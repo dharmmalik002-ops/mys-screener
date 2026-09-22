@@ -858,4 +858,21 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      `/api/bot/robust` now ships the `walkforward` block inside the same payload as the single-split figure, so the two always travel together, and the Rules book view leads with the walk-forward number rather than the friendlier one.
 
 
+111. **THE PAPER BOOK CAUGHT TWO BUGS IN ITS FIRST RUN THAT EIGHTEEN YEARS OF BACKTESTING COULD NOT.** `paper.py` is the position ledger — what the bot owns, carried across days in plain JSON so it survives being switched off — and `scripts/run_paper_session.py` advances it one session at a time. It exists because an execution layer on top of a book that miscounts its positions places real orders it should not place, so the ledger has to come **before** a broker connection, not after.
+
+     It paid for itself immediately. Replayed over 2024-01-01 to 2026-09-18 it returned **+5.87%** against a study returning ~40% a year, and each investigation found a real defect:
+
+     * **No sleeve.** The book held cash while the study parks idle capital in the index/gold sleeve, which the walk-forward decomposition says returns +31.63% a year on its own. `sleeve.py` now builds that series once and **both** the backtest and the paper runner read it, so the two cannot drift again. +5.87% -> +44.40%.
+     * **The trail never armed.** `atr_at_entry` was read from a field called `atr`; the signal writes `atr_pct_at_entry`, as a percent. The missing field defaulted to 0.0, so `gain_r >= 1 and atr > 0` was never true and every winner ran all the way back to its ORIGINAL stop. 169 closed trades showed **132 stop / 30 gap / 7 ceiling and not one trail exit**, and the win rate read **4.1% against the study's 32%**. Nothing errored — a rule was simply switched off by a typo.
+     * **R flipped sign on every trailed winner**, and this one hid *behind* the first. Once the trail lifts the stop above entry, `entry - stop` is negative, and `shares * (exit - entry) / that` turns a +50% trade into **-0.68R**. It was invisible while the trail was dead. `Position.risk_amount()` now derives from `initial_stop_pct`, which cannot go negative.
+
+     After both fixes: **+69.23% over 667 sessions, drawdown -23.24%, 179 closed trades, worst single trade -0.30% of equity** against the 1.5% rule.
+
+     **A remaining divergence, reported rather than tuned away.** Like-for-like — the study restricted to trades entered 2024 or later — the study wins 26.3% of 114 trades and the paper book 17.9% of 179. The paper book takes *more* trades because it starts flat with empty slots, while the study's book was already full of carried positions. That is also why the totals differ at all: on 2024-01-01 the study held **36 positions worth +84.2% of eventual equity contribution, including a +764% winner**, and a book starting from scratch owns none of them. **Expect roughly a year of ramp-up before a live book's returns resemble the study's** — that is a property of a strategy whose winners are held 239 sessions, not a defect.
+
+     Three properties are load-bearing and each has a test. **Idempotent per session** — a cron firing twice, a retried workflow or a manual re-run must not double-enter, and the duplicate would be invisible because it looks like a legitimate second position. **Catch-up** — a missed run replays every session it skipped, in order, so the book is never stranded in the past holding stops that were taken out on a day it never processed. **The same arithmetic as the study** — sizing, stop placement, the trail and the ceiling read from `rules.py` rather than being restated, because a paper book that sizes differently is not validating the study.
+
+     `bot-refresh.yml` runs it daily at 7:53 PM IST with `APP_STATE_DIR=backend/data`, so the book commits as JSON and survives between runs. Served at `/api/bot/paper`.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

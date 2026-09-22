@@ -41,6 +41,8 @@ ROBUST_FILE = "bot_robust.json"
 # The same book put through the yearly-rebuild test, which is the one that
 # matters. Built by `scripts/rules_walkforward.py`.
 RULES_WF_FILE = "bot_rules_walkforward.json"
+# The paper book's public summary, written by scripts/run_paper_session.py.
+PAPER_FILE = "bot_paper.json"
 ROLLING_FILE = "bot_rolling_walkforward.json"
 COMBINED_FILE = "bot_combined_product.json"
 # Beyond this the committed signal list is describing a market that has moved
@@ -147,6 +149,26 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
             "No trade here has ever been placed with real money.",
         ]
         return payload
+
+    @router.get("/paper")
+    def paper() -> dict[str, Any]:
+        """The paper book — what the bot would actually own, day by day.
+
+        This is not a backtest slice. It is the live path: signals regenerated
+        each session, entries at the next open, stops and the trail applied to
+        carried positions, the ledger written to disk and re-read the next
+        day. It already earned its keep by catching two bugs the backtest
+        could not see — a trail that never armed because it read a field the
+        signal does not have, and an R denominator that flipped sign once the
+        trail lifted a stop above entry (CLAUDE.md gotcha 111).
+        """
+        artifact = _load(data_dir, PAPER_FILE)
+        if not artifact:
+            raise HTTPException(
+                status_code=503,
+                detail="No paper book yet. Run scripts/run_paper_session.py.",
+            )
+        return artifact
 
     @router.get("/status")
     def status() -> dict[str, Any]:

@@ -14,6 +14,7 @@ on:
       - "backend/scripts/build_deep_history.py"
       - "backend/scripts/run_bot_backtest.py"
       - "backend/scripts/generate_bot_signals.py"
+      - "backend/scripts/run_paper_session.py"
   workflow_dispatch:
     inputs:
       rebuild_history:
@@ -79,7 +80,20 @@ jobs:
           python backend/scripts/run_bot_backtest.py
           python backend/scripts/generate_bot_signals.py
 
-          if git diff --quiet backend/data/bot_backtest.json backend/data/bot_signals.json; then
+          # Advance the paper book by one session. APP_STATE_DIR points at the
+          # committed data directory on purpose: the runner is stateless and
+          # the book IS the state, so it has to survive between runs. It is
+          # small JSON, not a binary, so the Space's pre-receive hook (gotcha
+          # 21) accepts it.
+          #
+          # `run_paper_session.py` is idempotent per session and catches up
+          # any sessions a missed run left behind, so a failed or re-run
+          # workflow cannot double-enter a position or strand the book.
+          APP_STATE_DIR=backend/data python backend/scripts/run_paper_session.py || \
+            echo "paper session failed; the study artifacts still commit"
+
+          if git diff --quiet backend/data/bot_backtest.json backend/data/bot_signals.json \
+                              backend/data/bot_paper.json backend/data/bot_paper_book.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -132,6 +146,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add backend/data/bot_backtest.json backend/data/bot_signals.json
+          git add backend/data/bot_paper.json backend/data/bot_paper_book.json || true
           git commit -m "chore(bot): refresh backtest and signals [skip ci]" || exit 0
           for attempt in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
