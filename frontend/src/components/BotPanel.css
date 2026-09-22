@@ -506,3 +506,15 @@
 .bot-table th.num, .bot-table td.num { text-align: right; }
 .bot-table td.pos { color: var(--up, #16a34a); }
 .bot-table td.neg { color: var(--down, #dc2626); }
+
+.bot-callout-ok {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--up, #16a34a);
+  background: rgba(22, 163, 74, 0.08);
+  line-height: 1.5;
+}

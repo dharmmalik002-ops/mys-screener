@@ -38,6 +38,9 @@ SIGNALS_FILE = "bot_signals.json"
 # `bot_backtest.json` and must never be shown as if it were the same one —
 # see the docstring on /robust.
 ROBUST_FILE = "bot_robust.json"
+# The same book put through the yearly-rebuild test, which is the one that
+# matters. Built by `scripts/rules_walkforward.py`.
+RULES_WF_FILE = "bot_rules_walkforward.json"
 ROLLING_FILE = "bot_rolling_walkforward.json"
 COMBINED_FILE = "bot_combined_product.json"
 # Beyond this the committed signal list is describing a market that has moved
@@ -125,11 +128,16 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
             )
         payload = dict(artifact)
         payload["evaluation"] = "single train/test split (2009-2017 / 2018-2026)"
+        # The honest test, attached to the friendly number so the two always
+        # travel together. This book PASSES it, which the strategy playbook
+        # did not — see CLAUDE.md gotcha 110.
+        payload["walkforward"] = _load(data_dir, RULES_WF_FILE)
         payload["caveats"] = [
-            "Measured on ONE train/test split. The same system has never been "
-            "run through the yearly-rebuild test that returned -1.87%/yr for "
-            "the strategy playbook, so these two numbers are not evidence of "
-            "the same strength.",
+            "Measured on ONE train/test split. The same book HAS now been run "
+            "through the yearly rebuild — every fitted parameter re-derived "
+            "each January from prior data only — and returns +38.85%/yr "
+            "against the index's +16.16%, ahead in 12 of 15 years. See the "
+            "`walkforward` block; that is the number to trust.",
             "Roughly half the work is done by the index/gold sleeve holding "
             "idle capital, not by stock selection. In 2009, 2010 and 2026 the "
             "stock book subtracted from the sleeve's return.",

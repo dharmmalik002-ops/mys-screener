@@ -27,6 +27,7 @@ export default function BotRulesBook({ equity }: { equity: number }) {
   if (error) return <p className="bot-message">Rules book unavailable: {error}</p>;
   if (!data) return <p className="bot-message">Loading the rules book…</p>;
 
+  const wf = data.walkforward ?? null;
   const rows = (data.diagnosis ?? []).filter((r) => r.index_return !== null);
   const money = (pct: number) => equity * (1 + pct / 100);
   const fmt = (v: number) =>
@@ -34,17 +35,29 @@ export default function BotRulesBook({ equity }: { equity: number }) {
 
   return (
     <div className="bot-view">
-      <div className="bot-callout bot-callout-warn">
-        <AlertTriangle size={15} aria-hidden />
-        <div>
-          <strong>Two different tests, two different answers.</strong> This book is
-          measured on a <em>single</em> train/test split and returns{" "}
-          <strong>{data.cagr.toFixed(1)}%</strong> a year. The Scorecard's
-          walk-forward test rebuilds the rules every January and trades the next
-          year blind — that returns <strong>-1.87%</strong> a year. The second is
-          the harder test and this system has never been put through it.
+      {wf ? (
+        <div className="bot-callout bot-callout-ok">
+          <AlertTriangle size={15} aria-hidden />
+          <div>
+            <strong>This book passes the hard test.</strong> Rebuilt every January
+            from prior data only and traded blind, it returns{" "}
+            <strong>{wf.cagr.toFixed(1)}%</strong> a year against the index's{" "}
+            {wf.index_cagr.toFixed(1)}%, ahead in <strong>{wf.years_beaten} of {wf.years}</strong>{" "}
+            years. The single-split figure below ({data.cagr.toFixed(1)}%) is the
+            softer measurement — <strong>trust {wf.cagr.toFixed(1)}%</strong>. Of
+            that, {wf.stock_picking_worth_pp.toFixed(1)}pp comes from stock
+            picking and the rest from the index/gold sleeve.
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bot-callout bot-callout-warn">
+          <AlertTriangle size={15} aria-hidden />
+          <div>
+            <strong>Single-split measurement.</strong> The yearly-rebuild result is
+            not loaded, so this page is showing the softer of the two numbers.
+          </div>
+        </div>
+      )}
 
       <div className="bot-stat-row">
         <Stat label="CAGR" value={`${data.cagr.toFixed(2)}%`} />

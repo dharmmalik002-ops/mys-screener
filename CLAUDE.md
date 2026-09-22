@@ -838,4 +838,24 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      It ships as an option (`gap_allowance_pct=0.0, gap_allowance_mult=None`) rather than being deleted, for gotcha 31's reason: it is the control that would detect the opposite if the gap behaviour of this universe ever changed. `TextbookSizingIsNotTheDefaultTests` pins that the defaults keep the gap leg on and that a zero allowance cannot select it silently.
 
 
+110. **THE RULES BOOK PASSES THE YEARLY-REBUILD TEST THAT KILLED THE PLAYBOOK. THIS IS THE ONLY POSITIVE OUT-OF-SAMPLE SELECTION RESULT IN THE PROJECT.** Gotcha 59 is the headline finding: rebuild the strategy playbook each January from prior data only and it compounds at **-2.60%/yr with a signal edge of -0.165R, negative in 9 of 11 years**. Every friendly number in this project rested on a single split, and the rules book had never been put through the same test. `scripts/rules_walkforward.py` does it.
+
+     **What is re-derived each January, from signals dated strictly earlier:** `MAX_TURNOVER_CRORE` (60th percentile of prior turnover), `TRADEABLE_SETUPS` (setups with positive prior average R), `SETUP_QUALITY` (prior average R rescaled), and `DECILE_CUTS` (deciles of the prior score spread, scored with the prior-derived quality map). The confidence *weights*, the regime thresholds and each strategy's `expects` stay fixed because they were declared before anything was measured — re-deriving a constant that was never fitted tests nothing. The account runs **continuously**, positions carried across January boundaries, because gotcha 74 measured that chaining yearly growth factors understates drawdown roughly threefold.
+
+         2012-2026                         CAGR     maxDD   Sharpe   beat    trades
+         shipped (one split, fitted once) +42.97%  -22.04%    1.81   13/15     1464
+         YEARLY REBUILD (honest test)     +38.85%  -21.91%    2.04   12/15      961
+         Nifty Smallcap 250               +16.16%
+
+     **It costs 4.1pp of CAGR and one year, and the Sharpe goes UP.** That is the opposite of what happened to the playbook, and the signal-level column says the same thing: **+2.067R mean, negative in 4 of 15 years**, against the playbook's -0.165R negative in 9 of 11.
+
+     **Three checks before believing it, because this project has caught eight false positives.** *Tail dependence*: dropping the 50 best trades of 1,658 still leaves **+33.62% and 9/15** — it is not three lucky names. *Matched random control*: taking the same NUMBER of cleared signals each year at random gives +35.06% (95th percentile +37.52%) and beats the index 9.8/15 on average, so the conviction pick **clears the control** on both. *Sleeve decomposition*: the sleeve alone returns +31.63% at 7/15, so the stock picking is worth **+7.22pp a year and five extra years beaten** — real, and not the whole story.
+
+     **What is still not tested, and should be said out loud.** `EXIT_MAX_STOP_PCT = 7.0` and `CONVICTION_BAR = 8` were both chosen on grids spanning the full period, and the thrust and recovery-tilt parameters were chosen on 2009-2017, which is in-sample for the 2012-2017 part of this run. Those are lookaheads this test does not remove. The exit rule itself (8 ATR, 500 sessions) was mined pre-2018. And survivorship is unchanged — the universe is today's listed companies (gotcha 31).
+
+     **Why this one might genuinely differ from gotcha 59.** The playbook learned *which strategy × regime cells had recently paid*, which is past performance predicting future performance — the thing measured empty at every granularity (gotchas 53, 65, 69, 70). The rules book instead selects on **properties of the trade at entry** — stop width relative to prevailing volatility, turnover, momentum, market state — which are structural facts about a setup rather than a record of how it recently did. That is the same distinction that made `adaptive_sizing` work (gotcha 78) while every P&L-driven loop failed. It is a mechanism, not a proof, and the honest position is that this is one measurement on one universe.
+
+     `/api/bot/robust` now ships the `walkforward` block inside the same payload as the single-split figure, so the two always travel together, and the Rules book view leads with the walk-forward number rather than the friendlier one.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

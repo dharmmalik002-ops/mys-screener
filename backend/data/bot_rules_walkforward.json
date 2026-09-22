@@ -1,0 +1,182 @@
+{
+  "evaluation": "yearly rebuild \u2014 every fitted parameter re-derived each January from prior data only, account run continuously",
+  "first_year": 2012,
+  "last_year": 2026,
+  "years": 15,
+  "cagr": 38.85,
+  "index_cagr": 16.16,
+  "max_drawdown": -21.91,
+  "sharpe": 2.04,
+  "win_rate": 34.4,
+  "payoff": 6.19,
+  "trades": 961,
+  "years_beaten": 12,
+  "sleeve_only_cagr": 31.63,
+  "stock_picking_worth_pp": 7.22,
+  "signal_avg_r": 2.067,
+  "signal_years_negative": 4,
+  "yearly": {
+    "2012": 20.8,
+    "2013": 19.6,
+    "2014": 67.92,
+    "2015": 10.99,
+    "2016": 60.05,
+    "2017": 79.46,
+    "2018": 13.26,
+    "2019": 20.88,
+    "2020": 131.69,
+    "2021": 78.45,
+    "2022": 21.91,
+    "2023": 50.68,
+    "2024": 37.2,
+    "2025": 34.82,
+    "2026": -7.62
+  },
+  "signal_avg_r_by_year": {
+    "2012": 0.265,
+    "2013": 11.875,
+    "2014": 2.176,
+    "2015": -0.769,
+    "2016": 0.96,
+    "2017": 1.85,
+    "2018": 0.171,
+    "2019": -0.859,
+    "2020": 5.928,
+    "2021": 2.207,
+    "2022": 1.598,
+    "2023": 4.822,
+    "2024": -0.475,
+    "2025": 0.01,
+    "2026": -1.215
+  },
+  "trades_by_year": {
+    "2012": 58,
+    "2013": 21,
+    "2014": 315,
+    "2015": 69,
+    "2016": 80,
+    "2017": 138,
+    "2018": 38,
+    "2019": 27,
+    "2020": 82,
+    "2021": 378,
+    "2022": 79,
+    "2023": 174,
+    "2024": 128,
+    "2025": 62,
+    "2026": 9
+  },
+  "robustness": {
+    "drop_top_50_trades_cagr": 33.62,
+    "matched_random_control_cagr": 35.06,
+    "matched_random_control_95th": 37.52,
+    "beats_matched_control": true
+  },
+  "per_year_params": [
+    {
+      "year": 2012,
+      "taken": 58,
+      "prior": 821,
+      "turnover_cap": 4.07,
+      "setups": 2
+    },
+    {
+      "year": 2013,
+      "taken": 21,
+      "prior": 1048,
+      "turnover_cap": 4.07,
+      "setups": 3
+    },
+    {
+      "year": 2014,
+      "taken": 315,
+      "prior": 1122,
+      "turnover_cap": 4.06,
+      "setups": 4
+    },
+    {
+      "year": 2015,
+      "taken": 69,
+      "prior": 1942,
+      "turnover_cap": 3.78,
+      "setups": 4
+    },
+    {
+      "year": 2016,
+      "taken": 80,
+      "prior": 2215,
+      "turnover_cap": 3.78,
+      "setups": 4
+    },
+    {
+      "year": 2017,
+      "taken": 138,
+      "prior": 2581,
+      "turnover_cap": 3.81,
+      "setups": 4
+    },
+    {
+      "year": 2018,
+      "taken": 38,
+      "prior": 2964,
+      "turnover_cap": 3.77,
+      "setups": 4
+    },
+    {
+      "year": 2019,
+      "taken": 27,
+      "prior": 3222,
+      "turnover_cap": 3.78,
+      "setups": 4
+    },
+    {
+      "year": 2020,
+      "taken": 82,
+      "prior": 3366,
+      "turnover_cap": 3.78,
+      "setups": 4
+    },
+    {
+      "year": 2021,
+      "taken": 378,
+      "prior": 3868,
+      "turnover_cap": 3.87,
+      "setups": 5
+    },
+    {
+      "year": 2022,
+      "taken": 79,
+      "prior": 5528,
+      "turnover_cap": 3.96,
+      "setups": 6
+    },
+    {
+      "year": 2023,
+      "taken": 174,
+      "prior": 5916,
+      "turnover_cap": 3.99,
+      "setups": 6
+    },
+    {
+      "year": 2024,
+      "taken": 128,
+      "prior": 6801,
+      "turnover_cap": 4.12,
+      "setups": 6
+    },
+    {
+      "year": 2025,
+      "taken": 62,
+      "prior": 7481,
+      "turnover_cap": 4.19,
+      "setups": 6
+    },
+    {
+      "year": 2026,
+      "taken": 9,
+      "prior": 7823,
+      "turnover_cap": 4.27,
+      "setups": 6
+    }
+  ]
+}

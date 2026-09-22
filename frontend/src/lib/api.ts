@@ -5330,6 +5330,22 @@ export type BotRobust = {
   summary?: { years_behind?: number; years_total?: number };
   evaluation?: string;
   caveats?: string[];
+  /** The yearly-rebuild test — the one that decides. Every fitted parameter
+   *  re-derived each January from prior data only. */
+  walkforward?: {
+    cagr: number;
+    index_cagr: number;
+    years: number;
+    years_beaten: number;
+    max_drawdown: number;
+    sharpe: number;
+    trades: number;
+    sleeve_only_cagr: number;
+    stock_picking_worth_pp: number;
+    signal_avg_r: number;
+    signal_years_negative: number;
+    yearly: Record<string, number>;
+  } | null;
 };
 
 /** The rules-based book. NOT the same measurement as `getBotWalkforward()` —
