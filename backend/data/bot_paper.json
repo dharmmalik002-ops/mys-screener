@@ -1,16 +1,16 @@
 {
   "summary": {
     "started": "2024-01-01",
-    "last_session": "2026-09-18",
-    "sessions": 667,
+    "last_session": "2026-09-21",
+    "sessions": 668,
     "starting_equity": 100000.0,
-    "equity": 169233.73,
-    "return_pct": 69.23,
+    "equity": 169245.77,
+    "return_pct": 69.25,
     "max_drawdown_pct": -23.24,
     "open_positions": 2,
     "closed_trades": 179,
     "win_rate": 17.9,
-    "avg_win_pct": 43.18540625,
+    "avg_win_pct": 43.18540624999999,
     "avg_loss_pct": -6.156884353741496,
     "worst_trade_equity_pct": -0.297,
     "declined_recent": 35
@@ -27,7 +27,7 @@
       "high_water": 1283.65,
       "atr_at_entry": 24.4767,
       "conf": 10.0,
-      "sessions_held": 250
+      "sessions_held": 251
     },
     {
       "symbol": "BLSE",
@@ -40,7 +40,7 @@
       "high_water": 327.3867,
       "atr_at_entry": 8.493383869999999,
       "conf": 9.0,
-      "sessions_held": 54
+      "sessions_held": 55
     }
   ],
   "recent_closed": [
@@ -746,13 +746,6 @@
     }
   ],
   "equity_curve": [
-    {
-      "day": "2024-09-09",
-      "equity": 130815.8,
-      "open": 34,
-      "cash": 0.0,
-      "sleeve": 17490.74
-    },
     {
       "day": "2024-09-10",
       "equity": 131803.23,
@@ -4245,6 +4238,13 @@
       "open": 2,
       "cash": 0.0,
       "sleeve": 157285.77
+    },
+    {
+      "day": "2026-09-21",
+      "equity": 169245.77,
+      "open": 2,
+      "cash": 0.0,
+      "sleeve": 157285.74
     }
   ]
 }

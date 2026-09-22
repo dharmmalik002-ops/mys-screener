@@ -2,8 +2,8 @@
   "started": "2024-01-01",
   "starting_equity": 100000.0,
   "cash": 0.0,
-  "last_session": "2026-09-18",
-  "sessions": 667,
+  "last_session": "2026-09-21",
+  "sessions": 668,
   "sleeve_units": 0.750425,
   "sleeve_level": 209595.549129,
   "positions": [
@@ -18,7 +18,7 @@
       "high_water": 1283.65,
       "atr_at_entry": 24.4767,
       "conf": 10.0,
-      "sessions_held": 250
+      "sessions_held": 251
     },
     {
       "symbol": "BLSE",
@@ -31,7 +31,7 @@
       "high_water": 327.3867,
       "atr_at_entry": 8.493383869999999,
       "conf": 9.0,
-      "sessions_held": 54
+      "sessions_held": 55
     }
   ],
   "closed": [
@@ -7211,6 +7211,13 @@
       "open": 2,
       "cash": 0.0,
       "sleeve": 157285.77
+    },
+    {
+      "day": "2026-09-21",
+      "equity": 169245.77,
+      "open": 2,
+      "cash": 0.0,
+      "sleeve": 157285.74
     }
   ],
   "declined": [
