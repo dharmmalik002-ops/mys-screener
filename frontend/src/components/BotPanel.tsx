@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import BotJournal from "./BotJournal";
 import BotRulesBook from "./BotRulesBook";
 
 import {
@@ -41,7 +42,7 @@ import "./BotPanel.css";
    The limitations view is what keeps the costume visible, so it gets equal
    billing with the numbers rather than a footnote nobody scrolls to. */
 
-type BotView = "today" | "rules" | "scorecard" | "playbook" | "learning" | "loop" | "evolution" | "evidence" | "limits";
+type BotView = "today" | "journal" | "rules" | "scorecard" | "playbook" | "learning" | "loop" | "evolution" | "evidence" | "limits";
 
 // Ordered the way a decision gets made: what to do now, the rules behind it,
 // what the trade record taught, how that view has shifted, the underlying
@@ -52,6 +53,7 @@ type BotView = "today" | "rules" | "scorecard" | "playbook" | "learning" | "loop
 // buy today, and has this ever made money.
 const VIEWS: Array<{ id: BotView; label: string; hint: string; primary?: boolean }> = [
   { id: "today", label: "Today", hint: "Current regime, stance and candidates", primary: true },
+  { id: "journal", label: "Journal", hint: "What the bot is doing with its paper money right now", primary: true },
   { id: "rules", label: "Rules book", hint: "Year by year against the Smallcap 250", primary: true },
   // Second on purpose: "is this any good?" is the question everything else
   // only supports, and it is answered against real fund managers.
@@ -729,6 +731,7 @@ export function BotPanel() {
                 refreshing={refreshing}
               />
             ) : null}
+            {view === "journal" ? <BotJournal /> : null}
             {view === "rules" ? <BotRulesBook equity={equity} /> : null}
             {view === "playbook" ? <PlaybookView backtest={backtest} /> : null}
             {view === "scorecard" ? (

@@ -5356,6 +5356,40 @@ export function getBotRobust() {
   return whileWaking(() => request<BotRobust>("/api/bot/robust", undefined, { timeoutMs: 60000 }));
 }
 
+export type BotPaper = {
+  summary: {
+    started: string;
+    last_session: string | null;
+    sessions: number;
+    starting_equity: number;
+    equity: number;
+    return_pct: number;
+    max_drawdown_pct: number;
+    open_positions: number;
+    closed_trades: number;
+    win_rate: number | null;
+    avg_win_pct: number | null;
+    avg_loss_pct: number | null;
+    worst_trade_equity_pct: number | null;
+  };
+  positions: Array<{
+    symbol: string; strategy: string; entry_day: string; entry_price: number;
+    shares: number; stop_price: number; initial_stop_pct: number;
+    high_water: number; conf: number; sessions_held: number;
+  }>;
+  recent_closed: Array<{
+    symbol: string; strategy: string; entry_day: string; exit_day: string;
+    entry_price: number; exit_price: number; shares: number; reason: string;
+    sessions_held: number; net_pct: number; r_multiple: number; equity_pct: number;
+  }>;
+  equity_curve: Array<{ day: string; equity: number; open: number; cash: number }>;
+};
+
+/** The paper book — the bot's own journal. Real money has never been placed. */
+export function getBotPaper() {
+  return whileWaking(() => request<BotPaper>("/api/bot/paper", undefined, { timeoutMs: 60000 }));
+}
+
 export function getBotStatus() {
   return whileWaking(() => request<BotStatus>("/api/bot/status", undefined, { timeoutMs: 30000 }));
 }

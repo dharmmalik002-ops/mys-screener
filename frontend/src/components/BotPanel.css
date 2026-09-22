@@ -518,3 +518,13 @@
   background: rgba(22, 163, 74, 0.08);
   line-height: 1.5;
 }
+
+/* --- Journal ------------------------------------------------------------- */
+.bot-journal-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.bot-stat-value.pos { color: var(--up, #16a34a); }
+.bot-stat-value.neg { color: var(--down, #dc2626); }
