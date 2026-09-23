@@ -56,13 +56,20 @@ class DefaultsAreOffTests(unittest.TestCase):
         self.assertFalse(m.trail_on_close)
         self.assertIsNone(m.climax_sma50_mult)
 
-    def test_none_has_been_adopted(self):
-        """Measured on the yearly rebuild (walk-forward +38.85% baseline):
-        trail-on-close +38.99, climax +38.99, no-chase +38.54, buy-stop
-        confirmation +37.51, stop-under-signal-low +34.07; the two best
-        combined +39.22 — inside the 0.5pp tie band and a year worse on the
-        single split. If this test fails, one was adopted: re-measure it."""
-        self.assertEqual(R.SEASONED_RULES, {})
+    def test_exactly_the_two_measured_rules_are_adopted(self):
+        """Close-basis trail and the climax exit, adopted together with group
+        strength in the confidence score (gotcha 113). Alone they were a tie
+        (+0.37pp, gotcha 112); inside the package the walk-forward goes
+        +38.85% -> +40.09% and the single split keeps 16 of 18 years. The
+        other three — no-chase, buy-stop confirmation, structural stop —
+        measured negative and must stay off."""
+        self.assertEqual(R.SEASONED_RULES, {"trail_on_close": True, "climax_sma50_mult": 1.7})
+        m = R.exit_model()
+        self.assertTrue(m.trail_on_close)
+        self.assertEqual(m.climax_sma50_mult, 1.7)
+        self.assertIsNone(m.max_entry_gap_pct)
+        self.assertFalse(m.confirm_above_signal_high)
+        self.assertFalse(m.stop_at_signal_low)
 
     def test_the_shared_builder_matches_the_shipped_constants(self):
         m = R.exit_model()

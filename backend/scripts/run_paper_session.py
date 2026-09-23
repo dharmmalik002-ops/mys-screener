@@ -41,6 +41,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.bot import confidence as cf  # noqa: E402
+from app.services.bot import group_strength as gs  # noqa: E402
 from app.services.bot import indicators as ind  # noqa: E402
 from app.services.bot import paper  # noqa: E402
 from app.services.bot import rules as R  # noqa: E402
@@ -89,8 +90,11 @@ def main() -> int:
              for i, d in enumerate(idx.dates)}
 
     cleared = R.accepted_with_rolling_risk(rows)
+    # Industry-group strength on the signal day (gotcha 113).
+    _ranks = gs.build_ranks(data_dir)
     for t in cleared:
-        t["conf"] = cf.rated(t, above.get(date.fromisoformat(str(t["entry_day"]))))
+        t["conf"] = cf.rated(t, above.get(date.fromisoformat(str(t["entry_day"]))),
+                             _ranks.rank(t["symbol"], str(t["signal_day"])))
     picked = [t for t in cleared if t["conf"] >= cf.CONVICTION_BAR]
 
     # The session is the newest TRADING day in the store, not the newest day a
@@ -153,6 +157,10 @@ def main() -> int:
     level = (sl.build_level(index_close, gold, small, sleeve_on)
              if gold else {d: index_close[d] for d in index_close})
 
+    def _prep(b):
+        hi, lo, cl = (np.asarray(x, dtype=float) for x in (b.high, b.low, b.close))
+        return (b, {d: i for i, d in enumerate(b.dates)}, ind.atr(hi, lo, cl, 14), ind.sma(cl, 50))
+
     # Read each symbol's bars once, not once per session.
     need = ({p.symbol for p in book.positions}
             | {str(t["symbol"]) for d in todo for t in by_day.get(d.isoformat(), [])})
@@ -160,7 +168,7 @@ def main() -> int:
     for sym in need:
         b = read_bars(data_dir, sym)
         if b is not None:
-            store[sym] = (b, {d: i for i, d in enumerate(b.dates)})
+            store[sym] = _prep(b)
 
     out = {}
     for session in todo:
@@ -171,18 +179,24 @@ def main() -> int:
         for sym in want - set(store):
             b = read_bars(data_dir, sym)
             if b is not None:
-                store[sym] = (b, {d: i for i, d in enumerate(b.dates)})
+                store[sym] = _prep(b)
         bars: dict[str, dict] = {}
         for sym in want:
             entry = store.get(sym)
             if not entry:
                 continue
-            b, where = entry
+            b, where, atr_arr, sma_arr = entry
             i = where.get(session)
             if i is None:
                 continue
             bars[sym] = {"open": float(b.open[i]), "high": float(b.high[i]),
                          "low": float(b.low[i]), "close": float(b.close[i])}
+            # The trail and the climax exit read these; the engine computes
+            # them per bar, so the book must be handed the same values.
+            if np.isfinite(atr_arr[i]):
+                bars[sym]["atr"] = float(atr_arr[i])
+            if np.isfinite(sma_arr[i]):
+                bars[sym]["sma50"] = float(sma_arr[i])
         out = paper.advance(book, session, bars, todays,
                             sleeve_level=level.get(session), force=args.force)
         if "skipped" in out:

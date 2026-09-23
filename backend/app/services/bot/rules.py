@@ -103,12 +103,12 @@ EXIT_MAX_STOP_PCT = 7.0
 # +0.088R in training and +0.069R held out, while the full cleared set is
 # negative in both (-0.068R / -0.035R). It declines 82% of what the rules
 # already cleared, which is why the trade count falls by two thirds.
-MEASURED_CAGR = 41.54
-MEASURED_MAX_DRAWDOWN = -21.21
-MEASURED_SHARPE = 1.98
-MEASURED_PAYOFF = 5.92
-MEASURED_WIN_RATE = 32.0
-MEASURED_TRADES = 1200
+MEASURED_CAGR = 42.26
+MEASURED_MAX_DRAWDOWN = -21.91
+MEASURED_SHARPE = 2.02
+MEASURED_PAYOFF = 5.84
+MEASURED_WIN_RATE = 32.2
+MEASURED_TRADES = 1301
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -448,7 +448,13 @@ def recovery_days(dates: "Sequence[date]", closes: "Sequence[float]") -> "set":
 # to construct ExitModel from these constants by hand. Three copies of the same
 # five arguments is exactly how the paper book ended up trading a different
 # rule from the study (CLAUDE.md gotcha 111), so all three now call this.
-SEASONED_RULES: dict = {}     # filled in once a rule earns its place
+# Two of the five seasoned-trader rules, adopted TOGETHER with group strength
+# in the confidence score (gotcha 113). On their own they were a tie (+0.37pp,
+# gotcha 112); combined with the group score the package clears both tests
+# with no year lost: walk-forward +38.85% -> +40.09%, single split +39.72% ->
+# +40.13% at 16/18. Adopting only the group score was +0.99pp on walk-forward
+# but cost two years on the split; the exits are what recover them.
+SEASONED_RULES: dict = {"trail_on_close": True, "climax_sma50_mult": 1.7}
 # ONE CAVEAT that must travel with any future entry here: `paper.py` does not
 # call the engine — it re-implements stops, the trail and the ceiling for a
 # book that advances one session at a time. A rule added to SEASONED_RULES

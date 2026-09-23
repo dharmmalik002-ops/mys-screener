@@ -65,6 +65,12 @@ class Position:
     atr_at_entry: float
     conf: float
     sessions_held: int = 0
+    # Closing-basis trail (SEASONED_RULES) — tracked apart from the hard
+    # intraday stop, exactly as the engine does it.
+    trail_level: float | None = None
+    # An exit decided on a close is executed at the NEXT open, so it has to
+    # survive the night in the ledger.
+    pending_exit: str | None = None
 
     def risk_amount(self) -> float:
         """What this trade risked AT ENTRY — the denominator of its R.
@@ -235,6 +241,12 @@ def advance(
     entered: list[str] = []
 
     # --- 1. age and exit ---------------------------------------------------
+    # Mirrors engine.simulate_symbol bar for bar. The paper book cannot call
+    # the engine (it advances one session at a time and must survive
+    # restarts), so it restates the rules — and reads which rules are live
+    # from R.SEASONED_RULES, so adopting a rule changes both paths at once.
+    close_trail = bool(R.SEASONED_RULES.get("trail_on_close"))
+    climax_mult = R.SEASONED_RULES.get("climax_sma50_mult")
     still: list[Position] = []
     for p in book.positions:
         bar = bars.get(p.symbol)
@@ -242,14 +254,18 @@ def advance(
             still.append(p)            # no print today: carry untouched
             continue
         p.sessions_held += 1
-        hit = _exit_price(bar, p.stop_price)
         reason = None
         px = None
-        if hit:
-            px, kind = hit
-            reason = "gap" if kind == "gap" else "stop"
-        elif p.sessions_held >= R.EXIT_MAX_HOLD_SESSIONS:
-            px, reason = float(bar["close"]), "ceiling"
+        if p.pending_exit:
+            # Decided on yesterday's close, executed at today's open.
+            px, reason = float(bar["open"]), p.pending_exit
+        else:
+            hit = _exit_price(bar, p.stop_price)
+            if hit:
+                px, kind = hit
+                reason = "gap" if kind == "gap" else "stop"
+            elif p.sessions_held >= R.EXIT_MAX_HOLD_SESSIONS:
+                px, reason = float(bar["close"]), "ceiling"
         if reason:
             equity_at_exit = book.equity(closes)
             gross = p.shares * px
@@ -266,13 +282,32 @@ def advance(
             ))
             exited.append(p.symbol)
             continue
-        # --- trail, once the trade is a winner by 1R -----------------------
+
+        # --- decisions on the CLOSE, acted on at the next open ------------
         close = float(bar["close"])
         p.high_water = max(p.high_water, close)
-        gain_r = (close - p.entry_price) / max(p.entry_price - p.stop_price, 1e-9)
-        if gain_r >= R.EXIT_TRAIL_AFTER_R and p.atr_at_entry > 0:
-            trail = p.high_water - R.EXIT_TRAIL_ATR_MULT * p.atr_at_entry
-            p.stop_price = max(p.stop_price, trail)   # a stop never moves down
+        sma50 = bar.get("sma50")
+        if climax_mult and sma50 and close >= float(climax_mult) * float(sma50):
+            p.pending_exit = "climax"
+            still.append(p)
+            continue
+        if close_trail and p.trail_level is not None and close < p.trail_level:
+            p.pending_exit = "trail"
+            still.append(p)
+            continue
+        # --- trail, once the trade is a winner by 1R -----------------------
+        # Current ATR, not ATR at entry: the engine trails off each bar's own
+        # ATR, and a frozen entry value drifts further from it the longer a
+        # winner runs — which is exactly the trade that matters.
+        atr_now = float(bar.get("atr") or p.atr_at_entry or 0.0)
+        initial_risk = p.entry_price * p.initial_stop_pct / 100.0
+        gain_r = (close - p.entry_price) / max(initial_risk, 1e-9)
+        if gain_r >= R.EXIT_TRAIL_AFTER_R and atr_now > 0:
+            level = close - R.EXIT_TRAIL_ATR_MULT * atr_now
+            if close_trail:
+                p.trail_level = level if p.trail_level is None else max(p.trail_level, level)
+            else:
+                p.stop_price = max(p.stop_price, level)   # a stop never moves down
         still.append(p)
     book.positions = still
 

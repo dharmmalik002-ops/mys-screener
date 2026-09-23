@@ -45,6 +45,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.bot import confidence as cf  # noqa: E402
+from app.services.bot import group_strength as gs  # noqa: E402
 from app.services.bot import indicators as ind  # noqa: E402
 from app.services.bot import mtm_account as mtm  # noqa: E402
 from app.services.bot import rules as R  # noqa: E402
@@ -79,7 +80,8 @@ def _rederive(prior: list[dict]) -> dict:
     }
 
 
-def _score(trade: dict, quality: dict, above200: bool | None) -> float:
+def _score(trade: dict, quality: dict, above200: bool | None,
+           group_rank: float | None = None) -> float:
     stop = float(trade.get("risk_pct") or 99.0)
     turnover = float(trade.get("turnover_crore_at_entry") or 1e9)
     momentum = float(trade.get("ret_63_at_entry") or 0.0)
@@ -91,7 +93,8 @@ def _score(trade: dict, quality: dict, above200: bool | None) -> float:
     market = 0.7 if regime in cf.STRONG_REGIMES else (0.35 if regime in cf.OK_REGIMES else 0.0)
     if above200:
         market += 0.3
-    return max(1.0, min(10.0, round(total + cf.W_MARKET * market, 2)))
+    total += cf.W_GROUP * (float(group_rank) if group_rank is not None else 0.0)
+    return max(1.0, round(total + cf.W_MARKET * market, 2))
 
 
 def main() -> int:
@@ -124,6 +127,10 @@ def main() -> int:
     above = {d: (bool(closes[i] > s200[i]) if not np.isnan(s200[i]) else True)
              for i, d in enumerate(bars.dates)}
 
+    # Group strength is causal per day already, so there is nothing to
+    # re-derive: the rank on a signal day reads closes up to that day only.
+    ranks = gs.build_ranks(data_dir)
+    grank = lambda t: ranks.rank(t["symbol"], str(t["signal_day"]))
     cleared = R.accepted_with_rolling_risk(rows)     # already causal
     cleared.sort(key=lambda t: str(t["entry_day"]))
     print(f"cleared the rolling stop-width cap: {len(cleared):,}")
@@ -140,7 +147,8 @@ def main() -> int:
         p = _rederive(prior)
         # Re-derive the decile cuts on the PRIOR signals, scored with the
         # prior-derived quality map — not on the year being traded.
-        prior_raw = sorted(_score(t, p["quality"], above.get(date.fromisoformat(str(t["entry_day"]))))
+        prior_raw = sorted(_score(t, p["quality"], above.get(date.fromisoformat(str(t["entry_day"]))),
+                                  grank(t))
                            for t in prior)
         cuts = [float(np.quantile(prior_raw, q / 10.0)) for q in range(1, 10)]
         took = []
@@ -153,7 +161,8 @@ def main() -> int:
                 continue
             if str(t.get("regime")) not in R.TRADEABLE_REGIMES:
                 continue
-            raw = _score(t, p["quality"], above.get(date.fromisoformat(str(t["entry_day"]))))
+            raw = _score(t, p["quality"], above.get(date.fromisoformat(str(t["entry_day"]))),
+                         grank(t))
             if 1.0 + sum(1 for c in cuts if raw >= c) >= cf.CONVICTION_BAR:
                 took.append(t)
         selected.extend(took)

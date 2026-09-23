@@ -41,6 +41,7 @@ sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.bot import adaptive_sizing as ad  # noqa: E402
 from app.services.bot import confidence as cf  # noqa: E402
+from app.services.bot import group_strength as gs  # noqa: E402
 from app.services.bot import diagnose as dg  # noqa: E402
 from app.services.bot import indicators as ind  # noqa: E402
 from app.services.bot import memory as mem  # noqa: E402
@@ -121,11 +122,14 @@ def main() -> int:
     _is200 = ind.sma(_ic, 200)
     _above = {dd: (bool(_ic[i] > _is200[i]) if not np.isnan(_is200[i]) else True)
               for i, dd in enumerate(_idx_bars.dates)}
+    # Industry-group strength on the signal day (gotcha 113).
+    _ranks = gs.build_ranks(data_dir)
     for t in kept:
         # The DECILE rating, not the raw sum. On the raw scale only 12 signals
         # in 18 years ever reached 9, so "take the 9s and 10s" is an empty
         # book; on deciles it is the top fifth of what the rules cleared.
-        t["conf"] = cf.rated(t, _above.get(date.fromisoformat(str(t["entry_day"]))))
+        t["conf"] = cf.rated(t, _above.get(date.fromisoformat(str(t["entry_day"]))),
+                             _ranks.rank(t["symbol"], str(t["signal_day"])))
     scored = len(kept)
     kept = [t for t in kept if t["conf"] >= cf.CONVICTION_BAR]
     print(f"signals {len(rows):,}  cleared rules {scored:,}  "

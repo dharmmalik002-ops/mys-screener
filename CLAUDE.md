@@ -895,4 +895,32 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      **The binding constraint is not the trade rules.** Only **10 of 1,200** filled trades lost more than twice their stop, yet the 10x gap allowance those rare events justify caps every position at ~2.4% of equity, and the book is often far from fully deployed. Every entry and exit refinement is competing for a thin slice of a book whose shape is set by the sizing rule and the sleeve. Whether gap losses cluster on results days — which would allow exiting before announcements and a smaller allowance — **cannot be tested yet**: only one of the ten gap trades has an announcement date on file.
 
 
+113. **INDUSTRY-GROUP STRENGTH IS THE FIRST NEW ENTRY FEATURE TO EARN A PLACE — AND IT ONLY PAYS IN THE SCORE, NOT AS A FILTER.** `group_strength.py` tags every signal with its industry group's rank on the signal day: the median 63-session return of the group's names, ranked against every other group that day (causal; each day reads closes up to that day only). The group is the `sub_sector` when the universe holds 8+ names in it, else the `sector` — sub-sectors alone have a median of 4 names, and a median of three stocks is one stock's news.
+
+     **The per-trade edge is large and holds in both halves.** Inside the band the bot actually trades, the weakest 40% of groups return **+0.86 to +1.26R** in training and **+0.77 to +0.99R** held out; the strongest 60% return **+1.59 to +1.80R** and **+2.28 to +2.66R**. That is the classic "leaders in leading groups".
+
+     **As a hard filter it barely moves the account** — skipping the weakest 40% gives walk-forward +39.01% against +38.85%, and loses a year on the split. It removes ~110 trades, and the capital they free lands in the sleeve, which earns nearly as much; the book is sizing-constrained (gotcha 107), so fewer trades is the wrong direction (gotcha 108). **As a score component it works**, because it swaps weak-group 8s for strong-group 7s at roughly the same trade count. `W_GROUP = 1.5`, declared at the momentum weight before measuring:
+
+         walk-forward 2012-2026          CAGR     vs base   years   Sharpe
+         baseline                       +38.85%      -      12/15    2.04
+         group in score, w = 1.0        +39.37%   +0.52    13/15    2.02
+         group in score, w = 1.5        +39.84%   +0.99    12/15    2.04
+         group in score, w = 2.0        +39.16%   +0.31    11/15    2.01
+         10 random-noise controls, w=1.5  +37.38 .. +39.63 (mean +38.66)
+
+     Every weight improves the walk-forward, so the value is not load-bearing, and the real group score beats **all ten** matched random-noise controls of the same weight on CAGR and win rate (35.5% against a control maximum of 34.3%). Random noise in the score on its own slightly *hurts* (mean -0.19pp), which is what it should do.
+
+     **Adopted as a package with two of gotcha 112's exits.** Group score alone cost two years on the single split (16/18 -> 14/18); adding the close-basis trail and the climax exit recovers them, which is why `SEASONED_RULES` now holds exactly those two:
+
+         package                          walk-forward       full backtest
+         before                         +38.85%  12/15     +41.54%  16/18  Sharpe 1.98  worst trade -41.6%
+         group + close-trail + climax   +40.09%  13/15     +42.26%  16/18  Sharpe 2.02  worst trade -19.2%
+
+     Stock picking is now worth **+8.47pp** a year over the sleeve alone (was +7.22pp), dropping the 50 best trades still leaves +33.59%, and a same-count random selection averages +38.36% (95th percentile +39.59%), which the book clears.
+
+     **The gain is uneven and that should be said.** On the walk-forward, 2021 (+10.6), 2022 (+5.1), 2023 (+6.0) and 2024 (+11.3) carry it, while 2012 (-2.2), 2016 (-1.4), 2017 (-1.9) and 2018 (-3.2) are slightly worse. The per-trade edge is also larger in the held-out half than in training. Both are consistent with group rotation mattering more in the recent market, and both are one sample.
+
+     **Three things changed together and all three had to.** `DECILE_CUTS` were re-derived on the training half under the new score (still monotone in both halves; the top decile is now +2.03R / +3.72R). The raw score is no longer clamped at 10 — weights sum to 11.5 and the decile scale is what reads 1-10. And `paper.py` now mirrors the adopted exits bar for bar: a close below the trail or a climax close sets `pending_exit` and sells at the **next** open, the hard stop stays intraday, and the trail reads **today's** ATR (the runner passes `atr` and `sma50` per session) — the book previously trailed off the ATR frozen at entry, a quieter version of the drift gotcha 111 was about.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

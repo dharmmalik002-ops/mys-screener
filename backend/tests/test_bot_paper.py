@@ -240,6 +240,13 @@ class TrailMustActuallyArmTests(unittest.TestCase):
     an error — a rule was simply off.
     """
 
+    def _protective_level(self, pos):
+        """Where the trail sits, whichever trail rule is live. Under the
+        close-basis trail (SEASONED_RULES) the hard stop stays put and a
+        separate trail level rises; under the intraday trail the stop itself
+        rises. These tests were first written for the intraday rule."""
+        return pos.trail_level if R.SEASONED_RULES.get("trail_on_close") else pos.stop_price
+
     def test_the_trail_raises_the_stop_once_the_trade_is_a_winner(self):
         book = fresh()
         cand = dict(CAND, atr_pct_at_entry=2.0)      # 2% of price
@@ -251,18 +258,22 @@ class TrailMustActuallyArmTests(unittest.TestCase):
         for i, px in enumerate([120, 140, 160], start=5):
             paper.advance(book, date(2026, 1, i), {"AAA": bar(px, px + 1, px - 1, px)}, [])
         self.assertTrue(book.positions, "position closed unexpectedly")
-        self.assertGreater(book.positions[0].stop_price, initial,
-                           "the trail never armed — check the ATR field name")
+        level = self._protective_level(book.positions[0])
+        self.assertIsNotNone(level, "the trail never armed — check the ATR field name")
+        self.assertGreater(level, initial, "the trail never armed — check the ATR field name")
 
     def test_a_trailed_winner_exits_in_profit(self):
         """The end-to-end version: run up, then fall back, and the trade must
-        close ABOVE entry rather than at the original stop."""
+        close ABOVE entry rather than at the original stop. Under the
+        close-basis trail the breach is seen on a close and sold at the NEXT
+        open, so one more session is needed than under the intraday rule."""
         book = fresh()
         cand = dict(CAND, atr_pct_at_entry=2.0)
         paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)}, [cand])
         for i, px in enumerate([130, 160, 190], start=5):
             paper.advance(book, date(2026, 1, i), {"AAA": bar(px, px + 1, px - 1, px)}, [])
         paper.advance(book, date(2026, 1, 20), {"AAA": bar(150, 150, 120, 125)}, [])
+        paper.advance(book, date(2026, 1, 21), {"AAA": bar(124, 126, 122, 123)}, [])
         self.assertEqual(len(book.closed), 1)
         done = book.closed[0]
         self.assertGreater(done.net_pct, 0.0,
@@ -294,3 +305,59 @@ class RIsMeasuredAgainstInitialRiskTests(unittest.TestCase):
         held.stop_price = 174.0                      # as the trail would leave it
         self.assertAlmostEqual(held.risk_amount(), risk_at_entry, places=6,
                                msg="R denominator moved with the trailing stop")
+
+
+class AdoptedExitRulesTests(unittest.TestCase):
+    """The paper book must trade the rules the study adopted (gotcha 113),
+    not the ones it had before — the drift that gotcha 111 was about."""
+
+    def test_a_close_breach_sells_at_the_next_open_not_the_same_bar(self):
+        if not R.SEASONED_RULES.get("trail_on_close"):
+            self.skipTest("close-basis trail not adopted")
+        book = fresh()
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)},
+                      [dict(CAND, atr_pct_at_entry=2.0)])
+        for i, px in enumerate([130, 160, 190], start=5):
+            paper.advance(book, date(2026, 1, i), {"AAA": bar(px, px + 1, px - 1, px)}, [])
+        paper.advance(book, date(2026, 1, 20), {"AAA": bar(150, 150, 120, 125)}, [])
+        self.assertEqual(len(book.closed), 0, "sold on the close that breached")
+        self.assertEqual(book.positions[0].pending_exit, "trail")
+        paper.advance(book, date(2026, 1, 21), {"AAA": bar(124, 126, 122, 123)}, [])
+        self.assertAlmostEqual(book.closed[0].exit_price, 124.0, places=6)
+
+    def test_an_intraday_wick_through_the_trail_does_not_sell(self):
+        if not R.SEASONED_RULES.get("trail_on_close"):
+            self.skipTest("close-basis trail not adopted")
+        book = fresh()
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)},
+                      [dict(CAND, atr_pct_at_entry=2.0)])
+        for i, px in enumerate([130, 160, 190], start=5):
+            paper.advance(book, date(2026, 1, i), {"AAA": bar(px, px + 1, px - 1, px)}, [])
+        # Wicks to 150 — below the 174 trail — and closes back at 188.
+        paper.advance(book, date(2026, 1, 20), {"AAA": bar(189, 190, 150, 188)}, [])
+        self.assertEqual(len(book.closed), 0)
+        self.assertIsNone(book.positions[0].pending_exit)
+
+    def test_a_climax_close_sells_at_the_next_open(self):
+        mult = R.SEASONED_RULES.get("climax_sma50_mult")
+        if not mult:
+            self.skipTest("climax exit not adopted")
+        book = fresh()
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)}, [CAND])
+        b = dict(bar(200, 205, 198, 200), sma50=200 / (mult * 1.01))   # just past the line
+        paper.advance(book, date(2026, 1, 5), {"AAA": b}, [])
+        self.assertEqual(book.positions[0].pending_exit, "climax")
+        paper.advance(book, date(2026, 1, 6), {"AAA": bar(199, 201, 197, 198)}, [])
+        self.assertEqual(book.closed[0].reason, "climax")
+        self.assertAlmostEqual(book.closed[0].exit_price, 199.0, places=6)
+
+    def test_the_trail_uses_todays_atr_when_the_runner_supplies_it(self):
+        """The engine trails off each bar's ATR; a frozen entry ATR drifts
+        from it the longer a winner runs."""
+        book = fresh()
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)},
+                      [dict(CAND, atr_pct_at_entry=2.0)])
+        paper.advance(book, date(2026, 1, 5), {"AAA": dict(bar(150, 151, 149, 150), atr=5.0)}, [])
+        level = (book.positions[0].trail_level if R.SEASONED_RULES.get("trail_on_close")
+                 else book.positions[0].stop_price)
+        self.assertAlmostEqual(level, 150 - R.EXIT_TRAIL_ATR_MULT * 5.0, places=6)

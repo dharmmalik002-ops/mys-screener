@@ -41,6 +41,14 @@ W_TURNOVER = 2.0
 W_SETUP = 2.0
 W_MOMENTUM = 1.5
 W_MARKET = 1.5
+# Industry-group strength (group_strength.py), the rank of the stock's group
+# on the signal day. Weight declared at 1.5 — the momentum weight, because its
+# measured R-spread on the training half was of the same size — and NOT tuned
+# afterwards. Checked for load-bearing: 1.0, 1.5 and 2.0 all improved the
+# yearly-rebuild result (+0.52 / +0.99 / +0.31pp), and 1.5 beat all ten
+# matched random-noise controls of the same weight. Weights now sum to 11.5;
+# the decile scale below absorbs that, which is what deciles are for.
+W_GROUP = 1.5
 
 # Measured on the training half. Order matters, magnitudes do not need to be
 # exact — they set the ranking, and the ranking is what the score uses.
@@ -77,7 +85,17 @@ HIGH_CONVICTION = 8.0      # the bar on the RAW scale (see DECILE_CUTS below)
 #     >= 8             +1.618       +2.108
 #     >= 9             +1.773       +2.568
 #     >= 10            +2.208       +2.767
-DECILE_CUTS = (4.983, 5.320, 5.560, 5.770, 5.970, 6.140, 6.280, 6.410, 6.650)
+# Re-derived when the group component was added (gotcha 113): deciles of the
+# training half (3,239 signals before 2018) under the new score, on the signal
+# pool the close-basis trail and climax exit produce. Still monotone in both
+# halves, and the top decile is sharper than it was:
+#
+#     band          train avgR    test avgR
+#     all cleared      +1.150       +1.608
+#     >= 8             +1.480       +2.337
+#     >= 9             +1.642       +2.570
+#     >= 10            +2.026       +3.715
+DECILE_CUTS = (5.68, 6.12, 6.42, 6.68, 6.91, 7.11, 7.33, 7.54, 7.8)
 
 # The band to trade: 8 to 10, i.e. the top 30% of what the rules cleared.
 # Measured against the narrower 9-10 band, widening to 8 is better on return
@@ -95,9 +113,10 @@ def decile(raw: float) -> float:
     return 1.0 + float(sum(1 for cut in DECILE_CUTS if raw >= cut))
 
 
-def rated(trade: "Mapping", index_above_200: bool | None = None) -> float:
+def rated(trade: "Mapping", index_above_200: bool | None = None,
+          group_rank: float | None = None) -> float:
     """The number a trader should read: 1-10, deciles, not the raw sum."""
-    return decile(score(trade, index_above_200))
+    return decile(score(trade, index_above_200, group_rank))
 
 
 def _band(value: float, best: float, worst: float) -> float:
@@ -108,7 +127,8 @@ def _band(value: float, best: float, worst: float) -> float:
     return max(0.0, min(1.0, raw))
 
 
-def score(trade: Mapping, index_above_200: bool | None = None) -> float:
+def score(trade: Mapping, index_above_200: bool | None = None,
+          group_rank: float | None = None) -> float:
     """Conviction from 1 to 10. Missing inputs score as neutral, never high."""
     stop = float(trade.get("risk_pct") or 99.0)
     turnover = float(trade.get("turnover_crore_at_entry") or 1e9)
@@ -130,8 +150,11 @@ def score(trade: Mapping, index_above_200: bool | None = None) -> float:
     if index_above_200:
         market += 0.3
     total += W_MARKET * market
+    # A missing group reading scores DOWN, like every other missing input:
+    # a signal we know less about is not one we are confident in.
+    total += W_GROUP * (float(group_rank) if group_rank is not None else 0.0)
 
-    return max(1.0, min(10.0, round(total, 2)))
+    return max(1.0, round(total, 2))
 
 
 def size_multiplier(conviction: float) -> float:

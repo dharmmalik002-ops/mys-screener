@@ -199,3 +199,31 @@ class SizingIsAlreadyMaximalTests(unittest.TestCase):
         unavailable without breaking that rule. The multiplier stays bounded
         so a future edit cannot quietly reintroduce it as leverage."""
         self.assertLessEqual(cf.size_multiplier(10.0), 2.0)
+
+
+
+class GroupStrengthComponentTests(unittest.TestCase):
+    """Industry-group strength in the score (gotcha 113)."""
+
+    BASE = {"risk_pct": 4.0, "turnover_crore_at_entry": 5.0, "ret_63_at_entry": 15.0,
+            "strategy": "pullback_ema21", "regime": "bull_strong"}
+
+    def test_a_stronger_group_scores_higher(self):
+        weak = cf.score(self.BASE, True, 0.1)
+        strong = cf.score(self.BASE, True, 0.9)
+        self.assertAlmostEqual(strong - weak, cf.W_GROUP * 0.8, places=6)
+
+    def test_a_missing_group_reading_scores_down(self):
+        self.assertLess(cf.score(self.BASE, True, None), cf.score(self.BASE, True, 0.5))
+
+    def test_the_weight_is_the_declared_one(self):
+        """Declared at the momentum weight and not tuned afterwards; 1.0 and
+        2.0 were measured too and both also improved the walk-forward, so the
+        exact value is not load-bearing."""
+        self.assertEqual(cf.W_GROUP, cf.W_MOMENTUM)
+
+    def test_group_alone_cannot_manufacture_a_top_rating(self):
+        """The strongest group on an otherwise poor signal must not rate 8."""
+        poor = {"risk_pct": 7.5, "turnover_crore_at_entry": 11.0, "ret_63_at_entry": 1.0,
+                "strategy": "minervini_breakout", "regime": "bull_narrow"}
+        self.assertLess(cf.rated(poor, False, 1.0), cf.CONVICTION_BAR)
