@@ -245,9 +245,7 @@ def _account(selected, rows, cleared, data_dir, table) -> dict:
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
     gold = sl.clean_series(_yahoo("GOLDBEES.NS"))
     small = sl.clean_series(_yahoo("NIFTYSMLCAP250.NS"))
-    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
-    level = sl.build_level(index_close, gold, small, sleeve_on) if gold else dict(index_close)
-    book = sl.book_regime(level, set(index_close), book_on)
+    level, book = sl.build_sleeve(index_close, gold, small, regimes)
 
     def run(sel, cfg=BOOK):
         return mtm.simulate(sel, data_dir, cfg, label="wf", park_idle_in=level,

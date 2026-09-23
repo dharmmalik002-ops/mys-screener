@@ -169,8 +169,7 @@ def main() -> int:
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
     gold, small = sl.clean_series(gold), sl.clean_series(small)
     sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
-    level = (sl.build_level(index_close, gold, small, sleeve_on)
-             if gold else {d: index_close[d] for d in index_close})
+    level, _ = sl.build_sleeve(index_close, gold, small, regimes)
     index_days = sorted(index_close)
 
     def risk_off_for(session):

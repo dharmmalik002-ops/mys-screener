@@ -176,16 +176,14 @@ def main() -> int:
     except Exception as exc:
         print(f"(no gold series, sleeve holds the index throughout: {exc})")
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
-    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
     small = sl.clean_series(index_yearly_prices) if index_yearly_prices else None
-    if gold:
-        park_prices = sl.build_level(index_close, gold, small, sleeve_on)
-    else:
-        park_prices = dict(index_close)
+    # Market-type sleeve (gotcha 117): each regime holds the asset that paid
+    # best under it in the years before, re-derived every January.
+    park_prices, _book_regime = sl.build_sleeve(index_close, gold, small, regimes)
     park_days = set(park_prices)
     _derisk = bool(gold) and __import__("os").environ.get("DERISK", "1") == "1"
-    _book_regime = sl.book_regime(park_prices, set(index_close), book_on)
-    print(f"sleeve: equities on {len(sleeve_on):,} sessions, book invested on {len(book_on):,}")
+    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
+    print(f"sleeve mode {sl.SLEEVE_MODE}; book invested on {len(book_on):,} sessions")
 
     # Adaptive sizing is built and OFF. Under correct accounting it costs
     # 1.4pp of CAGR and 0.11 of Sharpe (see adaptive_sizing's docstring); the

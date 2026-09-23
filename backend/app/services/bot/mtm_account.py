@@ -159,6 +159,7 @@ def simulate(
     max_equity_loss_pct: float | None = None,
     gap_allowance_pct: float = GAP_ALLOWANCE_PCT,
     gap_allowance_mult: float | None = GAP_ALLOWANCE_STOP_MULT,
+    derisk_exempt: "Callable[[Mapping], bool] | None" = None,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -308,7 +309,7 @@ def simulate(
             if p["exit"] <= day:
                 cash += p["cost"] + p["risk_amount"] * p["r"]
                 taken.append(p)
-            elif risk_off:
+            elif risk_off and not p.get("exempt"):
                 # Sold into the turn. Price it from the tape, and record the
                 # R actually achieved so win rate and payoff stay truthful.
                 series = price.get(p["symbol"], {})
@@ -335,7 +336,12 @@ def simulate(
             # could not use the capacity.
             todays = todays + list(reserve_by_day.get(day, []))
         held_syms = {p["symbol"] for p in open_pos}
-        for t in ([] if risk_off else todays):
+        # A regime specialist (gotcha 117) is a trade taken BECAUSE of the
+        # market state the de-risk is reacting to, so it is neither blocked
+        # nor sold by it. Off unless `derisk_exempt` is passed.
+        if risk_off:
+            todays = [t for t in todays if derisk_exempt is not None and derisk_exempt(t)]
+        for t in todays:
             stop_pct = float(t.get("risk_pct") or 0.0)
             if stop_pct <= 0:
                 declined += 1
@@ -443,6 +449,7 @@ def simulate(
                 # which is not always the signal's own risk_pct once the
                 # engine's max_stop_pct has pulled it in.
                 "strategy": t.get("strategy"),
+                "exempt": bool(derisk_exempt is not None and derisk_exempt(t)),
                 "stop_pct": stop_pct,
                 "sessions_held": t.get("sessions_held"),
             })

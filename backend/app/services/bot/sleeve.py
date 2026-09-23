@@ -38,7 +38,7 @@ from . import rules as R
 HEALTHY_REGIMES = frozenset({"bull_strong", "bull_narrow", "recovery"})
 
 
-SLEEVE_MODE = __import__("os").environ.get("BOT_SLEEVE_MODE", "default")
+SLEEVE_MODE = __import__("os").environ.get("BOT_SLEEVE_MODE", "regime_map")
 
 
 def risk_on_days(
@@ -149,3 +149,91 @@ def book_regime(days, index_days, book_on: set) -> dict:
             cur = d in book_on
         out[d] = "bull_strong" if cur else "bear"
     return out
+
+
+# --- the market-type sleeve (gotcha 117) --------------------------------------
+# Each regime holds whichever of Nifty 500 / Smallcap 250 / gold earned the
+# most on days carrying that regime label, measured ONLY on data before the
+# current January. Consistent in both halves of history: small caps in
+# bull_strong / choppy / recovery, gold in bull_narrow and bear. Re-derived
+# yearly rather than fixed, and it ranks at the 96.6th percentile of all 729
+# fixed hindsight maps (sleeve alone 2012-2026: +25.5%/yr against +17.2% for
+# the previous rule).
+REGIME_LABELS = ("bull_strong", "bull_narrow", "choppy", "correction", "bear", "recovery")
+MIN_REGIME_DAYS = 60
+
+
+def regime_asset_map(index_close, small_close, gold_close, regime_by_day, year: int) -> dict:
+    """{regime: 'n500' | 'small' | 'gold' | 'default'} from days strictly before `year`."""
+    import bisect
+    import math
+    assets = {"n500": index_close, "small": small_close or {}, "gold": gold_close or {}}
+    days = sorted(set(index_close) & set(assets["small"]) & set(assets["gold"]))
+    days = [d for d in days if d.year < year]
+    labels = sorted(regime_by_day)
+    sums = {(g, k): [0.0, 0] for g in REGIME_LABELS for k in assets}
+    for a, b in zip(days, days[1:]):
+        j = bisect.bisect_left(labels, b)
+        g = regime_by_day.get(labels[j - 1]) if j else None
+        if g not in REGIME_LABELS:
+            continue
+        for k, ser in assets.items():
+            pa, pb = ser.get(a), ser.get(b)
+            if pa and pb:
+                acc = sums[(g, k)]
+                acc[0] += math.log(pb / pa)
+                acc[1] += 1
+    out = {}
+    for g in REGIME_LABELS:
+        best, best_v = "default", None
+        for k in assets:
+            s, n = sums[(g, k)]
+            if n >= MIN_REGIME_DAYS and (best_v is None or s / n > best_v):
+                best, best_v = k, s / n
+        out[g] = best
+    return out
+
+
+def build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on: set) -> dict:
+    """Compounded level of the market-type sleeve.
+
+    The asset held over day d is chosen at the previous INDEX close, from
+    that close's regime and that year's map; `default` falls back to the
+    older rule (equities while healthy or above the 200-DMA, gold otherwise).
+    """
+    assets = {"n500": index_close, "small": small_close or {}, "gold": gold_close or {}}
+    maps: dict = {}
+    level, out = 100.0, {}
+    last = {k: None for k in assets}
+    held = "n500"
+    for d in sorted(set(index_close) | set(assets["small"]) | set(assets["gold"])):
+        p0, p1 = last[held], assets[held].get(d)
+        if p0 and p1:
+            level *= p1 / p0
+        for k, ser in assets.items():
+            if ser.get(d):
+                last[k] = ser[d]
+        if d in index_close:
+            if d.year not in maps:
+                maps[d.year] = regime_asset_map(index_close, small_close, gold_close, regime_by_day, d.year)
+            choice = maps[d.year].get(regime_by_day.get(d), "default")
+            if choice == "default":
+                choice = "n500" if d in sleeve_on else "gold"
+            if not assets[choice]:
+                choice = "n500"
+            held = choice
+        out[d] = level
+    return out
+
+
+def build_sleeve(index_close, gold_close, small_close, regime_by_day, mode: str | None = None):
+    """(sleeve level, book regime map) — the one entry point every runner uses."""
+    mode = mode or SLEEVE_MODE
+    sleeve_on, book_on = risk_on_days(index_close, regime_by_day, "bear_only" if mode == "bear_only" else None)
+    if not gold_close:
+        level = dict(index_close)
+    elif mode == "regime_map":
+        level = build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on)
+    else:
+        level = build_level(index_close, gold_close, small_close, sleeve_on)
+    return level, book_regime(level, set(index_close), book_on)
