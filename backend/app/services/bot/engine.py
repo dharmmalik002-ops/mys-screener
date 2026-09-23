@@ -192,6 +192,11 @@ class ExitModel:
     # sessions of the fill. Board meetings for results are intimated days in
     # advance (SEBI LODR reg. 29), so a short window is knowable at entry.
     results_entry_blackout: int | None = None
+    #
+    # SWING DISCIPLINE (gotcha 118): sell at the next open once the position
+    # has been held this many sessions and still closes below its entry.
+    # Winners are untouched; only a trade that has not worked is cut.
+    cut_loser_after_sessions: int | None = None
 
 
 # The calendar lives in results_calendar.py so strategies can read it too.
@@ -401,6 +406,11 @@ def simulate_symbol(
                     exit_idx, exit_price = j + 1, float(o[j + 1])
                     reason = "rule_break"
                     break
+
+            if (exits.cut_loser_after_sessions is not None and j + 1 <= last_idx
+                    and j - entry_idx + 1 >= exits.cut_loser_after_sessions and float(c[j]) < entry):
+                exit_idx, exit_price, reason = j + 1, float(o[j + 1]), "time_cut"
+                break
 
             # Climax: a close far above the 50-day average sells at the next open.
             if exits.climax_sma50_mult is not None and j + 1 <= last_idx:

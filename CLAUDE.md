@@ -953,4 +953,15 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
      By regime the bot moves from -6.9 to **+1.0%/yr in corrections**, -17.8 to -11.8 in bull_narrow, 33.2 to 37.5 in choppy. Stock picking still adds +4.4pp over the sleeve alone and beats matched random picks (95th pct +26.03%). **The cost is drawdown, and it is one episode**: -33.8% in Jan-Aug 2013, when a map built on five years chose gold for corrections just before gold's 2013 crash; requiring 125 or 250 days of evidence did not remove it and was not adopted (it was a post-hoc tweak). The single split reads +24.64% / -34.34% because its 2009-2011 maps are built on one or two years of data — quote the walk-forward.
 
+118. **SWING-LENGTH HOLDS LOSE TO THE CURRENT BOOK — RE-MEASURED ON THE HONEST SLEEVE.** Asked for "cut losers in days, hold weeks not a year". Losers are already cut fast (avg **15 sessions**, -7.1%, by the stop); it is winners that are held (avg 228 sessions, +50.9%). Walk-forward 2012-2026, market-type sleeve:
+
+         max hold 500 (ships)   +28.71%  11/15  win 31.1%  winners +50.9%
+         max hold 120           +20.63%   7/15  win 28.9%  winners +25.9%
+         max hold  60           +21.17%   6/15  win 31.6%  winners +20.4%
+         max hold  20           +24.75%   9/15  win 36.5%  winners +10.4%  (only 288 trades: most setups are negative after costs at 20 days, so the rebuild drops them)
+         cut a loser after 10d  +26.96%  11/15  win 23.7%  losers -5.2%
+         cut a loser after 5d   +25.65%  11/15  win 20.7%  losers -4.4%
+
+     Gotcha 95's verdict survives the sleeve fix. `ExitModel.cut_loser_after_sessions` exists, defaults off (`SwingDisciplineTests`); it shrinks the average loss and sells trades that would have recovered.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

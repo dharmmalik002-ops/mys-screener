@@ -119,3 +119,19 @@ class ChampionSetupsFireTests(unittest.TestCase):
         b = Bars(symbol="TST", dates=np.array([D0 + timedelta(days=i) for i in range(n)], dtype=object),
                  open=np.concatenate([[c[0]], c[:-1]]), high=c * 1.005, low=c * 0.995, close=c, volume=v)
         self.assertTrue(S._wedge_pop(build_features(b)).any())
+
+
+class SwingDisciplineTests(unittest.TestCase):
+    """Gotcha 118: cutting a trade that has not worked after N sessions — built, measured, off."""
+
+    def test_default_off(self):
+        self.assertIsNone(ExitModel().cut_loser_after_sessions)
+        self.assertIsNone(R.exit_model().cut_loser_after_sessions)
+
+    def test_it_cuts_a_trade_still_under_water(self):
+        n = 400
+        c = np.concatenate([np.linspace(100, 160, 301), np.full(n - 301, 159.7)])
+        b = Bars(symbol="TST", dates=np.array([D0 + timedelta(days=i) for i in range(n)], dtype=object),
+                 open=np.concatenate([[c[0]], c[:-1]]), high=c * 1.001, low=c * 0.999, close=c, volume=np.full(n, 1e7))
+        t = run(b, cut_loser_after_sessions=5)[0]
+        self.assertEqual(t.exit_reason, "time_cut")
