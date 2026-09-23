@@ -875,4 +875,24 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      `bot-refresh.yml` runs it daily at 7:53 PM IST with `APP_STATE_DIR=backend/data`, so the book commits as JSON and survives between runs. Served at `/api/bot/paper`.
 
 
+112. **THE SEASONED-TRADER RULES — FIVE REFLEXES, NONE CLEARS THE BAR.** The brief asked for better entries and exits "like a bot with 20 years of experience". Five rules a discretionary trader applies by reflex were added to `ExitModel`, declared together **before** any was measured, each defaulting off, and scored on the **yearly-rebuild test** (`rules_walkforward`) rather than the single split:
+
+         rule (walk-forward 2012-2026)          CAGR     vs base   years   Sharpe
+         baseline                              +38.85%      —      12/15    2.04
+         trail on a CLOSE, not an intraday wick +38.99%   +0.14    12/15    2.06
+         sell the climax (close >= 1.7x SMA50)   +38.99%   +0.14    12/15    2.06
+         don't chase (skip a >3% gap-up open)    +38.54%   -0.31    12/15    2.03
+         buy-stop over the signal-day high       +37.51%   -1.34    11/15    2.02
+         stop under the signal-day low           +34.07%   -4.78    10/15    1.74   worst trade -2.85% of equity
+         close-trail + climax combined           +39.22%   +0.37    12/15    2.07
+
+     **The best combination is +0.37pp, inside `CAGR_TIE_BAND`, and loses a year on the single split (16/18 -> 15/18).** Its per-year gain is almost all 2021 (+7.5) and 2024 (+5.4) against 2025 (-4.7) — the signature of noise, not edge. Nothing is adopted; `SEASONED_RULES` stays `{}` and `test_none_has_been_adopted` pins it.
+
+     **The two rules that sound most experienced are the two most harmful**, and the reason is the same one every sell-earlier idea here has hit (gotchas 34, 77, 84). A buy-stop over the trigger day skips the breakouts that open strong and never look back; a stop under the signal-day low is tighter, so it is hit more — win rate falls to 11.9% and, with a tighter stop, the gap-aware sizing allows *bigger* positions, so the worst trade costs 2.85% of equity against the 1.5% rule. **In a book whose result lives in a few 50R+ winners, any rule that makes a trade easier to lose costs more than the losers it saves.**
+
+     **A new entry feature was also mined and rejected.** Of five entry features the score does not use, 12-month return is the one whose top quintile is worst in both halves (+0.39R train, +0.88R test against ~+1.5R for the rest) — "don't buy what has already tripled". Filtered out causally (cut re-derived from prior signals each January) it raises the win rate to 36% and **costs a year and 0.2-0.7pp on the walk-forward.** A signal-level edge that does not survive into the account is the pattern of gotchas 54, 82 and 101: the conviction filter has already declined most of those trades. `atr_pct_at_entry` also survives both halves and is deliberately **not** added — it is the stop-width effect restated (gotcha 36), which the score already carries at weight 3.0.
+
+     **The binding constraint is not the trade rules.** Only **10 of 1,200** filled trades lost more than twice their stop, yet the 10x gap allowance those rare events justify caps every position at ~2.4% of equity, and the book is often far from fully deployed. Every entry and exit refinement is competing for a thin slice of a book whose shape is set by the sizing rule and the sleeve. Whether gap losses cluster on results days — which would allow exiting before announcements and a smaller allowance — **cannot be tested yet**: only one of the ten gap trades has an announcement date on file.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

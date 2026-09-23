@@ -145,6 +145,41 @@ class ExitModel:
     break_ma: str = "sma50"           # "sma50" or "ema21"
     break_confirm_sessions: int = 2
 
+    # --- the seasoned-trader set -----------------------------------------
+    # Five rules a discretionary trader with two decades behind them would
+    # apply by reflex, and which this engine had never modelled. Declared
+    # together, before any was measured, and each defaults off so the
+    # shipped result is unchanged until one earns its place on the
+    # yearly-rebuild test (scripts/rules_walkforward.py) — not on the single
+    # split, which has been wrong about this project eight times.
+    #
+    # ENTRY
+    # Do not chase: skip the trade when the next open gaps more than this far
+    # above the signal close. Buying a 6% gap puts the stop 6% further from
+    # the base and the move is partly spent before the fill.
+    max_entry_gap_pct: float | None = None
+    # Buy-stop over the signal bar: the order only fills if the next session
+    # trades ABOVE the signal day's high, and fills there (or at the open if
+    # it gaps through). A breakout that cannot clear its own trigger day is
+    # the failure the stop would otherwise have to eat.
+    confirm_above_signal_high: bool = False
+    # Structural stop: under the signal day's low when that is TIGHTER than
+    # the ATR stop. Invalidation is "the breakout day failed", not a
+    # volatility multiple.
+    stop_at_signal_low: bool = False
+    #
+    # EXIT
+    # Closing-basis trail: once the trail is armed, only a CLOSE below it
+    # exits (at the next open). The initial stop stays a hard intraday stop.
+    # An intraday wick through a trailing level shakes out positions that
+    # close back above it — the standard reason professionals trail on
+    # closes and protect capital on the hard stop.
+    trail_on_close: bool = False
+    # Sell the climax: exit at the next open once the close is this multiple
+    # of the 50-day average. O'Neil's "extended" zone; fires only on
+    # parabolic blow-offs, which historically give back most of the run.
+    climax_sma50_mult: float | None = None
+
 
 @dataclass
 class Trade:
@@ -240,8 +275,20 @@ def simulate_symbol(
         # Slippage scales with the name's liquidity — see costs.py. Measured at
         # the signal bar, which is what was knowable when the order was placed.
         turnover = float(features.turnover_crore[i]) if np.isfinite(features.turnover_crore[i]) else None
-        entry = costs.fill_price(float(o[entry_idx]), "buy", turnover)
+        raw_open = float(o[entry_idx])
+        if exits.max_entry_gap_pct is not None and float(c[i]) > 0:
+            if raw_open > float(c[i]) * (1.0 + exits.max_entry_gap_pct / 100.0):
+                continue                       # would be chasing — no trade
+        raw_fill = raw_open
+        if exits.confirm_above_signal_high:
+            trigger = float(h[i])
+            if float(h[entry_idx]) <= trigger:
+                continue                       # never cleared its trigger day
+            raw_fill = max(raw_open, trigger)
+        entry = costs.fill_price(raw_fill, "buy", turnover)
         stop = entry - spec.stop_atr_mult * float(atr[i])
+        if exits.stop_at_signal_low and float(l[i]) < entry:
+            stop = max(stop, float(l[i]) * 0.999)
         if exits.max_stop_pct is not None:
             stop = max(stop, entry * (1.0 - exits.max_stop_pct / 100.0))
         if stop <= 0 or entry <= 0:
@@ -268,6 +315,7 @@ def simulate_symbol(
         scaled_proceeds = 0.0
         break_run = 0
         break_ma = features.sma50 if exits.break_ma == "sma50" else features.ema21
+        trail_level: float | None = None
 
         last_idx = min(entry_idx + exits.max_hold_sessions - 1, n - 1)
         for j in range(entry_idx, last_idx + 1):
@@ -317,6 +365,19 @@ def simulate_symbol(
                     reason = "rule_break"
                     break
 
+            # Climax: a close far above the 50-day average sells at the next open.
+            if exits.climax_sma50_mult is not None and j + 1 <= last_idx:
+                sma = float(features.sma50[j]) if j < len(features.sma50) else float("nan")
+                if np.isfinite(sma) and sma > 0 and float(c[j]) >= exits.climax_sma50_mult * sma:
+                    exit_idx, exit_price, reason = j + 1, float(o[j + 1]), "climax"
+                    break
+
+            # Closing-basis trail: a close under the trail exits at the next open.
+            if exits.trail_on_close and trail_level is not None and float(c[j]) < trail_level:
+                if j + 1 <= last_idx:
+                    exit_idx, exit_price, reason = j + 1, float(o[j + 1]), "trail"
+                    break
+
             # Stop management, applied on the *close* of the bar so it can only
             # affect subsequent bars — moving a stop using the same bar's high
             # would be acting on information the day had not finished giving.
@@ -330,7 +391,13 @@ def simulate_symbol(
                 current_stop = max(current_stop, entry + exits.lock_floor_r * risk)
             if exits.trail_after_r is not None and run_r >= exits.trail_after_r:
                 if np.isfinite(atr[j]):
-                    current_stop = max(current_stop, float(c[j]) - exits.trail_atr_mult * float(atr[j]))
+                    level = float(c[j]) - exits.trail_atr_mult * float(atr[j])
+                    if exits.trail_on_close:
+                        # Tracked separately; the intraday stop stays the hard
+                        # initial stop so only a CLOSE can trip the trail.
+                        trail_level = level if trail_level is None else max(trail_level, level)
+                    else:
+                        current_stop = max(current_stop, level)
 
         if exit_idx is None:
             # Ran out of horizon (time stop) or out of data (still open).

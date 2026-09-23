@@ -441,3 +441,23 @@ def recovery_days(dates: "Sequence[date]", closes: "Sequence[float]") -> "set":
         elif last_deep is not None and 0 <= (day - last_deep).days <= RECOVERY_WINDOW_DAYS:
             out.add(day)
     return out
+
+
+# --- one place that builds the trade model ---------------------------------
+# The backtest runner, the yearly-rebuild test and the paper runner each used
+# to construct ExitModel from these constants by hand. Three copies of the same
+# five arguments is exactly how the paper book ended up trading a different
+# rule from the study (CLAUDE.md gotcha 111), so all three now call this.
+SEASONED_RULES: dict = {}     # filled in once a rule earns its place
+
+
+def exit_model(**overrides):
+    from .engine import ExitModel
+    kw = dict(
+        target_r=EXIT_TARGET_R, max_hold_sessions=EXIT_MAX_HOLD_SESSIONS,
+        trail_after_r=EXIT_TRAIL_AFTER_R, trail_atr_mult=EXIT_TRAIL_ATR_MULT,
+        max_stop_pct=EXIT_MAX_STOP_PCT,
+    )
+    kw.update(SEASONED_RULES)
+    kw.update(overrides)
+    return ExitModel(**kw)
