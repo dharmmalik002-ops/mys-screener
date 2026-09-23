@@ -3934,7 +3934,9 @@ class DashboardService:
         rows.sort(key=lambda r: (r.avg_forward_return_pct is None, -(r.avg_forward_return_pct or 0)))
         return _Resp(rows=rows)
 
-    def _merge_expansion_history(self, items: list[ScanMatch]) -> list[ScanMatch]:
+    def _merge_expansion_history(
+        self, items: list[ScanMatch], snapshots: list[StockSnapshot] | None = None
+    ) -> list[ScanMatch]:
         """Roll the Expansion scan into a 30-session tracker.
 
         Today's hits are pinned under the current session date (first write of
@@ -3967,6 +3969,7 @@ class DashboardService:
             if not history:
                 return items
 
+            current = {snap.symbol: snap for snap in (snapshots or [])}
             merged: list[ScanMatch] = []
             seen: set[str] = set()
             for date_iso in sorted(history.keys(), reverse=True):
@@ -3977,8 +3980,17 @@ class DashboardService:
                     if not symbol or symbol in seen:
                         continue
                     seen.add(symbol)
+                    snap = current.get(symbol)
+                    live = (
+                        {
+                            "current_price": round(float(snap.last_price), 2),
+                            "current_change_pct": round(float(snap.change_pct), 2),
+                        }
+                        if snap is not None
+                        else {}
+                    )
                     try:
-                        merged.append(ScanMatch.model_validate({**raw, "session_date": date_iso}))
+                        merged.append(ScanMatch.model_validate({**raw, **live, "session_date": date_iso}))
                     except Exception:
                         continue
             return merged if merged else items
@@ -4208,7 +4220,7 @@ class DashboardService:
         if scan_id == "ema-expansion":
             # Rolling 30-session tracker: today's hits on top, older sessions
             # below, pruned automatically after the 30th session.
-            items = await asyncio.to_thread(self._merge_expansion_history, items)
+            items = await asyncio.to_thread(self._merge_expansion_history, items, snapshots)
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
         signature_parts = [scan_id]
         if min_liquidity_crore is not None:

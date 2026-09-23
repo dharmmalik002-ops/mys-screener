@@ -3770,7 +3770,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       const items = payload?.items ?? [];
       sets.set(mode, new Set(items.map((item) => item.symbol)));
       for (const item of items) {
-        if (!rowBySymbol.has(item.symbol)) rowBySymbol.set(item.symbol, item);
+        // Expansion's rows are frozen at their trigger session (price and %
+        // as of that day, up to 30 sessions back), flagged by session_date.
+        // Prefer any scanner's current row for the same symbol.
+        const existing = rowBySymbol.get(item.symbol);
+        if (!existing || (existing.session_date && !item.session_date)) rowBySymbol.set(item.symbol, item);
         const label = totalScannerLeafLabel(mode);
         const list = matchedBySymbol.get(item.symbol);
         if (list) list.push(label);
@@ -3782,7 +3786,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     const items: ScanMatch[] = [];
     for (const symbol of symbols) {
       const row = rowBySymbol.get(symbol);
-      if (row) items.push({ ...row, also_in: matchedBySymbol.get(symbol) ?? [] });
+      if (!row) continue;
+      items.push({
+        ...row,
+        // Frozen row with no current twin: show today's quote, like the chart.
+        last_price: row.current_price ?? row.last_price,
+        change_pct: row.current_change_pct ?? row.change_pct,
+        also_in: matchedBySymbol.get(symbol) ?? [],
+      });
     }
     // Confluence first: names hit by more of the selected scanners lead, then
     // by RS. In an AND run every row ties on count, so RS does the sorting.

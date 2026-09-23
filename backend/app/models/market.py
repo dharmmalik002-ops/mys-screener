@@ -682,6 +682,12 @@ class ScanMatch(BaseModel):
     # with a rolling history (Expansion keeps 30 sessions) so the UI can show
     # which day each stock fired.
     session_date: str | None = None
+    # Today's price and 1-day % for a row whose last_price/change_pct are
+    # frozen at an earlier trigger session (Expansion's 30-session tracker).
+    # Consumers that need the current quote (Total Scanner) read these; the
+    # Expansion table keeps showing the trigger-day numbers.
+    current_price: float | None = None
+    current_change_pct: float | None = None
     # Result-announcement date (YYYY-MM-DD) for the Positive Earnings scanner,
     # so the UI can show a dedicated column and sort latest-first.
     earnings_date: str | None = None

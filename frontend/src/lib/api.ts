@@ -42,6 +42,9 @@ export type ScanMatch = {
   pattern?: string | null;
   volume_push_date?: string | null;
   session_date?: string | null;
+  /** Today's quote for rows frozen at an earlier trigger session (Expansion). */
+  current_price?: number | null;
+  current_change_pct?: number | null;
   earnings_date?: string | null;
   new_since_prev?: boolean | null;
   also_in?: string[];
