@@ -676,7 +676,42 @@ def _wedge_pop(f: Features) -> np.ndarray:
                      & (c > f.sma200) & (c < f.sma50 * 1.15) & f.liquid)
 
 
+def _minervini_signature(f: Features) -> np.ndarray:
+    """The measured shape of Mark Minervini's entries (gotcha 119).
+
+    Profiled on 555 of his 908 published trade ideas against 20 random days in
+    the same stocks: his entries sat 4% under the 52-week high (random 15%),
+    +72% over 12 months (+18%), a 10-day range of 8.4% (11.8%), volume dried
+    to 0.82x (0.94x), a base 11% deep (16%), then broke the 20-day high on
+    1.24x volume, +2.9% on the day. Relaxed here to within 20% of the high.
+    Everything but the breakout day is read on the PRIOR close.
+    """
+    b = f.bars
+    c, h, l = b.close, b.high, b.low
+    n = len(c)
+    rng10 = np.full(n, np.nan)
+    depth60 = np.full(n, np.nan)
+    for i in range(60, n):
+        rng10[i] = h[i - 9:i + 1].max() / l[i - 9:i + 1].min() - 1.0
+        top = i - 59 + int(np.argmax(h[i - 59:i + 1]))
+        depth60[i] = 1.0 - l[top:i + 1].min() / h[top]
+    vol10 = ind.sma(b.volume, 10)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        dryup = np.where(f.vol_sma50 > 0, vol10 / f.vol_sma50, np.nan)
+        ret252 = np.where(_prior(c, 252) > 0, c / _prior(c, 252) - 1.0, np.nan)
+        sma200_up = f.sma200 > _prior(f.sma200, 21)
+        setup = ((c > f.sma50) & (f.sma50 > f.sma150) & (f.sma150 > f.sma200) & sma200_up
+                 & (c >= 0.80 * f.high_52w) & (c >= 1.30 * f.low_52w)
+                 & (ret252 >= 0.30) & (rng10 <= 0.12) & (dryup <= 0.90) & (depth60 <= 0.25))
+        pivot = _prior(f.high_20)
+        day_range = h - l
+        breakout = ((c > pivot) & (c >= _prior(c) * 1.015) & (f.rel_volume >= 1.3)
+                    & np.where(day_range > 0, (c - l) >= 0.5 * day_range, False))
+        return _safe(_prior_flag(setup) & breakout & f.liquid)
+
+
 CHAMPION_COHORT = (
+    ("minervini_signature", _minervini_signature),
     ("results_breakaway", _results_breakaway),
     ("wedge_pop", _wedge_pop),
 )

@@ -135,3 +135,22 @@ class SwingDisciplineTests(unittest.TestCase):
                  open=np.concatenate([[c[0]], c[:-1]]), high=c * 1.001, low=c * 0.999, close=c, volume=np.full(n, 1e7))
         t = run(b, cut_loser_after_sessions=5)[0]
         self.assertEqual(t.exit_reason, "time_cut")
+
+
+class MinerviniSignatureTests(unittest.TestCase):
+    """Gotcha 119: the measured Minervini entry — defined, fires, not registered."""
+
+    def test_it_fires_on_a_tight_quiet_base_that_breaks_out(self):
+        from app.services.bot import strategies as S
+        n = 330
+        c = np.concatenate([np.linspace(50, 100, 300), np.full(29, 99.0), [104.0]])
+        v = np.concatenate([np.full(300, 1e7), np.full(29, 6e6), [2e7]])
+        h = np.concatenate([c[:300] * 1.01, np.full(29, 100.0), [104.5]])
+        l = np.concatenate([c[:300] * 0.99, np.full(29, 97.5), [99.5]])
+        b = Bars(symbol="TST", dates=np.array([D0 + timedelta(days=i) for i in range(n)], dtype=object),
+                 open=np.concatenate([[c[0]], c[:-1]]), high=h, low=l, close=c, volume=v)
+        self.assertTrue(S._minervini_signature(build_features(b))[-1])
+
+    def test_not_registered(self):
+        from app.services.bot import strategies as S
+        self.assertNotIn("minervini_signature", {s.id for s in S.STRATEGIES})
