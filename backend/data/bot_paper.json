@@ -1,12 +1,12 @@
 {
   "summary": {
     "started": "2026-09-18",
-    "last_session": "2026-09-18",
-    "sessions": 1,
+    "last_session": "2026-09-21",
+    "sessions": 2,
     "starting_equity": 1000000.0,
-    "equity": 1000000.0,
-    "return_pct": 0.0,
-    "max_drawdown_pct": 0.0,
+    "equity": 992805.16,
+    "return_pct": -0.72,
+    "max_drawdown_pct": -0.72,
     "open_positions": 0,
     "closed_trades": 0,
     "win_rate": null,
@@ -24,6 +24,13 @@
       "open": 0,
       "cash": 0.0,
       "sleeve": 1000000.0
+    },
+    {
+      "day": "2026-09-21",
+      "equity": 992805.16,
+      "open": 0,
+      "cash": 0.0,
+      "sleeve": 992805.16
     }
   ]
 }
