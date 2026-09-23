@@ -1,0 +1,39 @@
+{
+  "year": 2026,
+  "setups": [
+    "earnings_drift",
+    "earnings_gap_hold",
+    "episodic_pivot",
+    "high_tight_flag",
+    "minervini_breakout",
+    "nr7_release",
+    "pocket_pivot",
+    "pullback_ema21",
+    "results_follow_through",
+    "squeeze_release"
+  ],
+  "quality": {
+    "nr7_release": 0.36045342993674623,
+    "pocket_pivot": 0.344025467853588,
+    "earnings_drift": 0.9999999999999998,
+    "pullback_ema21": 0.39970761242596714,
+    "earnings_gap_hold": 0.9198373552757935,
+    "minervini_breakout": 0.3415373823286712,
+    "squeeze_release": 0.6294452824217938,
+    "high_tight_flag": 0.5629450698625118,
+    "episodic_pivot": 0.512177728482826,
+    "results_follow_through": 0.3
+  },
+  "turnover_cap": 4.18,
+  "decile_cuts": [
+    4.94,
+    5.34,
+    5.64,
+    5.89,
+    6.11,
+    6.34,
+    6.58,
+    6.83,
+    7.13
+  ]
+}

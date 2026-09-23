@@ -46,6 +46,7 @@ from app.services.bot import diagnose as dg  # noqa: E402
 from app.services.bot import indicators as ind  # noqa: E402
 from app.services.bot import memory as mem  # noqa: E402
 from app.services.bot import mtm_account as mtm  # noqa: E402
+from app.services.bot import sleeve as sl  # noqa: E402
 from app.services.bot import rules as R  # noqa: E402
 from app.services.bot.backtest import BacktestConfig, build_context, run_strategies  # noqa: E402
 from app.services.bot.engine import ExitModel  # noqa: E402
@@ -99,6 +100,10 @@ def main() -> int:
 
     context = build_context(data_dir, symbols)
     exits = R.exit_model()
+    # Results dates feed `results_follow_through` (gotcha 116); an absent file
+    # leaves it silent rather than guessing.
+    from app.services.bot import results_calendar as rc
+    print(f"results calendar: {rc.load(data_dir):,} symbols")
     trades = run_strategies(data_dir, context, BacktestConfig(exits=exits), symbols)
     rows = []
     for t in trades:
@@ -128,7 +133,7 @@ def main() -> int:
         # The DECILE rating, not the raw sum. On the raw scale only 12 signals
         # in 18 years ever reached 9, so "take the 9s and 10s" is an empty
         # book; on deciles it is the top fifth of what the rules cleared.
-        t["conf"] = cf.rated(t, _above.get(date.fromisoformat(str(t["entry_day"]))),
+        t["conf"] = cf.rated(t, _above.get(date.fromisoformat(str(t["signal_day"]))),
                              _ranks.rank(t["symbol"], str(t["signal_day"])))
     scored = len(kept)
     kept = [t for t in kept if t["conf"] >= cf.CONVICTION_BAR]
@@ -152,149 +157,47 @@ def main() -> int:
     # shallower drawdown (-27.98% vs -29.89%) and a higher Sharpe (1.32 vs
     # 1.28), for 0.3pp of CAGR. It also ships in the local store, so the
     # account does not depend on an external fetch.
+    # The sleeve and the book's de-risk come from sleeve.py — the SAME module
+    # the paper book and the yearly rebuild use, so the three cannot drift.
+    # Broad index (small caps inside a crash-recovery window) while the
+    # regime is healthy or the index is above its 200-DMA, gold otherwise;
+    # the stock book sells into an unhealthy regime. Every state is read at a
+    # close and acts on the NEXT session (gotcha 115).
     _park_bars = read_bars(data_dir, "NIFTY500")
-    park_series = (
+    index_close = (
         {d: float(c) for d, c in zip(_park_bars.dates, _park_bars.close)}
         if _park_bars is not None else {}
     )
-
-    # ...except while recovering from a crash, when it holds SMALL caps.
-    # Small caps are a leveraged version of the market in both directions
-    # (+11.3pp a year over the broad index in a recovery, -40.3pp in a
-    # crash), so the question is never whether they run harder but when the
-    # leverage is safe to hold. The recovery window is the answer because it
-    # reliably ENDS before the next crash: tilting instead on "the market is
-    # rising" earns nearly the same and costs ten points of drawdown, because
-    # that condition is still true on the way down.
-    _recovering = (
-        R.recovery_days(list(_park_bars.dates), [float(c) for c in _park_bars.close])
-        if _park_bars is not None else set()
-    )
-    if park_series and index_yearly_prices and _recovering:
-        _small = index_yearly_prices          # Smallcap 250, already fetched
-        _days = sorted(set(park_series) | set(_small))
-        _lvl, _tilted, _pb, _ps = 100.0, {}, None, None
-        for _d in _days:
-            _b, _sm = park_series.get(_d, _pb), _small.get(_d, _ps)
-            if _pb and _ps and _b and _sm:
-                # A missing price is not a zero price: carry the last one.
-                _lvl *= (_sm / _ps) if _d in _recovering else (_b / _pb)
-            _pb, _ps = _b or _pb, _sm or _ps
-            _tilted[_d] = _lvl
-        park_series = _tilted
-        print(f"sleeve tilts to small caps on {len(_recovering):,} recovery sessions")
-    elif park_series:
-        print("(no smallcap series: sleeve holds the broad index throughout)")
-
-    # Bet more when the market is paying. Built only from that morning's tape:
-    # index trend, breadth, regime — never from the bot's own recent P&L.
-    bars = read_bars(data_dir, INDEX_KEY)
-    closes = np.asarray(bars.close, dtype=float)
-    sma200 = ind.sma(closes, 200)
-    index_above = {
-        d: (bool(closes[i] > sma200[i]) if not np.isnan(sma200[i]) else None)
-        for i, d in enumerate(bars.dates)
-    }
-    schedule = ad.build_schedule(
-        {d: r.regime for d, r in context.regime_by_day.items()},
-        {r.day: r.pct_above_200dma for r in context.breadth},
-        index_above,
-    )
-    # Adaptive sizing is built and OFF. Under correct accounting it costs
-    # 1.4pp of CAGR and 0.11 of Sharpe (see adaptive_sizing's docstring); the
-    # gain it appeared to give was the position-cap bug, not the rule.
-    _ = schedule
-
-    # Uncommitted capital tracks the Smallcap 250 while the regime is healthy,
-    # and sits in cash otherwise. The diagnosis returned `under_deployed` on
-    # every run; this is the answer to it, and unlike the other four ideas
-    # tested it improves return AND drawdown together.
-    park_prices: dict = {}
-    park_days: set = set()
-    if park_series:
-        park_prices = park_series
-        healthy = {"bull_strong", "bull_narrow", "recovery"}
-        park_days = {
-            d for d in park_prices
-            if (context.regime_by_day.get(d).regime if context.regime_by_day.get(d) else None)
-            in healthy
-        }
-    # Sell the stock book into a regime turn and hold the index sleeve
-    # instead. This is the only change that delivers the two targets the brief
-    # states numerically — a 35-40% win rate and a shallower drawdown — and it
-    # buys them honestly rather than by truncating winners at a fixed R:
-    #
-    #     hold through   CAGR +22.89%  maxDD -27.98%  win 26.8%  payoff 10.63  ret/DD 0.82  15/18
-    #     sell the turn  CAGR +19.05%  maxDD -17.58%  win 36.8%  payoff  3.75  ret/DD 1.08  13/18
-    #
-    # It costs 3.8pp of CAGR and two years of outperformance and returns 10.4
-    # points of drawdown. OFF by default: the brief's first and most repeated
-    # complaint is years that trail the index, and holding through wins 15 of
-    # 18 against de-risking's 13 while also returning more. Set DERISK=1 for
-    # the win-rate/drawdown profile instead.
-    #
-    # No middle setting exists. Cutting only in a genuine bear (leaving
-    # choppy and correction alone) is worse than both: +19.77% at -31.30%,
-    # Sharpe 1.13, 11 of 18 — it gives up the upside without buying the
-    # protection, because by the time the label reads `bear` the fall has
-    # happened.
-    # Risk-on means the regime is healthy OR the index is still above its own
-    # 200-day average. The confirmation matters: the regime label flips on
-    # breadth and volatility, so it can read unhealthy while the market is
-    # still rising, and de-risking on that alone sold into strength in 2024
-    # and 2026. Requiring the trend to have actually broken recovers both
-    # (+9.0% -> +17.7% and -13.6% -> -10.2%) and lifts 2021 from +58.8% to
-    # +76.8%.
     gold: dict = {}
     try:
         import yfinance as yf
         _g = yf.Ticker("GOLDBEES.NS").history(period="max")
-        gold = {x.date(): float(c) for x, c in zip(_g.index, _g["Close"])}
+        gold = sl.clean_series({x.date(): float(c) for x, c in zip(_g.index, _g["Close"])})
     except Exception as exc:
-        print(f"(no gold series, sleeve holds cash in turns: {exc})")
-
-    _idx_close = np.asarray(bars.close, dtype=float)
-    _sma200 = ind.sma(_idx_close, 200)
-    above_200 = {
-        dd: (bool(_idx_close[i] > _sma200[i]) if not np.isnan(_sma200[i]) else True)
-        for i, dd in enumerate(bars.dates)
-    }
-    healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
-    # A follow-through day: the index closing 3% above its lowest close of the
-    # trailing ten sessions. Both of the other risk-on inputs need the fall to
-    # have happened before they turn off and the rebound to have happened
-    # before they turn back on, which in a V-shaped recovery is exactly the
-    # wrong timing — in 2026 the sleeve sat in gold through the index's +8.4%
-    # April rebound and finished the year worse than either of its own legs.
-    thrust = R.thrust_days(list(bars.dates), [float(c) for c in bars.close])
-
-    _healthy_days = {
-        dd for dd in (set(park_prices) | set(gold))
-        if (context.regime_by_day.get(dd) is not None
-            and context.regime_by_day[dd].regime in healthy_set)
-    }
-    # The SLEEVE re-enters on a healthy regime, an intact trend, or a thrust.
-    risk_on = {
-        dd for dd in (set(park_prices) | set(gold))
-        if dd in _healthy_days or above_200.get(dd, True) or dd in thrust
-    }
-    if gold and park_prices:
-        park_prices = mtm.composite_sleeve(park_prices, gold, risk_on)
-        park_days = set(park_prices)          # the sleeve itself is always held
+        print(f"(no gold series, sleeve holds the index throughout: {exc})")
+    regimes = {d: r.regime for d, r in context.regime_by_day.items()}
+    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
+    small = sl.clean_series(index_yearly_prices) if index_yearly_prices else None
+    if gold:
+        park_prices = sl.build_level(index_close, gold, small, sleeve_on)
+    else:
+        park_prices = dict(index_close)
+    park_days = set(park_prices)
     _derisk = bool(gold) and __import__("os").environ.get("DERISK", "1") == "1"
-    # The BOOK de-risks on a different, stricter condition than the sleeve:
-    # regime or thrust, WITHOUT the 200-DMA leg. Gotcha 90 added that leg to
-    # stop the book selling into live uptrends, and it was right under the
-    # configuration of the time. It is wrong now, and the reason is the sleeve:
-    # capital leaving the stock book no longer goes to cash, it goes into the
-    # index. De-risking has become a move from idiosyncratic risk to market
-    # risk rather than a move out of the market, so it can be done sooner.
-    # Measured in both halves rather than on the full period:
-    #
-    #     book on regime OR trend   h1 7/9 +35.4%   h2 7/9 +37.7%   DD -31.8%
-    #     book on regime OR thrust  h1 7/9 +39.0%   h2 8/9 +40.5%   DD -22.7%
-    _book_on = {dd for dd in park_prices if dd in _healthy_days or dd in thrust}
-    _book_regime = {dd: ("bull_strong" if dd in _book_on else "bear") for dd in park_prices}
+    _book_regime = sl.book_regime(park_prices, set(index_close), book_on)
+    print(f"sleeve: equities on {len(sleeve_on):,} sessions, book invested on {len(book_on):,}")
+
+    # Adaptive sizing is built and OFF. Under correct accounting it costs
+    # 1.4pp of CAGR and 0.11 of Sharpe (see adaptive_sizing's docstring); the
+    # gain it appeared to give was the position-cap bug, not the rule. The
+    # schedule is still built so it stays testable.
+    _s200 = ind.sma(np.asarray(_park_bars.close, dtype=float), 200)
+    schedule = ad.build_schedule(
+        regimes, {r.day: r.pct_above_200dma for r in context.breadth},
+        {d: (bool(c > _s200[i]) if not np.isnan(_s200[i]) else None)
+         for i, (d, c) in enumerate(zip(_park_bars.dates, _park_bars.close))},
+    )
+    _ = schedule
 
     result = mtm.simulate(
         kept, data_dir, BOOK, label="rules",

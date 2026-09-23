@@ -31,7 +31,7 @@ extreme input cannot manufacture a maximum-conviction trade on its own.
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Mapping, Sequence
 
 # Weights sum to 10. Each is proportional to the R-spread its feature showed
 # on the training half — stop width was worth roughly twice what momentum was,
@@ -59,6 +59,9 @@ SETUP_QUALITY: dict[str, float] = {
     "earnings_drift": 0.85,
     "pullback_ema21": 0.70,
     "minervini_breakout": 0.55,
+    # Training-half closed record puts both level with minervini_breakout.
+    "pocket_pivot": 0.55,
+    "nr7_release": 0.55,
 }
 
 STRONG_REGIMES = frozenset({"bull_strong"})
@@ -95,7 +98,9 @@ HIGH_CONVICTION = 8.0      # the bar on the RAW scale (see DECILE_CUTS below)
 #     >= 8             +1.480       +2.337
 #     >= 9             +1.642       +2.570
 #     >= 10            +2.026       +3.715
-DECILE_CUTS = (5.68, 6.12, 6.42, 6.68, 6.91, 7.11, 7.33, 7.54, 7.8)
+# Re-derived when pocket_pivot and nr7_release joined the tradeable set
+# (gotcha 116): the same training half, the same score, a larger pool.
+DECILE_CUTS = (5.51, 5.92, 6.22, 6.49, 6.71, 6.94, 7.15, 7.4, 7.67)
 
 # The band to trade: 8 to 10, i.e. the top 30% of what the rules cleared.
 # Measured against the narrower 9-10 band, widening to 8 is better on return
@@ -108,15 +113,20 @@ DECILE_CUTS = (5.68, 6.12, 6.42, 6.68, 6.91, 7.11, 7.33, 7.54, 7.8)
 CONVICTION_BAR = 8.0
 
 
-def decile(raw: float) -> float:
-    """Map a raw score onto 1-10 using the frozen training-half deciles."""
-    return 1.0 + float(sum(1 for cut in DECILE_CUTS if raw >= cut))
+def decile(raw: float, cuts: "Sequence[float] | None" = None) -> float:
+    """Map a raw score onto 1-10 using the frozen training-half deciles.
+
+    `cuts` overrides them — the live book passes the current year's cuts from
+    the yearly rebuild (`bot_live_params.json`).
+    """
+    return 1.0 + float(sum(1 for cut in (DECILE_CUTS if cuts is None else cuts) if raw >= cut))
 
 
 def rated(trade: "Mapping", index_above_200: bool | None = None,
-          group_rank: float | None = None) -> float:
+          group_rank: float | None = None, *, quality: "Mapping | None" = None,
+          cuts: "Sequence[float] | None" = None) -> float:
     """The number a trader should read: 1-10, deciles, not the raw sum."""
-    return decile(score(trade, index_above_200, group_rank))
+    return decile(score(trade, index_above_200, group_rank, quality=quality), cuts)
 
 
 def _band(value: float, best: float, worst: float) -> float:
@@ -128,7 +138,7 @@ def _band(value: float, best: float, worst: float) -> float:
 
 
 def score(trade: Mapping, index_above_200: bool | None = None,
-          group_rank: float | None = None) -> float:
+          group_rank: float | None = None, *, quality: "Mapping | None" = None) -> float:
     """Conviction from 1 to 10. Missing inputs score as neutral, never high."""
     stop = float(trade.get("risk_pct") or 99.0)
     turnover = float(trade.get("turnover_crore_at_entry") or 1e9)
@@ -139,7 +149,7 @@ def score(trade: Mapping, index_above_200: bool | None = None,
     total = 0.0
     total += W_STOP * _band(stop, best=2.0, worst=8.0)
     total += W_TURNOVER * _band(turnover, best=1.0, worst=12.0)
-    total += W_SETUP * SETUP_QUALITY.get(setup, 0.3)
+    total += W_SETUP * (SETUP_QUALITY if quality is None else quality).get(setup, 0.3)
     total += W_MOMENTUM * _band(momentum, best=40.0, worst=0.0)
 
     market = 0.0

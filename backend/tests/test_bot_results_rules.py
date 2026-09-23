@@ -80,3 +80,42 @@ class ResultsRulesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ChampionSetupsFireTests(unittest.TestCase):
+    """Gotcha 82's failure mode: a broken setup reports zero signals, not an error."""
+
+    def tearDown(self):
+        engine.RESULTS_CALENDAR.clear()
+
+    def _market(self):
+        from app.services.bot import strategies as S  # noqa: F401
+        n = 320
+        c = list(np.linspace(100, 140, 270))
+        # results session 270: gap 6%, strong close, triple volume
+        o = c[:]
+        c += [149.0] + [148.5 + 0.1 * k for k in range(8)] + [151.0 + 0.8 * k for k in range(n - 279)]
+        o += [148.4] + c[271:]
+        c = np.asarray(c[:n]); o = np.asarray(o[:n]); o[271:] = c[270:-1]
+        v = np.full(n, 1e7); v[270] = 4e7
+        return Bars(symbol="TST", dates=np.array([D0 + timedelta(days=i) for i in range(n)], dtype=object),
+                    open=o, high=np.maximum(o, c) * 1.002, low=np.minimum(o, c) * 0.998, close=c, volume=v)
+
+    def test_results_setups_fire_only_with_a_calendar(self):
+        from app.services.bot import strategies as S
+        b = self._market()
+        f = build_features(b)
+        self.assertFalse(S._results_breakaway(f).any(), "fired with no results calendar")
+        engine.RESULTS_CALENDAR["TST"] = [(D0 + timedelta(days=270), 10 * 60)]
+        f = build_features(b)
+        self.assertTrue(S._results_breakaway(f)[270])
+        self.assertTrue(S._results_follow_through(f).any())
+
+    def test_wedge_pop_fires_on_a_reclaimed_pullback(self):
+        from app.services.bot import strategies as S
+        n = 320
+        c = np.concatenate([np.linspace(100, 160, 290), np.linspace(159, 150, 20), [156.0] * 10])
+        v = np.full(n, 1e7); v[310] = 2e7
+        b = Bars(symbol="TST", dates=np.array([D0 + timedelta(days=i) for i in range(n)], dtype=object),
+                 open=np.concatenate([[c[0]], c[:-1]]), high=c * 1.005, low=c * 0.995, close=c, volume=v)
+        self.assertTrue(S._wedge_pop(build_features(b)).any())

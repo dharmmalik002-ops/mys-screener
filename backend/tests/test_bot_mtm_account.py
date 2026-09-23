@@ -337,3 +337,30 @@ class EquityLossLimitTests(unittest.TestCase):
         r = mtm.simulate([wide], self.dir, self._cfg(), max_equity_loss_pct=1.0)
         self.assertIsNotNone(r)
         self.assertGreaterEqual(r.worst_trade_equity_pct, -1.05)
+
+
+class NoSameDayLookAheadTests(unittest.TestCase):
+    """Gotcha 115: a switch decided on day D's close earns nothing on day D."""
+
+    def setUp(self):
+        self.days = [date(2020, 1, 1) + timedelta(days=i) for i in range(6)]
+
+    def test_the_sleeve_does_not_earn_the_move_that_switched_it_on(self):
+        # Flat, then a +10% day that is itself what flips the state risk-on.
+        risk = {d: (100.0 if i < 3 else 110.0) for i, d in enumerate(self.days)}
+        safe = {d: 50.0 for d in self.days}
+        out = mtm.composite_sleeve(risk, safe, set(self.days[3:]))
+        self.assertAlmostEqual(out[self.days[3]], out[self.days[2]])
+
+    def test_the_sleeve_does_not_dodge_the_crash_that_switched_it_off(self):
+        risk = {d: (100.0 if i < 3 else 80.0) for i, d in enumerate(self.days)}
+        safe = {d: 50.0 for d in self.days}
+        out = mtm.composite_sleeve(risk, safe, set(self.days[:3]))
+        self.assertAlmostEqual(out[self.days[3]] / out[self.days[2]], 0.8)
+
+    def test_build_level_lags_its_state_by_one_session(self):
+        from app.services.bot import sleeve as sl
+        idx = {d: (100.0 if i < 3 else 110.0) for i, d in enumerate(self.days)}
+        gold = {d: 50.0 for d in self.days}
+        out = sl.build_level(idx, gold, None, set(self.days[3:]))
+        self.assertAlmostEqual(out[self.days[3]], out[self.days[2]])

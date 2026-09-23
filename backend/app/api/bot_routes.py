@@ -111,10 +111,10 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
         **This is not comparable to `/walkforward` and the difference is the
         whole point.** `/walkforward` rebuilds the playbook every January from
         prior data only and trades the year that follows: eleven independent
-        out-of-sample years, and it returns -1.87%/yr. This book is measured
-        on a single train/test split, which is a weaker test, and returns
-        +41.5%/yr. A single split cannot be read as the same evidence, so the
-        payload carries `evaluation` and `caveats` and the UI shows them.
+        out-of-sample years, and it returns -1.87%/yr. This book's headline is
+        a single train/test split, and its own yearly rebuild ships alongside
+        it in `walkforward`. The payload carries `evaluation` and `caveats`
+        and the UI shows them.
 
         The two also differ in what they are. The walk-forward number is pure
         stock selection. This book is a stock book PLUS an index/gold sleeve
@@ -134,19 +134,31 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
         # travel together. This book PASSES it, which the strategy playbook
         # did not — see CLAUDE.md gotcha 110.
         payload["walkforward"] = _load(data_dir, RULES_WF_FILE)
+        wf = payload["walkforward"] or {}
+        # Read from the artifact rather than restated here: the text quoted
+        # +38.85% for weeks after the number it described had changed.
+        wf_line = (
+            f"returns {wf['cagr']:+.2f}%/yr against the index's {wf['index_cagr']:+.2f}%, "
+            f"ahead in {wf['years_beaten']} of {wf['years']} years"
+            if wf.get("cagr") is not None else "has not been run yet"
+        )
         payload["caveats"] = [
-            "Measured on ONE train/test split. The same book HAS now been run "
+            "Measured on ONE train/test split. The same book HAS been run "
             "through the yearly rebuild — every fitted parameter re-derived "
-            "each January from prior data only — and returns +38.85%/yr "
-            "against the index's +16.16%, ahead in 12 of 15 years. See the "
-            "`walkforward` block; that is the number to trust.",
-            "Roughly half the work is done by the index/gold sleeve holding "
-            "idle capital, not by stock selection. In 2009, 2010 and 2026 the "
-            "stock book subtracted from the sleeve's return.",
-            "Simulated fills and modelled slippage. The universe is today's "
-            "listed companies, so delisted names are missing and pre-2018 "
-            "results are filtered by survival.",
-            "No trade here has ever been placed with real money.",
+            "each January from trades closed before it — and " + wf_line + ". "
+            "See the `walkforward` block; that is the number to trust.",
+            "Earlier figures (+40% a year and more) were inflated by a "
+            "look-ahead: the index/gold sleeve was credited with each day's "
+            "move using that same day's close to decide what it held. Fixed; "
+            "every state now acts on the next session (CLAUDE.md gotcha 115).",
+            "Part of the return comes from the index/gold sleeve holding idle "
+            "capital; the `walkforward` block reports what stock selection "
+            "adds on top of it and whether it beats random picks.",
+            "The universe is today's listed companies. Adding the 1,624 names "
+            "that later delisted or shrank lowered the rebuilt return by about "
+            "2.8pp a year when last measured (gotcha 114).",
+            "Simulated fills and modelled slippage. No trade here has ever been "
+            "placed with real money.",
         ]
         return payload
 

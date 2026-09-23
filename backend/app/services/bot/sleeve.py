@@ -38,28 +38,62 @@ from . import rules as R
 HEALTHY_REGIMES = frozenset({"bull_strong", "bull_narrow", "recovery"})
 
 
+SLEEVE_MODE = __import__("os").environ.get("BOT_SLEEVE_MODE", "default")
+
+
 def risk_on_days(
     index_close: Mapping[date, float],
     regime_by_day: Mapping[date, str],
+    mode: str | None = None,
 ) -> tuple[set, set]:
     """(sleeve risk-on, book risk-on) — deliberately different conditions.
 
-    The sleeve re-enters on a healthy regime OR an intact 200-DMA trend OR a
-    thrust: it should be in the market whenever the market is worth being in.
-    The book re-enters on regime OR thrust only, without the trend leg —
-    individual stocks need more than an index that has not broken yet
-    (gotcha 97). Coupling them has cost real money twice.
+    The sleeve holds equities while the regime is healthy OR the index is
+    above its 200-DMA; the book stays invested only while the regime is
+    healthy. Each is read at a close and acts on the NEXT session.
+
+    The thrust leg (gotchas 96/97) is gone: it was chosen while the sleeve
+    read same-day state, so it was credited with the very rebound that
+    triggered it. With the one-session lag it added nothing and deepened the
+    drawdown (gotcha 115).
     """
     days = sorted(index_close)
     closes = np.asarray([index_close[d] for d in days], dtype=float)
     s200 = ind.sma(closes, 200)
     above = {d: (bool(closes[i] > s200[i]) if not np.isnan(s200[i]) else True)
              for i, d in enumerate(days)}
-    thrust = R.thrust_days(days, [float(c) for c in closes])
+    if (mode or SLEEVE_MODE) == "bear_only":
+        # Defend only in a genuine bear: gold and a flat stock book while the
+        # regime reads `bear`, fully invested through choppy and correction
+        # tape. Measured as the higher-return profile (gotcha 116) at a lower
+        # win rate; opt in with BOT_SLEEVE_MODE=bear_only.
+        on = {d for d in days if regime_by_day.get(d) != "bear"}
+        return on, set(on)
     healthy = {d for d in days if regime_by_day.get(d) in HEALTHY_REGIMES}
-    sleeve_on = {d for d in days if d in healthy or above.get(d, True) or d in thrust}
-    book_on = {d for d in days if d in healthy or d in thrust}
+    sleeve_on = {d for d in days if d in healthy or above.get(d, True)}
+    book_on = set(healthy)
     return sleeve_on, book_on
+
+
+def clean_series(prices: Mapping[date, float], max_jump: float = 0.5) -> dict:
+    """Drop prints that move more than `max_jump` from the last kept price.
+
+    Yahoo's GOLDBEES history reads 0.3355 on 2019-12-19 and 33.65 on
+    2019-12-23 — a -99% / +9900% pair around a real ~33 price. With the
+    sleeve's state lagged a session, a switch landing between the two would
+    book one leg of it. A dropped day carries the previous price instead.
+    """
+    out: dict = {}
+    last = None
+    for d in sorted(prices):
+        px = prices[d]
+        if not px or px <= 0:
+            continue
+        if last is not None and abs(px / last - 1.0) > max_jump:
+            continue
+        out[d] = px
+        last = px
+    return out
 
 
 def recovery_days(index_close: Mapping[date, float]) -> set:
@@ -79,20 +113,39 @@ def build_level(
     days = sorted(set(index_close) | set(gold_close) | set(small))
     level, out = 100.0, {}
     prev_i = prev_g = prev_s = None
+    # State is read on index sessions only and carried across days the index
+    # does not print (a gold-only print must not flip the sleeve into gold).
+    # Day d's return belongs to the state held going INTO d — what the close
+    # before it chose (gotcha 115).
+    held_on, held_rec = True, False
+    cur_on, cur_rec = True, False
     for d in days:
         i = index_close.get(d, prev_i)
         g = gold_close.get(d, prev_g)
         s = small.get(d, prev_s)
-        if d in sleeve_on:
+        held_on, held_rec = cur_on, cur_rec
+        if held_on:
             # Equity leg: small caps while a crash recovery is live, broad
             # index otherwise.
-            if d in recovering and prev_s and s:
+            if held_rec and prev_s and s:
                 level *= s / prev_s
             elif prev_i and i:
                 level *= i / prev_i
         elif prev_g and g:
             level *= g / prev_g
+        if d in index_close:
+            cur_on, cur_rec = d in sleeve_on, d in recovering
         # A missing price is not a zero price — carry the last one forward.
         prev_i, prev_g, prev_s = i or prev_i, g or prev_g, s or prev_s
         out[d] = level
+    return out
+
+
+def book_regime(days, index_days, book_on: set) -> dict:
+    """Per-day label the account's de-risk reads, carried across non-index days."""
+    out, cur = {}, True
+    for d in sorted(days):
+        if d in index_days:
+            cur = d in book_on
+        out[d] = "bull_strong" if cur else "bear"
     return out

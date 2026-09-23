@@ -32,6 +32,7 @@ from typing import Callable
 import numpy as np
 
 from . import indicators as ind
+from . import results_calendar as _rc
 from .features import Features
 
 # Families group strategies that share a failure mode — when a whole family
@@ -604,16 +605,121 @@ STRATEGIES: tuple[StrategySpec, ...] = (
 # That is now two independently-designed crash setups, both individually
 # sound, both unwanted by a capital-constrained book. The constraint is
 # capacity, not the library (gotchas 54, 82).
+# --- Champion cohort (gotcha 116) -------------------------------------------
+# Setups the US Investing Championship winners describe and the library did
+# not yet have. Each reads only data knowable at its signal close.
+
+def _breakaway_days(f: Features) -> np.ndarray:
+    """Results sessions the market voted on: gap up 4%+, held, strong close, heavy volume."""
+    o, h, l, c = f.bars.open, f.bars.high, f.bars.low, f.bars.close
+    impact = _rc.impact_sessions(f.bars.symbol, f.bars.dates)
+    prev = _prior(c)
+    with np.errstate(invalid="ignore"):
+        rng = h - l
+        strong_close = np.where(rng > 0, (c - l) >= 0.6 * rng, False)
+        return (impact & (o > prev * 1.04) & (c >= o) & strong_close
+                & (f.rel_volume >= 2.0) & (c > f.sma50))
+
+
+def _results_breakaway(f: Features) -> np.ndarray:
+    """O'Neil / Minervini / Kell: the earnings gap is the institutional verdict.
+
+    Needs no analyst estimate — the price reaction on the results session is
+    the surprise, measured by the people paying for it. Coverage is every
+    symbol with a BSE filing history (1,550 of 1,554) rather than the 484 that
+    `earnings_gap_hold` can see.
+    """
+    return _safe(_breakaway_days(f) & f.liquid)
+
+
+def _results_follow_through(f: Features) -> np.ndarray:
+    """A breakaway that consolidates, then clears its 20-day closing high.
+
+    The second-chance entry the champions take when they miss the gap day:
+    2 to 25 sessions after a breakaway, above a rising EMA21.
+    """
+    c = f.bars.close
+    brk = _breakaway_days(f)
+    n = len(c)
+    since = np.full(n, 10_000)
+    last = -10_000
+    for i in range(n):
+        if brk[i]:
+            last = i
+        since[i] = i - last
+    prior_high = np.full(n, np.nan)
+    for i in range(20, n):
+        prior_high[i] = c[i - 20:i].max()
+    with np.errstate(invalid="ignore"):
+        return _safe((since >= 2) & (since <= 25) & (c > prior_high)
+                     & (c > f.ema21) & (f.ema21 > _prior(f.ema21)) & f.liquid)
+
+
+def _wedge_pop(f: Features) -> np.ndarray:
+    """Oliver Kell (2020 US Investing Champion): the first thrust out of a pullback.
+
+    Price has spent most of the last twelve sessions under its EMA21, then
+    reclaims both the 10 and 21 EMA on a 2%+ up day with volume — the
+    earliest point a resumed uptrend can be bought, before it is a breakout.
+    Still above the 200-day and not stretched from the 50-day.
+    """
+    c = f.bars.close
+    below = (c < f.ema21).astype(float)
+    n = len(c)
+    recent_below = np.zeros(n)
+    for i in range(12, n):
+        recent_below[i] = below[i - 12:i].sum()
+    prev = _prior(c)
+    with np.errstate(invalid="ignore"):
+        return _safe((recent_below >= 6) & (c > f.ema10) & (c > f.ema21)
+                     & (c >= prev * 1.02) & (f.rel_volume >= 1.3)
+                     & (c > f.sma200) & (c < f.sma50 * 1.15) & f.liquid)
+
+
+CHAMPION_COHORT = (
+    ("results_breakaway", _results_breakaway),
+    ("wedge_pop", _wedge_pop),
+)
+
+# --- Registered after the honest re-test (gotcha 116) -----------------------
+# Every earlier "a bigger library makes it worse" verdict (gotchas 54, 82, 101)
+# was measured against a sleeve that read same-day state and so earned more
+# than it could have. Against the corrected sleeve, on the yearly rebuild,
+# these four each add return and together take it from +22.57% to +26.24%,
+# better in both halves. The first two were already positive on the training
+# half; the last two start with too few closed trades and are admitted by the
+# yearly rebuild only once their own record turns positive.
+STRATEGIES = STRATEGIES + (
+    StrategySpec(
+        "pocket_pivot", "Pocket Pivot", "breakout",
+        "Morales & Kacher: an up day inside a base whose volume beats every down day of the "
+        "prior ten — accumulation before the breakout.",
+        ("bull_strong", "bull_narrow"), _pocket_pivot, stop_atr_mult=2.0,
+    ),
+    StrategySpec(
+        "nr7_release", "NR7 Release", "volatility",
+        "Crabel: the narrowest range of seven sessions, then its high gives way.",
+        ("bull_strong", "choppy"), _nr7_release, stop_atr_mult=2.0,
+    ),
+    StrategySpec(
+        "results_follow_through", "Results Follow-Through", "fundamental",
+        "A results-day breakaway gap that consolidates, then clears its 20-day closing high.",
+        ("bull_strong", "bull_narrow"), _results_follow_through, stop_atr_mult=2.0,
+    ),
+    StrategySpec(
+        "episodic_pivot", "Episodic Pivot", "breakout",
+        "A 6%+ gap on triple volume out of a dormant stretch — new information being priced.",
+        ("bull_strong", "bull_narrow"), _episodic_pivot, stop_atr_mult=2.0,
+    ),
+)
+
 SECOND_COHORT = (
     ("v_recovery", _v_recovery),
     ("recovery_reversal", _recovery_reversal),
-    ("episodic_pivot", _episodic_pivot),
     ("long_base_breakout", _long_base_breakout),
     ("rs_leader_pullback", _rs_leader_pullback),
     ("coiled_spring", _coiled_spring),
     ("failed_breakdown", _failed_breakdown),
-    ("pocket_pivot", _pocket_pivot),
-    ("nr7_release", _nr7_release),
     ("rsi2_reversion", _rsi2_reversion),
 )
 

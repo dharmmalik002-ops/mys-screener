@@ -194,32 +194,14 @@ class ExitModel:
     results_entry_blackout: int | None = None
 
 
-# symbol -> [(announcement date, minutes after midnight IST)]. Filled by the
-# runner (scripts/build_results_calendar.py writes the source file); empty
-# means the results rules above have nothing to act on.
-RESULTS_CALENDAR: dict[str, list[tuple[date, int]]] = {}
-MARKET_OPEN_MINUTES = 9 * 60 + 15
+# The calendar lives in results_calendar.py so strategies can read it too.
+from .results_calendar import RESULTS_CALENDAR, MARKET_OPEN_MINUTES  # noqa: E402,F401
+from . import results_calendar as _rc  # noqa: E402
 
 
 def results_exit_sessions(bars: Bars) -> np.ndarray:
-    """Boolean per bar: True where the position must be out by the OPEN.
-
-    A filing before the open is priced at that day's open, so the exit is the
-    previous session's open; a filing during or after market hours on day D
-    is priced on D (intraday) or D+1, and selling at D's open is ahead of both.
-    """
-    out = np.zeros(len(bars.dates), dtype=bool)
-    events = RESULTS_CALENDAR.get(bars.symbol)
-    if not events:
-        return out
-    ords = np.array([d.toordinal() for d in bars.dates])
-    for day, minutes in events:
-        k = int(np.searchsorted(ords, day.toordinal()))   # first session >= day
-        if minutes < MARKET_OPEN_MINUTES or k >= len(ords) or ords[k] != day.toordinal():
-            k -= 1                                        # be out by the prior open
-        if 0 <= k < len(ords):
-            out[k] = True
-    return out
+    """Boolean per bar: True where the position must be out by the OPEN."""
+    return _rc.exit_sessions(bars.symbol, bars.dates)
 
 
 @dataclass

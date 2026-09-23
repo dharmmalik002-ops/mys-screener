@@ -1,10 +1,10 @@
 {
   "summary": {
     "started": "2026-09-18",
-    "last_session": "2026-09-21",
-    "sessions": 2,
+    "last_session": "2026-09-18",
+    "sessions": 1,
     "starting_equity": 1000000.0,
-    "equity": 1000000.07,
+    "equity": 1000000.0,
     "return_pct": 0.0,
     "max_drawdown_pct": 0.0,
     "open_positions": 0,
@@ -24,13 +24,6 @@
       "open": 0,
       "cash": 0.0,
       "sleeve": 1000000.0
-    },
-    {
-      "day": "2026-09-21",
-      "equity": 1000000.07,
-      "open": 0,
-      "cash": 0.0,
-      "sleeve": 1000000.07
     }
   ]
 }

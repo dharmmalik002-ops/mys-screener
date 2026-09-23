@@ -174,10 +174,31 @@ class AccountingTests(unittest.TestCase):
         """The study declines 99% of what it sees. A book that only logs its
         fills cannot be audited against it."""
         book = fresh()
-        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)}, [CAND])
-        paper.advance(book, date(2026, 1, 3), {"AAA": bar(103, 105, 102, 104)}, [CAND])
+        # A losing position is not added to (the study pyramids winners only).
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 101, 97, 98)}, [CAND])
+        paper.advance(book, date(2026, 1, 3), {"AAA": bar(98, 99, 97, 98)}, [CAND])
         self.assertTrue(book.declined)
         self.assertEqual(book.declined[-1]["why"], "already held")
+
+    def test_a_winner_is_added_to_once_on_yesterdays_close(self):
+        book = fresh()
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)}, [CAND])
+        paper.advance(book, date(2026, 1, 3), {"AAA": bar(103, 105, 102, 104)}, [CAND])
+        lots = [p for p in book.positions if p.symbol == "AAA"]
+        self.assertEqual(len(lots), 2)
+        self.assertTrue(lots[1].is_add)
+        paper.advance(book, date(2026, 1, 4), {"AAA": bar(104, 106, 103, 105)}, [CAND])
+        self.assertEqual(len([p for p in book.positions if p.symbol == "AAA"]), 2)
+
+    def test_risk_off_sells_the_book_at_the_close_and_takes_nothing(self):
+        book = fresh()
+        paper.advance(book, date(2026, 1, 2), {"AAA": bar(100, 104, 99, 103)}, [CAND])
+        other = dict(CAND, symbol="BBB")
+        paper.advance(book, date(2026, 1, 3), {"AAA": bar(103, 105, 101, 102), "BBB": bar(50, 51, 49, 50)},
+                      [other], risk_off=True)
+        self.assertEqual(book.positions, [])
+        self.assertEqual(book.closed[-1].reason, "derisk")
+        self.assertEqual(book.closed[-1].exit_price, 102.0)
 
     def test_summary_reports_nothing_rather_than_zero_on_an_empty_book(self):
         s = paper.summary(fresh())

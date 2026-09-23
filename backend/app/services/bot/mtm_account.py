@@ -83,11 +83,17 @@ def composite_sleeve(
     level = 100.0
     prev_risk: float | None = None
     prev_safe: float | None = None
+    prev_day: date | None = None
     out: dict[date, float] = {}
     for day in sorted(set(risk_asset) | set(safe_asset)):
         risk_px = risk_asset.get(day)
         safe_px = safe_asset.get(day)
-        if day in risk_on_days:
+        # The return from D-1 to D belongs to whatever was HELD over it, which
+        # the close of D-1 decided. Reading D's own membership credits the
+        # sleeve with the move that flipped it — a thrust day already in
+        # equities, a crash day already in gold. That look-ahead was here
+        # from gotcha 89 to 115 and inflated every sleeve figure in between.
+        if prev_day is not None and prev_day in risk_on_days:
             if risk_px and prev_risk:
                 level *= risk_px / prev_risk
         elif safe_px and prev_safe:
@@ -96,6 +102,7 @@ def composite_sleeve(
             prev_risk = risk_px
         if safe_px:
             prev_safe = safe_px
+        prev_day = day
         out[day] = level
     return out
 
@@ -261,7 +268,13 @@ def simulate(
     invested_days = 0
 
     forced = 0
+    import bisect
+    label_days = sorted(regime_by_day) if regime_by_day is not None else []
+    prev_sess: date | None = None
     for day in sessions:
+        yesterday, prev_sess = prev_sess, day
+        k = bisect.bisect_left(label_days, day)
+        label_day = label_days[k - 1] if k > 0 else None
         # Sell the parked index first, so `cash` is the whole uncommitted
         # balance before trades touch it. Parking at the end of the day and
         # restoring from units at the start of the next is the only ordering
@@ -281,9 +294,12 @@ def simulate(
             cash += park_units * park_px
             park_units = 0.0
 
+        # Yesterday's label: today's is set by today's close, after the open
+        # the entries fill at and after the sale would have to be placed.
         risk_off = (
             regime_by_day is not None and healthy_regimes is not None
-            and regime_by_day.get(day) not in healthy_regimes
+            and label_day is not None
+            and regime_by_day.get(label_day) not in healthy_regimes
         )
 
         # --- close anything due, at its realised R -------------------------
@@ -332,7 +348,9 @@ def simulate(
                     continue
                 # Add only to a winner, and only once.
                 existing = [p for p in open_pos if p["symbol"] == sym]
-                px_now = price.get(sym, {}).get(day)
+                # Yesterday's close: the add fills at today's open, before
+                # today's close exists (gotcha 115).
+                px_now = price.get(sym, {}).get(yesterday) if yesterday else None
                 winning = bool(px_now) and all(
                     px_now > p["entry_price"] for p in existing if p["entry_price"] > 0
                 )

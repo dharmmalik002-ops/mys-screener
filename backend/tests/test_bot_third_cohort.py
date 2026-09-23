@@ -65,15 +65,16 @@ class ThirdCohortFiresTests(unittest.TestCase):
                 f"bug, not a finding (run_strategies swallows its exceptions)",
             )
 
-    def test_none_of_them_is_registered(self):
-        """Measured and rejected. Registering one changes the book, and the
-        numbers that say not to are in CLAUDE.md gotcha 101."""
+    def test_registration_follows_the_honest_retest(self):
+        """Gotcha 101 rejected all three against a sleeve that read same-day
+        state. Re-measured against the corrected sleeve (gotcha 116), pocket
+        pivot and NR7 each add return in both halves and are registered;
+        RSI(2) does not and stays in the cohort."""
         registered = {s.id for s in S.STRATEGIES}
-        for name in THIRD_COHORT:
-            self.assertNotIn(name, registered)
-        cohort = {n for n, _ in S.SECOND_COHORT}
-        for name in THIRD_COHORT:
-            self.assertIn(name, cohort, "kept, so the measurement is reproducible")
+        self.assertIn("pocket_pivot", registered)
+        self.assertIn("nr7_release", registered)
+        self.assertNotIn("rsi2_reversion", registered)
+        self.assertIn("rsi2_reversion", {n for n, _ in S.SECOND_COHORT})
 
 
 class RSI2IsTheOnlyMeanReversionEntryTests(unittest.TestCase):

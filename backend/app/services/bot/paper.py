@@ -50,6 +50,10 @@ MAX_EQUITY_LOSS_PCT = 1.5
 MAX_POSITION_PCT = 35.0
 GAP_ALLOWANCE_STOP_MULT = 10.0
 GAP_ALLOWANCE_PCT = 15.0
+RISK_PER_TRADE_PCT = 0.50
+# Add to a winner, once, at this fraction of the risk budget — as the study
+# does (`mtm_account.simulate(pyramid=True, pyramid_scale=0.30)`).
+PYRAMID_SCALE = 0.30
 
 
 @dataclass
@@ -71,6 +75,10 @@ class Position:
     # An exit decided on a close is executed at the NEXT open, so it has to
     # survive the night in the ledger.
     pending_exit: str | None = None
+    # The previous session's close — what an add decides on, because the add
+    # fills at today's open before today's close exists.
+    last_close: float = 0.0
+    is_add: bool = False
 
     def risk_amount(self) -> float:
         """What this trade risked AT ENTRY — the denominator of its R.
@@ -214,6 +222,7 @@ def advance(
     *,
     sleeve_level: float | None = None,
     force: bool = False,
+    risk_off: bool = False,
 ) -> dict:
     """Run one session. Returns what happened, for the log.
 
@@ -239,6 +248,8 @@ def advance(
         book.sleeve_level = sleeve_level
     exited: list[str] = []
     entered: list[str] = []
+    # Yesterday's close per held position, captured before today updates it.
+    prior_close = {p.symbol: p.last_close for p in book.positions}
 
     # --- 1. age and exit ---------------------------------------------------
     # Mirrors engine.simulate_symbol bar for bar. The paper book cannot call
@@ -286,6 +297,7 @@ def advance(
         # --- decisions on the CLOSE, acted on at the next open ------------
         close = float(bar["close"])
         p.high_water = max(p.high_water, close)
+        p.last_close = close
         sma50 = bar.get("sma50")
         if climax_mult and sma50 and close >= float(climax_mult) * float(sma50):
             p.pending_exit = "climax"
@@ -311,16 +323,49 @@ def advance(
         still.append(p)
     book.positions = still
 
+    # --- 1b. de-risk: the regime read at YESTERDAY's close was unhealthy ------
+    # Sell the whole stock book at today's close and take nothing new, exactly
+    # as the study does (`derisk_losers_only=False`). The proceeds go to the
+    # sleeve in step 3.
+    if risk_off:
+        for p in book.positions:
+            bar = bars.get(p.symbol)
+            if not bar or not bar.get("close"):
+                continue                       # no print: cannot price a sale
+            px = float(bar["close"])
+            equity_at_exit = book.equity(closes)
+            book.cash += p.shares * px
+            risk = p.risk_amount() or 1.0
+            book.closed.append(ClosedTrade(
+                symbol=p.symbol, strategy=p.strategy, entry_day=p.entry_day, exit_day=day,
+                entry_price=p.entry_price, exit_price=px, shares=p.shares, reason="derisk",
+                sessions_held=p.sessions_held,
+                net_pct=round(100.0 * (px / p.entry_price - 1.0), 3),
+                r_multiple=round(p.shares * (px - p.entry_price) / risk, 3),
+                equity_pct=round(100.0 * p.shares * (px - p.entry_price) / max(equity_at_exit, 1.0), 3),
+            ))
+            exited.append(p.symbol)
+        book.positions = [p for p in book.positions
+                          if not (bars.get(p.symbol) or {}).get("close")]
+        candidates = []
+
     # --- 2. enter ----------------------------------------------------------
     equity = book.equity(closes)
     held = {p.symbol for p in book.positions}
     for c in candidates:
-        if len(book.positions) >= MAX_CONCURRENT:
-            book.declined.append({"session": day, "symbol": c.get("symbol"), "why": "no slot"})
-            continue
         sym = str(c.get("symbol"))
+        adding = False
         if sym in held:
-            book.declined.append({"session": day, "symbol": sym, "why": "already held"})
+            # Add to a winner, once: every existing lot above its entry on
+            # YESTERDAY's close, and none of them already an add.
+            lots = [p for p in book.positions if p.symbol == sym]
+            winning = all(prior_close.get(sym, 0.0) > p.entry_price for p in lots)
+            if not winning or any(p.is_add for p in lots):
+                book.declined.append({"session": day, "symbol": sym, "why": "already held"})
+                continue
+            adding = True
+        elif len(book.positions) >= MAX_CONCURRENT:
+            book.declined.append({"session": day, "symbol": sym, "why": "no slot"})
             continue
         bar = bars.get(sym)
         if not bar or not bar.get("open"):
@@ -332,6 +377,9 @@ def advance(
             book.declined.append({"session": day, "symbol": sym, "why": "stop too wide"})
             continue
         shares = position_size(equity, entry, stop_pct)
+        if adding:
+            budget = equity * RISK_PER_TRADE_PCT * PYRAMID_SCALE / 100.0 / (stop_pct / 100.0)
+            shares = min(shares, budget / entry)
         cost = shares * entry
         if shares <= 0 or cost > book.cash:
             book.declined.append({"session": day, "symbol": sym, "why": "no cash"})
@@ -352,6 +400,8 @@ def advance(
             # turns a rule off without failing.
             atr_at_entry=entry * float(c.get("atr_pct_at_entry") or 0.0) / 100.0,
             conf=float(c.get("conf") or 0.0),
+            last_close=float(bar.get("close") or entry),
+            is_add=adding,
         ))
         held.add(sym)
         entered.append(sym)

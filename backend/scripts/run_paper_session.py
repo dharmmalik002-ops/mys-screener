@@ -73,6 +73,8 @@ def main() -> int:
         symbols = symbols[: args.limit_symbols]
     context = build_context(data_dir, symbols)
     exits = R.exit_model()
+    from app.services.bot import results_calendar as rc
+    print(f"results calendar: {rc.load(data_dir):,} symbols")
     trades = run_strategies(data_dir, context, BacktestConfig(exits=exits), symbols)
     rows = []
     for t in trades:
@@ -89,12 +91,24 @@ def main() -> int:
     above = {d: (bool(closes[i] > s200[i]) if not np.isnan(s200[i]) else True)
              for i, d in enumerate(idx.dates)}
 
-    cleared = R.accepted_with_rolling_risk(rows)
+    # This year's rules from the yearly rebuild — what the walk-forward
+    # actually measured — rather than the single split's fixed constants.
+    # Falls back to the constants if the rebuild has not been run.
+    live_path = data_dir / "bot_live_params.json"
+    live = json.loads(live_path.read_text()) if live_path.exists() else None
+    cleared = R.accepted_with_rolling_risk(rows, R.CANDIDATE_SETUPS if live else None)
+    if live:
+        setups = set(live["setups"])
+        cleared = [t for t in cleared if str(t.get("strategy")) in setups
+                   and float(t.get("turnover_crore_at_entry") or 1e9) <= float(live["turnover_cap"])]
+        print(f"live rules: {live['year']} rebuild, {len(setups)} setups")
     # Industry-group strength on the signal day (gotcha 113).
     _ranks = gs.build_ranks(data_dir)
     for t in cleared:
-        t["conf"] = cf.rated(t, above.get(date.fromisoformat(str(t["entry_day"]))),
-                             _ranks.rank(t["symbol"], str(t["signal_day"])))
+        t["conf"] = cf.rated(t, above.get(date.fromisoformat(str(t["signal_day"]))),
+                             _ranks.rank(t["symbol"], str(t["signal_day"])),
+                             quality=live["quality"] if live else None,
+                             cuts=live["decile_cuts"] if live else None)
     picked = [t for t in cleared if t["conf"] >= cf.CONVICTION_BAR]
 
     # The session is the newest TRADING day in the store, not the newest day a
@@ -153,9 +167,17 @@ def main() -> int:
                 "smallcap": {d.isoformat(): v for d, v in small.items()},
             }))
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
-    sleeve_on, _book_on = sl.risk_on_days(index_close, regimes)
+    gold, small = sl.clean_series(gold), sl.clean_series(small)
+    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
     level = (sl.build_level(index_close, gold, small, sleeve_on)
              if gold else {d: index_close[d] for d in index_close})
+    index_days = sorted(index_close)
+
+    def risk_off_for(session):
+        """The book de-risks on the regime read at the PREVIOUS index close."""
+        import bisect
+        k = bisect.bisect_left(index_days, session)
+        return k > 0 and index_days[k - 1] not in book_on
 
     def _prep(b):
         hi, lo, cl = (np.asarray(x, dtype=float) for x in (b.high, b.low, b.close))
@@ -198,7 +220,8 @@ def main() -> int:
             if np.isfinite(sma_arr[i]):
                 bars[sym]["sma50"] = float(sma_arr[i])
         out = paper.advance(book, session, bars, todays,
-                            sleeve_level=level.get(session), force=args.force)
+                            sleeve_level=level.get(session), force=args.force,
+                            risk_off=risk_off_for(session))
         if "skipped" in out:
             print(f"  {session}  {out['skipped']}")
             continue
