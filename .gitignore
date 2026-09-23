@@ -27,6 +27,8 @@ backend/data/deep_history/
 # scripts/build_earnings_history.py, and only 484 of 1,581 symbols have
 # analyst estimates at all, so it is raw material rather than a product.
 backend/data/earnings_history/
+# Quarterly standalone results from BSE, rebuilt by scripts/build_quarterly_results.py
+backend/data/quarterly_results/
 backend/data/bot_exit_sweep.json
 backend/data/chart_cache_us/
 backend/data/scan_history.json
