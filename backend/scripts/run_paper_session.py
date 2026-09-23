@@ -71,9 +71,7 @@ def main() -> int:
     if args.limit_symbols:
         symbols = symbols[: args.limit_symbols]
     context = build_context(data_dir, symbols)
-    exits = ExitModel(target_r=R.EXIT_TARGET_R, max_hold_sessions=R.EXIT_MAX_HOLD_SESSIONS,
-                      trail_after_r=R.EXIT_TRAIL_AFTER_R, trail_atr_mult=R.EXIT_TRAIL_ATR_MULT,
-                      max_stop_pct=R.EXIT_MAX_STOP_PCT)
+    exits = R.exit_model()
     trades = run_strategies(data_dir, context, BacktestConfig(exits=exits), symbols)
     rows = []
     for t in trades:

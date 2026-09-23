@@ -449,6 +449,13 @@ def recovery_days(dates: "Sequence[date]", closes: "Sequence[float]") -> "set":
 # five arguments is exactly how the paper book ended up trading a different
 # rule from the study (CLAUDE.md gotcha 111), so all three now call this.
 SEASONED_RULES: dict = {}     # filled in once a rule earns its place
+# ONE CAVEAT that must travel with any future entry here: `paper.py` does not
+# call the engine — it re-implements stops, the trail and the ceiling for a
+# book that advances one session at a time. A rule added to SEASONED_RULES
+# reaches the backtest and the walk-forward through `exit_model()` but NOT the
+# paper book, which would then quietly trade the old rule. Port it to
+# `paper.advance` in the same change, or the paper book stops validating the
+# study (the exact failure of gotcha 111).
 
 
 def exit_model(**overrides):
