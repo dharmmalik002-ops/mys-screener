@@ -37,6 +37,7 @@ import numpy as np
 
 from .costs import CostModel, DEFAULT_COSTS
 from .features import Features
+from .history import Bars
 from .strategies import StrategySpec
 
 
@@ -179,6 +180,46 @@ class ExitModel:
     # of the 50-day average. O'Neil's "extended" zone; fires only on
     # parabolic blow-offs, which historically give back most of the run.
     climax_sma50_mult: float | None = None
+    #
+    # RESULTS DAYS (need `RESULTS_CALENDAR`; a symbol without dates is
+    # untouched, never guessed at)
+    # Sell at the open before a results announcement while the position is
+    # still worth less than this many R. The gap a stop cannot catch is
+    # mostly a results-day gap; a trade already well in profit can absorb one,
+    # a fresh one cannot. float("inf") sells every position.
+    results_exit_below_r: float | None = None
+    # Skip an entry when a results announcement lands within this many
+    # sessions of the fill. Board meetings for results are intimated days in
+    # advance (SEBI LODR reg. 29), so a short window is knowable at entry.
+    results_entry_blackout: int | None = None
+
+
+# symbol -> [(announcement date, minutes after midnight IST)]. Filled by the
+# runner (scripts/build_results_calendar.py writes the source file); empty
+# means the results rules above have nothing to act on.
+RESULTS_CALENDAR: dict[str, list[tuple[date, int]]] = {}
+MARKET_OPEN_MINUTES = 9 * 60 + 15
+
+
+def results_exit_sessions(bars: Bars) -> np.ndarray:
+    """Boolean per bar: True where the position must be out by the OPEN.
+
+    A filing before the open is priced at that day's open, so the exit is the
+    previous session's open; a filing during or after market hours on day D
+    is priced on D (intraday) or D+1, and selling at D's open is ahead of both.
+    """
+    out = np.zeros(len(bars.dates), dtype=bool)
+    events = RESULTS_CALENDAR.get(bars.symbol)
+    if not events:
+        return out
+    ords = np.array([d.toordinal() for d in bars.dates])
+    for day, minutes in events:
+        k = int(np.searchsorted(ords, day.toordinal()))   # first session >= day
+        if minutes < MARKET_OPEN_MINUTES or k >= len(ords) or ords[k] != day.toordinal():
+            k -= 1                                        # be out by the prior open
+        if 0 <= k < len(ords):
+            out[k] = True
+    return out
 
 
 @dataclass
@@ -263,6 +304,8 @@ def simulate_symbol(
 
     trades: list[Trade] = []
     blocked_until = -1
+    use_results = (exits.results_exit_below_r is not None or exits.results_entry_blackout is not None)
+    results_out = results_exit_sessions(bars) if use_results else None
 
     for i in np.flatnonzero(signals):
         i = int(i)
@@ -272,6 +315,9 @@ def simulate_symbol(
             continue
 
         entry_idx = i + 1
+        if results_out is not None and exits.results_entry_blackout is not None:
+            if results_out[entry_idx: entry_idx + exits.results_entry_blackout + 1].any():
+                continue                       # results inside the window — wait
         # Slippage scales with the name's liquidity — see costs.py. Measured at
         # the signal bar, which is what was knowable when the order was placed.
         turnover = float(features.turnover_crore[i]) if np.isfinite(features.turnover_crore[i]) else None
@@ -320,6 +366,15 @@ def simulate_symbol(
         last_idx = min(entry_idx + exits.max_hold_sessions - 1, n - 1)
         for j in range(entry_idx, last_idx + 1):
             bar_open, bar_high, bar_low = float(o[j]), float(h[j]), float(l[j])
+
+            # Planned sale at the open ahead of results, decided on the prior
+            # close (that close's R is what the rule reads).
+            if (results_out is not None and exits.results_exit_below_r is not None
+                    and j > entry_idx and results_out[j]
+                    and (float(c[j - 1]) - entry) / risk < exits.results_exit_below_r):
+                exit_idx, exit_price, reason = j, bar_open, "results"
+                mae = min(mae, (bar_open - entry) / risk)
+                break
 
             # A gap straight through the stop fills at the open. Checked before
             # anything else, because on that bar nothing else happened first.
