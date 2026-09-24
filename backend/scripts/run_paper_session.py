@@ -110,6 +110,15 @@ def main() -> int:
                              quality=live["quality"] if live else None,
                              cuts=live["decile_cuts"] if live else None)
     picked = [t for t in cleared if t["conf"] >= cf.CONVICTION_BAR]
+    if live and live.get("block_weak_tape"):
+        # The yearly rebuild learned that buys made while the index 20-DMA
+        # sits under its 50-DMA earn less; held positions are unaffected.
+        s20 = ind.sma(np.asarray(idx.close, dtype=float), 20)
+        s50 = ind.sma(np.asarray(idx.close, dtype=float), 50)
+        weak_days = {d for i, d in enumerate(idx.dates) if not np.isnan(s50[i]) and s20[i] < s50[i]}
+        before = len(picked)
+        picked = [t for t in picked if date.fromisoformat(str(t["signal_day"])) not in weak_days]
+        print(f"tape gate on: {before - len(picked):,} picks skipped (index 20-DMA under 50-DMA)")
 
     # The session is the newest TRADING day in the store, not the newest day a
     # signal happened to fire. Keying it off signals was the first version and
@@ -155,12 +164,16 @@ def main() -> int:
             return {}
 
     cache = data_dir / "bot_sleeve_cache.json"
+    gold, small = {}, {}
     if cache.exists():
         raw = json.loads(cache.read_text())
         gold = {date.fromisoformat(k): v for k, v in raw.get("gold", {}).items()}
         small = {date.fromisoformat(k): v for k, v in raw.get("smallcap", {}).items()}
-    else:
-        gold, small = _series("GOLDBEES.NS"), _series("NIFTYSMLCAP250.NS")
+    # A cache that ends before the newest index session would freeze the gold
+    # and small-cap legs at their last cached price; refetch it.
+    if not gold or not small or min(max(gold), max(small)) < max(index_close):
+        fresh_gold, fresh_small = _series("GOLDBEES.NS"), _series("NIFTYSMLCAP250.NS")
+        gold, small = fresh_gold or gold, fresh_small or small
         if gold and small:
             cache.write_text(json.dumps({
                 "gold": {d.isoformat(): v for d, v in gold.items()},
@@ -170,7 +183,8 @@ def main() -> int:
     gold, small = sl.clean_series(gold), sl.clean_series(small)
     sleeve_on, book_on = sl.risk_on_days(index_close, regimes,
                                          small_close=small if sl.SLEEVE_MODE == "regime_map" else None)
-    level, _ = sl.build_sleeve(index_close, gold, small, regimes)
+    sleeve_mix: dict = {}
+    level, _ = sl.build_sleeve(index_close, gold, small, regimes, holdings=sleeve_mix)
     index_days = sorted(index_close)
     # The sleeve is a compounded level, so any change to its history (a rule
     # change, a Yahoo revision of gold) rescales every later value. Units
@@ -241,13 +255,38 @@ def main() -> int:
                   + (f"   bought {', '.join(out['entered_symbols'])}" if out["entered_symbols"] else "")
                   + (f"   sold {', '.join(out['exited_symbols'])}" if out["exited_symbols"] else ""))
     if not out or "skipped" in out:
+        # Still republish the summary below — it is derived from the saved
+        # book, so rewriting it is idempotent and picks up new fields.
         print("  nothing to do — the book is already current")
-        return 0
-    book.save(state_dir)
+    else:
+        book.save(state_dir)
 
     summary = paper.summary(book)
+    # What the idle money is actually in. The book holds units of one
+    # compounded sleeve level, so the rupee split is its value times the mix
+    # chosen at the last close — the mix held into the next session.
+    last_day = date.fromisoformat(book.last_session)
+    # The mix and regime are read on index sessions; carry the last one.
+    mix_day = max((d for d in sleeve_mix if d <= last_day), default=last_day)
+    sleeve_value = book.sleeve_units * book.sleeve_level
+    mix = sleeve_mix.get(mix_day) or {}
+    names = {"gold": "Gold (GOLDBEES)", "n500": "Nifty 500", "small": "Nifty Smallcap 250"}
+    stocks_value = sum(p.shares * (store[p.symbol][0].close[store[p.symbol][1][last_day]]
+                                   if p.symbol in store and last_day in store[p.symbol][1] else p.entry_price)
+                       for p in book.positions)
+    holdings = {
+        "as_of": book.last_session,
+        "regime": regimes.get(mix_day),
+        "cash": round(book.cash, 2),
+        "stocks": round(float(stocks_value), 2),
+        "sleeve": round(sleeve_value, 2),
+        "sleeve_mix": [{"asset": k, "name": names.get(k, k), "weight": round(w, 4),
+                        "value": round(sleeve_value * w, 2)}
+                       for k, w in sorted(mix.items(), key=lambda kv: -kv[1])],
+    }
     (data_dir / "bot_paper.json").write_text(json.dumps({
         "summary": summary,
+        "holdings": holdings,
         "positions": [asdict(p) for p in book.positions],
         "recent_closed": [asdict(t) for t in book.closed[-50:]],
         "equity_curve": book.equity_curve[-500:],

@@ -78,17 +78,55 @@ def risk_on_days(
         # where small caps LOST money on the evidence before this January —
         # in practice `bull_narrow`, which reads healthy on the index while
         # small caps fall ~35% a year (gotcha 121).
+        #
+        # The same test is then applied one level finer, to the market type
+        # AND the index's short trend (20-DMA above or below its 50-DMA):
+        # "bull_strong, but the 20-day has rolled under the 50-day" is its own
+        # kind of market, and where small caps have lost in it the book stands
+        # aside too (gotcha 122).
+        stack = trend_stack_labels(index_close, regime_by_day)
         losing: dict = {}
+        losing_fine: dict = {}
         for d in list(book_on):
             if d.year not in losing:
                 losing[d.year] = small_cap_losing_regimes(index_close, small_close, regime_by_day, d.year)
-            if regime_by_day.get(d) in losing[d.year]:
+                losing_fine[d.year] = small_cap_losing_regimes(index_close, small_close, stack, d.year)
+            if regime_by_day.get(d) in losing[d.year] or stack.get(d) in losing_fine[d.year]:
                 book_on.discard(d)
     return sleeve_on, book_on
 
 
+def trend_stack_labels(index_close, regime_by_day) -> dict:
+    """{day: "<regime>|up" or "<regime>|dn"} — the index's 20-DMA against its 50-DMA."""
+    days = sorted(index_close)
+    closes = np.asarray([index_close[d] for d in days], dtype=float)
+    s20, s50 = ind.sma(closes, 20), ind.sma(closes, 50)
+    return {d: f"{regime_by_day[d]}|{'up' if s20[i] > s50[i] else 'dn'}"
+            for i, d in enumerate(days) if regime_by_day.get(d) and not np.isnan(s50[i])}
+
+
+def price_level_labels(index_close, regime_by_day) -> dict:
+    """{day: "<regime>|near|mid|deep"} — how far the index sits below its 252-day high.
+
+    near: within 5% of the high; mid: 5-15% below it; deep: more than 15%.
+    """
+    days = sorted(index_close)
+    closes = np.asarray([index_close[d] for d in days], dtype=float)
+    out = {}
+    for i, d in enumerate(days):
+        if not regime_by_day.get(d):
+            continue
+        dd = closes[i] / closes[max(0, i - 251):i + 1].max() - 1.0
+        lvl = "near" if dd > -0.05 else ("mid" if dd > -0.15 else "deep")
+        out[d] = f"{regime_by_day[d]}|{lvl}"
+    return out
+
+
 def small_cap_losing_regimes(index_close, small_close, regime_by_day, year: int) -> set:
-    """Regimes whose mean daily small-cap return, on days before `year`, was negative.
+    """Labels whose mean daily small-cap return, on days before `year`, was negative.
+
+    `regime_by_day` may carry any labels — plain regimes, or the finer
+    regime x trend-stack labels from `trend_stack_labels`.
 
     A day's return belongs to the label of the last regime day strictly before
     it, as in `regime_asset_map`; a regime needs MIN_REGIME_DAYS of evidence
@@ -123,7 +161,9 @@ def clean_series(prices: Mapping[date, float], max_jump: float = 0.5) -> dict:
     last = None
     for d in sorted(prices):
         px = prices[d]
-        if not px or px <= 0:
+        # NaN passes both `not px` and `px <= 0`; Yahoo prints one for a
+        # session it has not settled yet, and it poisons every later level.
+        if not px or not np.isfinite(px) or px <= 0:
             continue
         if last is not None and abs(px / last - 1.0) > max_jump:
             continue
@@ -142,6 +182,7 @@ def build_level(
     gold_close: Mapping[date, float],
     smallcap_close: Mapping[date, float] | None,
     sleeve_on: set,
+    holdings: dict | None = None,
 ) -> dict:
     """A single compounded level series the book can hold units of."""
     small = smallcap_close or {}
@@ -171,6 +212,8 @@ def build_level(
             level *= g / prev_g
         if d in index_close:
             cur_on, cur_rec = d in sleeve_on, d in recovering
+            if holdings is not None:
+                holdings[d] = {("small" if cur_rec and small else "n500") if cur_on else "gold": 1.0}
         # A missing price is not a zero price — carry the last one forward.
         prev_i, prev_g, prev_s = i or prev_i, g or prev_g, s or prev_s
         out[d] = level
@@ -230,16 +273,80 @@ def regime_asset_map(index_close, small_close, gold_close, regime_by_day, year: 
     return out
 
 
-def build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on: set) -> dict:
+MIN_LEVEL_DAYS = 125
+
+
+def label_asset_map(index_close, small_close, gold_close, labels, year: int, min_days: int):
+    """({label: best asset}, {label: mean daily small-cap log return}) from days before `year`."""
+    import bisect
+    import math
+    assets = {"n500": index_close, "small": small_close or {}, "gold": gold_close or {}}
+    days = [d for d in sorted(set(index_close) & set(assets["small"]) & set(assets["gold"])) if d.year < year]
+    keys = sorted(labels)
+    acc: dict = {}
+    for a, b in zip(days, days[1:]):
+        j = bisect.bisect_left(keys, b)
+        g = labels.get(keys[j - 1]) if j else None
+        if g is None:
+            continue
+        x = acc.setdefault(g, {k: [0.0, 0] for k in assets})
+        for k, ser in assets.items():
+            x[k][0] += math.log(ser[b] / ser[a])
+            x[k][1] += 1
+    best = {g: max(x, key=lambda k: x[k][0] / x[k][1]) for g, x in acc.items() if x["n500"][1] >= min_days}
+    small = {g: x["small"][0] / x["small"][1] for g, x in acc.items() if x["small"][1] >= min_days}
+    return best, small
+
+
+def better_equity(index_close, small_close, regime_by_day, regime: str, year: int) -> str:
+    """'small' or 'n500' — whichever earned more on `regime` days before `year`."""
+    import bisect
+    import math
+    days = [d for d in sorted(set(index_close) & set(small_close or {})) if d.year < year]
+    keys = sorted(regime_by_day)
+    s_n = s_s = 0.0
+    for a, b in zip(days, days[1:]):
+        j = bisect.bisect_left(keys, b)
+        if not j or regime_by_day.get(keys[j - 1]) != regime:
+            continue
+        s_n += math.log(index_close[b] / index_close[a])
+        s_s += math.log(small_close[b] / small_close[a])
+    return "small" if s_s >= s_n else "n500"
+
+
+def build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on: set,
+                       holdings: dict | None = None) -> dict:
     """Compounded level of the market-type sleeve.
 
-    The asset held over day d is chosen at the previous INDEX close, from
-    that close's regime and that year's map; `default` falls back to the
-    older rule (equities while healthy or above the 200-DMA, gold otherwise).
-    A regime in BLEND_REGIMES holds its fixed mix instead, rebalanced daily.
+    The asset held over day d is chosen at the previous INDEX close, in this
+    order (gotcha 122):
+
+      1. a regime in BLEND_REGIMES holds its fixed mix, rebalanced daily;
+      2. otherwise the market type AND the price level (near / mid / deep
+         below the 252-day high) hold whatever paid best on such days before
+         this January, once there are MIN_LEVEL_DAYS of them;
+      3. otherwise the market type alone decides (`regime_asset_map`), and
+         `default` falls back to the older rule (equities while healthy or
+         above the 200-DMA, gold otherwise).
+
+    Gold is a hedge, so it is held only where small caps have LOST money on
+    the prior evidence; where they made money the sleeve holds the better of
+    the two equity legs instead. That is what the 2012 map got wrong: three
+    years of history had gold ahead in `bull_strong` while small caps were
+    also earning +14% a year there.
     """
     assets = {"n500": index_close, "small": small_close or {}, "gold": gold_close or {}}
+    levels = price_level_labels(index_close, regime_by_day)
     maps: dict = {}
+    level_maps: dict = {}
+    losing: dict = {}
+    equity: dict = {}
+
+    def eq(regime, year):
+        if (regime, year) not in equity:
+            equity[(regime, year)] = better_equity(index_close, small_close, regime_by_day, regime, year)
+        return equity[(regime, year)]
+
     level, out = 100.0, {}
     last = {k: None for k in assets}
     held = {"n500": 1.0}
@@ -259,14 +366,30 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
             if mix and all(assets[k] for k in mix):
                 held = dict(mix)
             else:
-                if d.year not in maps:
-                    maps[d.year] = regime_asset_map(index_close, small_close, gold_close, regime_by_day, d.year)
-                choice = maps[d.year].get(regime, "default")
-                if choice == "default":
-                    choice = "n500" if d in sleeve_on else "gold"
+                y = d.year
+                if y not in maps:
+                    maps[y] = regime_asset_map(index_close, small_close, gold_close, regime_by_day, y)
+                    level_maps[y] = label_asset_map(index_close, small_close, gold_close, levels, y, MIN_LEVEL_DAYS)
+                best, small_mean = level_maps[y]
+                cell = levels.get(d)
+                choice = best.get(cell)
+                if choice is not None:
+                    if choice == "gold" and small_mean.get(cell, -1.0) > 0 and small_close:
+                        choice = eq(regime, y)
+                else:
+                    choice = maps[y].get(regime, "default")
+                    if choice == "default":
+                        choice = "n500" if d in sleeve_on else "gold"
+                    if choice == "gold" and regime is not None and small_close:
+                        if y not in losing:
+                            losing[y] = small_cap_losing_regimes(index_close, small_close, regime_by_day, y)
+                        if regime not in losing[y]:
+                            choice = eq(regime, y)
                 if not assets[choice]:
                     choice = "n500"
                 held = {choice: 1.0}
+            if holdings is not None:
+                holdings[d] = dict(held)
         out[d] = level
     return out
 
@@ -282,15 +405,22 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
 BLEND_REGIMES: dict = {"correction": {"gold": 0.5, "n500": 0.5}}
 
 
-def build_sleeve(index_close, gold_close, small_close, regime_by_day, mode: str | None = None):
-    """(sleeve level, book regime map) — the one entry point every runner uses."""
+def build_sleeve(index_close, gold_close, small_close, regime_by_day, mode: str | None = None,
+                 holdings: dict | None = None):
+    """(sleeve level, book regime map) — the one entry point every runner uses.
+
+    Pass `holdings={}` to have it filled with {index day: {asset: weight}} —
+    the mix chosen at that close and held over the NEXT session.
+    """
     mode = mode or SLEEVE_MODE
     sleeve_on, book_on = risk_on_days(index_close, regime_by_day, "bear_only" if mode == "bear_only" else None,
                                       small_close=small_close if mode == "regime_map" else None)
     if not gold_close:
         level = dict(index_close)
+        if holdings is not None:
+            holdings.update({d: {"n500": 1.0} for d in index_close})
     elif mode == "regime_map":
-        level = build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on)
+        level = build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on, holdings)
     else:
-        level = build_level(index_close, gold_close, small_close, sleeve_on)
+        level = build_level(index_close, gold_close, small_close, sleeve_on, holdings)
     return level, book_regime(level, set(index_close), book_on)

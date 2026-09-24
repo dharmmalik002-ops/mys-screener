@@ -35,5 +35,13 @@
     6.58,
     6.83,
     7.13
-  ]
+  ],
+  "block_weak_tape": true,
+  "tape_gate_evidence": {
+    "block": true,
+    "weak_n": 292,
+    "rest_n": 2811,
+    "weak_avg_r": 1.149,
+    "rest_avg_r": 1.986
+  }
 }

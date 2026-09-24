@@ -144,6 +144,7 @@ def main() -> int:
     s200 = ind.sma(closes, 200)
     above = {d: (bool(closes[i] > s200[i]) if not np.isnan(s200[i]) else True)
              for i, d in enumerate(bars.dates)}
+    weak_at = weak_tape_reader(bars.dates, closes)
 
     # Group strength is causal per day already, so there is nothing to
     # re-derive: the rank on a signal day reads closes up to that day only.
@@ -156,6 +157,7 @@ def main() -> int:
     print(f"cleared the rolling stop-width cap: {len(cleared):,}")
 
     selected: list[dict] = []
+    ungated: list[dict] = []   # every conviction pick, including ones the tape gate skipped
     table: list[dict] = []
     for year in range(FIRST_TRADED_YEAR, 2027):
         cut = f"{year}-01-01"
@@ -185,11 +187,17 @@ def main() -> int:
                          grank(t))
             if 1.0 + sum(1 for c in cuts if raw >= c) >= cf.CONVICTION_BAR:
                 took.append(t)
+        gate = learn_tape_gate(ungated, cut, weak_at)
+        ungated.extend(took)
+        if gate["block"]:
+            took = [t for t in took if not weak_at(t)]
         selected.extend(took)
         table.append({"year": year, "taken": len(took), "prior": p["n_prior"],
-                      "turnover_cap": round(p["turnover_cap"], 2), "setups": len(p["setups"])})
+                      "turnover_cap": round(p["turnover_cap"], 2), "setups": len(p["setups"]),
+                      "block_weak_tape": gate["block"]})
         live = {"year": year, "setups": sorted(p["setups"]), "quality": p["quality"],
-                "turnover_cap": p["turnover_cap"], "decile_cuts": cuts}
+                "turnover_cap": p["turnover_cap"], "decile_cuts": cuts,
+                "block_weak_tape": gate["block"], "tape_gate_evidence": gate}
 
     print(f"\nselected across all years: {len(selected):,}")
     for r in table:
@@ -214,6 +222,42 @@ def main() -> int:
              "selected_rows": selected}, indent=2, default=str))
         print(f"\nwrote {args.out}")
     return 0
+
+
+MIN_TAPE_TRADES = 20
+
+
+def weak_tape_reader(dates, closes):
+    """t -> True when, at the signal's close, the index 20-DMA sat under its 50-DMA."""
+    import bisect
+    s20, s50 = ind.sma(closes, 20), ind.sma(closes, 50)
+    ds = list(dates)
+
+    def weak(t) -> bool:
+        j = bisect.bisect_right(ds, date.fromisoformat(str(t["signal_day"]))) - 1
+        return j >= 0 and not np.isnan(s50[j]) and bool(s20[j] < s50[j])
+    return weak
+
+
+def learn_tape_gate(prior_picks, cut: str, weak_at) -> dict:
+    """Should this year's book skip new buys while the index's 20-DMA is under its 50-DMA?
+
+    Learned from the bot's own conviction picks that CLOSED before the cut —
+    including picks the gate itself skipped, which are tracked on paper, or
+    a gate once switched on could never collect the evidence to switch off.
+    It blocks only when buys made in that tape earned less than the rest.
+    In 2012-2018 they did not (+1.17R against +1.09R); from 2019 they
+    earned +1.00R against +2.52R, so the gate is on from 2022 (gotcha 122).
+    """
+    import statistics as st
+    closed = [t for t in prior_picks if str(t["entry_day"]) < cut and t.get("exit_day")
+              and str(t["exit_day"]) < cut and t.get("exit_reason") != "open"]
+    weak = [float(t["r_multiple"]) for t in closed if weak_at(t)]
+    rest = [float(t["r_multiple"]) for t in closed if not weak_at(t)]
+    block = len(weak) >= MIN_TAPE_TRADES and bool(rest) and st.mean(weak) < st.mean(rest)
+    return {"block": block, "weak_n": len(weak), "rest_n": len(rest),
+            "weak_avg_r": round(st.mean(weak), 3) if weak else None,
+            "rest_avg_r": round(st.mean(rest), 3) if rest else None}
 
 
 BOOK = PortfolioConfig(risk_per_trade_pct=0.50, watch_risk_pct=0.50, max_concurrent=40,
@@ -247,8 +291,14 @@ def _account(selected, rows, cleared, data_dir, table) -> dict:
     small = sl.clean_series(_yahoo("NIFTYSMLCAP250.NS"))
     level, book = sl.build_sleeve(index_close, gold, small, regimes)
 
+    # The account exists from the first traded January, with its capital in
+    # the sleeve — not from the day of its first stock trade. Starting at the
+    # first fill dropped Jan 1 - Feb 14 2012, when small caps rose 26.7%.
+    first = date(min(int(str(t["entry_day"])[:4]) for t in selected), 1, 1)
+    sessions = [d for d in sorted(index_close) if d >= first]
+
     def run(sel, cfg=BOOK):
-        return mtm.simulate(sel, data_dir, cfg, label="wf", park_idle_in=level,
+        return mtm.simulate(sel, data_dir, cfg, label="wf", sessions=sessions, park_idle_in=level,
                             park_only_on=set(level), regime_by_day=book,
                             healthy_regimes=frozenset({"bull_strong"}), derisk_losers_only=False,
                             pyramid=True, pyramid_scale=0.30, max_equity_loss_pct=1.5)
