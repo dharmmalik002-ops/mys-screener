@@ -168,9 +168,20 @@ def main() -> int:
             }))
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
     gold, small = sl.clean_series(gold), sl.clean_series(small)
-    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
+    sleeve_on, book_on = sl.risk_on_days(index_close, regimes,
+                                         small_close=small if sl.SLEEVE_MODE == "regime_map" else None)
     level, _ = sl.build_sleeve(index_close, gold, small, regimes)
     index_days = sorted(index_close)
+    # The sleeve is a compounded level, so any change to its history (a rule
+    # change, a Yahoo revision of gold) rescales every later value. Units
+    # bought at the old level must not be sold at the new one: re-express the
+    # book's sleeve holding at the new level, keeping its rupee value at the
+    # last close unchanged.
+    prior = level.get(date.fromisoformat(book.last_session)) if book.last_session else None
+    if prior and book.sleeve_units and book.sleeve_level and abs(prior / book.sleeve_level - 1) > 1e-9:
+        value = book.sleeve_units * book.sleeve_level
+        book.sleeve_units, book.sleeve_level = value / prior, prior
+        print(f"  sleeve rebased to the current series: value {value:,.0f} unchanged")
 
     def risk_off_for(session):
         """The book de-risks on the regime read at the PREVIOUS index close."""

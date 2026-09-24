@@ -126,16 +126,18 @@ EXIT_MAX_STOP_PCT = 7.0
 # state (it had been credited with the very move that switched it), the thrust
 # leg is gone, and pocket_pivot / nr7_release joined the book. The previous
 # figures (+42.26%, -21.91%, Sharpe 2.02) were inflated by that look-ahead.
-MEASURED_CAGR = 24.64
-MEASURED_MAX_DRAWDOWN = -34.34
-MEASURED_SHARPE = 1.23
-MEASURED_PAYOFF = 5.53
-MEASURED_WIN_RATE = 29.1
-MEASURED_TRADES = 1952
+# Gotcha 121 (sideways rules: the book stands aside where small caps lost,
+# corrections hold half gold / half index) moved it from +24.64% / -34.34%.
+MEASURED_CAGR = 25.86
+MEASURED_MAX_DRAWDOWN = -33.29
+MEASURED_SHARPE = 1.30
+MEASURED_PAYOFF = 5.50
+MEASURED_WIN_RATE = 30.4
+MEASURED_TRADES = 1920
 # The yearly rebuild is the figure quoted (gotcha 110). Its win rate clears
 # the brief's 30% floor; the single split, fitted once, sits just under it.
-MEASURED_WF_CAGR = 28.71
-MEASURED_WF_WIN_RATE = 31.1
+MEASURED_WF_CAGR = 30.23
+MEASURED_WF_WIN_RATE = 32.5
 MEASURED_SMALLCAP_CAGR = 16.26
 
 

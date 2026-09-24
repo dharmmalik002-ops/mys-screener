@@ -59,5 +59,46 @@ class RegimeSleeveTests(unittest.TestCase):
         lv = sl.build_regime_level(idx, gold, idx, reg, set(days))
         self.assertAlmostEqual(lv[tail[3]] / lv[tail[2]], 1.05)     # owns gold from the next session
 
+
+class SidewaysMarketTests(unittest.TestCase):
+    """Gotcha 121: corrections hold a mix; the book stands aside where small caps lost."""
+
+    def setUp(self):
+        self.days = [date(2010, 1, 1) + timedelta(days=i) for i in range(900)]
+
+    def test_a_correction_holds_half_gold_half_index(self):
+        days = self.days[:5]
+        reg = {d: "correction" for d in days}
+        idx = {d: 100.0 * (1.02 ** i) for i, d in enumerate(days)}
+        gold = {d: 100.0 for d in days}
+        lv = sl.build_regime_level(idx, gold, idx, reg, set(days))
+        # From the second session on, each +2% index day is worth +1%.
+        self.assertAlmostEqual(lv[days[3]] / lv[days[2]], 1.01)
+
+    def test_the_book_stands_aside_only_on_prior_evidence(self):
+        # bull_narrow every third day; small caps fall on the day after it.
+        reg = {d: ("bull_narrow" if i % 3 == 0 else "bull_strong") for i, d in enumerate(self.days)}
+        small, x, prev = {}, 100.0, None
+        for d in self.days:
+            if prev is not None:
+                x *= 0.99 if reg[prev] == "bull_narrow" else 1.01
+            small[d], prev = x, d
+        idx = {d: 100.0 for d in self.days}
+        self.assertEqual(sl.small_cap_losing_regimes(idx, small, reg, 2010), set())
+        self.assertEqual(sl.small_cap_losing_regimes(idx, small, reg, 2011), {"bull_narrow"})
+        _, book_on = sl.risk_on_days(idx, reg, small_close=small)
+        narrow_2010 = [d for d in self.days if d.year == 2010 and reg[d] == "bull_narrow"]
+        narrow_2011 = [d for d in self.days if d.year == 2011 and reg[d] == "bull_narrow"]
+        self.assertTrue(all(d in book_on for d in narrow_2010))      # no evidence yet
+        self.assertFalse(any(d in book_on for d in narrow_2011))     # judged on 2010
+        self.assertTrue(all(d in book_on for d in self.days if reg[d] == "bull_strong"))
+
+    def test_without_small_caps_the_book_rule_is_unchanged(self):
+        reg = {d: "bull_narrow" for d in self.days}
+        idx = {d: 100.0 for d in self.days}
+        _, book_on = sl.risk_on_days(idx, reg)
+        self.assertEqual(book_on, set(self.days))
+
+
 if __name__ == "__main__":
     unittest.main()

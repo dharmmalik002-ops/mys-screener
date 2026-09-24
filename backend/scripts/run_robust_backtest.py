@@ -182,7 +182,8 @@ def main() -> int:
     park_prices, _book_regime = sl.build_sleeve(index_close, gold, small, regimes)
     park_days = set(park_prices)
     _derisk = bool(gold) and __import__("os").environ.get("DERISK", "1") == "1"
-    sleeve_on, book_on = sl.risk_on_days(index_close, regimes)
+    sleeve_on, book_on = sl.risk_on_days(index_close, regimes,
+                                         small_close=small if sl.SLEEVE_MODE == "regime_map" else None)
     print(f"sleeve mode {sl.SLEEVE_MODE}; book invested on {len(book_on):,} sessions")
 
     # Adaptive sizing is built and OFF. Under correct accounting it costs
