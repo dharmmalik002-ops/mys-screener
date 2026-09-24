@@ -315,7 +315,8 @@ def better_equity(index_close, small_close, regime_by_day, regime: str, year: in
 
 
 def build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on: set,
-                       holdings: dict | None = None) -> dict:
+                       holdings: dict | None = None,
+                       cash_close: Mapping[date, float] | None = None) -> dict:
     """Compounded level of the market-type sleeve.
 
     The asset held over day d is chosen at the previous INDEX close, in this
@@ -335,7 +336,8 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
     years of history had gold ahead in `bull_strong` while small caps were
     also earning +14% a year there.
     """
-    assets = {"n500": index_close, "small": small_close or {}, "gold": gold_close or {}}
+    assets = {"n500": index_close, "small": small_close or {}, "gold": gold_close or {},
+              "cash": cash_close or {}}
     levels = price_level_labels(index_close, regime_by_day)
     maps: dict = {}
     level_maps: dict = {}
@@ -363,6 +365,8 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
         if d in index_close:
             regime = regime_by_day.get(d)
             mix = BLEND_REGIMES.get(regime)
+            if mix and not all(assets[k] for k in mix):
+                mix = BLEND_FALLBACK.get(regime)
             if mix and all(assets[k] for k in mix):
                 held = dict(mix)
             else:
@@ -402,11 +406,61 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
 # — whenever prior halves disagree, or the winner's lead is not significant —
 # was tested and loses in both halves, because it also blends bear markets,
 # where gold's win is real.
-BLEND_REGIMES: dict = {"correction": {"gold": 0.5, "n500": 0.5}}
+#
+# Gotcha 123: the equity half is now a liquid fund. A correction has no
+# dependable winner, so the sleeve holds only defensive assets in one — gold,
+# and cash earning a real rate. Walk-forward +32.46% -> +33.67%, the index
+# beaten in 15 of 15 years. The older gold/index mix is the fallback when the
+# liquid-fund series is unavailable, so a failed fetch degrades, never breaks.
+BLEND_REGIMES: dict = {"correction": {"gold": 0.5, "cash": 0.5}}
+BLEND_FALLBACK: dict = {"correction": {"gold": 0.5, "n500": 0.5}}
+
+# HDFC Liquid Fund, Regular plan, Growth: daily NAV back to 2006 from AMFI via
+# mfapi.in, after the fund's own fees (Direct plans only start in 2013).
+LIQUID_FUND_CODE = "100868"
+
+
+def nav_level(points) -> dict:
+    """{date: level} from (date, nav) points, chaining daily returns.
+
+    The fund redenominated its units on 2015-08-30 (NAV x99); a raw lookup
+    would book a +9,900% day, so any one-day move over 5% — which a liquid
+    fund cannot make — is skipped rather than compounded.
+    """
+    out, level, prev = {}, 100.0, None
+    for d, nav in sorted(points):
+        if not nav or nav <= 0:
+            continue
+        if prev is not None:
+            r = nav / prev - 1.0
+            if abs(r) <= 0.05:
+                level *= 1.0 + r
+        out[d] = level
+        prev = nav
+    return out
+
+
+def fetch_liquid_fund(code: str = LIQUID_FUND_CODE) -> dict:
+    """The liquid fund as a level series, or {} when the source is unreachable.
+
+    Reuses the funds page's AMFI client (`requests`, which carries its own CA
+    bundle — the stdlib `urllib` fails certificate checks on a stock macOS
+    Python and would silently hand back {} every time).
+    """
+    import time
+    from datetime import date as _date
+    for attempt in range(3):     # mfapi.in drops the odd request
+        try:
+            from app.services.mutual_funds.nav_source import fetch_nav_history
+            h = fetch_nav_history(code)
+            return nav_level((_date.fromisoformat(d), float(v)) for d, v in zip(h["dates"], h["navs"]))
+        except Exception:  # noqa: BLE001 — the sleeve falls back to the gold/index mix
+            time.sleep(2 * (attempt + 1))
+    return {}
 
 
 def build_sleeve(index_close, gold_close, small_close, regime_by_day, mode: str | None = None,
-                 holdings: dict | None = None):
+                 holdings: dict | None = None, cash_close: Mapping[date, float] | None = None):
     """(sleeve level, book regime map) — the one entry point every runner uses.
 
     Pass `holdings={}` to have it filled with {index day: {asset: weight}} —
@@ -420,7 +474,8 @@ def build_sleeve(index_close, gold_close, small_close, regime_by_day, mode: str 
         if holdings is not None:
             holdings.update({d: {"n500": 1.0} for d in index_close})
     elif mode == "regime_map":
-        level = build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on, holdings)
+        level = build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on, holdings,
+                                   cash_close=cash_close)
     else:
         level = build_level(index_close, gold_close, small_close, sleeve_on, holdings)
     return level, book_regime(level, set(index_close), book_on)

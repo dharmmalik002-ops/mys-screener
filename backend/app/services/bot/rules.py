@@ -128,17 +128,18 @@ EXIT_MAX_STOP_PCT = 7.0
 # figures (+42.26%, -21.91%, Sharpe 2.02) were inflated by that look-ahead.
 # Gotcha 121 (sideways rules: the book stands aside where small caps lost,
 # corrections hold half gold / half index) moved it from +24.64% / -34.34%;
-# gotcha 122 (price level, trend stack, gold only as a hedge) to +26.76%.
-MEASURED_CAGR = 26.76
-MEASURED_MAX_DRAWDOWN = -33.29
-MEASURED_SHARPE = 1.33
-MEASURED_PAYOFF = 5.26
-MEASURED_WIN_RATE = 30.5
-MEASURED_TRADES = 1980
+# gotcha 122 (price level, trend stack, gold only as a hedge) to +26.76%;
+# gotcha 123 (corrections hold gold + a liquid fund) to +27.35%.
+MEASURED_CAGR = 27.35
+MEASURED_MAX_DRAWDOWN = -31.37
+MEASURED_SHARPE = 1.40
+MEASURED_PAYOFF = 5.29
+MEASURED_WIN_RATE = 30.4
+MEASURED_TRADES = 1964
 # The yearly rebuild is the figure quoted (gotcha 110). Its win rate clears
 # the brief's 30% floor; the single split, fitted once, sits just under it.
-MEASURED_WF_CAGR = 32.46
-MEASURED_WF_WIN_RATE = 32.9
+MEASURED_WF_CAGR = 33.61
+MEASURED_WF_WIN_RATE = 32.5
 MEASURED_SMALLCAP_CAGR = 16.26
 
 

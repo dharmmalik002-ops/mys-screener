@@ -289,7 +289,9 @@ def _account(selected, rows, cleared, data_dir, table) -> dict:
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
     gold = sl.clean_series(_yahoo("GOLDBEES.NS"))
     small = sl.clean_series(_yahoo("NIFTYSMLCAP250.NS"))
-    level, book = sl.build_sleeve(index_close, gold, small, regimes)
+    liquid = sl.fetch_liquid_fund()
+    print(f"liquid fund: {len(liquid):,} NAVs" if liquid else "WARNING: no liquid-fund series — corrections fall back to gold/index")
+    level, book = sl.build_sleeve(index_close, gold, small, regimes, cash_close=liquid)
 
     # The account exists from the first traded January, with its capital in
     # the sleeve — not from the day of its first stock trade. Starting at the

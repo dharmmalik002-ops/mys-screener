@@ -1,48 +1,48 @@
 {
   "yearly": {
-    "2009": 50.59,
-    "2010": 16.09,
-    "2011": -25.75,
-    "2012": 37.11,
-    "2013": -5.82,
-    "2014": 81.61,
-    "2015": 1.33,
-    "2016": 12.55,
-    "2017": 90.39,
-    "2018": -15.76,
-    "2019": 5.89,
-    "2020": 75.89,
-    "2021": 102.72,
-    "2022": -2.52,
-    "2023": 52.82,
-    "2024": 39.55,
-    "2025": 20.93,
-    "2026": 16.39
+    "2009": 42.24,
+    "2010": 13.07,
+    "2011": -22.68,
+    "2012": 38.84,
+    "2013": -7.83,
+    "2014": 82.22,
+    "2015": 4.84,
+    "2016": 12.91,
+    "2017": 92.8,
+    "2018": -15.33,
+    "2019": 5.21,
+    "2020": 78.46,
+    "2021": 97.1,
+    "2022": 2.06,
+    "2023": 53.37,
+    "2024": 39.82,
+    "2025": 25.66,
+    "2026": 17.33
   },
   "trades_per_year": {
     "2009": 209,
-    "2010": 202,
+    "2010": 203,
     "2011": 3,
     "2012": 151,
     "2013": 51,
-    "2014": 659,
+    "2014": 650,
     "2015": 162,
-    "2016": 217,
-    "2017": 422,
-    "2018": 122,
+    "2016": 213,
+    "2017": 418,
+    "2018": 123,
     "2019": 73,
     "2020": 226,
-    "2021": 879,
+    "2021": 880,
     "2022": 168,
-    "2023": 436,
-    "2024": 270,
-    "2025": 171,
+    "2023": 438,
+    "2024": 269,
+    "2025": 170,
     "2026": 46
   },
   "size_mix": {
-    "small": 4004,
-    "mid": 347,
-    "large": 110,
+    "small": 3992,
+    "mid": 346,
+    "large": 109,
     "unknown": 6
   },
   "diagnosis": [
@@ -60,7 +60,7 @@
     },
     {
       "year": 2008,
-      "signals": 1096,
+      "signals": 1095,
       "accepted": 0,
       "acceptance_pct": 0.0,
       "avg_r": 0.0,
@@ -68,163 +68,163 @@
       "index_return": null,
       "alpha": null,
       "verdict": "starved",
-      "note": "only 0 trades from 1096 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
+      "note": "only 0 trades from 1095 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
     },
     {
       "year": 2009,
-      "signals": 3280,
+      "signals": 3279,
       "accepted": 209,
       "acceptance_pct": 6.4,
       "avg_r": 0.604,
-      "bot_return": 50.59,
+      "bot_return": 42.24,
       "index_return": 113.92,
-      "alpha": -63.33,
+      "alpha": -71.68,
       "verdict": "under_deployed",
-      "note": "209 trades at a healthy +0.60R but still -63.3pp behind \u2014 capital, not selection"
+      "note": "209 trades at a healthy +0.60R but still -71.7pp behind \u2014 capital, not selection"
     },
     {
       "year": 2010,
-      "signals": 2912,
-      "accepted": 202,
-      "acceptance_pct": 6.9,
-      "avg_r": -0.045,
-      "bot_return": 16.09,
+      "signals": 2911,
+      "accepted": 203,
+      "acceptance_pct": 7.0,
+      "avg_r": -0.051,
+      "bot_return": 13.07,
       "index_return": 16.25,
-      "alpha": -0.16,
+      "alpha": -3.18,
       "verdict": "bad_shots",
-      "note": "202 trades at -0.05R \u2014 enough shots, wrong names; this is an entry-rule problem"
+      "note": "203 trades at -0.05R \u2014 enough shots, wrong names; this is an entry-rule problem"
     },
     {
       "year": 2011,
-      "signals": 1205,
+      "signals": 1208,
       "accepted": 3,
       "acceptance_pct": 0.2,
       "avg_r": -1.133,
-      "bot_return": -25.75,
+      "bot_return": -22.68,
       "index_return": -36.03,
-      "alpha": 10.28,
+      "alpha": 13.35,
       "verdict": "starved",
-      "note": "only 3 trades from 1205 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
+      "note": "only 3 trades from 1208 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
     },
     {
       "year": 2012,
-      "signals": 2469,
+      "signals": 2470,
       "accepted": 151,
       "acceptance_pct": 6.1,
       "avg_r": -0.073,
-      "bot_return": 37.11,
+      "bot_return": 38.84,
       "index_return": 38.19,
-      "alpha": -1.08,
-      "verdict": "bad_shots",
-      "note": "151 trades at -0.07R \u2014 enough shots, wrong names; this is an entry-rule problem"
+      "alpha": 0.65,
+      "verdict": "ok",
+      "note": "beat the index by +0.7pp on 151 trades"
     },
     {
       "year": 2013,
-      "signals": 1665,
+      "signals": 1664,
       "accepted": 51,
       "acceptance_pct": 3.1,
-      "avg_r": 6.489,
-      "bot_return": -5.82,
+      "avg_r": 6.488,
+      "bot_return": -7.83,
       "index_return": -8.14,
-      "alpha": 2.32,
+      "alpha": 0.31,
       "verdict": "ok",
-      "note": "beat the index by +2.3pp on 51 trades"
+      "note": "beat the index by +0.3pp on 51 trades"
     },
     {
       "year": 2014,
-      "signals": 4857,
-      "accepted": 659,
-      "acceptance_pct": 13.6,
-      "avg_r": 2.234,
-      "bot_return": 81.61,
+      "signals": 4854,
+      "accepted": 650,
+      "acceptance_pct": 13.4,
+      "avg_r": 2.242,
+      "bot_return": 82.22,
       "index_return": 69.57,
-      "alpha": 12.04,
+      "alpha": 12.65,
       "verdict": "ok",
-      "note": "beat the index by +12.0pp on 659 trades"
+      "note": "beat the index by +12.7pp on 650 trades"
     },
     {
       "year": 2015,
-      "signals": 3148,
+      "signals": 3147,
       "accepted": 162,
       "acceptance_pct": 5.1,
       "avg_r": -0.697,
-      "bot_return": 1.33,
+      "bot_return": 4.84,
       "index_return": 10.2,
-      "alpha": -8.87,
+      "alpha": -5.36,
       "verdict": "bad_shots",
       "note": "162 trades at -0.70R \u2014 enough shots, wrong names; this is an entry-rule problem"
     },
     {
       "year": 2016,
-      "signals": 4350,
-      "accepted": 217,
-      "acceptance_pct": 5.0,
-      "avg_r": 0.275,
-      "bot_return": 12.55,
+      "signals": 4344,
+      "accepted": 213,
+      "acceptance_pct": 4.9,
+      "avg_r": 0.328,
+      "bot_return": 12.91,
       "index_return": 0.36,
-      "alpha": 12.19,
+      "alpha": 12.55,
       "verdict": "ok",
-      "note": "beat the index by +12.2pp on 217 trades"
+      "note": "beat the index by +12.5pp on 213 trades"
     },
     {
       "year": 2017,
-      "signals": 6369,
-      "accepted": 422,
+      "signals": 6362,
+      "accepted": 418,
       "acceptance_pct": 6.6,
-      "avg_r": 0.835,
-      "bot_return": 90.39,
+      "avg_r": 0.826,
+      "bot_return": 92.8,
       "index_return": 57.28,
-      "alpha": 33.11,
+      "alpha": 35.52,
       "verdict": "ok",
-      "note": "beat the index by +33.1pp on 422 trades"
+      "note": "beat the index by +35.5pp on 418 trades"
     },
     {
       "year": 2018,
-      "signals": 3384,
-      "accepted": 122,
+      "signals": 3389,
+      "accepted": 123,
       "acceptance_pct": 3.6,
-      "avg_r": -0.586,
-      "bot_return": -15.76,
+      "avg_r": -0.59,
+      "bot_return": -15.33,
       "index_return": -26.8,
-      "alpha": 11.04,
+      "alpha": 11.47,
       "verdict": "ok",
-      "note": "beat the index by +11.0pp on 122 trades"
+      "note": "beat the index by +11.5pp on 123 trades"
     },
     {
       "year": 2019,
-      "signals": 3259,
+      "signals": 3257,
       "accepted": 73,
       "acceptance_pct": 2.2,
       "avg_r": -0.741,
-      "bot_return": 5.89,
+      "bot_return": 5.21,
       "index_return": -8.27,
-      "alpha": 14.16,
+      "alpha": 13.48,
       "verdict": "ok",
-      "note": "beat the index by +14.2pp on 73 trades"
+      "note": "beat the index by +13.5pp on 73 trades"
     },
     {
       "year": 2020,
-      "signals": 6988,
+      "signals": 6987,
       "accepted": 226,
       "acceptance_pct": 3.2,
-      "avg_r": 4.512,
-      "bot_return": 75.89,
+      "avg_r": 4.378,
+      "bot_return": 78.46,
       "index_return": 25.09,
-      "alpha": 50.8,
+      "alpha": 53.37,
       "verdict": "ok",
-      "note": "beat the index by +50.8pp on 226 trades"
+      "note": "beat the index by +53.4pp on 226 trades"
     },
     {
       "year": 2021,
-      "signals": 10657,
-      "accepted": 879,
-      "acceptance_pct": 8.2,
-      "avg_r": 1.989,
-      "bot_return": 102.72,
+      "signals": 10665,
+      "accepted": 880,
+      "acceptance_pct": 8.3,
+      "avg_r": 1.985,
+      "bot_return": 97.1,
       "index_return": 61.94,
-      "alpha": 40.78,
+      "alpha": 35.16,
       "verdict": "ok",
-      "note": "beat the index by +40.8pp on 879 trades"
+      "note": "beat the index by +35.2pp on 880 trades"
     },
     {
       "year": 2022,
@@ -232,106 +232,106 @@
       "accepted": 168,
       "acceptance_pct": 2.5,
       "avg_r": 1.401,
-      "bot_return": -2.52,
+      "bot_return": 2.06,
       "index_return": -3.65,
-      "alpha": 1.13,
+      "alpha": 5.71,
       "verdict": "ok",
-      "note": "beat the index by +1.1pp on 168 trades"
+      "note": "beat the index by +5.7pp on 168 trades"
     },
     {
       "year": 2023,
-      "signals": 11764,
-      "accepted": 436,
+      "signals": 11772,
+      "accepted": 438,
       "acceptance_pct": 3.7,
-      "avg_r": 5.578,
-      "bot_return": 52.82,
+      "avg_r": 5.548,
+      "bot_return": 53.37,
       "index_return": 48.1,
-      "alpha": 4.72,
+      "alpha": 5.27,
       "verdict": "ok",
-      "note": "beat the index by +4.7pp on 436 trades"
+      "note": "beat the index by +5.3pp on 438 trades"
     },
     {
       "year": 2024,
-      "signals": 11711,
-      "accepted": 270,
+      "signals": 11712,
+      "accepted": 269,
       "acceptance_pct": 2.3,
-      "avg_r": -0.469,
-      "bot_return": 39.55,
+      "avg_r": -0.466,
+      "bot_return": 39.82,
       "index_return": 26.43,
-      "alpha": 13.12,
+      "alpha": 13.39,
       "verdict": "ok",
-      "note": "beat the index by +13.1pp on 270 trades"
+      "note": "beat the index by +13.4pp on 269 trades"
     },
     {
       "year": 2025,
-      "signals": 9091,
-      "accepted": 171,
+      "signals": 9088,
+      "accepted": 170,
       "acceptance_pct": 1.9,
-      "avg_r": -0.166,
-      "bot_return": 20.93,
+      "avg_r": -0.133,
+      "bot_return": 25.66,
       "index_return": -6.01,
-      "alpha": 26.94,
+      "alpha": 31.67,
       "verdict": "ok",
-      "note": "beat the index by +26.9pp on 171 trades"
+      "note": "beat the index by +31.7pp on 170 trades"
     },
     {
       "year": 2026,
-      "signals": 8207,
+      "signals": 8393,
       "accepted": 46,
-      "acceptance_pct": 0.6,
-      "avg_r": 0.031,
-      "bot_return": 16.39,
-      "index_return": 9.64,
-      "alpha": 6.75,
+      "acceptance_pct": 0.5,
+      "avg_r": 0.09,
+      "bot_return": 17.33,
+      "index_return": 9.55,
+      "alpha": 7.78,
       "verdict": "ok",
-      "note": "beat the index by +6.7pp on 46 trades"
+      "note": "beat the index by +7.8pp on 46 trades"
     }
   ],
   "summary": {
     "verdict_counts": {
       "starved": 3,
       "under_deployed": 1,
-      "bad_shots": 3,
-      "ok": 13
+      "bad_shots": 2,
+      "ok": 14
     },
-    "years_behind": 4,
+    "years_behind": 3,
     "years_total": 18,
     "worst": [
       {
         "year": 2009,
-        "signals": 3280,
+        "signals": 3279,
         "accepted": 209,
         "acceptance_pct": 6.4,
         "avg_r": 0.604,
-        "bot_return": 50.59,
+        "bot_return": 42.24,
         "index_return": 113.92,
-        "alpha": -63.33,
+        "alpha": -71.68,
         "verdict": "under_deployed",
-        "note": "209 trades at a healthy +0.60R but still -63.3pp behind \u2014 capital, not selection"
+        "note": "209 trades at a healthy +0.60R but still -71.7pp behind \u2014 capital, not selection"
       },
       {
         "year": 2015,
-        "signals": 3148,
+        "signals": 3147,
         "accepted": 162,
         "acceptance_pct": 5.1,
         "avg_r": -0.697,
-        "bot_return": 1.33,
+        "bot_return": 4.84,
         "index_return": 10.2,
-        "alpha": -8.87,
+        "alpha": -5.36,
         "verdict": "bad_shots",
         "note": "162 trades at -0.70R \u2014 enough shots, wrong names; this is an entry-rule problem"
       },
       {
-        "year": 2012,
-        "signals": 2469,
-        "accepted": 151,
-        "acceptance_pct": 6.1,
-        "avg_r": -0.073,
-        "bot_return": 37.11,
-        "index_return": 38.19,
-        "alpha": -1.08,
+        "year": 2010,
+        "signals": 2911,
+        "accepted": 203,
+        "acceptance_pct": 7.0,
+        "avg_r": -0.051,
+        "bot_return": 13.07,
+        "index_return": 16.25,
+        "alpha": -3.18,
         "verdict": "bad_shots",
-        "note": "151 trades at -0.07R \u2014 enough shots, wrong names; this is an entry-rule problem"
+        "note": "203 trades at -0.05R \u2014 enough shots, wrong names; this is an entry-rule problem"
       }
     ],
     "starved_years": [
@@ -341,16 +341,15 @@
     ],
     "bad_shot_years": [
       2010,
-      2012,
       2015
     ]
   },
-  "cagr": 26.76,
-  "max_drawdown": -33.29,
-  "sharpe": 1.33,
-  "win_rate": 30.5,
-  "payoff": 5.26,
-  "trades": 1980,
+  "cagr": 27.35,
+  "max_drawdown": -31.37,
+  "sharpe": 1.4,
+  "win_rate": 30.4,
+  "payoff": 5.29,
+  "trades": 1964,
   "fills": [
     {
       "symbol": "BGRENERGY",
@@ -1595,7 +1594,7 @@
       "exit_day": "2011-01-17",
       "r": 0.876,
       "risk_pct": 7.0,
-      "net_pct": 6.129,
+      "net_pct": 6.13,
       "sessions_held": 334,
       "equity_pct": 0.131,
       "is_add": false
@@ -1667,7 +1666,7 @@
       "exit_day": "2011-02-10",
       "r": 1.454,
       "risk_pct": 7.0,
-      "net_pct": 10.179,
+      "net_pct": 10.18,
       "sessions_held": 347,
       "equity_pct": 0.218,
       "is_add": false
@@ -2411,7 +2410,7 @@
       "exit_day": "2010-02-25",
       "r": 0.61,
       "risk_pct": 7.0,
-      "net_pct": 4.273,
+      "net_pct": 4.272,
       "sessions_held": 41,
       "equity_pct": 0.092,
       "is_add": false
@@ -2833,7 +2832,7 @@
       "risk_pct": 7.0,
       "net_pct": -9.31,
       "sessions_held": 2,
-      "equity_pct": -0.199,
+      "equity_pct": -0.2,
       "is_add": true
     },
     {
@@ -3373,7 +3372,7 @@
       "risk_pct": 7.0,
       "net_pct": 46.27,
       "sessions_held": 13,
-      "equity_pct": 0.992,
+      "equity_pct": 0.991,
       "is_add": false
     },
     {
@@ -3449,7 +3448,7 @@
       "is_add": false
     },
     {
-      "symbol": "BERGEPAINT",
+      "symbol": "ANDHRAPAP",
       "strategy": "nr7_release",
       "entry_day": "2010-09-28",
       "exit_day": "2010-09-30",
@@ -4115,9 +4114,9 @@
       "exit_day": "2010-12-03",
       "r": 0.443,
       "risk_pct": 7.0,
-      "net_pct": 3.104,
+      "net_pct": 3.103,
       "sessions_held": 11,
-      "equity_pct": 0.067,
+      "equity_pct": 0.066,
       "is_add": false
     },
     {
@@ -5581,7 +5580,7 @@
       "risk_pct": 4.49,
       "net_pct": -5.343,
       "sessions_held": 3,
-      "equity_pct": -0.178,
+      "equity_pct": -0.179,
       "is_add": false
     },
     {
@@ -6035,7 +6034,7 @@
       "exit_day": "2015-09-16",
       "r": 0.287,
       "risk_pct": 5.47,
-      "net_pct": 1.569,
+      "net_pct": 1.57,
       "sessions_held": 437,
       "equity_pct": 0.043,
       "is_add": false
@@ -6101,18 +6100,6 @@
       "is_add": false
     },
     {
-      "symbol": "NAUKRI",
-      "strategy": "pocket_pivot",
-      "entry_day": "2014-01-20",
-      "exit_day": "2014-01-24",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 5,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
       "symbol": "ATUL",
       "strategy": "pullback_ema21",
       "entry_day": "2014-01-22",
@@ -6122,54 +6109,6 @@
       "net_pct": -7.515,
       "sessions_held": 3,
       "equity_pct": -0.169,
-      "is_add": false
-    },
-    {
-      "symbol": "BFUTILITIE",
-      "strategy": "pullback_ema21",
-      "entry_day": "2014-01-23",
-      "exit_day": "2014-01-24",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 2,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "TCI",
-      "strategy": "nr7_release",
-      "entry_day": "2014-01-23",
-      "exit_day": "2014-01-24",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 2,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "ASTRAMICRO",
-      "strategy": "pullback_ema21",
-      "entry_day": "2014-01-21",
-      "exit_day": "2014-01-27",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 5,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "FDC",
-      "strategy": "pullback_ema21",
-      "entry_day": "2014-01-22",
-      "exit_day": "2014-01-27",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 4,
-      "equity_pct": -0.168,
       "is_add": false
     },
     {
@@ -6197,18 +6136,6 @@
       "is_add": false
     },
     {
-      "symbol": "KRBL",
-      "strategy": "pullback_ema21",
-      "entry_day": "2014-01-29",
-      "exit_day": "2014-01-29",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": true
-    },
-    {
       "symbol": "PERSISTENT",
       "strategy": "pullback_ema21",
       "entry_day": "2014-01-21",
@@ -6222,18 +6149,6 @@
     },
     {
       "symbol": "TORNTPHARM",
-      "strategy": "earnings_drift",
-      "entry_day": "2014-01-23",
-      "exit_day": "2016-02-08",
-      "r": 1.071,
-      "risk_pct": 7.0,
-      "net_pct": 7.499,
-      "sessions_held": 500,
-      "equity_pct": 0.161,
-      "is_add": false
-    },
-    {
-      "symbol": "TORNTPHARM",
       "strategy": "earnings_gap_hold",
       "entry_day": "2014-01-24",
       "exit_day": "2016-02-09",
@@ -6242,30 +6157,18 @@
       "net_pct": 1.843,
       "sessions_held": 500,
       "equity_pct": 0.039,
-      "is_add": true
+      "is_add": false
     },
     {
       "symbol": "KRBL",
       "strategy": "nr7_release",
       "entry_day": "2014-01-27",
       "exit_day": "2016-02-10",
-      "r": 0.445,
+      "r": 0.442,
       "risk_pct": 7.0,
-      "net_pct": 3.113,
+      "net_pct": 3.097,
       "sessions_held": 500,
-      "equity_pct": 0.067,
-      "is_add": false
-    },
-    {
-      "symbol": "TCI",
-      "strategy": "pullback_ema21",
-      "entry_day": "2014-01-29",
-      "exit_day": "2014-02-14",
-      "r": 0.585,
-      "risk_pct": 7.0,
-      "net_pct": 4.098,
-      "sessions_held": 13,
-      "equity_pct": 0.088,
+      "equity_pct": 0.066,
       "is_add": false
     },
     {
@@ -6297,11 +6200,11 @@
       "strategy": "pullback_ema21",
       "entry_day": "2014-01-31",
       "exit_day": "2016-02-15",
-      "r": -0.024,
+      "r": -0.023,
       "risk_pct": 7.0,
-      "net_pct": -0.167,
+      "net_pct": -0.163,
       "sessions_held": 499,
-      "equity_pct": -0.004,
+      "equity_pct": -0.003,
       "is_add": true
     },
     {
@@ -6338,7 +6241,7 @@
       "net_pct": 2.258,
       "sessions_held": 9,
       "equity_pct": 0.048,
-      "is_add": true
+      "is_add": false
     },
     {
       "symbol": "GRANULES",
@@ -6705,9 +6608,9 @@
       "strategy": "minervini_breakout",
       "entry_day": "2014-03-26",
       "exit_day": "2015-09-07",
-      "r": 7.241,
+      "r": 7.24,
       "risk_pct": 6.82,
-      "net_pct": 49.382,
+      "net_pct": 49.38,
       "sessions_held": 357,
       "equity_pct": 1.086,
       "is_add": false
@@ -6909,9 +6812,9 @@
       "strategy": "minervini_breakout",
       "entry_day": "2014-05-05",
       "exit_day": "2015-08-25",
-      "r": 6.173,
+      "r": 6.174,
       "risk_pct": 4.97,
-      "net_pct": 30.68,
+      "net_pct": 30.683,
       "sessions_held": 324,
       "equity_pct": 0.926,
       "is_add": false
@@ -6935,7 +6838,7 @@
       "exit_day": "2015-08-25",
       "r": 5.489,
       "risk_pct": 5.22,
-      "net_pct": 28.652,
+      "net_pct": 28.651,
       "sessions_held": 323,
       "equity_pct": 0.823,
       "is_add": true
@@ -7053,9 +6956,9 @@
       "strategy": "pullback_ema21",
       "entry_day": "2014-08-01",
       "exit_day": "2015-08-13",
-      "r": 11.142,
+      "r": 11.141,
       "risk_pct": 7.0,
-      "net_pct": 77.994,
+      "net_pct": 77.99,
       "sessions_held": 253,
       "equity_pct": 1.671,
       "is_add": false
@@ -7089,9 +6992,9 @@
       "strategy": "minervini_breakout",
       "entry_day": "2014-09-11",
       "exit_day": "2015-08-13",
-      "r": 3.724,
+      "r": 3.723,
       "risk_pct": 7.0,
-      "net_pct": 26.065,
+      "net_pct": 26.064,
       "sessions_held": 226,
       "equity_pct": 0.559,
       "is_add": true
@@ -7931,7 +7834,7 @@
       "exit_day": "2015-06-08",
       "r": 0.644,
       "risk_pct": 6.06,
-      "net_pct": 3.904,
+      "net_pct": 3.903,
       "sessions_held": 128,
       "equity_pct": 0.097,
       "is_add": false
@@ -9995,7 +9898,7 @@
       "exit_day": "2016-12-08",
       "r": 0.497,
       "risk_pct": 7.0,
-      "net_pct": 3.478,
+      "net_pct": 3.479,
       "sessions_held": 150,
       "equity_pct": 0.075,
       "is_add": false
@@ -10349,6 +10252,18 @@
       "is_add": false
     },
     {
+      "symbol": "JKLAKSHMI",
+      "strategy": "nr7_release",
+      "entry_day": "2016-08-09",
+      "exit_day": "2016-08-12",
+      "r": -1.156,
+      "risk_pct": 5.44,
+      "net_pct": -6.289,
+      "sessions_held": 4,
+      "equity_pct": -0.173,
+      "is_add": false
+    },
+    {
       "symbol": "ASTEC",
       "strategy": "pocket_pivot",
       "entry_day": "2016-07-15",
@@ -10574,18 +10489,6 @@
       "net_pct": 1.501,
       "sessions_held": 63,
       "equity_pct": 0.061,
-      "is_add": false
-    },
-    {
-      "symbol": "BAYERCROP",
-      "strategy": "nr7_release",
-      "entry_day": "2016-08-05",
-      "exit_day": "2016-11-09",
-      "r": 0.364,
-      "risk_pct": 4.13,
-      "net_pct": 1.501,
-      "sessions_held": 63,
-      "equity_pct": 0.055,
       "is_add": false
     },
     {
@@ -11165,42 +11068,6 @@
       "is_add": false
     },
     {
-      "symbol": "EKC",
-      "strategy": "pullback_ema21",
-      "entry_day": "2016-10-05",
-      "exit_day": "2016-10-05",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "EKC",
-      "strategy": "pocket_pivot",
-      "entry_day": "2016-10-05",
-      "exit_day": "2016-10-05",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "EKC",
-      "strategy": "nr7_release",
-      "entry_day": "2016-10-05",
-      "exit_day": "2016-10-05",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
       "symbol": "SHREEPUSHK",
       "strategy": "minervini_breakout",
       "entry_day": "2016-10-06",
@@ -11369,18 +11236,6 @@
       "is_add": false
     },
     {
-      "symbol": "EKC",
-      "strategy": "minervini_breakout",
-      "entry_day": "2016-10-20",
-      "exit_day": "2016-10-20",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": true
-    },
-    {
       "symbol": "SUDARSCHEM",
       "strategy": "pullback_ema21",
       "entry_day": "2016-10-19",
@@ -11429,30 +11284,6 @@
       "is_add": false
     },
     {
-      "symbol": "JKLAKSHMI",
-      "strategy": "minervini_breakout",
-      "entry_day": "2016-09-28",
-      "exit_day": "2016-11-04",
-      "r": -1.16,
-      "risk_pct": 5.3,
-      "net_pct": -6.148,
-      "sessions_held": 25,
-      "equity_pct": -0.174,
-      "is_add": true
-    },
-    {
-      "symbol": "AGI",
-      "strategy": "pullback_ema21",
-      "entry_day": "2016-10-05",
-      "exit_day": "2016-11-04",
-      "r": -1.156,
-      "risk_pct": 5.43,
-      "net_pct": -6.277,
-      "sessions_held": 20,
-      "equity_pct": -0.173,
-      "is_add": false
-    },
-    {
       "symbol": "MANALIPETC",
       "strategy": "minervini_breakout",
       "entry_day": "2016-10-14",
@@ -11498,6 +11329,30 @@
       "net_pct": -6.744,
       "sessions_held": 9,
       "equity_pct": -0.171,
+      "is_add": false
+    },
+    {
+      "symbol": "EKC",
+      "strategy": "pocket_pivot",
+      "entry_day": "2016-10-24",
+      "exit_day": "2016-11-04",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 9,
+      "equity_pct": -0.168,
+      "is_add": false
+    },
+    {
+      "symbol": "JBMA",
+      "strategy": "minervini_breakout",
+      "entry_day": "2016-10-25",
+      "exit_day": "2016-11-04",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 8,
+      "equity_pct": -0.168,
       "is_add": false
     },
     {
@@ -11559,6 +11414,18 @@
       "sessions_held": 51,
       "equity_pct": -0.19,
       "is_add": false
+    },
+    {
+      "symbol": "JKLAKSHMI",
+      "strategy": "nr7_release",
+      "entry_day": "2016-09-08",
+      "exit_day": "2016-11-09",
+      "r": -2.242,
+      "risk_pct": 5.4,
+      "net_pct": -12.107,
+      "sessions_held": 41,
+      "equity_pct": -0.336,
+      "is_add": true
     },
     {
       "symbol": "ASIANTILES",
@@ -11657,18 +11524,6 @@
       "is_add": false
     },
     {
-      "symbol": "AGI",
-      "strategy": "pocket_pivot",
-      "entry_day": "2016-10-05",
-      "exit_day": "2016-11-09",
-      "r": -1.471,
-      "risk_pct": 6.03,
-      "net_pct": -8.87,
-      "sessions_held": 23,
-      "equity_pct": -0.221,
-      "is_add": false
-    },
-    {
       "symbol": "RAIN",
       "strategy": "pullback_ema21",
       "entry_day": "2016-10-05",
@@ -11678,6 +11533,18 @@
       "net_pct": -11.109,
       "sessions_held": 23,
       "equity_pct": -0.238,
+      "is_add": false
+    },
+    {
+      "symbol": "AGI",
+      "strategy": "pullback_ema21",
+      "entry_day": "2016-10-13",
+      "exit_day": "2016-11-09",
+      "r": -1.377,
+      "risk_pct": 5.09,
+      "net_pct": -7.009,
+      "sessions_held": 19,
+      "equity_pct": -0.207,
       "is_add": false
     },
     {
@@ -11741,6 +11608,18 @@
       "is_add": false
     },
     {
+      "symbol": "RICOAUTO",
+      "strategy": "pocket_pivot",
+      "entry_day": "2016-10-24",
+      "exit_day": "2016-11-09",
+      "r": -2.145,
+      "risk_pct": 7.0,
+      "net_pct": -15.015,
+      "sessions_held": 12,
+      "equity_pct": -0.322,
+      "is_add": true
+    },
+    {
       "symbol": "CENTENKA",
       "strategy": "pocket_pivot",
       "entry_day": "2016-10-27",
@@ -11751,6 +11630,18 @@
       "sessions_held": 9,
       "equity_pct": -0.257,
       "is_add": false
+    },
+    {
+      "symbol": "IIFL",
+      "strategy": "earnings_drift",
+      "entry_day": "2016-10-28",
+      "exit_day": "2016-11-09",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 8,
+      "equity_pct": -0.168,
+      "is_add": true
     },
     {
       "symbol": "SWANCORP",
@@ -11867,7 +11758,7 @@
       "exit_day": "2016-12-23",
       "r": 1.409,
       "risk_pct": 4.88,
-      "net_pct": 6.874,
+      "net_pct": 6.875,
       "sessions_held": 63,
       "equity_pct": 0.211,
       "is_add": false
@@ -11935,25 +11826,13 @@
     {
       "symbol": "EKC",
       "strategy": "pullback_ema21",
-      "entry_day": "2016-10-13",
-      "exit_day": "2016-11-17",
-      "r": 1.35,
+      "entry_day": "2016-11-09",
+      "exit_day": "2018-03-27",
+      "r": 1.434,
       "risk_pct": 7.0,
-      "net_pct": 9.448,
-      "sessions_held": 24,
-      "equity_pct": 0.202,
-      "is_add": false
-    },
-    {
-      "symbol": "EKC",
-      "strategy": "pocket_pivot",
-      "entry_day": "2016-10-13",
-      "exit_day": "2016-11-17",
-      "r": 1.35,
-      "risk_pct": 7.0,
-      "net_pct": 9.448,
-      "sessions_held": 24,
-      "equity_pct": 0.202,
+      "net_pct": 10.039,
+      "sessions_held": 344,
+      "equity_pct": 0.215,
       "is_add": false
     },
     {
@@ -12269,18 +12148,6 @@
       "is_add": false
     },
     {
-      "symbol": "MAHSEAMLES",
-      "strategy": "minervini_breakout",
-      "entry_day": "2017-03-03",
-      "exit_day": "2017-05-15",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 48,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
       "symbol": "DALMIASUG",
       "strategy": "pocket_pivot",
       "entry_day": "2017-01-11",
@@ -12329,16 +12196,16 @@
       "is_add": false
     },
     {
-      "symbol": "GUJALKALI",
+      "symbol": "TVSSRICHAK",
       "strategy": "minervini_breakout",
-      "entry_day": "2017-03-14",
-      "exit_day": "2017-06-23",
-      "r": -1.158,
-      "risk_pct": 5.37,
-      "net_pct": -6.218,
-      "sessions_held": 71,
-      "equity_pct": -0.174,
-      "is_add": false
+      "entry_day": "2017-06-07",
+      "exit_day": "2017-06-16",
+      "r": -1.123,
+      "risk_pct": 6.81,
+      "net_pct": -7.648,
+      "sessions_held": 8,
+      "equity_pct": -0.168,
+      "is_add": true
     },
     {
       "symbol": "TVSSRICHAK",
@@ -12449,18 +12316,6 @@
       "is_add": false
     },
     {
-      "symbol": "IGPL",
-      "strategy": "minervini_breakout",
-      "entry_day": "2017-09-19",
-      "exit_day": "2017-09-22",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 4,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
       "symbol": "3MINDIA",
       "strategy": "minervini_breakout",
       "entry_day": "2017-08-28",
@@ -12473,27 +12328,15 @@
       "is_add": false
     },
     {
-      "symbol": "TGVSL",
-      "strategy": "minervini_breakout",
-      "entry_day": "2017-09-22",
-      "exit_day": "2017-09-22",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "MAHSCOOTER",
+      "symbol": "MPHASIS",
       "strategy": "pullback_ema21",
-      "entry_day": "2017-09-27",
-      "exit_day": "2017-09-28",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 2,
-      "equity_pct": -0.168,
+      "entry_day": "2017-09-18",
+      "exit_day": "2017-09-26",
+      "r": -1.182,
+      "risk_pct": 4.67,
+      "net_pct": -5.52,
+      "sessions_held": 7,
+      "equity_pct": -0.177,
       "is_add": false
     },
     {
@@ -12521,37 +12364,13 @@
       "is_add": false
     },
     {
-      "symbol": "IBULLSLTD",
-      "strategy": "minervini_breakout",
-      "entry_day": "2017-12-05",
-      "exit_day": "2017-12-06",
-      "r": 0.111,
-      "risk_pct": 7.0,
-      "net_pct": 0.777,
-      "sessions_held": 2,
-      "equity_pct": 0.017,
-      "is_add": false
-    },
-    {
-      "symbol": "PANAMAPET",
-      "strategy": "minervini_breakout",
-      "entry_day": "2017-12-06",
-      "exit_day": "2017-12-06",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
       "symbol": "KRBL",
       "strategy": "nr7_release",
       "entry_day": "2017-01-12",
       "exit_day": "2018-03-08",
-      "r": 14.434,
+      "r": 14.433,
       "risk_pct": 6.15,
-      "net_pct": 88.77,
+      "net_pct": 88.764,
       "sessions_held": 286,
       "equity_pct": 2.165,
       "is_add": false
@@ -12647,7 +12466,7 @@
       "exit_day": "2018-02-08",
       "r": 23.56,
       "risk_pct": 5.9,
-      "net_pct": 139.003,
+      "net_pct": 139.002,
       "sessions_held": 247,
       "equity_pct": 3.534,
       "is_add": false
@@ -12659,7 +12478,7 @@
       "exit_day": "2018-02-08",
       "r": 23.56,
       "risk_pct": 5.9,
-      "net_pct": 139.003,
+      "net_pct": 139.002,
       "sessions_held": 247,
       "equity_pct": 3.534,
       "is_add": false
@@ -12671,7 +12490,7 @@
       "exit_day": "2018-02-08",
       "r": 23.56,
       "risk_pct": 5.9,
-      "net_pct": 139.003,
+      "net_pct": 139.002,
       "sessions_held": 247,
       "equity_pct": 3.534,
       "is_add": false
@@ -12881,6 +12700,18 @@
       "is_add": false
     },
     {
+      "symbol": "BAJAJELEC",
+      "strategy": "nr7_release",
+      "entry_day": "2017-03-07",
+      "exit_day": "2018-10-30",
+      "r": 14.233,
+      "risk_pct": 5.9,
+      "net_pct": 83.974,
+      "sessions_held": 409,
+      "equity_pct": 2.135,
+      "is_add": true
+    },
+    {
       "symbol": "WHIRLPOOL",
       "strategy": "pullback_ema21",
       "entry_day": "2017-03-09",
@@ -12890,6 +12721,18 @@
       "net_pct": 49.889,
       "sessions_held": 387,
       "equity_pct": 1.266,
+      "is_add": false
+    },
+    {
+      "symbol": "ASTRAL",
+      "strategy": "pocket_pivot",
+      "entry_day": "2017-03-15",
+      "exit_day": "2018-10-09",
+      "r": 10.561,
+      "risk_pct": 5.9,
+      "net_pct": 62.309,
+      "sessions_held": 390,
+      "equity_pct": 1.584,
       "is_add": false
     },
     {
@@ -12917,30 +12760,6 @@
       "is_add": false
     },
     {
-      "symbol": "SUNTECK",
-      "strategy": "pullback_ema21",
-      "entry_day": "2017-05-16",
-      "exit_day": "2018-10-05",
-      "r": 14.271,
-      "risk_pct": 6.21,
-      "net_pct": 88.625,
-      "sessions_held": 347,
-      "equity_pct": 2.141,
-      "is_add": false
-    },
-    {
-      "symbol": "LMW",
-      "strategy": "minervini_breakout",
-      "entry_day": "2017-07-04",
-      "exit_day": "2018-09-24",
-      "r": 0.914,
-      "risk_pct": 6.68,
-      "net_pct": 6.104,
-      "sessions_held": 305,
-      "equity_pct": 0.137,
-      "is_add": false
-    },
-    {
       "symbol": "ANDHRSUGAR",
       "strategy": "pullback_ema21",
       "entry_day": "2017-09-27",
@@ -12953,15 +12772,15 @@
       "is_add": false
     },
     {
-      "symbol": "BAJAJHLDNG",
+      "symbol": "LTM",
       "strategy": "pullback_ema21",
-      "entry_day": "2017-09-28",
-      "exit_day": "2018-02-06",
-      "r": 0.423,
-      "risk_pct": 6.31,
-      "net_pct": 2.669,
-      "sessions_held": 90,
-      "equity_pct": 0.063,
+      "entry_day": "2017-09-27",
+      "exit_day": "2019-07-23",
+      "r": 10.994,
+      "risk_pct": 4.33,
+      "net_pct": 47.606,
+      "sessions_held": 448,
+      "equity_pct": 1.649,
       "is_add": false
     },
     {
@@ -13489,7 +13308,7 @@
       "risk_pct": 5.61,
       "net_pct": -6.452,
       "sessions_held": 13,
-      "equity_pct": -0.173,
+      "equity_pct": -0.172,
       "is_add": false
     },
     {
@@ -13778,7 +13597,7 @@
       "net_pct": -7.833,
       "sessions_held": 4,
       "equity_pct": -0.168,
-      "is_add": false
+      "is_add": true
     },
     {
       "symbol": "GAEL",
@@ -13826,6 +13645,18 @@
       "net_pct": -9.926,
       "sessions_held": 3,
       "equity_pct": -0.213,
+      "is_add": false
+    },
+    {
+      "symbol": "ORIENTHOT",
+      "strategy": "nr7_release",
+      "entry_day": "2018-02-09",
+      "exit_day": "2018-02-23",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 10,
+      "equity_pct": -0.168,
       "is_add": false
     },
     {
@@ -14449,7 +14280,7 @@
       "risk_pct": 5.28,
       "net_pct": -6.494,
       "sessions_held": 3,
-      "equity_pct": -0.184,
+      "equity_pct": -0.185,
       "is_add": false
     },
     {
@@ -15023,7 +14854,7 @@
       "exit_day": "2020-03-13",
       "r": 5.415,
       "risk_pct": 3.81,
-      "net_pct": 20.63,
+      "net_pct": 20.629,
       "sessions_held": 44,
       "equity_pct": 0.812,
       "is_add": false
@@ -15597,11 +15428,11 @@
       "strategy": "squeeze_release",
       "entry_day": "2020-07-08",
       "exit_day": "2022-05-26",
-      "r": 6.436,
+      "r": 6.437,
       "risk_pct": 7.0,
-      "net_pct": 45.051,
+      "net_pct": 45.057,
       "sessions_held": 470,
-      "equity_pct": 0.965,
+      "equity_pct": 0.966,
       "is_add": false
     },
     {
@@ -15935,7 +15766,7 @@
       "exit_day": "2020-11-02",
       "r": -0.076,
       "risk_pct": 7.0,
-      "net_pct": -0.529,
+      "net_pct": -0.534,
       "sessions_held": 34,
       "equity_pct": -0.011,
       "is_add": false
@@ -16541,18 +16372,6 @@
       "is_add": false
     },
     {
-      "symbol": "MANALIPETC",
-      "strategy": "pullback_ema21",
-      "entry_day": "2020-12-28",
-      "exit_day": "2021-01-25",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 21,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
       "symbol": "DOLLAR",
       "strategy": "nr7_release",
       "entry_day": "2020-12-29",
@@ -16577,6 +16396,18 @@
       "is_add": true
     },
     {
+      "symbol": "MAHSEAMLES",
+      "strategy": "nr7_release",
+      "entry_day": "2020-12-14",
+      "exit_day": "2021-01-27",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 31,
+      "equity_pct": -0.168,
+      "is_add": false
+    },
+    {
       "symbol": "DOLLAR",
       "strategy": "pullback_ema21",
       "entry_day": "2020-12-24",
@@ -16613,6 +16444,30 @@
       "is_add": true
     },
     {
+      "symbol": "MAHSCOOTER",
+      "strategy": "pullback_ema21",
+      "entry_day": "2021-01-25",
+      "exit_day": "2021-01-27",
+      "r": -1.142,
+      "risk_pct": 5.95,
+      "net_pct": -6.795,
+      "sessions_held": 2,
+      "equity_pct": -0.171,
+      "is_add": false
+    },
+    {
+      "symbol": "MAHSCOOTER",
+      "strategy": "pocket_pivot",
+      "entry_day": "2021-01-25",
+      "exit_day": "2021-01-27",
+      "r": -1.127,
+      "risk_pct": 6.61,
+      "net_pct": -7.449,
+      "sessions_held": 2,
+      "equity_pct": -0.169,
+      "is_add": false
+    },
+    {
       "symbol": "MANINDS",
       "strategy": "pocket_pivot",
       "entry_day": "2021-01-18",
@@ -16623,18 +16478,6 @@
       "sessions_held": 9,
       "equity_pct": -0.168,
       "is_add": true
-    },
-    {
-      "symbol": "MAHSCOOTER",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-01-22",
-      "exit_day": "2021-02-01",
-      "r": -1.145,
-      "risk_pct": 5.81,
-      "net_pct": -6.652,
-      "sessions_held": 6,
-      "equity_pct": -0.172,
-      "is_add": false
     },
     {
       "symbol": "GOLDIAM",
@@ -16695,6 +16538,18 @@
       "sessions_held": 33,
       "equity_pct": -0.168,
       "is_add": false
+    },
+    {
+      "symbol": "BANCOINDIA",
+      "strategy": "nr7_release",
+      "entry_day": "2021-02-09",
+      "exit_day": "2021-02-11",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 3,
+      "equity_pct": -0.168,
+      "is_add": true
     },
     {
       "symbol": "ANANTRAJ",
@@ -16805,18 +16660,6 @@
       "is_add": false
     },
     {
-      "symbol": "BANCOINDIA",
-      "strategy": "pocket_pivot",
-      "entry_day": "2021-02-04",
-      "exit_day": "2021-03-18",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 30,
-      "equity_pct": -0.168,
-      "is_add": true
-    },
-    {
       "symbol": "SUBROS",
       "strategy": "pocket_pivot",
       "entry_day": "2020-12-09",
@@ -16843,18 +16686,6 @@
     {
       "symbol": "LUMAXTECH",
       "strategy": "pocket_pivot",
-      "entry_day": "2021-03-18",
-      "exit_day": "2021-03-19",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 2,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "LUMAXTECH",
-      "strategy": "nr7_release",
       "entry_day": "2021-03-18",
       "exit_day": "2021-03-19",
       "r": -1.119,
@@ -16937,18 +16768,6 @@
       "is_add": false
     },
     {
-      "symbol": "POKARNA",
-      "strategy": "pocket_pivot",
-      "entry_day": "2021-04-05",
-      "exit_day": "2021-04-05",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 1,
-      "equity_pct": -0.168,
-      "is_add": true
-    },
-    {
       "symbol": "HITECH",
       "strategy": "pocket_pivot",
       "entry_day": "2021-03-30",
@@ -16961,16 +16780,16 @@
       "is_add": false
     },
     {
-      "symbol": "KIRLFER",
-      "strategy": "minervini_breakout",
-      "entry_day": "2021-04-06",
+      "symbol": "SHAKTIPUMP",
+      "strategy": "pullback_ema21",
+      "entry_day": "2021-03-31",
       "exit_day": "2021-04-12",
       "r": -1.119,
       "risk_pct": 7.0,
       "net_pct": -7.833,
-      "sessions_held": 5,
+      "sessions_held": 8,
       "equity_pct": -0.168,
-      "is_add": true
+      "is_add": false
     },
     {
       "symbol": "PAISALO",
@@ -17005,6 +16824,18 @@
       "risk_pct": 7.0,
       "net_pct": -7.833,
       "sessions_held": 1,
+      "equity_pct": -0.168,
+      "is_add": false
+    },
+    {
+      "symbol": "HINDWAREAP",
+      "strategy": "minervini_breakout",
+      "entry_day": "2021-04-12",
+      "exit_day": "2021-04-13",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 2,
       "equity_pct": -0.168,
       "is_add": false
     },
@@ -17069,86 +16900,26 @@
       "is_add": false
     },
     {
-      "symbol": "KIRLOSBROS",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-04-19",
-      "exit_day": "2021-06-08",
-      "r": 16.499,
-      "risk_pct": 7.0,
-      "net_pct": 115.493,
-      "sessions_held": 35,
-      "equity_pct": 2.475,
-      "is_add": false
-    },
-    {
-      "symbol": "AVTNPL",
-      "strategy": "nr7_release",
-      "entry_day": "2021-06-08",
-      "exit_day": "2021-06-18",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 9,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "EXPLEOSOL",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-06-08",
-      "exit_day": "2021-07-15",
-      "r": 13.934,
-      "risk_pct": 7.0,
-      "net_pct": 97.538,
-      "sessions_held": 28,
-      "equity_pct": 2.09,
-      "is_add": false
-    },
-    {
-      "symbol": "AURUM",
-      "strategy": "nr7_release",
-      "entry_day": "2021-07-15",
-      "exit_day": "2021-08-05",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 15,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "GMBREW",
-      "strategy": "nr7_release",
-      "entry_day": "2021-06-18",
-      "exit_day": "2021-08-06",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 35,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "HPL",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-08-06",
-      "exit_day": "2021-08-10",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 3,
-      "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "PDMJEPAPER",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-08-10",
-      "exit_day": "2021-08-10",
+      "symbol": "SPIC",
+      "strategy": "minervini_breakout",
+      "entry_day": "2021-05-12",
+      "exit_day": "2021-05-12",
       "r": -1.119,
       "risk_pct": 7.0,
       "net_pct": -7.833,
       "sessions_held": 1,
+      "equity_pct": -0.168,
+      "is_add": false
+    },
+    {
+      "symbol": "SAKSOFT",
+      "strategy": "pocket_pivot",
+      "entry_day": "2021-05-14",
+      "exit_day": "2021-05-26",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 9,
       "equity_pct": -0.168,
       "is_add": false
     },
@@ -17339,7 +17110,7 @@
       "exit_day": "2021-12-21",
       "r": 3.31,
       "risk_pct": 7.0,
-      "net_pct": 23.169,
+      "net_pct": 23.168,
       "sessions_held": 245,
       "equity_pct": 0.496,
       "is_add": false
@@ -17351,7 +17122,7 @@
       "exit_day": "2022-01-27",
       "r": 23.125,
       "risk_pct": 5.78,
-      "net_pct": 133.664,
+      "net_pct": 133.665,
       "sessions_held": 271,
       "equity_pct": 3.469,
       "is_add": false
@@ -17465,13 +17236,25 @@
       "is_add": false
     },
     {
+      "symbol": "THERMAX",
+      "strategy": "pullback_ema21",
+      "entry_day": "2021-01-28",
+      "exit_day": "2022-12-26",
+      "r": 15.265,
+      "risk_pct": 5.33,
+      "net_pct": 81.362,
+      "sessions_held": 474,
+      "equity_pct": 2.29,
+      "is_add": false
+    },
+    {
       "symbol": "OLECTRA",
       "strategy": "pullback_ema21",
       "entry_day": "2021-02-01",
       "exit_day": "2022-05-12",
-      "r": 78.005,
+      "r": 78.004,
       "risk_pct": 7.0,
-      "net_pct": 546.035,
+      "net_pct": 546.03,
       "sessions_held": 316,
       "equity_pct": 11.701,
       "is_add": false
@@ -17489,27 +17272,27 @@
       "is_add": false
     },
     {
-      "symbol": "ACE",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-02-02",
-      "exit_day": "2023-02-06",
-      "r": 7.754,
-      "risk_pct": 7.0,
-      "net_pct": 54.275,
-      "sessions_held": 500,
-      "equity_pct": 1.163,
-      "is_add": false
-    },
-    {
       "symbol": "OLECTRA",
       "strategy": "pocket_pivot",
       "entry_day": "2021-02-02",
       "exit_day": "2022-05-12",
-      "r": 70.802,
+      "r": 70.798,
       "risk_pct": 7.0,
-      "net_pct": 495.617,
+      "net_pct": 495.589,
       "sessions_held": 315,
       "equity_pct": 10.62,
+      "is_add": true
+    },
+    {
+      "symbol": "THERMAX",
+      "strategy": "nr7_release",
+      "entry_day": "2021-02-12",
+      "exit_day": "2022-12-26",
+      "r": 7.208,
+      "risk_pct": 7.0,
+      "net_pct": 50.456,
+      "sessions_held": 463,
+      "equity_pct": 1.081,
       "is_add": true
     },
     {
@@ -17531,21 +17314,9 @@
       "exit_day": "2023-03-01",
       "r": 33.716,
       "risk_pct": 7.0,
-      "net_pct": 236.015,
+      "net_pct": 236.014,
       "sessions_held": 500,
       "equity_pct": 5.057,
-      "is_add": false
-    },
-    {
-      "symbol": "KSB",
-      "strategy": "pullback_ema21",
-      "entry_day": "2021-03-22",
-      "exit_day": "2023-03-24",
-      "r": 8.285,
-      "risk_pct": 7.0,
-      "net_pct": 57.995,
-      "sessions_held": 500,
-      "equity_pct": 1.243,
       "is_add": false
     },
     {
@@ -17561,28 +17332,16 @@
       "is_add": false
     },
     {
-      "symbol": "KSB",
-      "strategy": "minervini_breakout",
-      "entry_day": "2021-03-24",
-      "exit_day": "2023-03-28",
-      "r": 7.567,
+      "symbol": "FILATEX",
+      "strategy": "pocket_pivot",
+      "entry_day": "2021-04-05",
+      "exit_day": "2022-12-26",
+      "r": 5.239,
       "risk_pct": 7.0,
-      "net_pct": 52.967,
-      "sessions_held": 500,
-      "equity_pct": 1.135,
-      "is_add": true
-    },
-    {
-      "symbol": "APOLLOPIPE",
-      "strategy": "minervini_breakout",
-      "entry_day": "2021-04-01",
-      "exit_day": "2022-06-17",
-      "r": 9.402,
-      "risk_pct": 7.0,
-      "net_pct": 65.811,
-      "sessions_held": 301,
-      "equity_pct": 1.41,
-      "is_add": true
+      "net_pct": 36.671,
+      "sessions_held": 430,
+      "equity_pct": 0.786,
+      "is_add": false
     },
     {
       "symbol": "TNPETRO",
@@ -17609,27 +17368,15 @@
       "is_add": false
     },
     {
-      "symbol": "360ONE",
-      "strategy": "earnings_drift",
-      "entry_day": "2021-08-05",
-      "exit_day": "2021-12-16",
-      "r": -1.086,
+      "symbol": "TNPETRO",
+      "strategy": "pocket_pivot",
+      "entry_day": "2021-04-15",
+      "exit_day": "2022-02-25",
+      "r": 10.782,
       "risk_pct": 7.0,
-      "net_pct": -7.602,
-      "sessions_held": 91,
-      "equity_pct": -0.163,
-      "is_add": false
-    },
-    {
-      "symbol": "GLOBUSSPR",
-      "strategy": "nr7_release",
-      "entry_day": "2021-08-11",
-      "exit_day": "2022-05-26",
-      "r": 8.591,
-      "risk_pct": 7.0,
-      "net_pct": 60.137,
-      "sessions_held": 196,
-      "equity_pct": 1.289,
+      "net_pct": 75.477,
+      "sessions_held": 218,
+      "equity_pct": 1.617,
       "is_add": false
     },
     {
@@ -17666,6 +17413,18 @@
       "net_pct": 44.994,
       "sessions_held": 500,
       "equity_pct": 0.964,
+      "is_add": false
+    },
+    {
+      "symbol": "GOODLUCK",
+      "strategy": "pullback_ema21",
+      "entry_day": "2021-08-27",
+      "exit_day": "2022-05-10",
+      "r": 1.932,
+      "risk_pct": 7.0,
+      "net_pct": 13.525,
+      "sessions_held": 173,
+      "equity_pct": 0.29,
       "is_add": false
     },
     {
@@ -18325,7 +18084,7 @@
       "risk_pct": 7.0,
       "net_pct": -8.19,
       "sessions_held": 3,
-      "equity_pct": -0.175,
+      "equity_pct": -0.176,
       "is_add": false
     },
     {
@@ -19489,7 +19248,7 @@
       "risk_pct": 7.0,
       "net_pct": -10.57,
       "sessions_held": 6,
-      "equity_pct": -0.227,
+      "equity_pct": -0.226,
       "is_add": false
     },
     {
@@ -19773,9 +19532,9 @@
       "strategy": "pullback_ema21",
       "entry_day": "2022-11-03",
       "exit_day": "2023-11-08",
-      "r": 5.975,
+      "r": 5.972,
       "risk_pct": 7.0,
-      "net_pct": 41.822,
+      "net_pct": 41.801,
       "sessions_held": 252,
       "equity_pct": 0.896,
       "is_add": false
@@ -19785,9 +19544,9 @@
       "strategy": "nr7_release",
       "entry_day": "2022-11-03",
       "exit_day": "2023-11-08",
-      "r": 5.975,
+      "r": 5.972,
       "risk_pct": 7.0,
-      "net_pct": 41.822,
+      "net_pct": 41.801,
       "sessions_held": 252,
       "equity_pct": 0.896,
       "is_add": false
@@ -20549,15 +20308,15 @@
       "is_add": true
     },
     {
-      "symbol": "DHANBANK",
-      "strategy": "pocket_pivot",
+      "symbol": "ASHIANA",
+      "strategy": "pullback_ema21",
       "entry_day": "2023-07-13",
       "exit_day": "2023-07-13",
-      "r": -1.122,
-      "risk_pct": 6.82,
-      "net_pct": -7.652,
+      "r": -1.136,
+      "risk_pct": 6.18,
+      "net_pct": -7.02,
       "sessions_held": 1,
-      "equity_pct": -0.168,
+      "equity_pct": -0.17,
       "is_add": false
     },
     {
@@ -20769,9 +20528,9 @@
       "strategy": "nr7_release",
       "entry_day": "2023-05-26",
       "exit_day": "2024-03-01",
-      "r": 75.715,
+      "r": 75.714,
       "risk_pct": 5.1,
-      "net_pct": 386.147,
+      "net_pct": 386.141,
       "sessions_held": 150,
       "equity_pct": 11.357,
       "is_add": false
@@ -20981,6 +20740,30 @@
       "is_add": false
     },
     {
+      "symbol": "YUKEN",
+      "strategy": "nr7_release",
+      "entry_day": "2024-05-17",
+      "exit_day": "2024-05-27",
+      "r": -1.086,
+      "risk_pct": 7.0,
+      "net_pct": -7.602,
+      "sessions_held": 6,
+      "equity_pct": -0.163,
+      "is_add": false
+    },
+    {
+      "symbol": "SOLEX",
+      "strategy": "minervini_breakout",
+      "entry_day": "2024-05-27",
+      "exit_day": "2024-05-29",
+      "r": -1.583,
+      "risk_pct": 7.0,
+      "net_pct": -11.081,
+      "sessions_held": 3,
+      "equity_pct": -0.237,
+      "is_add": true
+    },
+    {
       "symbol": "RIR",
       "strategy": "pullback_ema21",
       "entry_day": "2024-05-14",
@@ -20991,6 +20774,18 @@
       "sessions_held": 13,
       "equity_pct": -0.168,
       "is_add": true
+    },
+    {
+      "symbol": "YUKEN",
+      "strategy": "pullback_ema21",
+      "entry_day": "2024-05-29",
+      "exit_day": "2024-05-31",
+      "r": -1.086,
+      "risk_pct": 7.0,
+      "net_pct": -7.602,
+      "sessions_held": 3,
+      "equity_pct": -0.163,
+      "is_add": false
     },
     {
       "symbol": "AFSL",
@@ -21015,18 +20810,6 @@
       "sessions_held": 13,
       "equity_pct": -0.179,
       "is_add": false
-    },
-    {
-      "symbol": "JSLL",
-      "strategy": "pullback_ema21",
-      "entry_day": "2024-05-09",
-      "exit_day": "2024-06-05",
-      "r": -1.211,
-      "risk_pct": 7.0,
-      "net_pct": -8.477,
-      "sessions_held": 19,
-      "equity_pct": -0.182,
-      "is_add": true
     },
     {
       "symbol": "RIR",
@@ -21077,6 +20860,18 @@
       "is_add": false
     },
     {
+      "symbol": "GRPLTD",
+      "strategy": "minervini_breakout",
+      "entry_day": "2024-07-02",
+      "exit_day": "2024-07-02",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 1,
+      "equity_pct": -0.168,
+      "is_add": false
+    },
+    {
       "symbol": "MARINE",
       "strategy": "pullback_ema21",
       "entry_day": "2023-05-18",
@@ -21101,18 +20896,6 @@
       "is_add": false
     },
     {
-      "symbol": "GPTINFRA",
-      "strategy": "minervini_breakout",
-      "entry_day": "2024-07-11",
-      "exit_day": "2024-07-18",
-      "r": -1.582,
-      "risk_pct": 7.0,
-      "net_pct": -11.074,
-      "sessions_held": 5,
-      "equity_pct": -0.237,
-      "is_add": true
-    },
-    {
       "symbol": "VHL",
       "strategy": "pocket_pivot",
       "entry_day": "2024-07-12",
@@ -21123,18 +20906,6 @@
       "sessions_held": 5,
       "equity_pct": -0.168,
       "is_add": false
-    },
-    {
-      "symbol": "EIMCOELECO",
-      "strategy": "minervini_breakout",
-      "entry_day": "2024-07-18",
-      "exit_day": "2024-08-14",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 20,
-      "equity_pct": -0.168,
-      "is_add": true
     },
     {
       "symbol": "EIMCOELECO",
@@ -21170,31 +20941,79 @@
       "net_pct": -7.833,
       "sessions_held": 6,
       "equity_pct": -0.168,
-      "is_add": false
+      "is_add": true
     },
     {
-      "symbol": "INDOCO",
-      "strategy": "pocket_pivot",
-      "entry_day": "2024-09-06",
-      "exit_day": "2024-09-27",
-      "r": -1.155,
-      "risk_pct": 5.45,
-      "net_pct": -6.295,
-      "sessions_held": 16,
-      "equity_pct": -0.173,
-      "is_add": false
-    },
-    {
-      "symbol": "LOTUSCHO",
-      "strategy": "nr7_release",
-      "entry_day": "2024-10-01",
-      "exit_day": "2024-10-15",
+      "symbol": "IGPL",
+      "strategy": "minervini_breakout",
+      "entry_day": "2024-08-21",
+      "exit_day": "2024-09-09",
       "r": -1.119,
       "risk_pct": 7.0,
       "net_pct": -7.833,
-      "sessions_held": 10,
+      "sessions_held": 14,
       "equity_pct": -0.168,
       "is_add": false
+    },
+    {
+      "symbol": "JSLL",
+      "strategy": "minervini_breakout",
+      "entry_day": "2024-09-09",
+      "exit_day": "2024-09-13",
+      "r": -1.123,
+      "risk_pct": 6.8,
+      "net_pct": -7.636,
+      "sessions_held": 5,
+      "equity_pct": -0.168,
+      "is_add": true
+    },
+    {
+      "symbol": "SPORTKING",
+      "strategy": "high_tight_flag",
+      "entry_day": "2024-09-13",
+      "exit_day": "2024-09-13",
+      "r": -1.086,
+      "risk_pct": 7.0,
+      "net_pct": -7.602,
+      "sessions_held": 1,
+      "equity_pct": -0.163,
+      "is_add": false
+    },
+    {
+      "symbol": "GARGI",
+      "strategy": "pullback_ema21",
+      "entry_day": "2024-09-16",
+      "exit_day": "2024-09-18",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 3,
+      "equity_pct": -0.168,
+      "is_add": false
+    },
+    {
+      "symbol": "INDOTHAI",
+      "strategy": "nr7_release",
+      "entry_day": "2024-09-18",
+      "exit_day": "2024-09-19",
+      "r": -0.341,
+      "risk_pct": 7.0,
+      "net_pct": -2.387,
+      "sessions_held": 2,
+      "equity_pct": -0.051,
+      "is_add": false
+    },
+    {
+      "symbol": "GPTINFRA",
+      "strategy": "pocket_pivot",
+      "entry_day": "2024-07-03",
+      "exit_day": "2024-10-07",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 66,
+      "equity_pct": -0.168,
+      "is_add": true
     },
     {
       "symbol": "GPTINFRA",
@@ -21206,6 +21025,18 @@
       "net_pct": 15.127,
       "sessions_held": 108,
       "equity_pct": 0.324,
+      "is_add": false
+    },
+    {
+      "symbol": "SRHHYPOLTD",
+      "strategy": "pocket_pivot",
+      "entry_day": "2024-10-07",
+      "exit_day": "2024-10-22",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 12,
+      "equity_pct": -0.168,
       "is_add": false
     },
     {
@@ -21278,18 +21109,6 @@
       "net_pct": 83.481,
       "sessions_held": 346,
       "equity_pct": 2.664,
-      "is_add": false
-    },
-    {
-      "symbol": "WINDLAS",
-      "strategy": "nr7_release",
-      "entry_day": "2024-10-16",
-      "exit_day": "2024-10-28",
-      "r": -1.119,
-      "risk_pct": 7.0,
-      "net_pct": -7.833,
-      "sessions_held": 9,
-      "equity_pct": -0.168,
       "is_add": false
     },
     {
@@ -21561,9 +21380,9 @@
       "strategy": "pullback_ema21",
       "entry_day": "2023-09-15",
       "exit_day": "2025-09-25",
-      "r": 14.541,
+      "r": 14.542,
       "risk_pct": 6.64,
-      "net_pct": 96.553,
+      "net_pct": 96.557,
       "sessions_held": 500,
       "equity_pct": 2.181,
       "is_add": false
@@ -21665,27 +21484,39 @@
       "is_add": false
     },
     {
-      "symbol": "DIACABS",
-      "strategy": "minervini_breakout",
+      "symbol": "HONDAPOWER",
+      "strategy": "nr7_release",
       "entry_day": "2024-06-26",
-      "exit_day": "2025-01-16",
-      "r": 5.437,
-      "risk_pct": 4.94,
-      "net_pct": 26.858,
-      "sessions_held": 141,
-      "equity_pct": 0.816,
+      "exit_day": "2024-11-13",
+      "r": 0.032,
+      "risk_pct": 7.0,
+      "net_pct": 0.225,
+      "sessions_held": 98,
+      "equity_pct": 0.005,
       "is_add": false
     },
     {
-      "symbol": "RANEHOLDIN",
+      "symbol": "JSLL",
       "strategy": "pullback_ema21",
-      "entry_day": "2024-08-14",
-      "exit_day": "2025-01-10",
-      "r": 0.881,
+      "entry_day": "2024-09-19",
+      "exit_day": "2025-02-19",
+      "r": 3.39,
       "risk_pct": 7.0,
-      "net_pct": 6.167,
-      "sessions_held": 103,
-      "equity_pct": 0.132,
+      "net_pct": 23.728,
+      "sessions_held": 107,
+      "equity_pct": 0.508,
+      "is_add": true
+    },
+    {
+      "symbol": "MONTECARLO",
+      "strategy": "minervini_breakout",
+      "entry_day": "2024-12-05",
+      "exit_day": "2024-12-13",
+      "r": -1.119,
+      "risk_pct": 7.0,
+      "net_pct": -7.833,
+      "sessions_held": 7,
+      "equity_pct": -0.168,
       "is_add": false
     },
     {
@@ -21698,18 +21529,6 @@
       "net_pct": -7.833,
       "sessions_held": 7,
       "equity_pct": -0.168,
-      "is_add": true
-    },
-    {
-      "symbol": "MONTECARLO",
-      "strategy": "minervini_breakout",
-      "entry_day": "2024-12-04",
-      "exit_day": "2024-12-24",
-      "r": -0.59,
-      "risk_pct": 7.0,
-      "net_pct": -4.128,
-      "sessions_held": 15,
-      "equity_pct": -0.088,
       "is_add": false
     },
     {
@@ -21806,18 +21625,6 @@
       "net_pct": -7.833,
       "sessions_held": 2,
       "equity_pct": -0.168,
-      "is_add": false
-    },
-    {
-      "symbol": "CLSEL",
-      "strategy": "pocket_pivot",
-      "entry_day": "2025-06-06",
-      "exit_day": "2025-06-13",
-      "r": -1.267,
-      "risk_pct": 7.0,
-      "net_pct": -8.869,
-      "sessions_held": 6,
-      "equity_pct": -0.19,
       "is_add": false
     },
     {
@@ -22244,11 +22051,11 @@
       "symbol": "MBAPL",
       "strategy": "pullback_ema21",
       "entry_day": "2025-06-23",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 1.806,
       "risk_pct": 7.0,
       "net_pct": 12.641,
-      "sessions_held": 312,
+      "sessions_held": 316,
       "equity_pct": 0.271,
       "is_add": false
     },
@@ -22283,7 +22090,7 @@
       "exit_day": "2026-02-25",
       "r": 3.985,
       "risk_pct": 7.0,
-      "net_pct": 27.898,
+      "net_pct": 27.895,
       "sessions_held": 166,
       "equity_pct": 0.598,
       "is_add": false
@@ -22413,9 +22220,9 @@
       "strategy": "nr7_release",
       "entry_day": "2025-07-10",
       "exit_day": "2025-07-28",
-      "r": -0.499,
+      "r": -0.5,
       "risk_pct": 5.61,
-      "net_pct": -2.799,
+      "net_pct": -2.803,
       "sessions_held": 13,
       "equity_pct": -0.075,
       "is_add": false
@@ -22442,18 +22249,6 @@
       "net_pct": 2.239,
       "sessions_held": 16,
       "equity_pct": 0.063,
-      "is_add": false
-    },
-    {
-      "symbol": "MOLDTKPAC",
-      "strategy": "nr7_release",
-      "entry_day": "2025-07-11",
-      "exit_day": "2025-11-11",
-      "r": 0.606,
-      "risk_pct": 5.62,
-      "net_pct": 3.407,
-      "sessions_held": 83,
-      "equity_pct": 0.091,
       "is_add": false
     },
     {
@@ -22574,6 +22369,18 @@
       "net_pct": -0.821,
       "sessions_held": 13,
       "equity_pct": -0.041,
+      "is_add": false
+    },
+    {
+      "symbol": "MOLDTKPAC",
+      "strategy": "nr7_release",
+      "entry_day": "2025-07-22",
+      "exit_day": "2025-10-31",
+      "r": 0.308,
+      "risk_pct": 5.25,
+      "net_pct": 1.617,
+      "sessions_held": 70,
+      "equity_pct": 0.046,
       "is_add": false
     },
     {
@@ -23161,7 +22968,7 @@
       "risk_pct": 1.7,
       "net_pct": -2.329,
       "sessions_held": 5,
-      "equity_pct": -0.205,
+      "equity_pct": -0.206,
       "is_add": false
     },
     {
@@ -23365,7 +23172,7 @@
       "risk_pct": 4.98,
       "net_pct": -5.827,
       "sessions_held": 8,
-      "equity_pct": -0.176,
+      "equity_pct": -0.175,
       "is_add": false
     },
     {
@@ -23408,11 +23215,11 @@
       "symbol": "AAYUSHBULL",
       "strategy": "pullback_ema21",
       "entry_day": "2025-09-10",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 2.682,
       "risk_pct": 4.41,
       "net_pct": 11.826,
-      "sessions_held": 254,
+      "sessions_held": 258,
       "equity_pct": 0.402,
       "is_add": false
     },
@@ -23420,11 +23227,11 @@
       "symbol": "CNCRD",
       "strategy": "pullback_ema21",
       "entry_day": "2025-10-01",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 6.884,
       "risk_pct": 7.0,
       "net_pct": 48.187,
-      "sessions_held": 239,
+      "sessions_held": 243,
       "equity_pct": 1.033,
       "is_add": false
     },
@@ -23432,11 +23239,11 @@
       "symbol": "AAYUSHBULL",
       "strategy": "nr7_release",
       "entry_day": "2025-10-03",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 2.331,
       "risk_pct": 4.59,
       "net_pct": 10.701,
-      "sessions_held": 238,
+      "sessions_held": 242,
       "equity_pct": 0.35,
       "is_add": true
     },
@@ -23504,11 +23311,11 @@
       "symbol": "THANGAMAYL",
       "strategy": "earnings_drift",
       "entry_day": "2025-11-06",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 3.006,
       "risk_pct": 7.0,
       "net_pct": 21.043,
-      "sessions_held": 219,
+      "sessions_held": 224,
       "equity_pct": 0.451,
       "is_add": false
     },
@@ -23516,11 +23323,11 @@
       "symbol": "THANGAMAYL",
       "strategy": "earnings_gap_hold",
       "entry_day": "2025-11-07",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 2.777,
       "risk_pct": 7.0,
       "net_pct": 19.439,
-      "sessions_held": 218,
+      "sessions_held": 223,
       "equity_pct": 0.417,
       "is_add": true
     },
@@ -23540,11 +23347,11 @@
       "symbol": "RICOAUTO",
       "strategy": "minervini_breakout",
       "entry_day": "2025-11-14",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 4.011,
       "risk_pct": 7.0,
       "net_pct": 28.074,
-      "sessions_held": 213,
+      "sessions_held": 218,
       "equity_pct": 0.602,
       "is_add": false
     },
@@ -23552,11 +23359,11 @@
       "symbol": "RICOAUTO",
       "strategy": "pullback_ema21",
       "entry_day": "2025-11-14",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 4.011,
       "risk_pct": 7.0,
       "net_pct": 28.074,
-      "sessions_held": 213,
+      "sessions_held": 218,
       "equity_pct": 0.602,
       "is_add": false
     },
@@ -23564,11 +23371,11 @@
       "symbol": "RICOAUTO",
       "strategy": "pocket_pivot",
       "entry_day": "2025-11-14",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 4.011,
       "risk_pct": 7.0,
       "net_pct": 28.074,
-      "sessions_held": 213,
+      "sessions_held": 218,
       "equity_pct": 0.602,
       "is_add": false
     },
@@ -23612,11 +23419,11 @@
       "symbol": "HAPPYFORGE",
       "strategy": "pullback_ema21",
       "entry_day": "2025-12-10",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 1.419,
       "risk_pct": 5.48,
       "net_pct": 7.779,
-      "sessions_held": 195,
+      "sessions_held": 199,
       "equity_pct": 0.213,
       "is_add": false
     },
@@ -23660,11 +23467,11 @@
       "symbol": "TMB",
       "strategy": "pullback_ema21",
       "entry_day": "2025-12-16",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 1.855,
       "risk_pct": 5.54,
       "net_pct": 10.276,
-      "sessions_held": 190,
+      "sessions_held": 195,
       "equity_pct": 0.278,
       "is_add": false
     },
@@ -23687,7 +23494,7 @@
       "exit_day": "2026-01-20",
       "r": 0.159,
       "risk_pct": 5.34,
-      "net_pct": 0.848,
+      "net_pct": 0.849,
       "sessions_held": 15,
       "equity_pct": 0.024,
       "is_add": false
@@ -23708,11 +23515,11 @@
       "symbol": "TMB",
       "strategy": "pocket_pivot",
       "entry_day": "2026-01-02",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 1.642,
       "risk_pct": 4.8,
       "net_pct": 7.884,
-      "sessions_held": 178,
+      "sessions_held": 183,
       "equity_pct": 0.246,
       "is_add": true
     },
@@ -23996,11 +23803,11 @@
       "symbol": "INDOTECH",
       "strategy": "nr7_release",
       "entry_day": "2026-06-22",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 4.606,
       "risk_pct": 7.0,
       "net_pct": 32.242,
-      "sessions_held": 65,
+      "sessions_held": 68,
       "equity_pct": 0.691,
       "is_add": false
     },
@@ -24008,11 +23815,11 @@
       "symbol": "BLSE",
       "strategy": "squeeze_release",
       "entry_day": "2026-07-02",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 3.278,
       "risk_pct": 6.53,
       "net_pct": 21.407,
-      "sessions_held": 56,
+      "sessions_held": 60,
       "equity_pct": 0.492,
       "is_add": false
     },
@@ -24032,11 +23839,11 @@
       "symbol": "ADOR",
       "strategy": "pocket_pivot",
       "entry_day": "2026-07-10",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 2.688,
       "risk_pct": 6.55,
       "net_pct": 17.604,
-      "sessions_held": 49,
+      "sessions_held": 53,
       "equity_pct": 0.403,
       "is_add": false
     },
@@ -24044,11 +23851,11 @@
       "symbol": "INNOVACAP",
       "strategy": "pullback_ema21",
       "entry_day": "2026-07-21",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 0.727,
       "risk_pct": 7.0,
       "net_pct": 5.089,
-      "sessions_held": 44,
+      "sessions_held": 47,
       "equity_pct": 0.109,
       "is_add": false
     },
@@ -24056,11 +23863,11 @@
       "symbol": "ESAFSFB",
       "strategy": "pullback_ema21",
       "entry_day": "2026-07-22",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 2.914,
       "risk_pct": 7.0,
       "net_pct": 20.4,
-      "sessions_held": 41,
+      "sessions_held": 46,
       "equity_pct": 0.437,
       "is_add": false
     },
@@ -24068,11 +23875,11 @@
       "symbol": "CNL",
       "strategy": "pullback_ema21",
       "entry_day": "2026-07-28",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 2.672,
       "risk_pct": 7.0,
-      "net_pct": 18.703,
-      "sessions_held": 37,
+      "net_pct": 18.704,
+      "sessions_held": 41,
       "equity_pct": 0.401,
       "is_add": false
     },
@@ -24080,11 +23887,11 @@
       "symbol": "SUNDRMFAST",
       "strategy": "earnings_drift",
       "entry_day": "2026-08-06",
-      "exit_day": "2026-09-18",
+      "exit_day": "2026-09-24",
       "r": 3.124,
       "risk_pct": 5.38,
       "net_pct": 16.808,
-      "sessions_held": 30,
+      "sessions_held": 36,
       "equity_pct": 0.469,
       "is_add": false
     },

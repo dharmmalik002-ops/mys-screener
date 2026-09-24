@@ -162,6 +162,26 @@ class MarketConditionTests(unittest.TestCase):
         self.assertTrue(all(d in book_on for d in later if stack[d].endswith("up")))
 
 
+class LiquidFundTests(unittest.TestCase):
+    """Gotcha 123: corrections hold gold and a liquid fund."""
+
+    def test_a_redenomination_is_not_a_return(self):
+        d = [date(2015, 8, 27) + timedelta(days=i) for i in range(4)]
+        lv = sl.nav_level([(d[0], 20.0), (d[1], 20.002), (d[2], 1982.0), (d[3], 1982.2)])
+        self.assertAlmostEqual(lv[d[1]] / lv[d[0]], 1.0001)
+        self.assertAlmostEqual(lv[d[2]] / lv[d[1]], 1.0)            # the x99 jump is skipped
+        self.assertAlmostEqual(lv[d[3]] / lv[d[2]], 1982.2 / 1982.0)
+
+    def test_a_correction_earns_half_the_gold_move_and_half_the_cash_move(self):
+        days = [date(2012, 1, 2) + timedelta(days=i) for i in range(5)]
+        reg = {d: "correction" for d in days}
+        idx = {d: 100.0 * 0.98 ** i for i, d in enumerate(days)}        # equities falling
+        gold = {d: 100.0 * 1.02 ** i for i, d in enumerate(days)}
+        cash = {d: 100.0 * 1.0004 ** i for i, d in enumerate(days)}
+        lv = sl.build_regime_level(idx, gold, idx, reg, set(days), cash_close=cash)
+        self.assertAlmostEqual(lv[days[3]] / lv[days[2]], 1 + 0.5 * 0.02 + 0.5 * 0.0004)
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -179,6 +199,11 @@ class SleeveHoldingsTests(unittest.TestCase):
         held: dict = {}
         sl.build_sleeve(idx, gold, idx, reg, mode="regime_map", holdings=held)
         self.assertEqual(set(held), set(idx))
+        # No liquid-fund series given: corrections fall back to gold/index.
+        self.assertEqual(held[self.days[-1]], sl.BLEND_FALLBACK["correction"])
+        cash = series(self.days, lambda i: 100.0 * 1.0002 ** i)
+        held = {}
+        sl.build_sleeve(idx, gold, idx, reg, mode="regime_map", holdings=held, cash_close=cash)
         self.assertEqual(held[self.days[-1]], sl.BLEND_REGIMES["correction"])
 
     def test_holdings_are_optional_and_do_not_change_the_level(self):
