@@ -57,7 +57,7 @@ export default function BotJournal() {
       </nav>
 
       {page === "home" ? <Home data={data} /> : null}
-      {page === "open" ? <Open rows={open} /> : null}
+      {page === "open" ? <Open rows={open} holdings={data.holdings} /> : null}
       {page === "closed" ? <Closed rows={closed} /> : null}
     </div>
   );
@@ -76,7 +76,7 @@ function Home({ data }: { data: BotPaper }) {
         <Stat label="Worst dip" value={pct(s.max_drawdown_pct, 1)} />
       </div>
       <div className="bot-stat-row">
-        <Stat label="Holding" value={`${s.open_positions} stocks`} />
+        <Stat label="Holding" value={holdingLabel(data)} />
         <Stat label="Trades closed" value={`${s.closed_trades}`} />
         <Stat label="Winners" value={s.win_rate === null ? "—" : `${s.win_rate.toFixed(0)}%`} />
         <Stat label="Days running" value={`${s.sessions}`} />
@@ -93,6 +93,7 @@ function Home({ data }: { data: BotPaper }) {
           worst single trade cost {pct(s.worst_trade_equity_pct, 2)} of the account.
         </p>
       )}
+      <Allocation holdings={data.holdings} />
       <p className="bot-note">
         Last updated after the close on {s.last_session ?? "—"}.
       </p>
@@ -100,10 +101,84 @@ function Home({ data }: { data: BotPaper }) {
   );
 }
 
-function Open({ rows }: { rows: BotPaper["positions"] }) {
-  if (!rows.length)
-    return <p className="bot-note">Nothing held right now. The bot is sitting in the index sleeve.</p>;
+const REGIME_NAMES: Record<string, string> = {
+  bull_strong: "strong bull", bull_narrow: "narrow bull", choppy: "choppy",
+  correction: "correction", bear: "bear", recovery: "recovery",
+};
+
+/** "12 stocks + Gold" — stocks first, then whatever the sleeve holds. */
+function holdingLabel(data: BotPaper): string {
+  const n = data.summary.open_positions;
+  const mix = (data.holdings?.sleeve_mix ?? []).filter((m) => m.value > 0);
+  const legs = mix.map((m) => m.name.replace(/ \(.*\)$/, ""));
+  const parts = [n > 0 ? `${n} stock${n === 1 ? "" : "s"}` : "", legs.join(" + ")].filter(Boolean);
+  return parts.length ? parts.join(" + ") : "Cash";
+}
+
+/** Where every rupee sits right now: stocks, the sleeve's legs, and cash. */
+function Allocation({ holdings }: { holdings?: BotPaper["holdings"] }) {
+  if (!holdings) return null;
+  const rows: Array<{ label: string; value: number }> = [];
+  if (holdings.stocks > 0) rows.push({ label: "Stocks", value: holdings.stocks });
+  for (const m of holdings.sleeve_mix ?? []) if (m.value > 0) rows.push({ label: m.name, value: m.value });
+  if (holdings.cash > 0.5) rows.push({ label: "Cash", value: holdings.cash });
+  const total = rows.reduce((a, r) => a + r.value, 0);
+  if (!rows.length || total <= 0) return null;
+  const regime = holdings.regime ? REGIME_NAMES[holdings.regime] ?? holdings.regime : null;
   return (
+    <>
+      <table className="bot-table">
+        <thead>
+          <tr><th>Where the money is</th><th className="num">Value</th><th className="num">Share</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label}>
+              <td>{r.label}</td>
+              <td className="num">₹{Math.round(r.value).toLocaleString("en-IN")}</td>
+              <td className="num">{((r.value / total) * 100).toFixed(0)}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="bot-note">
+        Money not in stocks is parked in the sleeve, which holds whichever of gold, the
+        Nifty 500, small caps or a liquid fund has paid best in the current market type
+        {regime ? <> (now: <strong>{regime}</strong>)</> : null}. Its daily moves are
+        what change the balance on days the bot owns no stocks.
+      </p>
+    </>
+  );
+}
+
+function Open({ rows, holdings }: { rows: BotPaper["positions"]; holdings?: BotPaper["holdings"] }) {
+  const sleeve = (holdings?.sleeve_mix ?? []).filter((m) => m.value > 0);
+  const sleeveTable = sleeve.length ? (
+    <table className="bot-table">
+      <thead>
+        <tr><th>Sleeve (idle money)</th><th className="num">Share</th><th className="num">Value</th></tr>
+      </thead>
+      <tbody>
+        {sleeve.map((m) => (
+          <tr key={m.asset}>
+            <td>{m.name}</td>
+            <td className="num">{(m.weight * 100).toFixed(0)}%</td>
+            <td className="num">₹{Math.round(m.value).toLocaleString("en-IN")}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : null;
+  if (!rows.length)
+    return (
+      <>
+        <p className="bot-note">No stocks held right now{sleeve.length ? " — the money is in the sleeve:" : "."}</p>
+        {sleeveTable}
+      </>
+    );
+  return (
+    <>
+    {sleeveTable}
     <table className="bot-table">
       <thead>
         <tr>
@@ -124,6 +199,7 @@ function Open({ rows }: { rows: BotPaper["positions"] }) {
         ))}
       </tbody>
     </table>
+    </>
   );
 }
 

@@ -5375,6 +5375,16 @@ export type BotPaper = {
     avg_loss_pct: number | null;
     worst_trade_equity_pct: number | null;
   };
+  /** Where the money sits: stocks, cash, and the idle-capital sleeve split
+   *  by asset (gold / Nifty 500 / Smallcap 250). Absent on older payloads. */
+  holdings?: {
+    as_of: string | null;
+    regime: string | null;
+    cash: number;
+    stocks: number;
+    sleeve: number;
+    sleeve_mix: Array<{ asset: string; name: string; weight: number; value: number }>;
+  };
   positions: Array<{
     symbol: string; strategy: string; entry_day: string; entry_price: number;
     shares: number; stop_price: number; initial_stop_pct: number;

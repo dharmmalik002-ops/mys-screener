@@ -284,7 +284,8 @@ def main() -> int:
     mix_day = max((d for d in sleeve_mix if d <= last_day), default=last_day)
     sleeve_value = book.sleeve_units * book.sleeve_level
     mix = sleeve_mix.get(mix_day) or {}
-    names = {"gold": "Gold (GOLDBEES)", "n500": "Nifty 500", "small": "Nifty Smallcap 250"}
+    names = {"gold": "Gold (GOLDBEES)", "n500": "Nifty 500", "small": "Nifty Smallcap 250",
+             "cash": "Liquid fund (HDFC Liquid)"}
     stocks_value = sum(p.shares * (store[p.symbol][0].close[store[p.symbol][1][last_day]]
                                    if p.symbol in store and last_day in store[p.symbol][1] else p.entry_price)
                        for p in book.positions)
