@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-23T18:31:09.832153+00:00",
+  "generated_at": "2026-09-24T05:23:04.976518+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -893,10 +893,10 @@
     "pct_from_200dma": -4.35,
     "pct_from_52w_high": -11.22,
     "ma200_slope": -0.0321,
-    "breadth_above_200dma": 55.03,
-    "breadth_net_new_highs": 2.4,
+    "breadth_above_200dma": 55.09,
+    "breadth_net_new_highs": 2.46,
     "vix_percentile": 15.3,
-    "constituents": 1461,
+    "constituents": 1463,
     "regime_label": "Correction"
   },
   "strategy_totals": [
@@ -22014,8 +22014,8 @@
           }
         ]
       },
-      "fund_median_cagr": 11.4,
-      "fund_median_drawdown": -27.74,
+      "fund_median_cagr": 11.35,
+      "fund_median_drawdown": -27.78,
       "beats_buy_and_hold": true,
       "beats_fund_median": true,
       "shallower_than_fund": true,
@@ -22113,24 +22113,24 @@
           "bot_max_drawdown_pct": -22.06,
           "bot_sharpe": 0.55,
           "index_cagr_pct": 9.54,
-          "funds_counted": 669,
-          "fund_median_cagr": 11.4,
+          "funds_counted": 674,
+          "fund_median_cagr": 11.35,
           "fund_p75_cagr": 14.94,
-          "fund_p90_cagr": 18.19,
+          "fund_p90_cagr": 18.16,
           "fund_best_cagr": 37.04,
           "percentile": 0.9,
           "beats_median": false,
           "beats_index": false,
-          "fund_median_drawdown": -27.74,
+          "fund_median_drawdown": -27.78,
           "drawdown_better_than_median": true,
           "bot_return_per_drawdown": 0.171,
-          "fund_return_per_drawdown": 0.411,
+          "fund_return_per_drawdown": 0.409,
           "risk_adjusted_better": false,
           "fund_median_sharpe": 0.39,
-          "sharpe_percentile": 71.0,
-          "drawdown_percentile": 64.0,
-          "funds_dominating": 241,
-          "funds_dominating_pct": 36.0,
+          "sharpe_percentile": 71.4,
+          "drawdown_percentile": 63.5,
+          "funds_dominating": 246,
+          "funds_dominating_pct": 36.5,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
@@ -22141,13 +22141,13 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "3.78%",
-              "reference": "11.40%",
+              "reference": "11.35%",
               "verdict": false
             },
             {
               "dimension": "Worst drawdown vs the median fund",
               "bot": "-22.1%",
-              "reference": "-27.7%",
+              "reference": "-27.8%",
               "verdict": true
             },
             {
@@ -22164,12 +22164,12 @@
             },
             {
               "dimension": "Funds beating it on return AND drawdown",
-              "bot": "36.0%",
+              "bot": "36.5%",
               "reference": "50% would be average",
               "verdict": true
             }
           ],
-          "verdict": "The account's 3.8% CAGR is below 99% of 669 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, with a shallower worst drawdown (-22% against a fund median of -28%).",
+          "verdict": "The account's 3.8% CAGR is below 99% of 674 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, with a shallower worst drawdown (-22% against a fund median of -28%).",
           "uncertainty": {
             "trades": 1803,
             "eligible_pool": 44776,
@@ -22179,7 +22179,7 @@
             "median_resample_cagr": 17.34,
             "share_positive": 100.0,
             "share_beating_index": 98.5,
-            "share_beating_fund_median": 94.8,
+            "share_beating_fund_median": 95.0,
             "note": "1,803 trades drawn from 44,776 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 11.4% and 24.3% a year, with a median of 17.3% \u2014 against a realised 3.8%. The width is what 1,803 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
           }
         },
@@ -22190,24 +22190,24 @@
           "bot_max_drawdown_pct": -20.48,
           "bot_sharpe": 0.53,
           "index_cagr_pct": 9.54,
-          "funds_counted": 669,
-          "fund_median_cagr": 11.4,
+          "funds_counted": 674,
+          "fund_median_cagr": 11.35,
           "fund_p75_cagr": 14.94,
-          "fund_p90_cagr": 18.19,
+          "fund_p90_cagr": 18.16,
           "fund_best_cagr": 37.04,
           "percentile": 0.9,
           "beats_median": false,
           "beats_index": false,
-          "fund_median_drawdown": -27.74,
+          "fund_median_drawdown": -27.78,
           "drawdown_better_than_median": true,
           "bot_return_per_drawdown": 0.169,
-          "fund_return_per_drawdown": 0.411,
+          "fund_return_per_drawdown": 0.409,
           "risk_adjusted_better": false,
           "fund_median_sharpe": 0.39,
-          "sharpe_percentile": 68.3,
-          "drawdown_percentile": 68.6,
-          "funds_dominating": 210,
-          "funds_dominating_pct": 31.4,
+          "sharpe_percentile": 68.7,
+          "drawdown_percentile": 68.5,
+          "funds_dominating": 212,
+          "funds_dominating_pct": 31.5,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
@@ -22218,13 +22218,13 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "3.47%",
-              "reference": "11.40%",
+              "reference": "11.35%",
               "verdict": false
             },
             {
               "dimension": "Worst drawdown vs the median fund",
               "bot": "-20.5%",
-              "reference": "-27.7%",
+              "reference": "-27.8%",
               "verdict": true
             },
             {
@@ -22241,12 +22241,12 @@
             },
             {
               "dimension": "Funds beating it on return AND drawdown",
-              "bot": "31.4%",
+              "bot": "31.5%",
               "reference": "50% would be average",
               "verdict": true
             }
           ],
-          "verdict": "The account's 3.5% CAGR is below 99% of 669 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, with a shallower worst drawdown (-20% against a fund median of -28%)."
+          "verdict": "The account's 3.5% CAGR is below 99% of 674 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, with a shallower worst drawdown (-20% against a fund median of -28%)."
         },
         {
           "run": "reactive_held_out",
@@ -22255,24 +22255,24 @@
           "bot_max_drawdown_pct": -32.97,
           "bot_sharpe": -0.04,
           "index_cagr_pct": 9.54,
-          "funds_counted": 669,
-          "fund_median_cagr": 11.4,
+          "funds_counted": 674,
+          "fund_median_cagr": 11.35,
           "fund_p75_cagr": 14.94,
-          "fund_p90_cagr": 18.19,
+          "fund_p90_cagr": 18.16,
           "fund_best_cagr": 37.04,
           "percentile": 0.3,
           "beats_median": false,
           "beats_index": false,
-          "fund_median_drawdown": -27.74,
+          "fund_median_drawdown": -27.78,
           "drawdown_better_than_median": false,
           "bot_return_per_drawdown": -0.099,
-          "fund_return_per_drawdown": 0.411,
+          "fund_return_per_drawdown": 0.409,
           "risk_adjusted_better": false,
           "fund_median_sharpe": 0.39,
-          "sharpe_percentile": 3.7,
-          "drawdown_percentile": 39.8,
-          "funds_dominating": 401,
-          "funds_dominating_pct": 59.9,
+          "sharpe_percentile": 3.6,
+          "drawdown_percentile": 40.1,
+          "funds_dominating": 402,
+          "funds_dominating_pct": 59.6,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
@@ -22283,13 +22283,13 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "-3.27%",
-              "reference": "11.40%",
+              "reference": "11.35%",
               "verdict": false
             },
             {
               "dimension": "Worst drawdown vs the median fund",
               "bot": "-33.0%",
-              "reference": "-27.7%",
+              "reference": "-27.8%",
               "verdict": false
             },
             {
@@ -22306,12 +22306,12 @@
             },
             {
               "dimension": "Funds beating it on return AND drawdown",
-              "bot": "59.9%",
+              "bot": "59.6%",
               "reference": "50% would be average",
               "verdict": false
             }
           ],
-          "verdict": "The account's -3.3% CAGR is below 100% of 669 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, but with a deeper worst drawdown (-33% against a fund median of -28%)."
+          "verdict": "The account's -3.3% CAGR is below 100% of 674 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, but with a deeper worst drawdown (-33% against a fund median of -28%)."
         },
         {
           "run": "no_gating",
@@ -22320,10 +22320,10 @@
           "bot_max_drawdown_pct": -44.33,
           "bot_sharpe": 0.17,
           "index_cagr_pct": 9.83,
-          "funds_counted": 320,
+          "funds_counted": 322,
           "fund_median_cagr": 12.89,
-          "fund_p75_cagr": 15.13,
-          "fund_p90_cagr": 17.11,
+          "fund_p75_cagr": 15.14,
+          "fund_p90_cagr": 16.99,
           "fund_best_cagr": 21.14,
           "percentile": 0.0,
           "beats_median": false,
@@ -22334,10 +22334,10 @@
           "fund_return_per_drawdown": 0.358,
           "risk_adjusted_better": false,
           "fund_median_sharpe": 0.35,
-          "sharpe_percentile": 21.2,
-          "drawdown_percentile": 11.9,
-          "funds_dominating": 282,
-          "funds_dominating_pct": 88.1,
+          "sharpe_percentile": 21.1,
+          "drawdown_percentile": 12.1,
+          "funds_dominating": 283,
+          "funds_dominating_pct": 87.9,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
@@ -22371,12 +22371,12 @@
             },
             {
               "dimension": "Funds beating it on return AND drawdown",
-              "bot": "88.1%",
+              "bot": "87.9%",
               "reference": "50% would be average",
               "verdict": false
             }
           ],
-          "verdict": "The account's 1.3% CAGR is below 100% of 320 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.8%), which needed no work at all, but with a deeper worst drawdown (-44% against a fund median of -36%)."
+          "verdict": "The account's 1.3% CAGR is below 100% of 322 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.8%), which needed no work at all, but with a deeper worst drawdown (-44% against a fund median of -36%)."
         }
       ],
       "headline": {
@@ -22386,24 +22386,24 @@
         "bot_max_drawdown_pct": -22.06,
         "bot_sharpe": 0.55,
         "index_cagr_pct": 9.54,
-        "funds_counted": 669,
-        "fund_median_cagr": 11.4,
+        "funds_counted": 674,
+        "fund_median_cagr": 11.35,
         "fund_p75_cagr": 14.94,
-        "fund_p90_cagr": 18.19,
+        "fund_p90_cagr": 18.16,
         "fund_best_cagr": 37.04,
         "percentile": 0.9,
         "beats_median": false,
         "beats_index": false,
-        "fund_median_drawdown": -27.74,
+        "fund_median_drawdown": -27.78,
         "drawdown_better_than_median": true,
         "bot_return_per_drawdown": 0.171,
-        "fund_return_per_drawdown": 0.411,
+        "fund_return_per_drawdown": 0.409,
         "risk_adjusted_better": false,
         "fund_median_sharpe": 0.39,
-        "sharpe_percentile": 71.0,
-        "drawdown_percentile": 64.0,
-        "funds_dominating": 241,
-        "funds_dominating_pct": 36.0,
+        "sharpe_percentile": 71.4,
+        "drawdown_percentile": 63.5,
+        "funds_dominating": 246,
+        "funds_dominating_pct": 36.5,
         "scorecard": [
           {
             "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
@@ -22414,13 +22414,13 @@
           {
             "dimension": "Return vs the median professional fund",
             "bot": "3.78%",
-            "reference": "11.40%",
+            "reference": "11.35%",
             "verdict": false
           },
           {
             "dimension": "Worst drawdown vs the median fund",
             "bot": "-22.1%",
-            "reference": "-27.7%",
+            "reference": "-27.8%",
             "verdict": true
           },
           {
@@ -22437,12 +22437,12 @@
           },
           {
             "dimension": "Funds beating it on return AND drawdown",
-            "bot": "36.0%",
+            "bot": "36.5%",
             "reference": "50% would be average",
             "verdict": true
           }
         ],
-        "verdict": "The account's 3.8% CAGR is below 99% of 669 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, with a shallower worst drawdown (-22% against a fund median of -28%).",
+        "verdict": "The account's 3.8% CAGR is below 99% of 674 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.5%), which needed no work at all, with a shallower worst drawdown (-22% against a fund median of -28%).",
         "uncertainty": {
           "trades": 1803,
           "eligible_pool": 44776,
@@ -22452,7 +22452,7 @@
           "median_resample_cagr": 17.34,
           "share_positive": 100.0,
           "share_beating_index": 98.5,
-          "share_beating_fund_median": 94.8,
+          "share_beating_fund_median": 95.0,
           "note": "1,803 trades drawn from 44,776 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 11.4% and 24.3% a year, with a median of 17.3% \u2014 against a realised 3.8%. The width is what 1,803 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
         }
       },
@@ -22470,7 +22470,7 @@
           "Return vs the median professional fund",
           "Return per unit of drawdown"
         ],
-        "summary": "Measured over 3 years it never saw, against 669 real funds: better on 3 of 6 measures, worse on 3. Only 241 of them (36.0%) beat it on return and drawdown at the same time \u2014 the comparison with no axis left to pick. On Sharpe, which is how professional performance is actually judged, it sits at the 71th percentile. It earns less than the median fund in raw return, and does so taking roughly half the drawdown."
+        "summary": "Measured over 3 years it never saw, against 674 real funds: better on 3 of 6 measures, worse on 3. Only 246 of them (36.5%) beat it on return and drawdown at the same time \u2014 the comparison with no axis left to pick. On Sharpe, which is how professional performance is actually judged, it sits at the 71th percentile. It earns less than the median fund in raw return, and does so taking roughly half the drawdown."
       },
       "caveats": [
         "Fund returns are realised money; the bot's are simulated. A simulation never hesitates, never oversleeps, and never sizes down after three losses in a row.",
