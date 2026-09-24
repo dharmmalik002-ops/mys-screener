@@ -179,7 +179,7 @@ def main() -> int:
     small = sl.clean_series(index_yearly_prices) if index_yearly_prices else None
     # Market-type sleeve (gotcha 117): each regime holds the asset that paid
     # best under it in the years before, re-derived every January.
-    liquid = sl.fetch_liquid_fund()
+    liquid = sl.load_liquid_fund(data_dir, write=True)
     print(f"liquid fund: {len(liquid):,} NAVs" if liquid else "WARNING: no liquid-fund series — corrections fall back to gold/index")
     park_prices, _book_regime = sl.build_sleeve(index_close, gold, small, regimes, cash_close=liquid)
     park_days = set(park_prices)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 from datetime import date, timedelta
 
 from app.services.bot import sleeve as sl
@@ -136,7 +137,7 @@ class MarketConditionTests(unittest.TestCase):
         small = {d: 100.0 * 1.001 ** i for i, d in enumerate(days)}
         gold = {d: 100.0 * 1.002 ** i for i, d in enumerate(days)}
         lv = sl.build_regime_level(idx, gold, small, reg, set(days))
-        d0, d1 = [d for d in days if d.year == 2011][:2]
+        d0, d1 = [d for d in days if d.year == 2011][3:5]   # after the one-session execution lag
         self.assertAlmostEqual(lv[d1] / lv[d0], 1.001)       # small caps, not gold
 
     def test_the_book_stands_aside_where_the_short_trend_lost(self):
@@ -180,6 +181,56 @@ class LiquidFundTests(unittest.TestCase):
         cash = {d: 100.0 * 1.0004 ** i for i, d in enumerate(days)}
         lv = sl.build_regime_level(idx, gold, idx, reg, set(days), cash_close=cash)
         self.assertAlmostEqual(lv[days[3]] / lv[days[2]], 1 + 0.5 * 0.02 + 0.5 * 0.0004)
+
+    def test_a_dead_source_falls_back_to_the_committed_history(self):
+        import json, tempfile
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, sl.LIQUID_FUND_FILE).write_text(json.dumps(
+                {"points": [["2020-01-01", 10.0], ["2020-01-02", 10.001]]}))
+            with mock.patch.object(sl, "_fetch_liquid_points", return_value=[]):
+                lv = sl.load_liquid_fund(tmp, write=True)
+            self.assertEqual(len(lv), 2)
+            fresh = [(date(2020, 1, 3), 10.002)]
+            with mock.patch.object(sl, "_fetch_liquid_points", return_value=fresh):
+                lv = sl.load_liquid_fund(tmp, write=True)
+            self.assertEqual(len(lv), 3)                           # merged, not replaced
+            self.assertEqual(len(json.loads(Path(tmp, sl.LIQUID_FUND_FILE).read_text())["points"]), 3)
+
+
+class SleeveExecutionTests(unittest.TestCase):
+    """Gotcha 124: a switch is traded at the NEXT close and pays for itself."""
+
+    def setUp(self):
+        self.days = [date(2012, 1, 2) + timedelta(days=i) for i in range(6)]
+        # Bull (small caps) until days[2]'s close reads bear; gold jumps 10% on days[3].
+        self.reg = {d: ("bull_strong" if i < 2 else "bear") for i, d in enumerate(self.days)}
+        self.idx = {d: 100.0 for d in self.days}
+        self.gold = {d: (100.0 if i < 3 else 110.0) for i, d in enumerate(self.days)}
+        self.gold[self.days[5]] = 121.0
+
+    def level(self, **kw):
+        # No history, so the map falls back to the default rule: equities on
+        # risk-on days, gold otherwise; no small-cap leg, so no hedge rule.
+        on = {d for d in self.days if self.reg[d] == "bull_strong"}
+        return sl.build_regime_level(self.idx, self.gold, None, self.reg, on, **kw)
+
+    def test_the_switch_is_executed_one_session_late(self):
+        idealised = self.level(execution_lag=0, switch_cost=0.0)
+        realistic = self.level(execution_lag=1, switch_cost=0.0)
+        d = self.days
+        self.assertAlmostEqual(idealised[d[3]] / idealised[d[2]], 1.10)   # gold from days[2]'s close
+        self.assertAlmostEqual(realistic[d[3]] / realistic[d[2]], 1.00)   # still in equities
+        self.assertAlmostEqual(realistic[d[5]] / realistic[d[4]], 1.10)   # gold once executed
+
+    def test_a_switch_pays_for_the_units_it_turns_over(self):
+        free = self.level(execution_lag=1, switch_cost=0.0)
+        paid = self.level(execution_lag=1, switch_cost=0.0015)
+        self.assertAlmostEqual(paid[self.days[-1]] / free[self.days[-1]], 1 - 0.0015)
+
+    def test_the_defaults_are_the_realistic_ones(self):
+        self.assertEqual(sl.SLEEVE_EXECUTION_LAG, 1)
+        self.assertGreater(sl.SLEEVE_SWITCH_COST, 0)
 
 
 if __name__ == "__main__":

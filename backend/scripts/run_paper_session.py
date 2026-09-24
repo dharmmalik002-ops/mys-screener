@@ -179,18 +179,11 @@ def main() -> int:
                 "gold": {d.isoformat(): v for d, v in gold.items()},
                 "smallcap": {d.isoformat(): v for d, v in small.items()},
             }))
-    # The liquid-fund leg of the correction mix (gotcha 123), cached beside
-    # gold and small caps and refetched once it ends before the newest
-    # session — a stale NAV would freeze the cash leg at its last price.
-    raw = json.loads(cache.read_text()) if cache.exists() else {}
-    liquid = {date.fromisoformat(k): v for k, v in raw.get("liquid", {}).items()}
-    if not liquid or (max(index_close) - max(liquid)).days > 4:
-        fresh = sl.fetch_liquid_fund()
-        if fresh:
-            liquid = fresh
-            if raw:
-                raw["liquid"] = {d.isoformat(): v for d, v in liquid.items()}
-                cache.write_text(json.dumps(raw))
+    # The liquid-fund leg of the correction mix (gotcha 123): the committed
+    # NAV history, topped up from AMFI with a hard deadline.
+    liquid = sl.load_liquid_fund(data_dir, write=True)
+    if liquid and (max(index_close) - max(liquid)).days > 10:
+        print(f"  WARNING: liquid-fund NAV is stale (last {max(liquid)})")
     if not liquid:
         print("  WARNING: no liquid-fund series — corrections fall back to gold/index")
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}

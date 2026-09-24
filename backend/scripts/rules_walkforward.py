@@ -289,7 +289,7 @@ def _account(selected, rows, cleared, data_dir, table) -> dict:
     regimes = {d: r.regime for d, r in context.regime_by_day.items()}
     gold = sl.clean_series(_yahoo("GOLDBEES.NS"))
     small = sl.clean_series(_yahoo("NIFTYSMLCAP250.NS"))
-    liquid = sl.fetch_liquid_fund()
+    liquid = sl.load_liquid_fund(data_dir, write=True)
     print(f"liquid fund: {len(liquid):,} NAVs" if liquid else "WARNING: no liquid-fund series — corrections fall back to gold/index")
     level, book = sl.build_sleeve(index_close, gold, small, regimes, cash_close=liquid)
 

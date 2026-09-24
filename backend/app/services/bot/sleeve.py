@@ -275,6 +275,16 @@ def regime_asset_map(index_close, small_close, gold_close, regime_by_day, year: 
 
 MIN_LEVEL_DAYS = 125
 
+# Gotcha 124. The market type is read from a session's CLOSE (index, breadth
+# across ~1,500 stocks), which the nightly job only has at 7:53 PM IST — so a
+# switch decided on day D is executed at D+1's close, not at D's. Holding the
+# new asset from D's close was a quiet look-ahead worth ~2.8pp a year. And a
+# switch is a real trade: ~0.15% per unit of the sleeve turned over (ETF
+# brokerage, STT, stamp duty and the spread on thin small-cap ETFs), charged
+# at ~11 switches a year. Both default ON; pass 0 to see the idealised book.
+SLEEVE_EXECUTION_LAG = 1
+SLEEVE_SWITCH_COST = 0.0015
+
 
 def label_asset_map(index_close, small_close, gold_close, labels, year: int, min_days: int):
     """({label: best asset}, {label: mean daily small-cap log return}) from days before `year`."""
@@ -316,7 +326,9 @@ def better_equity(index_close, small_close, regime_by_day, regime: str, year: in
 
 def build_regime_level(index_close, gold_close, small_close, regime_by_day, sleeve_on: set,
                        holdings: dict | None = None,
-                       cash_close: Mapping[date, float] | None = None) -> dict:
+                       cash_close: Mapping[date, float] | None = None,
+                       execution_lag: int | None = None,
+                       switch_cost: float | None = None) -> dict:
     """Compounded level of the market-type sleeve.
 
     The asset held over day d is chosen at the previous INDEX close, in this
@@ -351,10 +363,14 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
 
     level, out = 100.0, {}
     last = {k: None for k in assets}
-    held = {"n500": 1.0}
+    held = {"n500": 1.0}          # the mix DECIDED at this close
+    live = {"n500": 1.0}          # the mix actually HELD, `lag` sessions later
+    decisions: list = []
+    lag = SLEEVE_EXECUTION_LAG if execution_lag is None else execution_lag
+    cost = SLEEVE_SWITCH_COST if switch_cost is None else switch_cost
     for d in sorted(set(index_close) | set(assets["small"]) | set(assets["gold"])):
         growth = 0.0
-        for k, w in held.items():
+        for k, w in live.items():
             p0, p1 = last[k], assets[k].get(d)
             if p0 and p1:
                 growth += w * (p1 / p0 - 1.0)
@@ -392,8 +408,17 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
                 if not assets[choice]:
                     choice = "n500"
                 held = {choice: 1.0}
+            # Execution (gotcha 124): the decision needs this close's breadth,
+            # which only exists after the market shuts, so it is traded at a
+            # later close — and every switch pays for the units it turns over.
+            decisions.append(dict(held))
+            target = decisions[-1 - lag] if len(decisions) > lag else {"n500": 1.0}
+            turned = sum(abs(target.get(k, 0.0) - live.get(k, 0.0)) for k in set(target) | set(live)) / 2
+            if turned > 1e-9:
+                level *= 1.0 - cost * turned
+            live = dict(target)
             if holdings is not None:
-                holdings[d] = dict(held)
+                holdings[d] = dict(live)
         out[d] = level
     return out
 
@@ -409,8 +434,9 @@ def build_regime_level(index_close, gold_close, small_close, regime_by_day, slee
 #
 # Gotcha 123: the equity half is now a liquid fund. A correction has no
 # dependable winner, so the sleeve holds only defensive assets in one — gold,
-# and cash earning a real rate. Walk-forward +32.46% -> +33.67%, the index
-# beaten in 15 of 15 years. The older gold/index mix is the fallback when the
+# and cash earning a real rate. Walk-forward +32.46% -> +33.67% under the old
+# same-close execution; +28.83% -> +29.30% once switches are executed a
+# session late and charged (gotcha 124). The older gold/index mix is the fallback when the
 # liquid-fund series is unavailable, so a failed fetch degrades, never breaks.
 BLEND_REGIMES: dict = {"correction": {"gold": 0.5, "cash": 0.5}}
 BLEND_FALLBACK: dict = {"correction": {"gold": 0.5, "n500": 0.5}}
@@ -440,23 +466,70 @@ def nav_level(points) -> dict:
     return out
 
 
-def fetch_liquid_fund(code: str = LIQUID_FUND_CODE) -> dict:
-    """The liquid fund as a level series, or {} when the source is unreachable.
+LIQUID_FUND_FILE = "liquid_fund_nav.json"
+LIQUID_FETCH_SECONDS = 60
 
-    Reuses the funds page's AMFI client (`requests`, which carries its own CA
-    bundle — the stdlib `urllib` fails certificate checks on a stock macOS
-    Python and would silently hand back {} every time).
+
+def _fetch_liquid_points(code: str) -> list:
+    """Fresh (date, nav) points from AMFI, or [] — never waits longer than LIQUID_FETCH_SECONDS.
+
+    mfapi.in is flaky: in one audit a single request trickled for 54 minutes
+    before `requests` raised ReadTimeout (its timeout is per socket read, not
+    per request), and the next two failed outright. A worker thread with a
+    hard deadline keeps a stalled mirror from stalling the nightly job.
     """
-    import time
+    import concurrent.futures as cf
     from datetime import date as _date
-    for attempt in range(3):     # mfapi.in drops the odd request
+
+    def pull():
+        from app.services.mutual_funds.nav_source import fetch_nav_history
+        h = fetch_nav_history(code, timeout=20)
+        return [(_date.fromisoformat(d), float(v)) for d, v in zip(h["dates"], h["navs"])]
+    pool = cf.ThreadPoolExecutor(max_workers=1)
+    try:
+        return pool.submit(pull).result(timeout=LIQUID_FETCH_SECONDS)
+    except Exception:  # noqa: BLE001 — timeout or source error: fall back to the committed copy
+        return []
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+
+
+def load_liquid_fund(data_dir=None, code: str = LIQUID_FUND_CODE, refresh: bool = True,
+                     write: bool = False) -> dict:
+    """The liquid fund as a level series: the committed NAV history, topped up live.
+
+    The committed `data/liquid_fund_nav.json` is the floor, as with
+    `sector_indices.json` (gotcha 14): a dead mirror degrades to a few days of
+    stale NAV — a liquid fund moves ~0.02% a day — never to the fallback mix.
+    `write=True` merges fresh points back into the file; it never shrinks it.
+    """
+    import json as _json
+    from datetime import date as _date
+    from pathlib import Path as _Path
+    path = _Path(data_dir or _Path(__file__).resolve().parents[3] / "data") / LIQUID_FUND_FILE
+    points: dict = {}
+    if path.exists():
         try:
-            from app.services.mutual_funds.nav_source import fetch_nav_history
-            h = fetch_nav_history(code)
-            return nav_level((_date.fromisoformat(d), float(v)) for d, v in zip(h["dates"], h["navs"]))
-        except Exception:  # noqa: BLE001 — the sleeve falls back to the gold/index mix
-            time.sleep(2 * (attempt + 1))
-    return {}
+            raw = _json.loads(path.read_text())
+            points = {_date.fromisoformat(d): float(v) for d, v in raw.get("points", [])}
+        except (ValueError, OSError):
+            points = {}
+    if refresh:
+        fresh = dict(_fetch_liquid_points(code))
+        if fresh:
+            grew = len(set(fresh) - set(points))
+            points.update(fresh)
+            if write and grew and path.parent.exists():
+                path.write_text(_json.dumps({
+                    "scheme_code": code, "source": "AMFI via mfapi.in",
+                    "points": [(d.isoformat(), v) for d, v in sorted(points.items())]},
+                    separators=(",", ":")))
+    return nav_level(points.items())
+
+
+def fetch_liquid_fund(code: str = LIQUID_FUND_CODE) -> dict:
+    """Back-compat alias: the committed history, topped up live."""
+    return load_liquid_fund(code=code)
 
 
 def build_sleeve(index_close, gold_close, small_close, regime_by_day, mode: str | None = None,
