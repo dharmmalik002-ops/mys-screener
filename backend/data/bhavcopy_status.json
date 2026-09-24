@@ -1,9 +1,9 @@
 {
-  "date": "2026-09-15",
+  "date": "2026-09-23",
   "source": "yf+bse",
-  "snapshots_updated": 1713,
-  "ipos_seeded": 179,
+  "snapshots_updated": 1892,
+  "ipos_seeded": 5,
   "chart_caches_updated": 0,
-  "applied_at": "2026-09-16T07:09:27.426970+00:00",
+  "applied_at": "2026-09-24T06:30:11.350220+00:00",
   "schema_version": 12
 }
