@@ -3330,6 +3330,14 @@ button {
   color: #64748b;
 }
 
+/* The rank pill's #bfdbfe text is for the dark shell; on the white grid it
+   was near-invisible. */
+.chart-grid-modal.chart-grid-light .chart-grid-group-title > span {
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
 .chart-grid-card {
   position: relative;
   display: grid;

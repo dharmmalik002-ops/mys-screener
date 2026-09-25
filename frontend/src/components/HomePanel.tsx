@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { activatable } from "../lib/activate";
 import { createPortal } from "react-dom";
 import { CalendarDays } from "lucide-react";
@@ -698,6 +698,20 @@ export function HomePanel({
     return `${pad(Math.floor(secondsToClose / 3600))}:${pad(Math.floor((secondsToClose % 3600) / 60))}:${pad(secondsToClose % 60)}`;
   }, [nowTick]);
 
+  /** The next NSE weekday session from now in IST. Exchange holidays are not
+      known here, so this is the next weekday — never the EOD date just printed,
+      which is what this label used to show after the close. */
+  const nextSessionLabel = useMemo(() => {
+    const ist = new Date(nowTick + (new Date(nowTick).getTimezoneOffset() + 330) * 60_000);
+    const beforeOpen = ist.getHours() * 60 + ist.getMinutes() < 9 * 60 + 15;
+    const day = new Date(ist.getFullYear(), ist.getMonth(), ist.getDate());
+    const isWeekday = (d: Date) => d.getDay() !== 0 && d.getDay() !== 6;
+    if (!(beforeOpen && isWeekday(day))) {
+      do { day.setDate(day.getDate() + 1); } while (!isWeekday(day));
+    }
+    return day.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  }, [nowTick]);
+
   useEffect(() => {
     let active = true;
     getGroupRankHistory(activeMarket)
@@ -802,7 +816,7 @@ export function HomePanel({
     <div className="homepro">
       {briefing ? (
         <div className="homepro-briefing">
-          <div className="homepro-briefing-title">Morning Briefing · {snapshotDateLabel}</div>
+          <div className="homepro-briefing-title">Market Briefing · {snapshotDateLabel}</div>
           <div className="homepro-briefing-body">
             {briefing.xp ? (
               <span>
@@ -827,14 +841,16 @@ export function HomePanel({
               <span>
                 {" "}Improving groups:{" "}
                 {briefing.improving.map((g, i) => (
+                  <Fragment key={g.group_id}>
+                  {i > 0 ? ", " : null}
                   <button
-                    key={g.group_id}
                     type="button"
                     className="homepro-briefing-link"
                     onClick={() => onOpenGroups({ groupId: g.group_id })}
                   >
-                    {g.group_name} (▲{g.rank_change_1w}){i < briefing.improving.length - 1 ? "," : ""}
+                    {g.group_name} (▲{g.rank_change_1w})
                   </button>
+                  </Fragment>
                 ))}
                 .
               </span>
@@ -842,14 +858,16 @@ export function HomePanel({
               <span>
                 {" "}Leading groups:{" "}
                 {briefing.topGroups.map((g, i) => (
+                  <Fragment key={g.group_id}>
+                  {i > 0 ? ", " : null}
                   <button
-                    key={g.group_id}
                     type="button"
                     className="homepro-briefing-link"
                     onClick={() => onOpenGroups({ groupId: g.group_id })}
                   >
-                    {g.group_name}{i < briefing.topGroups.length - 1 ? "," : ""}
+                    {g.group_name}
                   </button>
+                  </Fragment>
                 ))}
                 .
               </span>
@@ -882,7 +900,7 @@ export function HomePanel({
             {/* The old sparkline here was a sine wave; the countdown was the
                 hardcoded string "Closes in 01:24:15" and never counted down. */}
             <div className="homepro-kpi-sub">
-              {marketOpen ? `Closes in ${sessionCountdown}` : `Next session ${snapshotDateLabel}`}
+              {marketOpen ? `Closes in ${sessionCountdown}` : `Next session ${nextSessionLabel}`}
             </div>
           </div>
 
@@ -977,7 +995,7 @@ export function HomePanel({
                 <th>#</th>
                 <th>Industry Group</th>
                 <th className="homepro-num">Stocks</th>
-                <th className="homepro-num">Change %</th>
+                <th className="homepro-num" title="Group return over the last month">1M %</th>
                 <th className="homepro-num" title="Daily rank across the last 30 stored sessions — rising means the group is climbing the rankings.">
                   Rank Trend
                 </th>

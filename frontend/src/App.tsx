@@ -84,6 +84,7 @@ import {
   type PullBackScanRequest,
   type ReturnsScanRequest,
   type RefreshResponse,
+  type ScanDescriptor,
   type ScanMatch,
   type ScanSectorSummary,
   type SectorSortBy,
@@ -3369,6 +3370,32 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   }, [dashboard]);
 
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
+  // Sidebar badges: the scan that is on screen reports its own hit count; every
+  // other scanner falls back to the dashboard's precomputed count, so the list
+  // does not read "0" for scanners that simply have not been opened yet.
+  // /api/scan-counts, not dashboard.scanners: the dashboard skips the scan
+  // catalog when a worker has not built it yet and caches those zeros, so its
+  // counts depend on which of the two workers answered.
+  const [scanCountRows, setScanCountRows] = useState<ScanDescriptor[] | null>(null);
+  useEffect(() => {
+    if (activePage !== "screener") return;
+    let active = true;
+    getScanCounts(activeMarket)
+      .then((rows) => { if (active) setScanCountRows(rows); })
+      .catch(() => { /* badges fall back to the dashboard's copy */ });
+    return () => { active = false; };
+  }, [activePage, activeMarket, dashboard?.generated_at]);
+  const precomputedScanCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const scanner of dashboard?.scanners ?? []) counts.set(scanner.id, scanner.hit_count);
+    for (const scanner of scanCountRows ?? []) counts.set(scanner.id, scanner.hit_count);
+    return counts;
+  }, [dashboard?.scanners, scanCountRows]);
+  const scannerCountFor = (mode: string) => {
+    if (activeScanner === mode) return scanResults?.total_hits ?? precomputedScanCounts.get(mode) ?? 0;
+    if (scanResults?.scan.id === mode) return scanResults.total_hits;
+    return precomputedScanCounts.get(mode) ?? 0;
+  };
   const snapshotTimeLabel = formatSnapshotTime(activeMarket, dashboard?.generated_at);
   const activeWatchlist = watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null;
   const activeViewCount =
@@ -6102,28 +6129,28 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                     activeMode={activeScanner}
                     onModeChange={handleScannerModeChange}
                     counts={{
-                      "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
-                      "volume": activeScanner === "volume" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "volume" ? scanResults.total_hits : 0,
-                      "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
+                      "custom-scan": scannerCountFor("custom-scan"),
+                      "volume": scannerCountFor("volume"),
+                      "ipo": scannerCountFor("ipo"),
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
-                      "ema-expansion": activeScanner === "ema-expansion" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ema-expansion" ? scanResults.total_hits : 0,
-                      "contraction": activeScanner === "contraction" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "contraction" ? scanResults.total_hits : 0,
-                      "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
-                      "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
-                      "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,
-                      "consolidating": activeScanner === "consolidating" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "consolidating" ? scanResults.total_hits : 0,
-                      "demand-zone": activeScanner === "demand-zone" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "demand-zone" ? scanResults.total_hits : 0,
-                      "minervini-1m": activeScanner === "minervini-1m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-1m" ? scanResults.total_hits : 0,
-                      "minervini-5m": activeScanner === "minervini-5m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-5m" ? scanResults.total_hits : 0,
-                      "positive-earnings": activeScanner === "positive-earnings" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "positive-earnings" ? scanResults.total_hits : 0,
-                      "episodic-pivot": activeScanner === "episodic-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "episodic-pivot" ? scanResults.total_hits : 0,
-                      "rs-line-leads": activeScanner === "rs-line-leads" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "rs-line-leads" ? scanResults.total_hits : 0,
-                      "fresh-stage2": activeScanner === "fresh-stage2" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "fresh-stage2" ? scanResults.total_hits : 0,
-                      "high-tight-flag": activeScanner === "high-tight-flag" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "high-tight-flag" ? scanResults.total_hits : 0,
-                      "vcp": activeScanner === "vcp" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "vcp" ? scanResults.total_hits : 0,
-                      "tight-closes": activeScanner === "tight-closes" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "tight-closes" ? scanResults.total_hits : 0,
-                      "power-base": activeScanner === "power-base" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "power-base" ? scanResults.total_hits : 0,
-                      "qullamaggie": activeScanner === "qullamaggie" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "qullamaggie" ? scanResults.total_hits : 0,
+                      "ema-expansion": scannerCountFor("ema-expansion"),
+                      "contraction": scannerCountFor("contraction"),
+                      "near-pivot": scannerCountFor("near-pivot"),
+                      "pull-backs": scannerCountFor("pull-backs"),
+                      "returns": scannerCountFor("returns"),
+                      "consolidating": scannerCountFor("consolidating"),
+                      "demand-zone": scannerCountFor("demand-zone"),
+                      "minervini-1m": scannerCountFor("minervini-1m"),
+                      "minervini-5m": scannerCountFor("minervini-5m"),
+                      "positive-earnings": scannerCountFor("positive-earnings"),
+                      "episodic-pivot": scannerCountFor("episodic-pivot"),
+                      "rs-line-leads": scannerCountFor("rs-line-leads"),
+                      "fresh-stage2": scannerCountFor("fresh-stage2"),
+                      "high-tight-flag": scannerCountFor("high-tight-flag"),
+                      "vcp": scannerCountFor("vcp"),
+                      "tight-closes": scannerCountFor("tight-closes"),
+                      "power-base": scannerCountFor("power-base"),
+                      "qullamaggie": scannerCountFor("qullamaggie"),
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({

@@ -89,6 +89,26 @@
         "backend"
       ],
       "port": 8001
+    },
+    {
+      "name": "frontend-space-ts",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend",
+        "--",
+        "--config",
+        "vite.config.ts",
+        "--port",
+        "5176"
+      ],
+      "port": 5176,
+      "env": {
+        "VITE_PROXY_TARGET": "https://dharmmalik-stock-scanner-backend.hf.space",
+        "VITE_API_TIMEOUT_MS": "900000"
+      }
     }
   ]
 }
