@@ -35,8 +35,13 @@ function pct(value: number | null | undefined, digits = 1): string {
  * whether breakouts pay, so the verdict rests only on measured present
  * performance against the user's own break-even.
  */
+// A weekend plus one missed night is 4 calendar days; beyond that the nightly
+// replay has stopped rather than merely run late.
+const STATS_STALE_AFTER_DAYS = 4;
+
 export function ExposureVerdict({ data }: Props) {
   const verdict = data?.verdict;
+  const stale = (data?.stats_lag_days ?? 0) > STATS_STALE_AFTER_DAYS;
 
   if (!data?.available || !verdict?.available) {
     return (
@@ -119,8 +124,15 @@ export function ExposureVerdict({ data }: Props) {
             open weeks read high because winners resolve faster than losers.
           </>
         ) : null}{" "}
-        This describes conditions now; it is not a forecast.
+        {stale ? "It is not a forecast." : "This describes conditions now; it is not a forecast."}
       </p>
+      {stale ? (
+        <p className="mkx-stale" role="status">
+          <AlertTriangle size={14} aria-hidden />
+          Stale: the breakout replay last ran through {data?.stats_as_of_session}, {data?.stats_lag_days} days
+          behind the price data, so this verdict reflects those weeks rather than today.
+        </p>
+      ) : null}
     </section>
   );
 }

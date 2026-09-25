@@ -149,6 +149,22 @@
   color: var(--text-muted);
 }
 
+.mkx-stale {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 0;
+  max-width: 88ch;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
+}
+
+.mkx-stale svg { flex: none; margin-top: 2px; }
+
 /* --- Empty state --- */
 
 .mkx-empty {

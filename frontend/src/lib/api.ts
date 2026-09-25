@@ -2685,6 +2685,9 @@ export type MarketsExposure = {
   available: boolean;
   reason: string | null;
   as_of_session: string | null;
+  /** Last session the nightly breakout replay covered, and how far it trails the price data. */
+  stats_as_of_session: string | null;
+  stats_lag_days: number | null;
   verdict: ExposureVerdict | null;
   edge_trend: EdgeTrendPoint[];
   context: {
@@ -2753,6 +2756,8 @@ export function getMarketsExposure(market: MarketKey = "india") {
     available: Boolean(root.available),
     reason: typeof root.reason === "string" ? root.reason : null,
     as_of_session: typeof root.as_of_session === "string" ? root.as_of_session : null,
+    stats_as_of_session: typeof root.stats_as_of_session === "string" ? root.stats_as_of_session : null,
+    stats_lag_days: readNullableNumber(root.stats_lag_days),
     verdict: readExposureVerdict(root.verdict),
     edge_trend: mapArray(root.edge_trend, (item) => {
       const r = isRecord(item) ? item : {};

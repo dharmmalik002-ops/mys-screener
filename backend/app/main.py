@@ -298,6 +298,69 @@ def pull_latest_xp_breadth() -> bool:
         return False
 
 
+_last_breakout_stats_pull_monotonic = 0.0
+_BREAKOUT_STATS_PULL_MIN_INTERVAL_S = 3600  # the file changes once a night
+
+
+def pull_latest_breakout_stats(path: Path | None = None) -> bool:
+    """Pull the committed breakout follow-through stats from the public repo.
+
+    ``breakout-stats.yml`` commits ``breakout_stats.json`` nightly with the
+    workflow's ``GITHUB_TOKEN``, and a push made with that token never triggers
+    another workflow — so ``deploy.yml`` does not fire and the Space would keep
+    whatever stats it was last deployed with. Pulling it here is what actually
+    delivers the nightly file. Throttled to once an hour per worker because the
+    file is ~600 KB and changes once a night. Returns True when a newer file was
+    written.
+    """
+    global _last_breakout_stats_pull_monotonic
+    import json as _json
+
+    import requests as _requests
+
+    now_m = time.monotonic()
+    if now_m - _last_breakout_stats_pull_monotonic < _BREAKOUT_STATS_PULL_MIN_INTERVAL_S:
+        return False
+    _last_breakout_stats_pull_monotonic = now_m
+
+    url = (
+        os.environ.get("BREAKOUT_STATS_URL")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data/breakout_stats.json"
+    ).strip()
+    path = path or Path(__file__).resolve().parents[1] / "data" / "breakout_stats.json"
+    try:
+        local_stamp = ""
+        try:
+            local_stamp = str(_json.loads(path.read_text(encoding="utf-8")).get("generated_at") or "")
+        except Exception:
+            local_stamp = ""
+        resp = _requests.get(url, timeout=25)
+        if resp.status_code != 200:
+            logger.info("Breakout stats self-update: remote HTTP %s — keeping local %s", resp.status_code, local_stamp or "<none>")
+            return False
+        remote = resp.json()
+        remote_stamp = str(remote.get("generated_at") or "") if isinstance(remote, dict) else ""
+        # Same guard the workflow applies before committing: never replace a
+        # usable file with one that has no weeks or no signals.
+        if not remote_stamp or not remote.get("weeks") or not remote.get("signals"):
+            logger.warning("Breakout stats self-update: remote payload invalid — keeping local")
+            return False
+        if local_stamp and remote_stamp <= local_stamp:
+            return False
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(resp.text, encoding="utf-8")
+        tmp.replace(path)
+        logger.info(
+            "Breakout stats self-update: pulled %s through %s (was %s)",
+            remote_stamp, remote.get("as_of_session"), local_stamp or "<none>",
+        )
+        return True
+    except Exception as exc:
+        logger.warning("Breakout stats self-update failed: %s", exc)
+        return False
+
+
 def pull_latest_mcap_breadth() -> bool:
     """Pull the committed ₹1,000 cr+ breadth history from the public repo.
 
@@ -565,6 +628,7 @@ def apply_bhavcopy_patch_on_startup() -> None:
     bands_pulled = pull_latest_price_bands()
     eod_bars_pulled = pull_latest_eod_bars()
     earnings_pulled = pull_latest_earnings_data()
+    breakout_pulled = pull_latest_breakout_stats()
     try:
         result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
@@ -576,7 +640,7 @@ def apply_bhavcopy_patch_on_startup() -> None:
     # charts / dashboard / scanners re-read fresh files.
     if (
         snapshot_updated or xp_pulled or mcap_pulled
-        or bands_pulled or eod_bars_pulled or earnings_pulled
+        or bands_pulled or eod_bars_pulled or earnings_pulled or breakout_pulled
     ):
         try:
             service._clear_runtime_caches()
@@ -675,6 +739,19 @@ def maybe_self_heal_bhavcopy() -> None:
             bands_current = False  # can't read bands — let the pull decide
 
         if bhav_current and xp_current and bands_current:
+            # Breakout stats land ~8 PM IST, hours after everything above is
+            # current, so this short-circuit would otherwise never pull them.
+            # They get their own background pull, throttled hourly inside
+            # pull_latest_breakout_stats, instead of re-running the whole heal.
+            stats_current = False
+            try:
+                stats_doc = _json.loads((data_dir / "breakout_stats.json").read_text(encoding="utf-8"))
+                stats_as_of = str(stats_doc.get("as_of_session") or "") if isinstance(stats_doc, dict) else ""
+                stats_current = bool(stats_as_of) and stats_as_of >= expected
+            except Exception:
+                stats_current = False
+            if not stats_current:
+                threading.Thread(target=pull_latest_breakout_stats, daemon=True).start()
             return  # all current for the latest trading session — skip the pull
     except Exception:
         pass  # can't determine staleness — fall through and let the apply decide

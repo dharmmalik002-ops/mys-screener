@@ -98,6 +98,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 2. **Patch Application:** On HF Space startup, `apply_bhavcopy_patch_on_startup()` in `app/main.py` reads `backend/data/bhavcopy_patch.json` and patches `free_snapshots.json`.
 3. **Current Schema Version:** `APPLY_SCHEMA_VERSION = 10` (includes NSE volume overlay from yfinance for combined BSE+NSE accuracy).
 4. **Staleness Guard:** `_scan_eligible_snapshots` filters out stocks with obsolete `history_session_date` relative to the patch date.
+5. **Breakout stats (Markets exposure verdict):** `.github/workflows/breakout-stats.yml` runs ~8 PM IST. It must build its own bars first (`scripts/build_breakout_bars.py` → `data/breakout_bars/`, gitignored) because `chart_cache/` is gitignored and absent on a runner — without that step the job failed every night from 2026-08-10 to 2026-09-25 and the verdict sat on July weeks. Its push uses `GITHUB_TOKEN`, which cannot trigger `deploy.yml`, so the Space gets the file only through `main.py::pull_latest_breakout_stats` (startup + traffic self-heal, hourly throttle). The exposure payload carries `stats_lag_days` and the page shows a warning past 4 days.
 
 ---
 

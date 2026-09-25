@@ -2912,10 +2912,25 @@ class DashboardService:
 
             verdict = exposure_model.compute_exposure(stats, stop_pct=stop_pct, win_pct=win_pct)
             latest = rows[-1] if rows else None
+            # The verdict is only as current as the nightly replay. When that
+            # job stopped running, the page kept saying "describes conditions
+            # now" over July weeks for two months — so the lag ships with it.
+            stats_as_of = str(stats.get("as_of_session") or "") or None
+            stats_lag_days = None
+            index_last = sources.get("index_last_session")
+            if stats_as_of and index_last:
+                try:
+                    stats_lag_days = (
+                        date.fromisoformat(str(index_last)[:10]) - date.fromisoformat(stats_as_of[:10])
+                    ).days
+                except ValueError:
+                    stats_lag_days = None
             return {
                 "available": bool(verdict.get("available")),
                 "reason": verdict.get("reason"),
-                "as_of_session": sources.get("index_last_session"),
+                "as_of_session": index_last,
+                "stats_as_of_session": stats_as_of,
+                "stats_lag_days": stats_lag_days,
                 "verdict": verdict,
                 "edge_trend": exposure_model.exposure_series(
                     stats, stop_pct=stop_pct, win_pct=win_pct

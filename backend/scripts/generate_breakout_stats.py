@@ -53,8 +53,8 @@ def load_universe(data_dir: Path) -> dict[str, dict]:
     return {str(r["symbol"]).upper(): r for r in rows if r.get("symbol")}
 
 
-def load_benchmark(data_dir: Path) -> pd.Series:
-    payload = json.loads((data_dir / "chart_cache" / BENCHMARK_FILE).read_text(encoding="utf-8"))
+def load_benchmark(bars_dir: Path) -> pd.Series:
+    payload = json.loads((bars_dir / BENCHMARK_FILE).read_text(encoding="utf-8"))
     frame = bs._bars_frame(payload)
     if frame is None:
         raise SystemExit(f"benchmark {BENCHMARK_FILE} has too little history to replay against")
@@ -177,6 +177,12 @@ def main() -> int:
     parser.add_argument("--weeks", type=int, default=12, help="how many ISO weeks back to replay")
     parser.add_argument("--limit-symbols", type=int, default=0, help="cap symbols (testing only)")
     parser.add_argument("--out", default=None, help="output path")
+    parser.add_argument(
+        "--bars-dir",
+        default=None,
+        help="daily bars to replay (default data/chart_cache; CI builds data/breakout_bars "
+        "with scripts/build_breakout_bars.py because chart_cache is gitignored)",
+    )
     args = parser.parse_args()
 
     data_dir = BACKEND_ROOT / "data"
@@ -184,17 +190,21 @@ def main() -> int:
 
     provider = FreeMarketDataProvider(gemini_api_key=None, eod_only_mode=True)
     universe = load_universe(data_dir)
-    benchmark = load_benchmark(data_dir)
+    bars_dir = Path(args.bars_dir) if args.bars_dir else data_dir / "chart_cache"
+    if not (bars_dir / BENCHMARK_FILE).exists():
+        logger.error("no %s in %s — build it with scripts/build_breakout_bars.py", BENCHMARK_FILE, bars_dir)
+        return 1
+    benchmark = load_benchmark(bars_dir)
 
     logger.info("loading bars…")
     frames: dict[str, pd.DataFrame] = {}
-    for symbol, frame in bs.iter_symbol_bars(data_dir / "chart_cache"):
+    for symbol, frame in bs.iter_symbol_bars(bars_dir):
         if symbol in universe:
             frames[symbol] = frame
         if args.limit_symbols and len(frames) >= args.limit_symbols:
             break
     if not frames:
-        logger.error("no usable symbols in chart_cache — nothing to replay")
+        logger.error("no usable symbols in %s — nothing to replay", bars_dir)
         return 1
     logger.info("loaded %d symbols", len(frames))
 

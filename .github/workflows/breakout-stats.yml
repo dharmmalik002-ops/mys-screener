@@ -1,20 +1,23 @@
 name: Breakout follow-through stats
 
-# Replays every scanner over the cached daily bars and measures what happened
-# after each signal. Feeds the Markets page regime brief.
+# Replays every scanner over daily bars and measures what happened after each
+# signal. Feeds the Markets page exposure verdict and regime brief.
 #
-# Runs after the daily bhavcopy job has landed the day's bars, so the newest
-# session is included. ~25 minutes of CPU for a 12-week window over ~1,350
-# symbols, which is why this is a nightly job rather than an API endpoint.
+# Bars: the replay was written against backend/data/chart_cache/, which is
+# gitignored, so on a runner it did not exist and this job failed on its first
+# file read every night from the day it was added — the committed stats were
+# the one hand-built file from 2026-08-10. scripts/build_breakout_bars.py now
+# builds the bars here first: chunked yf.download (the call shape that works
+# from datacenter IPs), gap-filled from the committed data/eod_bars store.
 #
-# Reaching the HF Space: the commit below deliberately does NOT carry [skip ci].
-# deploy.yml already triggers on pushes touching backend/**, and this job writes
-# backend/data/breakout_stats.json — which deploy.yml does not exclude from its
-# rsync. So the existing, proven deploy path carries the stats to the Space the
-# same evening, with no second force-push and no extra credentials here. (The
-# bhavcopy job uses [skip ci] because it force-pushes to the Space itself; this
-# one has no such step, so skipping CI would strand the file in git until the
-# next bhavcopy run — roughly a day of staleness for no reason.)
+# Reaching the HF Space: a push made with GITHUB_TOKEN never triggers another
+# workflow, so deploy.yml does NOT fire for this commit. The Space pulls the
+# file from the public repo itself (main.py::pull_latest_breakout_stats, run on
+# startup and from the traffic self-heal), the same way it gets XP breadth and
+# the EOD bars.
+#
+# Cost: ~13 min of downloads plus ~35 min of CPU for a 12-week window over
+# ~1,500 symbols, which is why this is a nightly job rather than an endpoint.
 
 on:
   schedule:
@@ -25,6 +28,9 @@ on:
         description: "How many ISO weeks back to replay"
         required: false
         default: "12"
+
+permissions:
+  contents: write
 
 concurrency:
   # Never let two replays race to write the same file.
@@ -49,11 +55,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
 
+      - name: Build daily bars
+        run: |
+          set -euo pipefail
+          cd backend
+          python3 scripts/build_breakout_bars.py
+
       - name: Replay scanners and build stats
         run: |
           set -euo pipefail
           cd backend
-          python3 scripts/generate_breakout_stats.py --weeks "${{ github.event.inputs.weeks || '12' }}"
+          python3 scripts/generate_breakout_stats.py \
+            --weeks "${{ github.event.inputs.weeks || '12' }}" \
+            --bars-dir data/breakout_bars
 
       - name: Sanity-check the output
         run: |
@@ -94,7 +108,8 @@ jobs:
           fi
           AS_OF=$(python3 -c "import json; print(json.load(open('backend/data/breakout_stats.json'))['as_of_session'])")
           SIGS=$(python3 -c "import json; print(json.load(open('backend/data/breakout_stats.json'))['signals'])")
-          # No [skip ci]: deploy.yml must fire so the Space picks this up tonight.
+          # The Space pulls this file itself (see the header); a GITHUB_TOKEN
+          # push would not trigger deploy.yml anyway.
           git commit -m "data: breakout follow-through stats through ${AS_OF} (${SIGS} signals)"
           # Same race-proofing as the bhavcopy job: feature commits land on main
           # while this long job runs, so a plain push is rejected with
