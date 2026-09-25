@@ -85,3 +85,9 @@ backend/data/mf_portfolio.json
 
 # Vercel CLI project linkage — Vercel advises against committing this.
 frontend/.vercel/
+
+# Local runtime caches — rebuilt on demand, never shipped (committed copies
+# would look fresh after checkout and serve stale data)
+backend/data/earnings_cache/
+backend/data/bot_sleeve_cache.json
+backend/data/bot_memory.json
