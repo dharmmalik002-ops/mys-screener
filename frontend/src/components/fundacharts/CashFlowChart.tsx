@@ -12,13 +12,13 @@ type Props = { cashFlow: CashFlowItem[] };
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
-      <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>{label}</div>
+    <div style={{ background: "var(--surface-strong)", border: "1px solid color-mix(in srgb, var(--text) 12%, transparent)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
+      <div style={{ fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color || p.fill }} />
-          <span style={{ color: "rgba(255,255,255,0.7)" }}>{p.name}:</span>
-          <span style={{ color: p.color || p.fill, fontWeight: 700 }}>
+          <span style={{ color: "color-mix(in srgb, var(--text) 70%, transparent)" }}>{p.name}:</span>
+          <span style={{ color: p.color || p.fill, fontWeight: 500 }}>
             {p.value != null ? `₹${p.value >= 0 ? "" : ""}${p.value.toFixed(0)} Cr` : "—"}
           </span>
         </div>
@@ -36,9 +36,9 @@ function MetricCard({ label, value, color }: { label: string; value: number | nu
   };
   const sign = value != null && value >= 0;
   return (
-    <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "7px 12px", textAlign: "center", flex: 1, minWidth: 100 }}>
-      <div style={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: value == null ? "rgba(255,255,255,0.3)" : (sign ? color : "var(--negative)"), fontFamily: "monospace" }}>
+    <div style={{ background: "color-mix(in srgb, var(--text) 4%, transparent)", border: "1px solid color-mix(in srgb, var(--text) 9%, transparent)", borderRadius: 8, padding: "7px 12px", textAlign: "center", flex: 1, minWidth: 100 }}>
+      <div style={{ fontSize: "var(--fs-micro)", color: "color-mix(in srgb, var(--text) 50%, transparent)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: "var(--fs-body)", fontWeight: 500, color: value == null ? "color-mix(in srgb, var(--text) 30%, transparent)" : (sign ? color : "var(--negative)"), fontFamily: "monospace" }}>
         {fmt(value)}
       </div>
     </div>
@@ -48,7 +48,7 @@ function MetricCard({ label, value, color }: { label: string; value: number | nu
 export function CashFlowChart({ cashFlow }: Props) {
   if (!cashFlow || cashFlow.length === 0) {
     return (
-      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "30px 0", fontSize: "var(--fs-base)" }}>
+      <div style={{ textAlign: "center", color: "color-mix(in srgb, var(--text) 40%, transparent)", padding: "30px 0", fontSize: "var(--fs-base)" }}>
         No cash flow data available
       </div>
     );
@@ -66,7 +66,7 @@ export function CashFlowChart({ cashFlow }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <span style={{ fontSize: "var(--fs-small)", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+      <span style={{ fontSize: "var(--fs-small)", fontWeight: 500, color: "var(--text)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
         Cash Flow Quality ({sorted.length}Y)
       </span>
 
@@ -80,12 +80,12 @@ export function CashFlowChart({ cashFlow }: Props) {
       <div style={{ height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-            <XAxis dataKey="year" tick={{ fontSize: "var(--fs-micro)", fill: "rgba(255,255,255,0.45)" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: "var(--fs-micro)", fill: "rgba(255,255,255,0.45)" }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--text) 7%, transparent)" />
+            <XAxis dataKey="year" tick={{ fontSize: "var(--fs-micro)", fill: "color-mix(in srgb, var(--text) 45%, transparent)" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: "var(--fs-micro)", fill: "color-mix(in srgb, var(--text) 45%, transparent)" }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.6)" }} />
-            <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
+            <Legend wrapperStyle={{ fontSize: "var(--fs-tiny)", color: "color-mix(in srgb, var(--text) 60%, transparent)" }} />
+            <ReferenceLine y={0} stroke="color-mix(in srgb, var(--text) 20%, transparent)" />
             <Bar dataKey="ocf" name="Oper. CF" fill="var(--positive)" opacity={0.8} radius={[2, 2, 0, 0]} />
             <Bar dataKey="capex" name="Capex" fill="#ef444466" radius={[2, 2, 0, 0]} />
             <Line type="monotone" dataKey="fcf" name="Free CF" stroke="#00d2ff"
@@ -96,13 +96,13 @@ export function CashFlowChart({ cashFlow }: Props) {
 
       {/* FCF quality note */}
       {latest.operating_cash_flow_crore != null && latest.free_cash_flow_crore != null && (
-        <div style={{ fontSize: "var(--fs-small)", color: "rgba(255,255,255,0.45)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
+        <div style={{ fontSize: "var(--fs-small)", color: "color-mix(in srgb, var(--text) 45%, transparent)", borderTop: "1px solid color-mix(in srgb, var(--text) 8%, transparent)", paddingTop: 8 }}>
           FCF Conversion:{" "}
           <span style={{
-            fontWeight: 700,
+            fontWeight: 500,
             color: latest.operating_cash_flow_crore > 0
               ? (latest.free_cash_flow_crore / latest.operating_cash_flow_crore >= 0.7 ? "var(--positive)" : "#f59e0b")
-              : "rgba(255,255,255,0.4)",
+              : "color-mix(in srgb, var(--text) 40%, transparent)",
           }}>
             {latest.operating_cash_flow_crore > 0
               ? `${((latest.free_cash_flow_crore / latest.operating_cash_flow_crore) * 100).toFixed(0)}%`
@@ -110,7 +110,7 @@ export function CashFlowChart({ cashFlow }: Props) {
           </span>
           <span style={{ marginLeft: 12 }}>
             Capex Intensity:{" "}
-            <span style={{ fontWeight: 700, color: "#f59e0b" }}>
+            <span style={{ fontWeight: 500, color: "#f59e0b" }}>
               {latest.capital_expenditure_crore != null && latest.operating_cash_flow_crore > 0
                 ? `${((Math.abs(latest.capital_expenditure_crore) / latest.operating_cash_flow_crore) * 100).toFixed(0)}%`
                 : "—"}

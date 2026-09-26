@@ -1,0 +1,1039 @@
+/* ==========================================================================
+   classic.css — the "Classic" design: obsidian (dark) / ivory (light) with a
+   champagne-gold accent, Geist + Instrument Serif. This is the look that
+   shipped in 27bc4beb / 7f69d028, kept selectable beside Studio.
+   --------------------------------------------------------------------------
+   Every selector is scoped to :root[data-design="classic"], so it can never
+   leak into Studio, and loads after premium.css so it wins ties. The token
+   blocks are the old app.css :root / light blocks verbatim; the chrome layer
+   is the old premium.css. Switching design reloads the page (see App.tsx),
+   because the canvas charts and the regime palette read it once at load.
+   ========================================================================== */
+
+:root[data-design="classic"] {
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  --font-sans: "Geist", "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Geist", "Inter", "Segoe UI", system-ui, sans-serif;
+  /* Editorial serif for page titles and hero numerals only — never tables. */
+  --font-serif: "Instrument Serif", "Iowan Old Style", "Georgia", serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+  --bg: #0a0a0c;
+  --bg-alt: #0e0f12;
+  /* The page canvas. Flat, on purpose: this used to be a blue gradient mesh
+     that only the Markets page fully covered, so that page read as a calm grey
+     and every other page read blue. The grey won. --card-flat is one step off
+     the canvas so the opaque cards that used to sit on --bg (Markets verdict,
+     context tiles, disclosures) still read as cards now that the canvas is
+     their old colour. */
+  --app-canvas: var(--bg-alt);
+  --card-flat: #15161a;
+  --surface: rgba(20, 21, 25, 0.80);
+  --surface-strong: rgba(22, 23, 27, 0.94);
+  --surface-soft: rgba(36, 37, 43, 0.50);
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  /* Dark values are measured against --card-flat (#171f3a), the LIGHTEST dark
+     surface and therefore the tightest test -- a value can clear AA on the
+     canvas and fail on a card, which is where most text actually sits.
+     --text-muted was 3.41:1 and --negative 4.31:1. */
+  --text: #edebe5;
+  --text-soft: #a9a69d;
+  --text-muted: #8b877d;
+  --accent: #d4af6a;
+  --accent-strong: #c29b52;
+  /* Accent text sitting ON an accent-tinted chip. It has to move the OPPOSITE
+     way in each theme: darker than --accent on a light tint, lighter than it
+     on a dark tint. Using --accent-strong for both put #3b6cef on a dark chip
+     and cost 8 severe contrast failures on the Funds page. */
+  --accent-on-tint: #e6c88c;
+  --accent-2: #5fc6a0;
+  --accent-3: #8fb8d8;
+  --positive: #34c28a;
+  /* Chart candles are a SEPARATE semantic from UI up/down, and deliberately
+     so: this is TradingView's exact pair, chosen so the chart reads like a pro
+     terminal. Collapsing it into --positive/--negative would flatten a real
+     distinction. Tokenised only so the hex stops being repeated in ten files.
+     Canvas-drawn series cannot read CSS variables -- lightweight-charts callers
+     import the same values from lib/chartDefaults.ts instead. */
+  /* Tint and shade steps DERIVED from the one green and the one red, for the
+     places that need a lighter or darker variant: text on a colour-tinted
+     chip, a dark-on-light badge. These replaced nine more hand-picked hexes
+     (#6ee7b7, #86efac, #4ade80, #fca5a5, #b91c1c, #991b1b, #065f46, #166534,
+     #7f1d1d). Deriving them is the point: a hand-picked tint is how a palette
+     grows a tenth green. */
+  --positive-tint: color-mix(in oklab, var(--positive) 55%, white);
+  --positive-shade: color-mix(in oklab, var(--positive) 58%, black);
+  --negative-tint: color-mix(in oklab, var(--negative) 45%, white);
+  --negative-shade: color-mix(in oklab, var(--negative) 58%, black);
+  --positive-on-tint: var(--positive);
+  --negative-on-tint: var(--negative);
+  --candle-up: #22ab94;
+  --candle-down: #f7525f;
+  --positive-soft: rgba(52, 194, 138, 0.13);
+  --negative: #ef6461;
+  --negative-soft: rgba(239, 100, 97, 0.13);
+  --danger: #f07470;
+  /* Aliases kept for the call sites that use them; they must never hold a
+     second green or a second red, which is how this drifted before. */
+  --red: var(--negative);
+  --green: var(--positive);
+  --teal: #3fb8a8;
+  --teal-soft: rgba(63, 184, 168, 0.13);
+  --pink: #e0719b;
+  --pink-soft: rgba(224, 113, 155, 0.13);
+  --orange: #e8905a;
+  --orange-soft: rgba(232, 144, 90, 0.13);
+  --violet: #a391e6;
+  --amber: #e0a84a;
+  --amber-soft: rgba(224, 168, 74, 0.13);
+  --warning: #e6b04e;
+  --accent-contrast: #17130a;
+  /* ---- Elevation ------------------------------------------------------
+     Three levels, replacing 61 hand-rolled drop shadows. Three rather than
+     the two this pass aimed at, because there are genuinely three needs: a
+     hairline lift for a row or chip, a card, and an overlay. Two forced
+     modals and table rows to share a shadow.
+
+     Focus rings, inset inner-highlights and coloured accent glows are NOT
+     elevation and are left alone -- collapsing those into a drop shadow
+     would lose the distinction, not tidy it. */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --elev-2: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 34px -14px rgba(0, 0, 0, 0.55);
+  --elev-3: 0 28px 64px -16px rgba(0, 0, 0, 0.66);
+  /* Kept as aliases: both names are used widely and both mean "a card". */
+  --shadow: var(--elev-2);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0));
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-glow: rgba(212, 175, 106, 0.05);
+  /* ---- Corner radii ---------------------------------------------------
+     "Pill" was written three ways -- 99px, 999px and 9999px, 108
+     declarations between them -- which is how you end up with two
+     differently-rounded chips side by side. One token now.
+
+     --radius-xs closes the gap the old scale left below 8px, which is why
+     1, 2, 3, 4, 5, 6, 7 and 9px had all grown in ad hoc. 50% is left alone:
+     it means "circle" and is unambiguous. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+  /* One focus ring. The eight :focus declarations used five treatments --
+     accent at 12%, 14% and 15%, plus two indigo rgba() values that were not
+     the app accent at all. Deliberately stronger than any of them: the
+     original audit found only a handful of focus-visible rules across the
+     whole stylesheet, so keyboard focus was near-invisible. A panel that
+     wants its own hue overrides this token locally rather than inventing a
+     sixth ring. */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent);
+  /* ---- Type scale ----------------------------------------------------
+     Twelve steps, replacing 72 distinct computed sizes across 1,178
+     declarations. The sprawl was mostly the same optical size written
+     several ways: 11px, 0.68rem, 0.7rem and 0.72rem all landed within half
+     a pixel of each other, and px/rem were mixed freely for the same intent.
+
+     Twelve, not the seven this pass originally aimed at. Seven cannot span
+     a UI that runs from an 8px sort-arrow to a 44px exposure headline
+     without doing damage: it grew mobile nav labels and avatar initials by
+     a quarter and shrank two hero numbers by a fifth. Twelve keeps every
+     declaration within 8% of where it was bar fourteen of them, and the
+     worst case is one 8px icon glyph.
+
+     Steps are dense between 9 and 14px on purpose -- that band holds 1,028
+     of the 1,178 declarations, because this is a table-heavy app. */
+  --fs-nano: 9px;
+  --fs-micro: 10px;
+  --fs-tiny: 11px;
+  --fs-small: 12px;
+  --fs-base: 13px;
+  --fs-body: 14px;
+  --fs-lead: 16px;
+  --fs-title: 18px;
+  --fs-heading: 22px;
+  --fs-display: 28px;
+  --fs-jumbo: 32px;
+  --fs-hero: 40px;
+
+  /* Spacing scale — use these instead of ad-hoc paddings so density stays consistent. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  /* Hairline + one soft elevation: the only two "depth" treatments chrome should use. */
+  --hairline: 1px solid var(--line);
+  --elevation: var(--elev-2);
+  --transition-fast: var(--dur-fast) var(--ease-out);
+  --transition-smooth: var(--dur-slow) var(--ease-emphasis);
+  /* Motion scale. Durations were previously ad-hoc: 19 distinct values, with
+     `0.15s` and `150ms` — the same number — written both ways 72 times between
+     them. Three steps cover everything chrome needs:
+       fast  — hover/press feedback on a control the pointer is already on
+       base  — a state change the eye has to follow (panel, popover, toast)
+       slow  — a larger surface entering or leaving (modal, drawer) */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-emphasis: cubic-bezier(0.4, 0, 0.2, 1);
+  --hero-glow: radial-gradient(ellipse at 18% 0%, rgba(212, 175, 106, 0.08), transparent 52%), radial-gradient(ellipse at 85% 0%, rgba(143, 184, 216, 0.05), transparent 45%);
+  /* Premium gradient mesh under the glass chrome (replaced the photographic
+     background: glass over a quiet mesh reads terminal-grade, not wallpaper).
+     To restore the photo: url("/liquid-glass-bg.jpg"). */
+  --app-bg-image: radial-gradient(ellipse 70% 40% at 50% -8%, rgba(212, 175, 106, 0.07), transparent 60%), linear-gradient(180deg, #0e0f12 0%, #0b0b0d 100%);
+  /* Theme veil: a quiet mesh needs far less dimming than the old photo did. */
+  --app-veil: linear-gradient(180deg, rgba(10, 10, 12, 0) 0%, rgba(10, 10, 12, 0.4) 100%);
+  /* Gradient-stroke "liquid glass" rim — bright at top & bottom edges, fading mid (masked ::before). */
+  --glass-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 45%);
+}
+
+:root[data-design="classic"][data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f3ee;
+  --bg-alt: #f0ede6;
+  --app-canvas: var(--bg-alt);
+  /* Lighter than the canvas here, darker than it in dark theme — either way a
+     card should be the thing that catches the light. */
+  --card-flat: #fbfaf7;
+  --surface: rgba(255, 255, 253, 0.74);
+  --surface-strong: rgba(255, 254, 251, 0.94);
+  --surface-soft: rgba(240, 237, 229, 0.70);
+  --line: rgba(40, 33, 20, 0.09);
+  --line-strong: rgba(40, 33, 20, 0.17);
+  --text: #1a1814;
+  --text-soft: #57534a;
+  /* #94a3b8 on #f1f5f9 was ~2.1:1 — labels washed out. Slate-500 keeps the
+     muted feel at readable contrast. */
+  --text-muted: #6a655a;
+  --accent: #86641f;
+  --accent-strong: #6f5214;
+  --accent-on-tint: #6f5214;
+  /* Light-theme colour values are darker than their dark-theme counterparts
+     because they are read as TEXT on a near-white card, not on near-black.
+     Every value here was measured against --card-flat (#f4f7fb) and clears
+     WCAG AA 4.5:1; the previous set had --positive at 3.07:1, --danger at
+     3.50:1 and --amber at 2.96:1, which is why gains, warnings and delete
+     actions were all hard to read in light mode. */
+  --accent-2: #1d6b52;
+  --accent-3: #2b6c8f;
+  --positive: #137a4c;
+  --positive-on-tint: var(--positive-shade);
+  --negative-on-tint: var(--negative-shade);
+  --positive-soft: rgba(19, 122, 76, 0.10);
+  --negative: #b8323a;
+  --negative-soft: rgba(184, 50, 58, 0.10);
+  --danger: #a82b2b;
+  --red: var(--negative);
+  --green: var(--positive);
+  --teal: #0f6f66;
+  --teal-soft: rgba(15, 111, 102, 0.10);
+  --pink: #b3346a;
+  --pink-soft: rgba(179, 52, 106, 0.10);
+  --orange: #b0561c;
+  --orange-soft: rgba(176, 86, 28, 0.10);
+  --violet: #6a4fc4;
+  --amber: #9a6410;
+  --amber-soft: rgba(154, 100, 16, 0.10);
+  --warning: #9a6410;
+  --accent-contrast: #fffdf7;
+  --elev-1: 0 1px 2px rgba(40, 30, 10, 0.06);
+  --elev-2: 0 1px 2px rgba(40, 30, 10, 0.05), 0 10px 28px -12px rgba(40, 30, 10, 0.14);
+  --elev-3: 0 24px 56px -16px rgba(40, 30, 10, 0.22);
+  --shadow: var(--elev-2);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.25));
+  --glass-border: rgba(40, 33, 20, 0.10);
+  --glass-glow: rgba(134, 100, 31, 0.05);
+  --hero-glow: radial-gradient(ellipse at 18% 0%, rgba(134, 100, 31, 0.07), transparent 52%);
+  --app-bg-image: linear-gradient(180deg, #f5f3ee 0%, #f0ede6 100%);
+  --app-veil: linear-gradient(180deg, rgba(245, 243, 238, 0) 0%, rgba(245, 243, 238, 0.5) 100%);
+  /* Darker rim for light theme so the glass edge reads on light surfaces. */
+  --glass-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 45%);
+}
+
+
+/* Values the shared chart marks (tick meters, distribution bars, hatched
+   columns, tooltip pill) read, in the Classic palette. */
+:root[data-design="classic"] {
+  --viz-orange: #d48850;
+  --viz-orange-soft: #e6b04e;
+  --viz-pink: #e0605c;
+  --viz-green: #2fb67f;
+  --viz-purple: #d4af6a;
+  --viz-red: #ef6461;
+  --inverse: #edebe5;
+  --inverse-ink: #0e0f12;
+  --track: rgba(255, 255, 255, 0.10);
+  --muted-bg: rgba(255, 255, 255, 0.04);
+  --chip-line: rgba(255, 255, 255, 0.12);
+  --axis: #8b877d;
+  --legend: #a9a69d;
+  --nav-ink: #a9a69d;
+  --hatch-bar: repeating-linear-gradient(60.34deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 3.95px);
+  --hatch-soft: repeating-linear-gradient(54.4deg, rgba(255, 255, 255, 0.07) 0 0.6px, transparent 0.6px 4.64px);
+  --hatch-white: repeating-linear-gradient(54.4deg, rgba(255, 255, 255, 0.28) 0 0.6px, transparent 0.6px 4.64px);
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-soft: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+:root[data-design="classic"][data-theme="light"] {
+  --viz-purple: #b8861f;
+  --inverse: #1a1814;
+  --inverse-ink: #fffdf7;
+  --track: rgba(40, 33, 20, 0.12);
+  --muted-bg: #f0ede6;
+  --chip-line: rgba(40, 33, 20, 0.14);
+  --axis: #6b665b;
+  --legend: #57534a;
+  --nav-ink: #57534a;
+  --hatch-bar: repeating-linear-gradient(60.34deg, rgba(40, 33, 20, 0.08) 0 1px, transparent 1px 3.95px);
+  --hatch-soft: repeating-linear-gradient(54.4deg, rgba(40, 33, 20, 0.06) 0 0.6px, transparent 0.6px 4.64px);
+  --hatch-white: repeating-linear-gradient(54.4deg, rgba(255, 255, 255, 0.55) 0 0.6px, transparent 0.6px 4.64px);
+}
+
+/* Classic sets its weight: the shared stylesheets now default to regular and
+   medium, which is the Studio voice. */
+html:root[data-design="classic"] strong,
+html:root[data-design="classic"] b,
+html:root[data-design="classic"] th {
+  font-weight: 600;
+}
+
+html:root[data-design="classic"] .homepro-kpi-label,
+html:root[data-design="classic"] .homepro-card h3 {
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   premium.css — the house look, loaded after overrides.css
+   --------------------------------------------------------------------------
+   One visual language for the whole app: warm obsidian (dark) / ivory (light)
+   surfaces, a single champagne-gold accent, Geist for UI, Geist Mono for
+   numbers, Instrument Serif for a handful of editorial headlines.
+
+   Specificity: lazily-loaded panel CSS is injected AFTER this file, so any
+   rule here that must beat a panel's own rule is prefixed `html:root` —
+   (0,2,1) beats a panel's plain class and its `:root[data-theme] .x` (0,3,0)
+   only where we add one more class. mobile.css prefixes with `html ` (0,1,1)
+   and owns LAYOUT on phones, so the rules below stay on paint (colour,
+   border, shadow, type) and leave padding/size to the layout files.
+   ========================================================================== */
+
+:root[data-design="classic"] {
+  /* Card surface: a flat fill with a faint top-lit sheen. */
+  --surface-card: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0) 140px), var(--card-flat);
+  --surface-raised: #1b1c21;
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --gold-grad: linear-gradient(180deg, #e3c586 0%, #cfa75c 100%);
+  --gold-line: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+  --row-hover: rgba(255, 255, 255, 0.028);
+  --tracking-tight: -0.018em;
+  --tracking-label: 0.09em;
+}
+
+:root[data-design="classic"][data-theme="light"] {
+  --surface-card: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
+  --surface-raised: #ffffff;
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --gold-grad: linear-gradient(180deg, #957129 0%, #7a5b19 100%);
+  --row-hover: rgba(40, 33, 20, 0.035);
+}
+
+/* ---------- Type ---------------------------------------------------------- */
+
+html[data-design="classic"] body {
+  font-family: var(--font-sans);
+  letter-spacing: -0.006em;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+  text-rendering: optimizeLegibility;
+}
+
+html:root[data-design="classic"] h1,
+html:root[data-design="classic"] h2,
+html:root[data-design="classic"] h3,
+html:root[data-design="classic"] h4 {
+  letter-spacing: var(--tracking-tight);
+}
+
+:root[data-design="classic"] ::selection {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text);
+}
+
+/* Gold scrollbar thumb on hover only — resting state stays quiet. */
+:root[data-design="classic"] ::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* ---------- Canvas -------------------------------------------------------- */
+
+:root[data-design="classic"] .app-shell::before {
+  background: var(--app-bg-image);
+}
+
+/* ---------- Ticker ribbon ------------------------------------------------- */
+
+html:root[data-design="classic"] .ticker-ribbon {
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+html:root[data-design="classic"] .ticker-ribbon::before {
+  background: linear-gradient(90deg, var(--bg), transparent 6%, transparent 94%, var(--bg));
+}
+
+html:root[data-design="classic"] .ticker-ribbon-item {
+  gap: 7px;
+  padding: 0 14px;
+  position: relative;
+}
+
+html:root[data-design="classic"] .ticker-ribbon-item::after {
+  content: "";
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--line-strong);
+  transform: translateY(-50%);
+}
+
+html:root[data-design="classic"] .ticker-ribbon-item span {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+html:root[data-design="classic"] .ticker-ribbon-item strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+html:root[data-design="classic"] .ticker-ribbon-item small {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  font-weight: 500;
+}
+
+/* ---------- Top bar ------------------------------------------------------- */
+
+html:root[data-design="classic"][data-theme] .top-nav {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 12px 32px -24px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-design="classic"][data-theme="light"] .top-nav {
+  box-shadow: 0 1px 0 rgba(40, 33, 20, 0.02);
+}
+
+html:root[data-design="classic"] .top-nav .brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    var(--surface-raised);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  box-shadow: var(--card-highlight), 0 6px 18px -8px color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1;
+  padding-bottom: 1px;
+}
+
+html:root[data-design="classic"] .top-nav .brand-cluster h1 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.005em;
+  line-height: 1.05;
+  color: var(--text);
+}
+
+html:root[data-design="classic"] .top-nav .brand-cluster h1 .brand-accent {
+  font-style: italic;
+  color: var(--accent);
+}
+
+html:root[data-design="classic"] .top-nav .brand-cluster .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  opacity: 1;
+  margin-bottom: 3px;
+}
+
+/* The page tabs sit in one recessed rail — a segmented control — instead of
+   eleven separately outlined glass chips. */
+:root[data-design="classic"] .nav-rail {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 3px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--line);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button {
+  position: relative;
+  overflow: visible;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  animation: none;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button::before {
+  display: none;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+/* !important only because overrides.css paints every .nav-button.primary
+   solid accent with !important; the rail's active tab is the one exception. */
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button.primary {
+  color: var(--text) !important;
+  background: var(--surface-raised) !important;
+  border-color: var(--line-strong) !important;
+  box-shadow: var(--card-highlight), 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+/* A hairline of gold under the active tab — the one place the accent shows
+   in the chrome at rest. */
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button.primary::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  bottom: -1px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+:root[data-design="classic"][data-theme="light"] .top-nav .nav-rail .nav-button.primary {
+  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.08), 0 0 0 0.5px rgba(40, 30, 10, 0.04) !important;
+}
+
+/* Search, status pill and icon buttons: flat, hairline, no glass rim. */
+html:root[data-design="classic"][data-theme] .top-nav .status-pill::before,
+html:root[data-design="classic"][data-theme] .top-nav .icon-btn::before {
+  display: none;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-search input,
+html:root[data-design="classic"][data-theme] .top-nav .nav-search-field input {
+  height: 34px;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-search input::placeholder {
+  color: var(--text-muted);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-search input:focus {
+  background: var(--surface-raised);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: var(--focus-ring);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .status-pill,
+html:root[data-design="classic"][data-theme] .top-nav .icon-btn {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 10px;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .status-pill {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .status-pill strong {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--text);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .icon-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* ---------- Cards --------------------------------------------------------- */
+
+html:root[data-design="classic"] .panel,
+html:root[data-design="classic"] .homepro-kpi,
+html:root[data-design="classic"] .homepro-card,
+html:root[data-design="classic"] .screener-sidebar-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  box-shadow: var(--card-highlight), var(--elev-2);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html:root[data-design="classic"] .panel:hover,
+html:root[data-design="classic"] .homepro-card:hover {
+  border-color: var(--line-strong);
+}
+
+html:root[data-design="classic"] .homepro-kpi {
+  transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+
+html:root[data-design="classic"] .homepro-kpi:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+
+/* KPI anatomy: a quiet label, a serif hero numeral, muted sub-lines. */
+html:root[data-design="classic"] .homepro-kpi-label,
+html:root[data-design="classic"] .homepro-card h3,
+html:root[data-design="classic"] .panel-kicker {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+html:root[data-design="classic"] .homepro-kpi-value {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+html:root[data-design="classic"] .homepro-kpi-sub {
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+html:root[data-design="classic"] .homepro-kpi-icon {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid var(--line);
+  color: var(--text-soft);
+}
+
+html:root[data-design="classic"] .panel h2 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Home palette: the dashboard reads its own --hp-* tokens. */
+html:root[data-design="classic"] .homepro {
+  --hp-card-bg: var(--card-flat);
+  --hp-border: var(--line);
+  --hp-muted: var(--text-muted);
+  --hp-violet: var(--violet);
+  --hp-shadow: var(--elev-2);
+}
+
+/* ---------- Buttons ------------------------------------------------------- */
+
+/* Primary actions inside pages (the nav rail is styled above). */
+html:root[data-design="classic"] .nav-button.primary:not(.top-nav .nav-button) {
+  background: var(--gold-grad) !important;
+  color: var(--accent-contrast) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 80%, #000) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent) !important;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+html:root[data-design="classic"] .nav-button.primary:not(.top-nav .nav-button):hover {
+  background: var(--gold-grad) !important;
+  filter: brightness(1.06);
+  border-color: color-mix(in srgb, var(--accent-strong) 80%, #000) !important;
+}
+
+html:root[data-design="classic"] .nav-button.ghost:not(.top-nav .nav-button) {
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+  color: var(--text);
+}
+
+html:root[data-design="classic"] .nav-button.ghost:not(.top-nav .nav-button):hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+/* Segmented pills: selected = raised neutral with gold text, not a solid
+   accent slab. Solid gold is reserved for the one primary action per view. */
+html:root[data-design="classic"] .timeframe-pill.active,
+html:root[data-design="classic"] .scanner-tab.active,
+html:root[data-design="classic"] .indicator-pill.active,
+html:root[data-design="classic"] .tool-pill.active,
+html:root[data-design="classic"] .pe-modal-tab.active,
+html:root[data-design="classic"] .mf-mode-tab.active,
+html:root[data-design="classic"] .saved-scanner-chip.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-raised)) !important;
+  color: var(--accent-on-tint) !important;
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  box-shadow: var(--card-highlight) !important;
+}
+
+/* ---------- Tables & rows ------------------------------------------------- */
+
+html:root[data-design="classic"] .scan-row:hover {
+  background: var(--row-hover);
+}
+
+html:root[data-design="classic"] .scan-row.active {
+  border-left: 2px solid var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 7%, transparent) !important;
+}
+
+html:root[data-design="classic"] table thead th {
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+html:root[data-design="classic"] table tbody tr {
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+/* ---------- Form fields --------------------------------------------------- */
+
+html:root[data-design="classic"] input[type="text"],
+html:root[data-design="classic"] input[type="search"],
+html:root[data-design="classic"] input[type="number"],
+html:root[data-design="classic"] input[type="date"],
+html:root[data-design="classic"] select,
+html:root[data-design="classic"] textarea {
+  caret-color: var(--accent);
+}
+
+html:root[data-design="classic"] input[type="checkbox"]::before {
+  background: var(--accent-contrast);
+}
+
+/* ---------- Chart surfaces ------------------------------------------------ */
+
+/* Tooltips anywhere in the app share one elevated card. */
+html:root[data-design="classic"] .chart-tooltip,
+html:root[data-design="classic"] .rrg-tooltip,
+html:root[data-design="classic"] .treemap-tooltip,
+html:root[data-design="classic"] [class*="-tooltip"][role="tooltip"] {
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--elev-3);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+/* ---------- Footer -------------------------------------------------------- */
+
+html:root[data-design="classic"] .app-footer,
+html:root[data-design="classic"] footer.site-footer {
+  color: var(--text-muted);
+  border-top: 1px solid var(--line);
+}
+
+/* The status pill's schedule label is long; below a wide desktop the dot and
+   the snapshot date carry it, and the refresh/theme buttons stay on screen. */
+@media (max-width: 1680px) {
+  html:root[data-design="classic"] .top-nav .status-pill > span:not(.status-dot):not(.status-pill-sep),
+  html:root[data-design="classic"] .top-nav .status-pill-sep {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  html:root[data-design="classic"] .top-nav {
+    padding: 10px 22px;
+  }
+  html:root[data-design="classic"] .top-nav .nav-controls {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 769px) {
+  html:root[data-design="classic"] .top-nav .nav-search {
+    min-width: 150px;
+    flex: 1 1 220px;
+  }
+  html:root[data-design="classic"][data-theme] .top-nav .nav-search input,
+  html:root[data-design="classic"][data-theme] .top-nav .nav-search-field input {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1360px) and (min-width: 769px) {
+  html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 6px 8px;
+    font-size: 12.5px;
+  }
+  html:root[data-design="classic"] .top-nav .brand-cluster .eyebrow {
+    display: none;
+  }
+}
+
+/* ---------- Chart panel header ------------------------------------------- */
+
+/* The company name is the page's headline; it gets the editorial serif. */
+html:root[data-design="classic"] .chart-panel .panel-header h2 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.005em;
+  line-height: 1.1;
+}
+
+html:root[data-design="classic"] .chart-panel .panel-header .panel-kicker,
+html:root[data-design="classic"] .chart-panel .panel-header .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+/* ---------- Selected state, shared ---------------------------------------
+   Segmented tabs across the pages each painted their own solid-accent pill,
+   so a single view could carry five gold slabs. Selected now means a raised
+   neutral chip with gold text; solid gold is kept for the one primary action
+   per view. */
+html:root[data-design="classic"] .gp-tab.active,
+html:root[data-design="classic"] .tm-seg-btn.active,
+html:root[data-design="classic"] .study-filters button.active,
+html:root[data-design="classic"] .study-tools button.active,
+html:root[data-design="classic"] .study-styles button.active,
+html:root[data-design="classic"] .home-market-toggle-btn.active,
+html:root[data-design="classic"] .mf-week-btn.active,
+html:root[data-design="classic"] .top-nav .mode-switch .tool-pill.active,
+html:root[data-design="classic"] .homepro-tf.active,
+html:root[data-design="classic"] .tj-tabbtn.active,
+html:root[data-design="classic"] .tj-toggle-btn.active,
+html:root[data-design="classic"] .study-view-toggle button.on,
+html:root[data-design="classic"] .rrg-seg-btn.active {
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface-raised)) !important;
+  color: var(--accent-on-tint) !important;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  box-shadow: var(--card-highlight), 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  font-weight: 600 !important;
+}
+
+/* Solid-gold call-to-action: one recipe wherever a page has its primary. */
+html:root[data-design="classic"] .gp-export-btn:not(:disabled),
+html:root[data-design="classic"] .study-next,
+html:root[data-design="classic"] .gsw-compare-btn {
+  background: var(--gold-grad);
+  color: var(--accent-contrast);
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 80%, #000);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+html:root[data-design="classic"] .gp-export-btn:not(:disabled):hover,
+html:root[data-design="classic"] .study-next:hover,
+html:root[data-design="classic"] .gsw-compare-btn:hover {
+  filter: brightness(1.06);
+}
+
+/* ---------- Editorial headlines ------------------------------------------
+   Page titles and the few numbers a page exists to show are set in the
+   serif. Everything dense — tables, chips, axes, labels — stays in Geist. */
+html:root[data-design="classic"] .panel > .panel-header h2,
+html:root[data-design="classic"] .sh-title,
+html:root[data-design="classic"] .today-head h2,
+html:root[data-design="classic"] .mfp-head-title h2,
+html:root[data-design="classic"] .tj-brand-name,
+html:root[data-design="classic"] .study-head-left h2 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: -0.005em;
+  line-height: 1.08;
+}
+
+html:root[data-design="classic"] .mkx-number strong {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 56px;
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+html:root[data-design="classic"] .mkc-item strong:not(.mkc-word) {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+html:root[data-design="classic"] .mkc-item strong.mkc-word {
+  font-weight: 600;
+}
+
+/* Phones: the tabs move to the bottom bar, so the rail would render as an
+   empty recessed dot beside the brand. */
+@media (max-width: 768px) {
+  html:root[data-design="classic"] .top-nav .nav-rail {
+    display: none;
+  }
+}
+
+/* Zoom-by-wheel is a pointer affordance; touch screens pinch the page. */
+@media (pointer: coarse), (max-width: 768px) {
+  html:root[data-design="classic"] .homepro-xp-zoom-hint {
+    display: none;
+  }
+}
+
+/* Touch scrubbing on the home charts: a horizontal drag moves the crosshair,
+   a vertical one still scrolls the page. */
+:root[data-design="classic"] .homepro-xp-svg,
+:root[data-design="classic"] .homepro-nifty-chart svg {
+  touch-action: pan-y;
+}
+
+/* Screener: "Run Scanner" / "Apply Filters" are the view's actions and keep
+   solid gold; the query builder's add-filter and AND/OR toggle are editing
+   affordances and read as tinted chips. */
+html:root[data-design="classic"] .sh-btn.sh-btn-primary {
+  background: var(--gold-grad);
+  color: var(--accent-contrast);
+  border-color: color-mix(in srgb, var(--accent-strong) 80%, #000);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+html:root[data-design="classic"] .qb-op-toggle,
+html:root[data-design="classic"] .qb-action.qb-action-primary {
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface-raised));
+  color: var(--accent-on-tint);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: var(--card-highlight);
+}
+
+html:root[data-design="classic"] .qb-action.qb-action-primary:hover:not(:disabled),
+html:root[data-design="classic"] .qb-op-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-raised));
+}
+
+/* ---------- Big charts: white paper, no lines ----------------------------
+   The chart canvases (ChartPanel, Chart Gym, Markets index, sector and fund
+   NAV charts) draw on plain white in both themes. Everything floating ON
+   the canvas — tool rail, zoom/nav buttons, hint pills — reads the light
+   token set here, so it sits on the paper instead of punching dark holes
+   in it. Scoped to the stage, so the dark UI around the chart is untouched. */
+html:root[data-design="classic"] .chart-stage,
+html:root[data-design="classic"] .study-chart-wrap {
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-strong: rgba(255, 255, 255, 0.96);
+  --surface-soft: rgba(245, 243, 238, 0.9);
+  --surface-raised: #ffffff;
+  --card-flat: #ffffff;
+  --line: rgba(40, 33, 20, 0.10);
+  --line-strong: rgba(40, 33, 20, 0.18);
+  --text: #1a1814;
+  --text-soft: #57534a;
+  --text-muted: #6b665b;
+  --accent: #86641f;
+  --accent-strong: #6f5214;
+  --accent-on-tint: #6f5214;
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+html:root[data-design="classic"] .chart-stage .chart-canvas,
+html:root[data-design="classic"] .study-chart-wrap,
+html:root[data-design="classic"] .icc-chart,
+html:root[data-design="classic"] .fnc-wrap .tv-lightweight-charts {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+html:root[data-design="classic"] .chart-stage .chart-tool-rail {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.06), 0 8px 20px -12px rgba(40, 30, 10, 0.25);
+}
+
+html:root[data-design="classic"] .chart-stage .chart-stage-action-button,
+html:root[data-design="classic"] .chart-stage .chart-stage-nav-button {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.08);
+}
+
+/* The stage itself can be far taller than the canvas (it stretches with the
+   page grid); only the canvas is paper, the stage stays see-through. */
+html:root[data-design="classic"] .chart-stage {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Home marks that HomePanel.css sets in the Studio voice. */
+html:root[data-design="classic"] .homepro-xp-gauge-score {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  letter-spacing: -0.01em;
+}
+
+html:root[data-design="classic"] .homepro-xp-tip .homepro-xp-tip-val,
+html:root[data-design="classic"] .ol-dist-value {
+  font-family: var(--font-serif);
+}
+
+html:root[data-design="classic"] .ol-dist-value {
+  font-size: 26px;
+}

@@ -14,9 +14,9 @@ type Props = {
 };
 
 const COLORS: Record<"promoter_pct" | "fii_pct" | "dii_pct" | "public_pct", string> = {
-  promoter_pct: "#d4af6a",
+  promoter_pct: "#958dfc",
   fii_pct: "#7fb4d9",
-  dii_pct: "#d4af6a",
+  dii_pct: "#958dfc",
   public_pct: "#8b877d",
 };
 
@@ -33,9 +33,9 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   const { name, value } = payload[0];
   return (
-    <div style={{ background: "var(--surface-strong,#1b1c21)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: "var(--fs-small)" }}>
-      <span style={{ color: "#fff", fontWeight: 700 }}>{name}: </span>
-      <span style={{ color: payload[0].payload.color || "#fff", fontWeight: 700 }}>{value?.toFixed(1)}%</span>
+    <div style={{ background: "var(--surface-strong)", border: "1px solid color-mix(in srgb, var(--text) 12%, transparent)", borderRadius: 8, padding: "8px 12px", fontSize: "var(--fs-small)" }}>
+      <span style={{ color: "var(--text)", fontWeight: 500 }}>{name}: </span>
+      <span style={{ color: payload[0].payload.color || "var(--text)", fontWeight: 500 }}>{value?.toFixed(1)}%</span>
     </div>
   );
 };
@@ -43,13 +43,13 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--surface-strong,#1b1c21)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
-      <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>{label}</div>
+    <div style={{ background: "var(--surface-strong)", border: "1px solid color-mix(in srgb, var(--text) 12%, transparent)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
+      <div style={{ fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.fill }} />
-          <span style={{ color: "rgba(255,255,255,0.7)" }}>{LABELS[p.dataKey]}:</span>
-          <span style={{ color: p.fill, fontWeight: 700 }}>{p.value?.toFixed(1)}%</span>
+          <span style={{ color: "color-mix(in srgb, var(--text) 70%, transparent)" }}>{LABELS[p.dataKey]}:</span>
+          <span style={{ color: p.fill, fontWeight: 500 }}>{p.value?.toFixed(1)}%</span>
         </div>
       ))}
     </div>
@@ -61,7 +61,7 @@ export function ShareholdingChart({ data }: Props) {
 
   if (!data || data.length === 0) {
     return (
-      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "30px 0", fontSize: "var(--fs-base)" }}>
+      <div style={{ textAlign: "center", color: "color-mix(in srgb, var(--text) 40%, transparent)", padding: "30px 0", fontSize: "var(--fs-base)" }}>
         No shareholding data available
       </div>
     );
@@ -95,16 +95,16 @@ export function ShareholdingChart({ data }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <span style={{ fontSize: "var(--fs-small)", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        <span style={{ fontSize: "var(--fs-small)", fontWeight: 500, color: "var(--text)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
           Shareholding Pattern — {latest.period}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
           {(["bar", "area"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} style={{
               fontSize: "var(--fs-tiny)", padding: "3px 10px", borderRadius: 6, cursor: "pointer",
-              background: view === v ? "var(--accent,#d4af6a)" : "rgba(255,255,255,0.07)",
-              border: `1px solid ${view === v ? "var(--accent,#d4af6a)" : "rgba(255,255,255,0.12)"}`,
-              color: view === v ? "#fff" : "rgba(255,255,255,0.6)",
+              background: view === v ? "var(--accent,#958dfc)" : "color-mix(in srgb, var(--text) 7%, transparent)",
+              border: `1px solid ${view === v ? "var(--accent,#958dfc)" : "color-mix(in srgb, var(--text) 12%, transparent)"}`,
+              color: view === v ? "var(--accent-contrast)" : "color-mix(in srgb, var(--text) 60%, transparent)",
             }}>
               {v === "bar" ? "Stacked Bar" : "Area Trend"}
             </button>
@@ -135,17 +135,17 @@ export function ShareholdingChart({ data }: Props) {
               const val = latest[k] ?? 0;
               const d = delta ? (delta as any)[k] : null;
               const arrow = d != null ? (d > 0.1 ? "▲" : d < -0.1 ? "▼" : "—") : "";
-              const dColor = d != null ? (k === "promoter_pct" ? (d > 0 ? "var(--positive)" : d < 0 ? "var(--negative)" : "rgba(255,255,255,0.4)") : "rgba(255,255,255,0.4)") : "rgba(255,255,255,0.4)";
+              const dColor = d != null ? (k === "promoter_pct" ? (d > 0 ? "var(--positive)" : d < 0 ? "var(--negative)" : "color-mix(in srgb, var(--text) 40%, transparent)") : "color-mix(in srgb, var(--text) 40%, transparent)") : "color-mix(in srgb, var(--text) 40%, transparent)";
               return (
                 <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS[k], flexShrink: 0 }} />
-                    <span style={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.7)" }}>{LABELS[k]}</span>
+                    <span style={{ fontSize: "var(--fs-tiny)", color: "color-mix(in srgb, var(--text) 70%, transparent)" }}>{LABELS[k]}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: "var(--fs-small)", color: COLORS[k], fontWeight: 700, fontFamily: "monospace" }}>{val.toFixed(1)}%</span>
+                    <span style={{ fontSize: "var(--fs-small)", color: COLORS[k], fontWeight: 500, fontFamily: "monospace" }}>{val.toFixed(1)}%</span>
                     {arrow && d != null && Math.abs(d) > 0.05 && (
-                      <span style={{ fontSize: "var(--fs-micro)", color: dColor, fontWeight: 700 }}>{arrow}{Math.abs(d).toFixed(1)}</span>
+                      <span style={{ fontSize: "var(--fs-micro)", color: dColor, fontWeight: 500 }}>{arrow}{Math.abs(d).toFixed(1)}</span>
                     )}
                   </div>
                 </div>
@@ -159,22 +159,22 @@ export function ShareholdingChart({ data }: Props) {
           <ResponsiveContainer width="100%" height="100%">
             {view === "bar" ? (
               <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-                <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--text) 7%, transparent)" />
+                <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "color-mix(in srgb, var(--text) 40%, transparent)" }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-nano)", fill: "color-mix(in srgb, var(--text) 40%, transparent)" }} axisLine={false} tickLine={false} />
                 <RTooltip content={<CustomBarTooltip />} />
-                <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)" }} />
+                <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "color-mix(in srgb, var(--text) 50%, transparent)" }} />
                 {KEYS.map(k => (
                   <Bar key={k} dataKey={k} name={LABELS[k]} stackId="a" fill={COLORS[k]} />
                 ))}
               </BarChart>
             ) : (
               <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-                <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--text) 7%, transparent)" />
+                <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "color-mix(in srgb, var(--text) 40%, transparent)" }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-nano)", fill: "color-mix(in srgb, var(--text) 40%, transparent)" }} axisLine={false} tickLine={false} />
                 <RTooltip content={<CustomBarTooltip />} />
-                <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)" }} />
+                <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "color-mix(in srgb, var(--text) 50%, transparent)" }} />
                 {KEYS.map(k => (
                   <Area key={k} type="monotone" dataKey={k} name={LABELS[k]}
                     stackId="a" fill={COLORS[k] + "66"} stroke={COLORS[k]} strokeWidth={1.5} />

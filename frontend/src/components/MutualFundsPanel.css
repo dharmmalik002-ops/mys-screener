@@ -39,7 +39,7 @@
 .mfp-tab {
   padding: 6px 13px;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: 0;
@@ -73,7 +73,7 @@
   gap: 5px;
   padding: 4px 10px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--negative-tint);
   background: none;
   border: 1px solid rgba(239, 68, 68, 0.45);
@@ -148,7 +148,7 @@
   gap: 4px;
   padding: 4px 10px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: 0;
@@ -212,7 +212,7 @@
   gap: 4px;
   padding: 4px 10px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: var(--surface-soft, rgba(255, 255, 255, 0.03));
   border: 1px solid var(--line);
@@ -257,7 +257,7 @@
 .mfp-pill {
   padding: 4px 11px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: var(--surface-soft, transparent);
   border: 1px solid var(--line);
@@ -305,7 +305,7 @@
   top: 0;
   z-index: 2;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -325,7 +325,7 @@
 .mfp-row-held { background: color-mix(in srgb, var(--accent-3) 6%, transparent); }
 
 .mfp-name { display: flex; flex-direction: column; gap: 1px; max-width: 300px; }
-.mfp-name b { font-weight: 600; color: var(--text); white-space: normal; line-height: 1.3; }
+.mfp-name b { font-weight: 500; color: var(--text); white-space: normal; line-height: 1.3; }
 .mfp-name small { font-size: var(--fs-micro); color: var(--text-muted); }
 
 .mfp-held {
@@ -343,7 +343,7 @@
 .mfp-table em { font-style: normal; font-size: var(--fs-micro); opacity: 0.8; }
 .mfp-flag { font-style: normal; margin-left: 2px; color: var(--text-muted); cursor: help; }
 
-.mfp-rank { font-weight: 600; }
+.mfp-rank { font-weight: 500; }
 .mfp-rank i { font-style: normal; font-size: var(--fs-nano); opacity: 0.55; }
 .mfp-rank.q1 { color: var(--positive); }
 .mfp-rank.q2 { color: #a3e635; }
@@ -356,7 +356,7 @@
   gap: 3px;
   padding: 3px 7px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: 1px solid var(--line);
@@ -444,7 +444,7 @@
 .mfp-leader-name {
   padding: 0;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
   color: var(--text-soft);
   background: none;
@@ -519,7 +519,7 @@
 .mfp-pf-card > h3, .mfp-pf-card-head h3 {
   margin: 0;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-soft);
@@ -637,7 +637,7 @@
   margin-top: 2px;
   padding: 4px 10px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   background: none;
   border: 1px solid var(--line);
@@ -671,7 +671,7 @@
 .mfp-ahead-group h4 {
   margin: 0 0 5px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
@@ -683,7 +683,7 @@
 .mfp-ai-headline {
   margin: 0;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.45;
   color: var(--text);
 }
@@ -718,7 +718,7 @@
 .mfp-tag, .mfp-tag-pos, .mfp-tag-neg {
   padding: 1px 7px;
   font-size: var(--fs-nano);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-radius: var(--radius-pill);

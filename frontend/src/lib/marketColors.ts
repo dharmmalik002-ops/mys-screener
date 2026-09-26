@@ -33,6 +33,15 @@ export const CANDLE_DOWN = "#f7525f";
  * server's colour.
  */
 const REGIME_PALETTE: Record<string, string> = {
+  "Extremely Strong": "#3fae7c",
+  "Swing-Friendly": "#66c398",
+  "Progressive Exposure": "#958dfc",
+  "Choppy / Spurt Only": "#fc6200",
+  "Avoid Longs": "#ea4c7d",
+};
+
+/** The same five regimes in the Classic (obsidian & gold) design. */
+const CLASSIC_REGIME_PALETTE: Record<string, string> = {
   "Extremely Strong": "#2fb67f",
   "Swing-Friendly": "#86c29a",
   "Progressive Exposure": "#d4af6a",
@@ -40,6 +49,12 @@ const REGIME_PALETTE: Record<string, string> = {
   "Avoid Longs": "#e0605c",
 };
 
+/** True when the page is wearing the Classic design (read at call time). */
+export function isClassicDesign(): boolean {
+  return typeof document !== "undefined" && document.documentElement.dataset.design === "classic";
+}
+
 export function regimeColor(label: string, fallback: string): string {
-  return REGIME_PALETTE[label] ?? fallback;
+  const palette = isClassicDesign() ? CLASSIC_REGIME_PALETTE : REGIME_PALETTE;
+  return palette[label] ?? fallback;
 }

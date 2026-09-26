@@ -328,7 +328,7 @@ type OverlayLine = { key: string; color: string; values: Array<number | null> };
 const MA_OVERLAYS: Array<{ key: string; label: string; color: string; kind: "ema" | "sma"; length: number }> = [
   { key: "e10", label: "10 EMA", color: "var(--negative)", kind: "ema", length: 10 },
   { key: "e21", label: "21 EMA", color: "var(--positive)", kind: "ema", length: 21 },
-  { key: "s50", label: "50 SMA", color: "#d4af6a", kind: "sma", length: 50 },
+  { key: "s50", label: "50 SMA", color: "#958dfc", kind: "sma", length: 50 },
   { key: "s200", label: "200 SMA", color: "#f5f3ee", kind: "sma", length: 200 },
 ];
 
@@ -684,7 +684,7 @@ function OhlcChart({
         const top = y(zone.high);
         const bottom = y(zone.low);
         // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
-        const color = zone.kind === "demand" ? (zone.timeframe === "W" ? "#d4af6a" : "var(--positive)") : "var(--negative)";
+        const color = zone.kind === "demand" ? (zone.timeframe === "W" ? "#958dfc" : "var(--positive)") : "var(--negative)";
         // Anchor at the origin candle; stop where the band ends (first test / latest bar).
         const sIdx = idxAtOrBefore(zone.startTime);
         const eIdx = idxAtOrBefore(zone.endTime);

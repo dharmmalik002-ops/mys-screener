@@ -230,7 +230,7 @@ function ValueChart({
         background: { type: ColorType.Solid, color: "transparent" },
         textColor,
         fontSize: 11,
-        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif",
       },
       // "₹21.7L" rather than "2170551" — a seven-digit axis label is the
       // fastest way to make a chart look unfinished.

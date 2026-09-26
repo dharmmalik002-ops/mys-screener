@@ -222,7 +222,7 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -611,7 +611,7 @@
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 

@@ -81,7 +81,7 @@
 
 .wl-nav-text strong {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--st-text);
   white-space: nowrap;
   overflow: hidden;
@@ -296,7 +296,7 @@
   display: block;
   padding: 6px 10px 2px;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--st-text-soft);
@@ -336,7 +336,7 @@
 .wl-selection-count {
   font-size: var(--fs-small);
   color: var(--st-text-soft);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* ----- Table grid override ----- */
@@ -403,7 +403,7 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--st-text);
   padding-right: 4px;
 }
@@ -414,7 +414,7 @@
   justify-content: center;
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--st-text);
 }
 
@@ -428,7 +428,7 @@
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent-on-tint);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
@@ -438,7 +438,7 @@
   border: 1px solid transparent;
   font: inherit;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 80ms ease;
 }
@@ -519,7 +519,7 @@
 
 .wl-group-header strong {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--st-text);
   letter-spacing: -0.01em;
 }
@@ -539,7 +539,7 @@
   background: linear-gradient(135deg, var(--st-primary, #6366f1), var(--st-primary-strong, #4f46e5));
   color: #fff;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
@@ -642,7 +642,7 @@
   padding: 0 5px;
   border-radius: var(--radius-xs);
   font-size: var(--fs-nano);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   line-height: 14px;
   vertical-align: middle;
@@ -669,7 +669,7 @@
   background: transparent;
   color: var(--text-soft);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
   transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease;
@@ -704,7 +704,7 @@
   border-radius: 999px;
   border: 1px solid currentColor;
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.06em;
   vertical-align: middle;
 }

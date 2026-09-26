@@ -11,7 +11,7 @@
 .sipc-head h3 {
   margin: 0 0 4px;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-soft);
@@ -78,7 +78,7 @@
   flex: 1 1 0;
   padding: 4px 6px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: 0;
@@ -130,7 +130,7 @@
 .sipc-scenarios h4 {
   margin: 0 0 2px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
@@ -175,7 +175,7 @@
 .sipc-reset {
   padding: 1px 7px;
   font-size: var(--fs-nano);
-  font-weight: 600;
+  font-weight: 500;
   font-family: inherit;
   color: var(--text-muted);
   background: none;

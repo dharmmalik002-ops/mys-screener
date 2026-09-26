@@ -16,7 +16,7 @@
 
 .live-label {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -154,7 +154,7 @@
 
 .live-triggered-head {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--candle-up);
@@ -213,7 +213,7 @@
 
 .live-empty-title {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -230,7 +230,7 @@
 .live-table th {
   text-align: left;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -257,7 +257,7 @@
   border: none;
   background: none;
   color: inherit;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   padding: 0;
   font-size: var(--fs-base);
@@ -277,7 +277,7 @@
 
 .live-table .pos { color: var(--candle-up); }
 .live-table .neg { color: var(--candle-down); }
-.live-trigger-card .pos { color: var(--candle-up); font-weight: 700; }
+.live-trigger-card .pos { color: var(--candle-up); font-weight: 500; }
 
 .live-range {
   display: inline-block;

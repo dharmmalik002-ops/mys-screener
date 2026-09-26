@@ -41,7 +41,7 @@
 }
 
 .qb-head strong {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--qb-text);
 }
 
@@ -71,7 +71,7 @@
   background: var(--qb-bg);
   color: var(--qb-text-soft);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
@@ -129,7 +129,7 @@
   color: var(--accent-contrast);
   font-family: inherit;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   cursor: pointer;
   transition: filter var(--dur-fast) ease, transform var(--dur-fast) ease;
@@ -210,7 +210,7 @@
 
 .qb-chip-value {
   color: var(--accent-on-tint);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 :root[data-theme="dark"] .qb-chip-value,
@@ -275,7 +275,7 @@
   color: var(--accent-on-tint);
   font-family: inherit;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }

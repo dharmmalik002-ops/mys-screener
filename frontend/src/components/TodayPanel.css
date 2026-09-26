@@ -26,7 +26,7 @@
 .today-eyebrow {
   margin: 0 0 3px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -66,7 +66,7 @@
   flex-wrap: wrap;
   margin: 0 0 10px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -94,7 +94,7 @@
   color: var(--negative);
 }
 
-.today-stance { margin: 0 0 8px; font-size: 15px; line-height: 1.55; color: var(--text); font-weight: 600; }
+.today-stance { margin: 0 0 8px; font-size: 15px; line-height: 1.55; color: var(--text); font-weight: 500; }
 .today-stance--supportive { color: var(--positive); }
 .today-stance--hostile { color: var(--negative); }
 .today-stance strong { font-variant-numeric: tabular-nums; }
@@ -131,11 +131,11 @@
 .today-pos--good  { border-left-color: var(--positive); }
 .today-pos--muted { border-left-color: var(--line); }
 
-.today-pos-sym strong { display: block; color: var(--text); font-weight: 650; }
+.today-pos-sym strong { display: block; color: var(--text); font-weight: 500; }
 .today-pos-sym em { display: block; font-style: normal; font-size: 11px; color: var(--text-muted); }
 
-.today-pos--bad .today-pos-stop  { color: var(--negative); font-weight: 600; }
-.today-pos--warn .today-pos-stop { color: var(--warning, #d97706); font-weight: 600; }
+.today-pos--bad .today-pos-stop  { color: var(--negative); font-weight: 500; }
+.today-pos--warn .today-pos-stop { color: var(--warning, #d97706); font-weight: 500; }
 .today-pos--good .today-pos-stop { color: var(--text-muted); }
 .today-pos--muted .today-pos-stop { color: var(--text-muted); }
 
@@ -153,7 +153,7 @@
   flex-wrap: wrap;
   margin: 0 0 5px;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 500;
   color: var(--text);
 }
 

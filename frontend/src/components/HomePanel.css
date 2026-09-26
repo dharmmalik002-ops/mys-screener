@@ -67,14 +67,14 @@
 .homepro-kpi-label {
   font-size: var(--fs-micro);
   letter-spacing: 0.08em;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--hp-muted);
   text-transform: uppercase;
 }
 
 .homepro-kpi-value {
   font-size: var(--fs-display);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--hp-text);
   display: flex;
@@ -146,7 +146,7 @@
 
 .homepro-section-title {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hp-muted);
@@ -154,7 +154,7 @@
 
 .homepro-link {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--hp-blue);
   cursor: pointer;
   background: transparent;
@@ -185,7 +185,7 @@
 
 .homepro-mini-label {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--hp-muted);
   text-transform: uppercase;
@@ -193,12 +193,12 @@
 
 .homepro-mini-price {
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .homepro-mini-chg {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .homepro-mini-spark {
@@ -253,7 +253,7 @@
 
 .homepro-sector-val {
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* =========================================================
@@ -284,7 +284,7 @@
 
 .homepro-card h3 {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--hp-text);
@@ -302,7 +302,7 @@
   padding: 8px 6px;
   border-bottom: 1px solid var(--hp-border);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--hp-muted);
   letter-spacing: 0.04em;
@@ -330,12 +330,12 @@
 
 .homepro-rank {
   color: var(--hp-muted);
-  font-weight: 600;
+  font-weight: 500;
   width: 24px;
 }
 
 .homepro-group-name {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .homepro-num {
@@ -343,7 +343,7 @@
 }
 
 .homepro-chg {
-  font-weight: 700;
+  font-weight: 500;
 }
 .homepro-chg.pos { color: var(--hp-green); }
 .homepro-chg.neg { color: var(--hp-red); }
@@ -427,7 +427,7 @@
   justify-content: space-between;
   font-size: var(--fs-tiny);
   color: var(--hp-muted);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -443,7 +443,7 @@
   display: flex;
   justify-content: space-between;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .homepro-hl-vals .low { color: var(--hp-red); }
@@ -459,7 +459,7 @@
 
 .homepro-breadth-history-head {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--hp-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -492,7 +492,7 @@
 
 .homepro-breadth-history-summary-date {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--hp-muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -503,7 +503,7 @@
   align-items: baseline;
   gap: 6px;
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .homepro-breadth-history-summary-pcts .pos { color: var(--positive); }
@@ -514,7 +514,7 @@
   display: flex;
   gap: 10px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .homepro-breadth-history-summary-counts .pos { color: var(--positive); }
@@ -582,7 +582,7 @@
 
 .homepro-breadth-history-day.pinned .homepro-breadth-history-date {
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .homepro-breadth-history-day:focus-visible {
@@ -609,7 +609,7 @@
 
 .homepro-breadth-history-pct {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -628,7 +628,7 @@
 
 .homepro-breadth-history-day.active .homepro-breadth-history-date {
   color: var(--hp-text);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .homepro-breadth-history-empty {
@@ -677,7 +677,7 @@
   background: transparent;
   color: var(--hp-muted);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   padding: 6px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -725,7 +725,7 @@
 .homepro-nifty-last-text {
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   fill: #fff;
 }
 .homepro-nifty-crosshair line {
@@ -734,14 +734,11 @@
   opacity: 0.45;
 }
 .homepro-nifty-hover-pill {
-  fill: var(--surface-raised);
-  stroke: var(--line-strong);
+  fill: var(--inverse);
 }
 .homepro-nifty-hover-text {
-  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
-  fill: var(--text);
+  fill: var(--inverse-ink);
 }
 .homepro-nifty-ohlc {
   position: absolute;
@@ -824,7 +821,7 @@
   border-radius: var(--radius-sm);
   display: grid;
   place-items: center;
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-micro);
   color: #fff;
   background: var(--hp-blue);
@@ -865,7 +862,7 @@
 .homepro-row-sym {
   display: block;
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--hp-text);
   white-space: nowrap;
   overflow: hidden;
@@ -892,14 +889,14 @@
 
 .homepro-row-price {
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   text-align: right;
   white-space: nowrap;
 }
 
 .homepro-chip {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
   min-width: 60px;
@@ -982,7 +979,7 @@
 .homepro-modal-head h2 {
   margin: 0 0 4px;
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .homepro-modal-head p {
@@ -1028,7 +1025,7 @@
   padding: 10px 8px;
   border-bottom: 1px solid var(--hp-border);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--hp-muted);
   letter-spacing: 0.04em;
@@ -1174,7 +1171,7 @@ body.dark .homepro-modal-close:hover {
 }
 .homepro-xp-delta {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
 }
@@ -1227,7 +1224,7 @@ body.dark .homepro-modal-close:hover {
   transition: opacity var(--dur-fast) ease;
 }
 .homepro-xp-band-label.is-active text {
-  font-weight: 600;
+  font-weight: 500;
 }
 .homepro-xp-band-label.is-active circle {
   opacity: 1;
@@ -1238,14 +1235,11 @@ body.dark .homepro-modal-close:hover {
   opacity: 0.45;
 }
 .homepro-xp-axis-pill {
-  fill: var(--surface-raised);
-  stroke: var(--line-strong);
+  fill: var(--inverse);
 }
 .homepro-xp-axis-pill-text {
-  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
-  fill: var(--text);
+  fill: var(--inverse-ink);
 }
 .homepro-xp-pulse {
   transform-box: fill-box;
@@ -1262,68 +1256,55 @@ body.dark .homepro-modal-close:hover {
 .homepro-xp-tip {
   position: absolute;
   top: 2px;
-  transform: translateX(-50%) translateY(4px);
+  transform: translate(-50%, 4px);
   display: grid;
-  gap: 4px;
-  width: 188px;
-  padding: 10px 12px 11px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--card-highlight), var(--elev-3);
-  font-size: var(--fs-tiny);
+  gap: 2px;
+  padding: 7px 10px 8px;
+  border-radius: 8px;
+  background: var(--inverse);
+  color: var(--inverse-ink);
+  box-shadow: 0 8px 24px rgba(10, 13, 20, 0.16);
+  font-size: 11px;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--dur-fast) ease, transform var(--dur-base) var(--ease-out);
+  transition: opacity 150ms var(--ease-out-soft), transform 200ms var(--ease-out-soft), left 150ms var(--ease-out-soft), top 150ms var(--ease-out-soft);
 }
 .homepro-xp-tip.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, 0);
 }
 .homepro-xp-tip-date {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 500;
+  font-size: 10.5px;
+  opacity: 0.7;
 }
 .homepro-xp-tip-row {
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
-.homepro-xp-tip-val {
-  font-family: var(--font-serif);
+html:root .homepro-xp-tip .homepro-xp-tip-val {
+  font-size: 20px;
   font-weight: 400;
-  font-size: 26px;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--inverse-ink);
 }
 .homepro-xp-tip-delta {
-  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
+  opacity: 0.75;
 }
-.homepro-xp-tip-delta.up { color: var(--positive); }
-.homepro-xp-tip-delta.down { color: var(--negative); }
-.homepro-xp-tip-regime {
+html:root .homepro-xp-tip .homepro-xp-tip-regime {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-weight: 600;
-  font-size: 11.5px;
+  font-size: 11px;
+  color: var(--inverse-ink);
 }
 .homepro-xp-tip-regime i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--regime-color, var(--accent)) 22%, transparent);
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
 }
 .homepro-xp-zoom {
   display: flex;
@@ -1341,7 +1322,7 @@ body.dark .homepro-modal-close:hover {
   border-radius: var(--radius-sm);
   color: var(--hp-text);
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   display: grid;
@@ -1412,7 +1393,7 @@ body.dark .homepro-modal-close:hover {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .homepro-xp-legend-item .homepro-legend-swatch {
   width: 9px;
@@ -1443,7 +1424,7 @@ body.dark .homepro-modal-close:hover {
 
 .homepro-briefing-title {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hp-muted);
@@ -1466,7 +1447,7 @@ body.dark .homepro-modal-close:hover {
   background: transparent;
   color: var(--hp-blue);
   font-size: inherit;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -1557,4 +1538,224 @@ body.dark .homepro-modal-close:hover {
 :root[data-theme="light"] .homepro-xp-tip-regime,
 :root[data-theme="light"] .homepro-briefing-regime {
   color: color-mix(in oklab, var(--regime-color, var(--text)) 52%, black);
+}
+
+
+/* =========================================================
+   Dashboard marks (meter cards, distribution, columns)
+   ========================================================= */
+.ol-meter-card {
+  min-height: 185px;
+  padding: 20px;
+  gap: 20px;
+  justify-content: space-between;
+}
+.ol-meter-card.is-clickable {
+  cursor: pointer;
+}
+.ol-meter-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ol-meter-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ol-session-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ol-dist {
+  display: flex;
+  gap: 8px;
+  min-height: 230px;
+}
+.ol-dist-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: opacity 200ms var(--ease-out-soft);
+}
+.ol-dist-col.is-dim {
+  opacity: 0.45;
+}
+.ol-dist-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.ol-dist-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.ol-dist-value {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.ol-dist-note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ol-dist-well {
+  flex: 1 1 auto;
+  min-height: 120px;
+  display: flex;
+  align-items: flex-end;
+}
+.ol-dist-bar {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  transition: height 600ms var(--ease-in-out-soft);
+}
+.ol-dist-hatch,
+.ol-col-hatch {
+  position: absolute;
+  inset: 0;
+  background-image: var(--hatch-white);
+}
+
+.ol-cols {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  height: 150px;
+  padding-top: 26px;
+}
+.ol-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.ol-col-well {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.ol-col-bar {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin-bottom: -4px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--col-color) 9%, transparent);
+  transition: background 150ms var(--ease-out-soft), height 600ms var(--ease-in-out-soft);
+}
+.ol-col-bar .ol-col-hatch {
+  background-image: var(--hatch-bar);
+}
+.ol-col.is-active .ol-col-bar {
+  background: linear-gradient(180deg, var(--col-color) 0%, color-mix(in oklab, var(--col-color) 10%, var(--card-flat)) 100%);
+}
+.ol-col.is-active .ol-col-bar .ol-col-hatch {
+  background-image: var(--hatch-soft);
+}
+.ol-col .ol-tip {
+  margin-top: -6px;
+}
+.ol-col .ol-chip {
+  position: relative;
+  font-size: 9.5px;
+  padding: 0 5px;
+}
+
+.homepro-xp-gauge {
+  width: 220px;
+}
+.homepro-xp-gauge-mark {
+  font-size: 9px;
+  fill: var(--axis);
+}
+html:root .homepro-xp-gauge-score {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  fill: var(--text);
+}
+html:root .homepro-xp-gauge-regime {
+  font-size: 8px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  fill: var(--text-muted);
+}
+
+/* Home row cards read the reference's quiet sub-headers. */
+html:root .homepro-breadth-history-head span {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+html:root .homepro-xp-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+html:root .homepro-xp-legend {
+  color: var(--legend);
+  font-size: 13px;
+}
+html:root .homepro-xp-legend-item {
+  font-weight: 400;
+}
+html:root .homepro-xp-legend-item .homepro-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+}
+
+/* Briefing: same card, quiet sentence-case title, links read as links
+   (the accent is ink now, so an underline carries the affordance). */
+html:root .homepro-briefing {
+  border-color: transparent;
+  box-shadow: none;
+  padding: 18px 20px;
+}
+html:root .homepro-briefing-title {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+html:root .homepro-briefing-body {
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+html:root .homepro-briefing-link {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--track);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  transition: text-decoration-color 150ms var(--ease-out-soft);
+}
+html:root .homepro-briefing-link:hover {
+  text-decoration-color: var(--text);
 }

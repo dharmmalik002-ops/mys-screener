@@ -22,7 +22,7 @@
 
 .mkb-now strong {
   font-size: var(--fs-lead);
-  font-weight: 650;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
@@ -99,7 +99,7 @@
   background: transparent;
   color: var(--text-muted);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),

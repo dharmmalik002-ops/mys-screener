@@ -61,7 +61,7 @@
 .gsw-title {
   margin: 0 0 4px;
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -108,7 +108,7 @@
   border: none;
   color: var(--accent-contrast);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   padding: 7px 12px;
   border-radius: var(--radius-xs);
   cursor: pointer;
@@ -190,7 +190,7 @@
 
 .gsw-pane-hint strong {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .gsw-table-head {
@@ -281,7 +281,7 @@
 
 .gsw-symbol strong {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -312,7 +312,7 @@
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-tiny);
   text-align: center;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--radius-pill);
   padding: 2px 0;
 }
@@ -325,7 +325,7 @@
 .gsw-quarter {
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
   padding: 2px 0;
   border-radius: var(--radius-xs);

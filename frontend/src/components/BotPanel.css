@@ -100,7 +100,7 @@
   padding: 5px 12px;
   border-radius: var(--radius-pill);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
 }
 .bot-badge-good { background: var(--positive-soft); color: var(--positive); }
 .bot-badge-warn { background: var(--amber-soft); color: var(--amber); }
@@ -171,10 +171,10 @@
 .bot-table tbody tr:hover { background: var(--surface-soft); }
 .bot-table .num { text-align: right; font-family: var(--font-mono); }
 .bot-table-compact th, .bot-table-compact td { padding: 6px 9px; }
-.bot-symbol { font-weight: 600; color: var(--text); }
+.bot-symbol { font-weight: 500; color: var(--text); }
 .bot-stop { color: var(--negative); }
-.bot-expected { color: var(--positive); font-weight: 600; }
-.bot-negative { color: var(--negative); font-weight: 600; }
+.bot-expected { color: var(--positive); font-weight: 500; }
+.bot-negative { color: var(--negative); font-weight: 500; }
 .bot-row-muted td { opacity: 0.55; }
 .bot-macro-verdict { font-size: var(--fs-tiny); }
 .bot-footnote {
@@ -185,7 +185,7 @@
 /* --- pills --- */
 .bot-pill {
   display: inline-block; padding: 2px 9px; border-radius: var(--radius-pill);
-  font-size: var(--fs-tiny); font-weight: 600; white-space: nowrap;
+  font-size: var(--fs-tiny); font-weight: 500; white-space: nowrap;
 }
 .bot-pill-good { background: var(--positive-soft); color: var(--positive); }
 .bot-pill-warn { background: var(--amber-soft); color: var(--amber); }
@@ -372,7 +372,7 @@
 .bot-mark {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 9px; border-radius: var(--radius-pill);
-  font-size: var(--fs-tiny); font-weight: 600; white-space: nowrap;
+  font-size: var(--fs-tiny); font-weight: 500; white-space: nowrap;
 }
 .bot-mark-good { background: var(--positive-soft); color: var(--positive); }
 .bot-mark-bad  { background: var(--negative-soft); color: var(--negative); }
@@ -486,7 +486,7 @@
 }
 .bot-stat-value {
   font-size: 1.15rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .bot-view-more {

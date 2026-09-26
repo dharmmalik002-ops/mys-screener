@@ -89,7 +89,7 @@
 
 .sgm-badge {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   padding: 1px 7px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);

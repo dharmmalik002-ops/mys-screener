@@ -99,7 +99,7 @@
 
 .sd-card-label {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sd-text);
   letter-spacing: 0.01em;
 }
@@ -127,7 +127,7 @@
 
 .sd-stat strong {
   font-size: var(--fs-display);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   color: var(--sd-text);
   letter-spacing: -0.01em;
@@ -182,7 +182,7 @@
 
 .sd-mini-donut-center strong {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -233,7 +233,7 @@
 
 .sd-donut-center strong {
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -279,7 +279,7 @@
 
 .sd-legend-label strong {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sd-text);
   line-height: 1.15;
   white-space: nowrap;
@@ -297,7 +297,7 @@
 }
 
 .sd-legend-value {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--sd-text);
   text-align: right;
   font-size: var(--fs-small);

@@ -11,7 +11,7 @@ import { computeCandleWeights, WeightedCandleSeries } from "../lib/weightedCandl
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
 import { StageBadge } from "./StageBadge";
-import { CANDLE_DOWN, CANDLE_UP, NEGATIVE, POSITIVE } from "../lib/marketColors";
+import { isClassicDesign, CANDLE_DOWN, CANDLE_UP, NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 export type ChartStyle = "candles" | "bars" | "hlc";
@@ -462,10 +462,10 @@ const CHART_PALETTES: Record<
     // levels are the only lines on the chart.
     label: "White",
     background: "#ffffff",
-    textColor: "#6b665b",
+    textColor: "#4c5051",
     gridColor: "rgba(0, 0, 0, 0)",
-    crosshairColor: "rgba(111, 82, 20, 0.45)",
-    borderColor: "rgba(40, 33, 20, 0.12)",
+    crosshairColor: "rgba(34, 34, 34, 0.35)",
+    borderColor: "#ebebeb",
     upColor: CANDLE_UP,
     downColor: CANDLE_DOWN,
     volumeUpColor: "rgba(34, 171, 148, 0.30)",
@@ -479,7 +479,7 @@ const CHART_PALETTES: Record<
     background: "#fbfaf7",
     textColor: "#57534a",
     gridColor: "rgba(40, 33, 20, 0.05)",
-    crosshairColor: "rgba(134, 100, 31, 0.45)",
+    crosshairColor: "rgba(34, 34, 34, 0.35)",
     borderColor: "rgba(40, 33, 20, 0.14)",
     upColor: "#1d7a63",
     downColor: "#c2453d",
@@ -1032,12 +1032,15 @@ function withOpacity(color: string, opacity: number) {
 
 // Shared chart chrome. E1 (create) and E2 (re-apply options) both read these,
 // so axis typography and crosshair styling can never drift apart.
-const CHART_FONT_FAMILY =
-  '"Geist Mono", "SF Mono", ui-monospace, Menlo, monospace';
+// Classic sets its axes in Geist Mono; Studio in the system face. Read once:
+// switching design reloads the page.
+const CHART_FONT_FAMILY = isClassicDesign()
+  ? '"Geist Mono", "SF Mono", ui-monospace, Menlo, monospace'
+  : '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif';
 // One solid neutral for the crosshair axis pills in every palette —
 // lightweight-charts picks the label text colour from its luminance, so this
 // reads correctly on both the dark and the light (Editorial) canvas.
-const CROSSHAIR_LABEL_BG = "#2a2722";
+const CROSSHAIR_LABEL_BG = "#222222";
 
 // How much deeper the wick sits than the candle body (negative = darker).
 const WICK_SHADE = -0.18;
@@ -4557,7 +4560,7 @@ export function ChartPanel({
         <g pointerEvents="none">
           <line x1={x} y1={30} x2={x} y2={Math.max(stageHeight - 8, 30)} stroke={color} strokeWidth={1.4} strokeDasharray="4 5" opacity={0.75} />
           <rect x={x - 10} y={6} width={20} height={20} rx={6} fill={color} />
-          <text x={x} y={20} textAnchor="middle" fontSize="12" fontWeight={800} fill="#1a1305">E</text>
+          <text x={x} y={20} textAnchor="middle" fontSize="12" fontWeight={500} fill="#1a1305">E</text>
         </g>
       );
     })();
@@ -4631,7 +4634,7 @@ export function ChartPanel({
           return (
             <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
               <rect x={xStart} y={top} width={width} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
-              <text x={xStart + 4} y={top + 12} fontSize="10" fontWeight={600} fill={color}>{label}</text>
+              <text x={xStart + 4} y={top + 12} fontSize="10" fontWeight={500} fill={color}>{label}</text>
             </g>
           );
         })

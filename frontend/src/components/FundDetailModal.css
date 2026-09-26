@@ -69,7 +69,7 @@
   gap: 5px;
   padding: 5px 11px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-soft);
   background: var(--surface-soft, transparent);
   border: 1px solid var(--line-strong, var(--line));
@@ -154,7 +154,7 @@
 .fdm-tab {
   padding: 9px 13px;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: 0;
@@ -180,7 +180,7 @@
 .fdm-section h3 {
   margin: 0;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-soft);
@@ -189,7 +189,7 @@
 .fdm-h4, .fdm-section h4 {
   margin: 0 0 6px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
@@ -248,7 +248,7 @@
 .fdm-pill {
   padding: 4px 10px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: var(--surface-soft, transparent);
   border: 1px solid var(--line);
@@ -311,7 +311,7 @@
   top: 0;
   z-index: 1;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -322,11 +322,11 @@
 .fdm-table td:first-child,
 .fdm-table td:nth-child(2) { text-align: left; }
 
-.fdm-table tbody th { font-weight: 600; color: var(--text-soft); }
+.fdm-table tbody th { font-weight: 500; color: var(--text-soft); }
 .fdm-table tbody tr:hover { background: var(--surface-soft, rgba(255, 255, 255, 0.02)); }
 .fdm-row-muted td, .fdm-row-muted th { color: var(--text-muted); }
 .fdm-row-self { background: color-mix(in srgb, var(--accent-3) 9%, transparent); }
-.fdm-row-self td, .fdm-row-self th { color: var(--text); font-weight: 600; }
+.fdm-row-self td, .fdm-row-self th { color: var(--text); font-weight: 500; }
 
 .fdm-table-holdings td:nth-child(2) { white-space: normal; min-width: 190px; }
 .fdm-holding-name { color: var(--text-soft); }
@@ -346,7 +346,7 @@
   gap: 2px;
   padding: 1px 5px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   background: none;
   border: 1px solid transparent;
@@ -585,7 +585,7 @@
   color: var(--text-soft);
 }
 
-.fdm-score-value { text-align: right; color: var(--text); font-weight: 600; }
+.fdm-score-value { text-align: right; color: var(--text); font-weight: 500; }
 
 .fdm-score-bar {
   display: block;
@@ -622,7 +622,7 @@
 .fdm-ai-headline {
   margin: 0;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.45;
   color: var(--text);
 }

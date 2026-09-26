@@ -134,7 +134,7 @@
   color: var(--text-soft);
   font: inherit;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -184,7 +184,7 @@
   color: var(--text-soft);
   font: inherit;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -217,7 +217,7 @@
 .tm-parent-label {
   font-family: var(--font-display);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   fill: var(--text-soft);
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -227,7 +227,7 @@
 .tm-parent-ret {
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-transform: none;
   letter-spacing: 0;
@@ -244,7 +244,7 @@
 
 .tm-tile-label {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   fill: var(--tm-tile-ink);
   pointer-events: none;
 }
@@ -272,7 +272,7 @@
 .tm-tile:not(.tm-clickable) .tm-tile-label,
 .tm-tile:not(.tm-clickable) .tm-tile-value {
   opacity: 0.6;
-  font-weight: 600;
+  font-weight: 500;
 }
 .tm-clickable:hover .tm-tile-rect {
   stroke: var(--text);
@@ -312,7 +312,7 @@
 
 .tm-tooltip strong {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   line-height: 1.25;
 }
@@ -320,7 +320,7 @@
 .tm-tt-ret {
   font-family: var(--font-mono);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .tm-tt-ret.pos-1, .tm-tt-ret.pos-2, .tm-tt-ret.pos-3 { color: var(--positive); }

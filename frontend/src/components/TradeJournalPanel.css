@@ -70,7 +70,7 @@
 
 .tj-brand-name {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   letter-spacing: -0.3px;
 }
@@ -168,7 +168,7 @@
   background: var(--accent);
   color: var(--accent-contrast);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   padding: 1px 4px;
   border-radius: var(--radius-xs);
   line-height: 1.4;
@@ -192,7 +192,7 @@
 
 .tj-card-hdr {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -248,7 +248,7 @@
   background: transparent;
   color: var(--text-muted);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.2px;
   border-radius: var(--radius-pill);
   padding: 6px 11px;
@@ -293,7 +293,7 @@
 
 .tj-board-sym {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.2px;
   color: var(--text);
 }
@@ -319,7 +319,7 @@
 
 .tj-kpi-value {
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   line-height: 1.1;
   letter-spacing: -0.5px;
@@ -392,7 +392,7 @@
 
 .tj-dist-summary-value {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: inherit;
 }
 .tj-dist-summary-value.pos { color: var(--positive); }
@@ -400,7 +400,7 @@
 
 .tj-dist-summary-pct {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   margin-left: 2px;
 }
@@ -484,14 +484,14 @@
 
 .tj-dist-count {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   line-height: 1;
 }
 
 .tj-dist-share {
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 0.2px;
 }
@@ -501,7 +501,7 @@
   color: var(--text-muted);
   margin-top: 6px;
   white-space: nowrap;
-  font-weight: 600;
+  font-weight: 500;
 }
 .tj-dist-label.pos { color: color-mix(in srgb, var(--positive) 80%, var(--text-muted)); }
 .tj-dist-label.neg { color: color-mix(in srgb, var(--negative) 80%, var(--text-muted)); }
@@ -551,16 +551,16 @@
 .tj-eq-tooltip-row {
   line-height: 1.35;
 }
-.tj-eq-tooltip-row.strong { font-weight: 700; font-size: var(--fs-base); }
+.tj-eq-tooltip-row.strong { font-weight: 500; font-size: var(--fs-base); }
 .tj-eq-tooltip-row.muted { color: var(--text-muted); font-size: var(--fs-small); margin-bottom: 4px; }
-.tj-eq-tooltip-row.pos { color: var(--positive); font-weight: 700; }
-.tj-eq-tooltip-row.neg { color: var(--negative); font-weight: 700; }
-.tj-eq-tooltip-pct { font-weight: 600; opacity: 0.85; }
+.tj-eq-tooltip-row.pos { color: var(--positive); font-weight: 500; }
+.tj-eq-tooltip-row.neg { color: var(--negative); font-weight: 500; }
+.tj-eq-tooltip-pct { font-weight: 500; opacity: 0.85; }
 
 .tj-card-hdr-sub {
   margin-left: 8px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 0.3px;
   text-transform: none;
@@ -578,7 +578,7 @@
 
 .tj-wl-title {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -597,7 +597,7 @@
 .tj-wl-row:last-child { border-bottom: none; }
 
 .tj-wl-rank { color: var(--text-muted); font-size: var(--fs-tiny); width: 22px; }
-.tj-wl-sym { font-weight: 600; flex: 1; }
+.tj-wl-sym { font-weight: 500; flex: 1; }
 .tj-wl-pnl { font-size: var(--fs-small); }
 
 .tj-symbol-link {
@@ -605,7 +605,7 @@
   border: none;
   color: var(--text);
   font: inherit;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
@@ -645,14 +645,14 @@
 
 .tj-cal-title {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   letter-spacing: 0.2px;
 }
 
 .tj-cal-subtotal {
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
 }
 .tj-cal-subtotal.pos { color: var(--positive); }
 .tj-cal-subtotal.neg { color: var(--negative); }
@@ -689,7 +689,7 @@
 .tj-cal-dow-cell {
   text-align: center;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   padding: 8px 0;
   letter-spacing: 0.3px;
@@ -756,7 +756,7 @@
   margin-top: auto;
   text-align: center;
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.2px;
   padding-bottom: 4px;
 }
@@ -813,12 +813,12 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tj-cal-modal-stat-val {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
 }
 .tj-cal-modal-stat-val.pos { color: var(--positive); }
@@ -848,7 +848,7 @@
   display: flex;
   gap: 10px;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   margin-left: auto;
 }
 
@@ -868,7 +868,7 @@
   padding: 9px 12px;
   text-align: left;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -885,7 +885,7 @@
 .tj-table .win-row td { }
 .tj-table .loss-row td { }
 
-.tj-sym-cell { font-weight: 700; color: var(--text); }
+.tj-sym-cell { font-weight: 500; color: var(--text); }
 .tj-date-cell { color: var(--text-muted); font-size: var(--fs-small); white-space: nowrap; }
 .tj-action-cell { display: flex; gap: 4px; white-space: nowrap; }
 
@@ -914,7 +914,7 @@
   gap: 2px;
 }
 .tj-km span { font-size: var(--fs-tiny); color: var(--text-muted); text-transform: uppercase; }
-.tj-km strong { font-size: var(--fs-lead); font-weight: 700; color: var(--text); }
+.tj-km strong { font-size: var(--fs-lead); font-weight: 500; color: var(--text); }
 .tj-km.pos strong { color: var(--positive); }
 .tj-km.neg strong { color: var(--negative); }
 
@@ -939,11 +939,11 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
-  font-weight: 700;
+  font-weight: 500;
 }
 .tj-kbox-value {
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
@@ -951,7 +951,7 @@
 .tj-kbox-sub {
   font-size: var(--fs-small);
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1010,7 +1010,7 @@
   color: var(--text-muted);
   background: var(--surface-strong);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .tj-open-ai-card {
@@ -1030,7 +1030,7 @@
 .tj-open-ai-title,
 .tj-open-ai-label {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1086,7 +1086,7 @@
 }
 
 .tj-open-group-table tbody tr:last-child td { border-bottom: none; }
-.tj-open-group-table td strong { display: block; color: var(--text); font-weight: 700; }
+.tj-open-group-table td strong { display: block; color: var(--text); font-weight: 500; }
 .tj-open-group-table td span { display: block; color: var(--text-muted); line-height: 1.4; }
 
 .tj-open-return-cell {
@@ -1097,7 +1097,7 @@
 .tj-open-return-cell span {
   display: inline-block;
   min-width: 54px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .tj-open-return-cell .pos { color: var(--positive); }
@@ -1111,7 +1111,7 @@
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1156,7 +1156,7 @@
   align-items: center;
   justify-content: space-between;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -1192,7 +1192,7 @@
   margin-bottom: 8px;
 }
 .tj-kcard-sym { display: flex; align-items: center; gap: 6px; }
-.tj-kcard-sym-text { font-size: var(--fs-body); font-weight: 700; color: var(--text); }
+.tj-kcard-sym-text { font-size: var(--fs-body); font-weight: 500; color: var(--text); }
 .tj-kcard-setup { font-size: var(--fs-micro); background: var(--surface-strong); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1px 6px; color: var(--text-muted); }
 .tj-kcard-qty { font-size: var(--fs-small); color: var(--text-muted); background: var(--surface-strong); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1px 7px; }
 
@@ -1206,7 +1206,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .tj-kcard-group-main {
@@ -1218,11 +1218,11 @@
 
 .tj-kcard-metrics { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .tj-kcard-metric { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-small); }
-.tj-kcard-metric.pos > span:last-child { color: var(--positive, var(--positive)); font-weight: 700; }
-.tj-kcard-metric.neg > span:last-child { color: var(--negative, var(--negative)); font-weight: 700; }
+.tj-kcard-metric.pos > span:last-child { color: var(--positive, var(--positive)); font-weight: 500; }
+.tj-kcard-metric.neg > span:last-child { color: var(--negative, var(--negative)); font-weight: 500; }
 .tj-kcard-ml { color: var(--text-muted); font-size: var(--fs-tiny); }
-.tj-kcard-cmp { color: var(--accent); font-weight: 600; }
-.tj-kcard-pnl { font-weight: 700; }
+.tj-kcard-cmp { color: var(--accent); font-weight: 500; }
+.tj-kcard-pnl { font-weight: 500; }
 
 .tj-kcard-actions { display: flex; gap: 6px; margin-top: 8px; }
 
@@ -1245,7 +1245,7 @@
 .tj-calc-result {
   text-align: center;
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
@@ -1292,7 +1292,7 @@
 
 .tj-command-value {
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--text);
 }
@@ -1457,7 +1457,7 @@
   text-align: center;
 }
 .tj-sizer-label { font-size: var(--fs-tiny); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
-.tj-sizer-val { font-size: var(--fs-title); font-weight: 700; color: var(--text); }
+.tj-sizer-val { font-size: var(--fs-title); font-weight: 500; color: var(--text); }
 .tj-sizer-val.accent { color: var(--accent); }
 
 /* ─── News ───────────────────────────────────────────────────────────────── */
@@ -1484,7 +1484,7 @@
 }
 .tj-news-sym {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   margin-bottom: 10px;
   padding-bottom: 8px;
@@ -1493,7 +1493,7 @@
 .tj-news-none { font-size: var(--fs-small); color: var(--text-muted); padding: 8px 0; }
 .tj-news-item { padding: 8px 0; border-bottom: 1px solid var(--line); }
 .tj-news-item:last-child { border-bottom: none; }
-.tj-news-title { font-size: var(--fs-base); font-weight: 600; color: var(--accent); text-decoration: none; display: block; margin-bottom: 4px; line-height: 1.3; }
+.tj-news-title { font-size: var(--fs-base); font-weight: 500; color: var(--accent); text-decoration: none; display: block; margin-bottom: 4px; line-height: 1.3; }
 .tj-news-title:hover { text-decoration: underline; }
 .tj-news-summary { font-size: var(--fs-small); color: var(--text-muted); line-height: 1.5; }
 .tj-news-date { font-size: var(--fs-tiny); color: var(--text-muted); margin-top: 4px; }
@@ -1512,7 +1512,7 @@
 @media (max-width: 600px) { .tj-form-grid-2, .tj-form-grid-3 { grid-template-columns: 1fr; } }
 
 .tj-form-field { display: flex; flex-direction: column; gap: 4px; }
-.tj-form-field label { font-size: var(--fs-small); color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.tj-form-field label { font-size: var(--fs-small); color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
 
 .tj-input, .tj-select, .tj-textarea {
   background: var(--surface-strong);
@@ -1543,7 +1543,7 @@
   padding: 7px 16px;
   border-radius: var(--radius-sm);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all var(--transition-fast);
@@ -1561,7 +1561,7 @@
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all var(--transition-fast);
@@ -1595,7 +1595,7 @@
 /* ─── Colors ─────────────────────────────────────────────────────────────── */
 .pos { color: var(--positive); }
 .neg { color: var(--negative); }
-.fw { font-weight: 700; }
+.fw { font-weight: 500; }
 
 /* ─── Empty / Misc ───────────────────────────────────────────────────────── */
 .tj-empty { font-size: var(--fs-base); color: var(--text-muted); padding: 16px 0; text-align: center; }
@@ -1642,7 +1642,7 @@
 
 .tj-modal-title {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   margin-bottom: 16px;
   padding-right: 28px;
@@ -1682,7 +1682,7 @@
 
 .trade-review-section-title {
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -1706,7 +1706,7 @@
 
 .trade-review-saved {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent-2, var(--positive));
   margin-right: auto;
 }
@@ -1821,7 +1821,7 @@
 
 .tj-root .tj-brand-name {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
@@ -1835,7 +1835,7 @@
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--fs-base);
   background: var(--surface);
   border-color: var(--line);
@@ -1858,7 +1858,7 @@
 
 .tj-root .tj-btn {
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--fs-base);
 }
 
@@ -1873,7 +1873,7 @@
 .tj-root .tj-tabbtn {
   padding: 7px 13px;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--radius-sm);
   border-color: transparent;
 }
@@ -1909,7 +1909,7 @@
   background: color-mix(in srgb, var(--tj-accent) 18%, transparent);
   color: var(--tj-accent);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* ── Page + cards ───────────────────────────────────────────────────────── */
@@ -1928,7 +1928,7 @@
 .tj-root .tj-card-hdr {
   font-size: var(--fs-tiny);
   letter-spacing: 0.08em;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   margin-bottom: 12px;
 }
@@ -1985,14 +1985,14 @@
 .tj-root .tj-kpi-label {
   font-size: var(--fs-tiny);
   letter-spacing: 0.08em;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .tj-root .tj-kpi-value {
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   margin-top: 4px;
@@ -2015,7 +2015,7 @@
 
 .tj-root .tj-toggle-btn {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   padding: 5px 11px;
   border-radius: var(--radius-sm);
 }
@@ -2078,7 +2078,7 @@
 
 .tj-donut-value {
   font-size: var(--fs-display);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -2087,7 +2087,7 @@
 .tj-donut-label {
   display: block;
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -2111,7 +2111,7 @@
 
 .tj-donut-leg strong {
   color: var(--text);
-  font-weight: 700;
+  font-weight: 500;
   margin-left: 2px;
   font-variant-numeric: tabular-nums;
 }
@@ -2180,20 +2180,20 @@
   left: 50%;
   transform: translateX(-50%);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .tj-hold-label {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
 .tj-hold-pnl {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .tj-hold-pnl.pos { color: var(--tj-pos); }
@@ -2219,7 +2219,7 @@
 
 .tj-dow-label {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2246,14 +2246,14 @@
   position: relative;
   z-index: 1;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 
 .tj-dow-pnl {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .tj-dow-pnl.pos { color: var(--tj-pos); }
@@ -2287,7 +2287,7 @@
 
 .tj-setup-name {
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -2324,7 +2324,7 @@
 .tj-setup-pnl {
   text-align: right;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-base);
 }
 .tj-setup-pnl.pos { color: var(--tj-pos); }
@@ -2360,7 +2360,7 @@
   background: color-mix(in srgb, var(--tj-accent) 14%, transparent);
   color: var(--tj-accent);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* ── Symbol scoreboard cards ────────────────────────────────────────────── */
@@ -2377,7 +2377,7 @@
 }
 
 .tj-root .tj-board-sym {
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
@@ -2419,7 +2419,7 @@
 
 .tj-recent-table thead th {
   text-align: left;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -2446,13 +2446,13 @@
 
 .tj-recent-table td.num { text-align: right; }
 .tj-recent-table td.muted { color: var(--text-muted); }
-.tj-recent-table td.pos { color: var(--positive); font-weight: 600; }
-.tj-recent-table td.neg { color: var(--negative); font-weight: 600; }
+.tj-recent-table td.pos { color: var(--positive); font-weight: 500; }
+.tj-recent-table td.neg { color: var(--negative); font-weight: 500; }
 
 .tj-recent-table tfoot .tj-recent-total-row td {
   padding: 9px 10px;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   border-top: 1px solid var(--line-strong);
   background: color-mix(in srgb, var(--tj-accent, var(--accent, #6ea8ff)) 8%, transparent);
 }
@@ -2591,7 +2591,7 @@
 
 .tj-ai-col-title {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-soft);
@@ -2617,7 +2617,7 @@
   padding: 1px 8px;
   border-radius: var(--radius-pill);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
 }
 
@@ -2729,7 +2729,7 @@
 .tj-edge-modal-eyebrow {
   display: block;
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent, #58a6ff);
@@ -2762,7 +2762,7 @@
   background: color-mix(in srgb, var(--accent, #58a6ff) 22%, transparent);
   color: var(--text);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   vertical-align: middle;
@@ -2795,11 +2795,11 @@
   border-bottom: 1px solid color-mix(in srgb, var(--line, #2a2f3a) 60%, transparent);
 }
 .tj-charges-row span:first-child { color: var(--text-soft, var(--text-muted)); }
-.tj-charges-gross { font-weight: 600; }
+.tj-charges-gross { font-weight: 500; }
 .tj-charges-total { border-top: 1px solid var(--line-strong, #3a4150); border-bottom: none; margin-top: 4px; padding-top: 8px; }
 .tj-charges-net {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   border-bottom: none;
   margin-top: 2px;
   padding-top: 6px;
@@ -2832,7 +2832,7 @@
   align-items: center;
   gap: 8px;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-soft, var(--text-muted));
   margin-bottom: 10px;
 }
@@ -2841,7 +2841,7 @@
   padding: 1px 8px;
   border-radius: var(--radius-pill);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: color-mix(in srgb, var(--accent, #58a6ff) 20%, transparent);
@@ -2876,7 +2876,7 @@
 
 .tj-mentor-author {
   color: var(--text-soft);
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--fs-body);
 }
 
@@ -2913,7 +2913,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tj-regime-stat {
@@ -2923,7 +2923,7 @@
 
 .tj-regime-pnl {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tj-wisdom-callout {
@@ -2931,7 +2931,7 @@
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tj-wisdom-callout.neg {
@@ -2993,7 +2993,7 @@
 }
 
 .tj-mistake-bill-tag {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tj-mistake-bill-count,
@@ -3004,7 +3004,7 @@
 }
 
 .tj-mistake-bill-pnl {
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-align: right;
   min-width: 84px;
@@ -3082,7 +3082,7 @@
 
 .tj-learn-traj {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--amber);
 }
 
@@ -3135,7 +3135,7 @@
 .tj-learn-era {
   margin-left: auto;
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
@@ -3192,7 +3192,7 @@
 .tj-learn-habit-name {
   margin: 0 0 6px;
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .tj-learn-habit p {
@@ -3266,7 +3266,7 @@
 }
 
 .tj-grade-head:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
-.tj-grade-head strong { color: var(--text); font-weight: 650; }
+.tj-grade-head strong { color: var(--text); font-weight: 500; }
 .tj-grade-head span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .tj-grade-score { color: var(--text-muted); font-weight: 500; }
 
@@ -3275,14 +3275,14 @@
 
 .tj-grade-why li { display: flex; gap: 10px; align-items: baseline; font-size: 12px; line-height: 1.55; }
 .tj-grade-why li > span:last-child { min-width: 0; }
-.tj-grade-why li strong { display: block; color: var(--text); font-weight: 600; }
+.tj-grade-why li strong { display: block; color: var(--text); font-weight: 500; }
 .tj-grade-why li em { display: block; font-style: normal; color: var(--text-muted); font-size: 11px; }
 
 .tj-grade-delta {
   flex: none;
   width: 34px;
   text-align: right;
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
 }

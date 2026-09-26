@@ -46,7 +46,7 @@
   color: var(--text-soft);
   font: inherit;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -61,7 +61,7 @@
   color: var(--text-soft);
   font: inherit;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -127,7 +127,7 @@
 .rrg-q-label {
   font-family: var(--font-display);
   font-size: var(--fs-micro);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.14em;
   pointer-events: none;
   opacity: 0.75;
@@ -173,7 +173,7 @@
 
 .rrg-head-label {
   font-size: 10.5px;
-  font-weight: 650;
+  font-weight: 500;
   fill: var(--text);
   /* Painted under the glyphs (paint-order: stroke), so a name stays readable
      where it crosses a trail or a quadrant edge. */
@@ -187,7 +187,7 @@
 .rrg-trail.is-hot .rrg-head { r: 6.6; }
 .rrg-trail.is-hot .rrg-head-ring { opacity: 0.6; }
 .rrg-trail.is-hot .rrg-head-glow { opacity: 0.3; }
-.rrg-trail.is-hot .rrg-head-label { font-weight: 800; stroke-width: 3.2; }
+.rrg-trail.is-hot .rrg-head-label { font-weight: 500; stroke-width: 3.2; }
 /* Hovering one trail fades the rest rather than hiding them: the neighbours
    are the comparison, they just stop competing for attention. */
 .rrg-trail.is-dim { opacity: 0.22; }
@@ -213,7 +213,7 @@
   pointer-events: none;
 }
 .rrg-tooltip strong { font-size: var(--fs-small); color: var(--text); line-height: 1.25; }
-.rrg-tt-q { font-size: var(--fs-tiny); font-weight: 700; }
+.rrg-tt-q { font-size: var(--fs-tiny); font-weight: 500; }
 .rrg-tt-q.leading   { color: var(--positive-on-tint); }
 .rrg-tt-q.improving { color: var(--accent-on-tint); }
 .rrg-tt-q.weakening { color: var(--amber); }
@@ -263,7 +263,7 @@
 .rrg-legend-btn.is-off .rrg-legend-name { text-decoration: line-through; }
 .rrg-legend-btn.is-off .rrg-legend-dot { background: var(--text-muted); }
 .rrg-legend-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rrg-legend-btn em { font-style: normal; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.rrg-legend-btn em { font-style: normal; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
 .rrg-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .rrg-legend-dot.leading   { background: var(--positive); }
 .rrg-legend-dot.improving { background: var(--accent); }
@@ -312,7 +312,7 @@
   border-bottom: var(--hairline);
   color: var(--text-muted);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   text-align: left;
@@ -385,7 +385,7 @@
   align-items: flex-end;
   min-width: 108px;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
@@ -408,7 +408,7 @@
   backdrop-filter: blur(8px);
   box-shadow: var(--elev-2);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
@@ -418,7 +418,7 @@
   padding: 0;
   color: var(--accent-on-tint);
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -458,7 +458,7 @@
   color: var(--text);
   font: inherit;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -493,7 +493,7 @@
   justify-content: space-between;
   margin: 0 0 var(--space-2);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -523,7 +523,7 @@
 .rrg-cross-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rrg-cross-move { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-micro); }
 .rrg-cross-arrow { color: var(--text-muted); }
-.rrg-cross-q { font-weight: 700; }
+.rrg-cross-q { font-weight: 500; }
 .rrg-cross-q.leading   { color: var(--positive-on-tint); }
 .rrg-cross-q.improving { color: var(--accent-on-tint); }
 .rrg-cross-q.weakening { color: var(--amber); }

@@ -45,10 +45,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-.positive-text { color: var(--positive) !important; font-weight: 600; }
-.negative-text { color: var(--negative) !important; font-weight: 600; }
+.positive-text { color: var(--positive) !important; font-weight: 500; }
+.negative-text { color: var(--negative) !important; font-weight: 500; }
 /* ===== 2. METRIC STRIP - one slim status line; values in mono, quiet labels ===== */
-.metric-card strong { font-family: var(--font-mono); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.01em; }
+.metric-card strong { font-family: var(--font-mono); font-size: var(--fs-body); font-weight: 500; letter-spacing: -0.01em; }
 
 /* ===== 3. MARKET TOGGLE - accent for the active market ===== */
 .home-market-toggle {
@@ -57,7 +57,7 @@
 }
 .home-market-toggle-btn.active {
   background: var(--accent) !important;
-  color: var(--accent-contrast) !important; font-weight: 700 !important;
+  color: var(--accent-contrast) !important; font-weight: 500 !important;
   box-shadow: none !important;
 }
 
@@ -79,13 +79,13 @@
   color: var(--text) !important;
   box-shadow: none !important;
 }
-.screener-nav-button.active .screener-nav-main strong { color: var(--accent); font-weight: 700; }
+.screener-nav-button.active .screener-nav-main strong { color: var(--accent); font-weight: 500; }
 
 /* ===== 5. ACTIVE / SELECTED STATES - one accent everywhere ===== */
 .timeframe-pill.active,.scanner-tab.active,.indicator-pill.active,.tool-pill.active,
 .pe-modal-tab.active,.mf-mode-tab.active,.saved-scanner-chip.active {
   background: var(--accent) !important; color: var(--accent-contrast) !important;
-  border-color: var(--accent) !important; font-weight: 600 !important;
+  border-color: var(--accent) !important; font-weight: 500 !important;
   box-shadow: none !important;
 }
 /* --accent-strong, not --accent: white on the lighter dark-theme --accent
@@ -93,7 +93,7 @@
    shade is the same hue and lands at 4.59:1 dark / 6.70:1 light. */
 .nav-button.primary {
   background: var(--accent-strong) !important; color: var(--accent-contrast) !important;
-  border-color: var(--accent-strong) !important; font-weight: 600 !important;
+  border-color: var(--accent-strong) !important; font-weight: 500 !important;
   box-shadow: none !important;
 }
 /* Hover has to go darker still — it used to land on --accent-strong, which is
@@ -105,7 +105,7 @@
 .mf-week-btn.active {
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-strong)) !important;
   color: var(--accent) !important;
-  border-color: color-mix(in srgb, var(--accent) 50%, transparent) !important; font-weight: 600 !important;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent) !important; font-weight: 500 !important;
 }
 .width-btn.active,.rvol-size-btn.active { background: var(--accent) !important; color: var(--accent-contrast) !important; }
 
@@ -123,7 +123,7 @@
 .watchlist-link.active {
   background: color-mix(in srgb, var(--accent) 14%, var(--surface-strong)) !important;
   border-color: color-mix(in srgb, var(--accent) 42%, transparent) !important;
-  color: var(--accent) !important; font-weight: 600 !important;
+  color: var(--accent) !important; font-weight: 500 !important;
 }
 .mf-stock-card.active { border-color: var(--accent) !important; box-shadow: none !important; }
 .screener-saved-item.active {
@@ -142,7 +142,7 @@
   transition: border-color var(--dur-base) ease;
 }
 .panel:hover { border-color: var(--line-strong); }
-.panel-kicker { color: var(--text-muted); font-size: var(--fs-small); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.panel-kicker { color: var(--text-muted); font-size: var(--fs-small); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
 
 /* ===== 7. GROUP CARDS - neutral, hover reveals accent ===== */
 .home-group-card {
@@ -179,7 +179,7 @@
   border-color: var(--line-strong);
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
 }
-.home-macro-price { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 600; letter-spacing: -0.01em; }
+.home-macro-price { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 500; letter-spacing: -0.01em; }
 
 /* ===== 10. SCAN ROWS ===== */
 .scan-row {
@@ -197,15 +197,15 @@
 }
 
 /* ===== 11. MF BADGES - direction colours only ===== */
-.mf-badge--bull { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 30%, transparent); font-weight: 600; }
-.mf-badge--bear { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 28%, transparent); font-weight: 600; }
-.mf-badge--neutral { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-soft); border: 1px solid var(--line-strong); font-weight: 600; }
+.mf-badge--bull { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 30%, transparent); font-weight: 500; }
+.mf-badge--bear { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 28%, transparent); font-weight: 500; }
+.mf-badge--neutral { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-soft); border: 1px solid var(--line-strong); font-weight: 500; }
 .mf-sector-card--bullish { border-color: color-mix(in srgb, var(--positive) 32%, transparent); background: color-mix(in srgb, var(--positive) 7%, var(--surface-soft)); }
 .mf-sector-card--bearish { border-color: color-mix(in srgb, var(--negative) 32%, transparent); background: color-mix(in srgb, var(--negative) 7%, var(--surface-soft)); }
 
 /* ===== 12. CHART GRID ===== */
-.chart-grid-badge.positive { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 26%, transparent); font-weight: 600; }
-.chart-grid-badge.negative { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 24%, transparent); font-weight: 600; }
+.chart-grid-badge.positive { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 26%, transparent); font-weight: 500; }
+.chart-grid-badge.negative { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 24%, transparent); font-weight: 500; }
 .chart-grid-sparkline.positive .chart-grid-sparkline-area { fill: color-mix(in srgb, var(--positive) 18%, transparent); }
 .chart-grid-sparkline.positive .chart-grid-sparkline-line { stroke: var(--positive); }
 .chart-grid-sparkline.negative .chart-grid-sparkline-area { fill: color-mix(in srgb, var(--negative) 16%, transparent); }
@@ -227,7 +227,7 @@
   transition: filter var(--dur-base) ease;
 }
 .sector-heatmap-card:hover { filter: brightness(1.08); }
-.sector-heatmap-card-return { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 700; letter-spacing: -0.03em; }
+.sector-heatmap-card-return { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 500; letter-spacing: -0.03em; }
 
 /* ===== 14. NAV ===== */
 .top-nav {
@@ -279,7 +279,7 @@
 }
 
 /* ===== 20. MF STOCK METRICS ===== */
-.mf-stock-metric-card strong,.mf-key-metric-item strong,.mf-rotation-pct,.mf-rotation-main-value { font-family: var(--font-mono); font-weight: 600; letter-spacing: -0.015em; }
+.mf-stock-metric-card strong,.mf-key-metric-item strong,.mf-rotation-pct,.mf-rotation-main-value { font-family: var(--font-mono); font-weight: 500; letter-spacing: -0.015em; }
 
 /* ===== 21. MISC ===== */
 .mode-switch { border: 1px solid var(--line); background: color-mix(in srgb, var(--surface-soft) 70%, transparent); }
@@ -344,7 +344,7 @@
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: #fff;
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-body);
   letter-spacing: 0.02em;
   display: grid;
@@ -353,14 +353,14 @@
 
 .top-nav .brand-cluster h1 {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
   margin: 0;
 }
 
 .top-nav .brand-cluster .eyebrow {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -375,7 +375,7 @@
 .top-nav .nav-button {
   position: relative;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.01em;
   padding: 9px 16px;
   border-radius: var(--radius-md);
@@ -476,7 +476,7 @@
   font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
@@ -494,7 +494,7 @@
   padding: 5px 10px;
   border-radius: var(--radius-sm);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: #77736a;
   cursor: pointer;
   transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
@@ -529,7 +529,7 @@
 }
 
 .ticker-ribbon-item span {
-  font-weight: 700;
+  font-weight: 500;
   color: #77736a;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -541,12 +541,12 @@
 }
 
 .ticker-ribbon-item strong {
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-base);
 }
 
 .ticker-ribbon-item small {
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--fs-small);
 }
 
@@ -619,7 +619,7 @@
 .top-nav .nav-button {
   padding: 6px 12px;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--radius-sm);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -780,7 +780,7 @@
 .status-pill strong {
   font-family: var(--font-display);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text);
 }

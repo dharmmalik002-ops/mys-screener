@@ -83,7 +83,7 @@
 
 .sf-card-head strong {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--sf-text);
 }
 
@@ -171,7 +171,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--sf-text-soft);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -179,7 +179,7 @@
 
 .sf-stat-text strong {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--sf-text);
   white-space: nowrap;
   overflow: hidden;
@@ -255,7 +255,7 @@
 
 .sf-mover-fallback {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent-on-tint);
 }
 
@@ -267,7 +267,7 @@
 
 .sf-mover-text strong {
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--sf-text);
   white-space: nowrap;
   overflow: hidden;
@@ -318,7 +318,7 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   white-space: nowrap;
 }
 

@@ -23,7 +23,7 @@
 .icc-legend em {
   font-style: normal;
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .icc-legend em.pos { color: var(--positive); }

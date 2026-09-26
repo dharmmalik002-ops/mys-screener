@@ -1,13 +1,13 @@
 :root {
   color-scheme: dark;
   font-family: var(--font-sans);
-  --font-sans: "Geist", "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Geist", "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Editorial serif for page titles and hero numerals only — never tables. */
-  --font-serif: "Instrument Serif", "Iowan Old Style", "Georgia", serif;
-  --font-mono: "Geist Mono", "SFMono-Regular", "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
-  --bg: #0a0a0c;
-  --bg-alt: #0e0f12;
+  --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-sans);
+  --bg: #111112;
+  --bg-alt: #111112;
   /* The page canvas. Flat, on purpose: this used to be a blue gradient mesh
      that only the Markets page fully covered, so that page read as a calm grey
      and every other page read blue. The grey won. --card-flat is one step off
@@ -15,29 +15,29 @@
      context tiles, disclosures) still read as cards now that the canvas is
      their old colour. */
   --app-canvas: var(--bg-alt);
-  --card-flat: #15161a;
-  --surface: rgba(20, 21, 25, 0.80);
-  --surface-strong: rgba(22, 23, 27, 0.94);
-  --surface-soft: rgba(36, 37, 43, 0.50);
-  --line: rgba(255, 255, 255, 0.075);
-  --line-strong: rgba(255, 255, 255, 0.14);
+  --card-flat: #1a1a1c;
+  --surface: #1a1a1c;
+  --surface-strong: #1a1a1c;
+  --surface-soft: #222225;
+  --line: #2a2a2d;
+  --line-strong: #35353a;
   /* Dark values are measured against --card-flat (#171f3a), the LIGHTEST dark
      surface and therefore the tightest test -- a value can clear AA on the
      canvas and fail on a card, which is where most text actually sits.
      --text-muted was 3.41:1 and --negative 4.31:1. */
-  --text: #edebe5;
-  --text-soft: #a9a69d;
-  --text-muted: #8b877d;
-  --accent: #d4af6a;
-  --accent-strong: #c29b52;
+  --text: #ededed;
+  --text-soft: #a8a8a8;
+  --text-muted: #8c8c8c;
+  --accent: #ededed;
+  --accent-strong: #ffffff;
   /* Accent text sitting ON an accent-tinted chip. It has to move the OPPOSITE
      way in each theme: darker than --accent on a light tint, lighter than it
      on a dark tint. Using --accent-strong for both put #3b6cef on a dark chip
      and cost 8 severe contrast failures on the Funds page. */
-  --accent-on-tint: #e6c88c;
-  --accent-2: #5fc6a0;
-  --accent-3: #8fb8d8;
-  --positive: #34c28a;
+  --accent-on-tint: #ffffff;
+  --accent-2: #66c398;
+  --accent-3: #958dfc;
+  --positive: #4fbf8b;
   /* Chart candles are a SEPARATE semantic from UI up/down, and deliberately
      so: this is TradingView's exact pair, chosen so the chart reads like a pro
      terminal. Collapsing it into --positive/--negative would flatten a real
@@ -58,25 +58,25 @@
   --negative-on-tint: var(--negative);
   --candle-up: #22ab94;
   --candle-down: #f7525f;
-  --positive-soft: rgba(52, 194, 138, 0.13);
-  --negative: #ef6461;
-  --negative-soft: rgba(239, 100, 97, 0.13);
-  --danger: #f07470;
+  --positive-soft: rgba(102, 195, 152, 0.14);
+  --negative: #f2606b;
+  --negative-soft: rgba(251, 55, 72, 0.14);
+  --danger: #fb3748;
   /* Aliases kept for the call sites that use them; they must never hold a
      second green or a second red, which is how this drifted before. */
   --red: var(--negative);
   --green: var(--positive);
   --teal: #3fb8a8;
-  --teal-soft: rgba(63, 184, 168, 0.13);
-  --pink: #e0719b;
-  --pink-soft: rgba(224, 113, 155, 0.13);
-  --orange: #e8905a;
-  --orange-soft: rgba(232, 144, 90, 0.13);
-  --violet: #a391e6;
-  --amber: #e0a84a;
-  --amber-soft: rgba(224, 168, 74, 0.13);
-  --warning: #e6b04e;
-  --accent-contrast: #17130a;
+  --teal-soft: rgba(63, 184, 168, 0.14);
+  --pink: #ea4c7d;
+  --pink-soft: rgba(234, 76, 125, 0.14);
+  --orange: #fc6200;
+  --orange-soft: rgba(252, 98, 0, 0.14);
+  --violet: #958dfc;
+  --amber: #ff9857;
+  --amber-soft: rgba(255, 152, 87, 0.14);
+  --warning: #ff9857;
+  --accent-contrast: #111112;
   /* ---- Elevation ------------------------------------------------------
      Three levels, replacing 61 hand-rolled drop shadows. Three rather than
      the two this pass aimed at, because there are genuinely three needs: a
@@ -86,14 +86,14 @@
      Focus rings, inset inner-highlights and coloured accent glows are NOT
      elevation and are left alone -- collapsing those into a drop shadow
      would lose the distinction, not tidy it. */
-  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.40);
-  --elev-2: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 34px -14px rgba(0, 0, 0, 0.55);
-  --elev-3: 0 28px 64px -16px rgba(0, 0, 0, 0.66);
+  --elev-1: none;
+  --elev-2: none;
+  --elev-3: 0 16px 40px rgba(0, 0, 0, 0.45);
   /* Kept as aliases: both names are used widely and both mean "a card". */
   --shadow: var(--elev-2);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0));
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-glow: rgba(212, 175, 106, 0.05);
+  --glass-sheen: none;
+  --glass-border: #2a2a2d;
+  --glass-glow: transparent;
   /* ---- Corner radii ---------------------------------------------------
      "Pill" was written three ways -- 99px, 999px and 9999px, 108
      declarations between them -- which is how you end up with two
@@ -104,9 +104,9 @@
      it means "circle" and is unambiguous. */
   --radius-xs: 4px;
   --radius-sm: 8px;
-  --radius-md: 10px;
+  --radius-md: 8px;
   --radius-lg: 12px;
-  --radius-xl: 14px;
+  --radius-xl: 12px;
   --radius-2xl: 32px;
   --radius-pill: 999px;
   /* One focus ring. The eight :focus declarations used five treatments --
@@ -116,7 +116,7 @@
      whole stylesheet, so keyboard focus was near-invisible. A panel that
      wants its own hue overrides this token locally rather than inventing a
      sixth ring. */
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent);
+  --focus-ring: 0 0 0 3px rgba(237, 237, 237, 0.22);
   /* ---- Type scale ----------------------------------------------------
      Twelve steps, replacing 72 distinct computed sizes across 1,178
      declarations. The sprawl was mostly the same optical size written
@@ -168,78 +168,79 @@
   --dur-slow: 320ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-emphasis: cubic-bezier(0.4, 0, 0.2, 1);
-  --hero-glow: radial-gradient(ellipse at 18% 0%, rgba(212, 175, 106, 0.08), transparent 52%), radial-gradient(ellipse at 85% 0%, rgba(143, 184, 216, 0.05), transparent 45%);
+  --hero-glow: none;
   /* Premium gradient mesh under the glass chrome (replaced the photographic
      background: glass over a quiet mesh reads terminal-grade, not wallpaper).
      To restore the photo: url("/liquid-glass-bg.jpg"). */
-  --app-bg-image: radial-gradient(ellipse 70% 40% at 50% -8%, rgba(212, 175, 106, 0.07), transparent 60%), linear-gradient(180deg, #0e0f12 0%, #0b0b0d 100%);
+  --app-bg-image: #111112;
   /* Theme veil: a quiet mesh needs far less dimming than the old photo did. */
-  --app-veil: linear-gradient(180deg, rgba(10, 10, 12, 0) 0%, rgba(10, 10, 12, 0.4) 100%);
+  --app-veil: none;
   /* Gradient-stroke "liquid glass" rim — bright at top & bottom edges, fading mid (masked ::before). */
-  --glass-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 45%);
+  --glass-rim: none;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f5f3ee;
-  --bg-alt: #f0ede6;
+  --bg: #f8f8f8;
+  --bg-alt: #f8f8f8;
   --app-canvas: var(--bg-alt);
   /* Lighter than the canvas here, darker than it in dark theme — either way a
      card should be the thing that catches the light. */
-  --card-flat: #fbfaf7;
-  --surface: rgba(255, 255, 253, 0.74);
-  --surface-strong: rgba(255, 254, 251, 0.94);
-  --surface-soft: rgba(240, 237, 229, 0.70);
-  --line: rgba(40, 33, 20, 0.09);
-  --line-strong: rgba(40, 33, 20, 0.17);
-  --text: #1a1814;
-  --text-soft: #57534a;
+  --card-flat: #ffffff;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-soft: #fafafa;
+  --line: #ebebeb;
+  --line-strong: #dfe6e8;
+  --text: #222222;
+  --text-soft: #5c5c5c;
   /* #94a3b8 on #f1f5f9 was ~2.1:1 — labels washed out. Slate-500 keeps the
      muted feel at readable contrast. */
-  --text-muted: #6a655a;
-  --accent: #86641f;
-  --accent-strong: #6f5214;
-  --accent-on-tint: #6f5214;
+  --text-muted: #767676;
+  --accent: #222222;
+  --accent-strong: #0b0b0b;
+  --accent-on-tint: #0b0b0b;
   /* Light-theme colour values are darker than their dark-theme counterparts
      because they are read as TEXT on a near-white card, not on near-black.
      Every value here was measured against --card-flat (#f4f7fb) and clears
      WCAG AA 4.5:1; the previous set had --positive at 3.07:1, --danger at
      3.50:1 and --amber at 2.96:1, which is why gains, warnings and delete
      actions were all hard to read in light mode. */
-  --accent-2: #1d6b52;
-  --accent-3: #2b6c8f;
-  --positive: #137a4c;
+  --accent-2: #2f9a6a;
+  --accent-3: #6d63e8;
+  --positive: #1a7f52;
   --positive-on-tint: var(--positive-shade);
   --negative-on-tint: var(--negative-shade);
-  --positive-soft: rgba(19, 122, 76, 0.10);
-  --negative: #b8323a;
-  --negative-soft: rgba(184, 50, 58, 0.10);
-  --danger: #a82b2b;
+  --positive-soft: rgba(102, 195, 152, 0.16);
+  --negative: #d42a3b;
+  --negative-soft: rgba(251, 55, 72, 0.10);
+  --danger: #d42a3b;
   --red: var(--negative);
   --green: var(--positive);
-  --teal: #0f6f66;
-  --teal-soft: rgba(15, 111, 102, 0.10);
-  --pink: #b3346a;
-  --pink-soft: rgba(179, 52, 106, 0.10);
-  --orange: #b0561c;
-  --orange-soft: rgba(176, 86, 28, 0.10);
-  --violet: #6a4fc4;
-  --amber: #9a6410;
-  --amber-soft: rgba(154, 100, 16, 0.10);
-  --warning: #9a6410;
-  --accent-contrast: #fffdf7;
-  --elev-1: 0 1px 2px rgba(40, 30, 10, 0.06);
-  --elev-2: 0 1px 2px rgba(40, 30, 10, 0.05), 0 10px 28px -12px rgba(40, 30, 10, 0.14);
-  --elev-3: 0 24px 56px -16px rgba(40, 30, 10, 0.22);
+  --teal: #0f7a70;
+  --teal-soft: rgba(15, 122, 112, 0.10);
+  --pink: #c7325f;
+  --pink-soft: rgba(234, 76, 125, 0.12);
+  --orange: #c64d00;
+  --orange-soft: rgba(252, 98, 0, 0.10);
+  --violet: #5b52d6;
+  --amber: #b25a13;
+  --amber-soft: rgba(255, 152, 87, 0.14);
+  --warning: #b25a13;
+  --accent-contrast: #ffffff;
+  --elev-1: 0 1px 2px rgba(10, 13, 20, 0.03);
+  --elev-2: none;
+  --elev-3: 0 16px 40px rgba(10, 13, 20, 0.10);
   --shadow: var(--elev-2);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.25));
-  --glass-border: rgba(40, 33, 20, 0.10);
-  --glass-glow: rgba(134, 100, 31, 0.05);
-  --hero-glow: radial-gradient(ellipse at 18% 0%, rgba(134, 100, 31, 0.07), transparent 52%);
-  --app-bg-image: linear-gradient(180deg, #f5f3ee 0%, #f0ede6 100%);
-  --app-veil: linear-gradient(180deg, rgba(245, 243, 238, 0) 0%, rgba(245, 243, 238, 0.5) 100%);
+  --glass-sheen: none;
+  --glass-border: #ebebeb;
+  --glass-glow: transparent;
+  --hero-glow: none;
+  --app-bg-image: #f8f8f8;
+  --app-veil: none;
   /* Darker rim for light theme so the glass edge reads on light surfaces. */
-  --glass-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 45%);
+  --glass-rim: none;
+  --focus-ring: 0 0 0 3px rgba(34, 34, 34, 0.14);
 }
 
 * {
@@ -571,7 +572,7 @@ button {
   color: var(--text);
   font-family: var(--font-display);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 @keyframes ticker-scroll {
@@ -632,7 +633,7 @@ button {
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: var(--accent-contrast);
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-lead);
   letter-spacing: 0.02em;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
@@ -659,7 +660,7 @@ button {
 
 .brand-cluster h1 {
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .eyebrow {
@@ -860,7 +861,7 @@ button {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: var(--accent-contrast);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
     0 8px 24px color-mix(in srgb, var(--accent) 22%, transparent),
@@ -992,7 +993,7 @@ button {
 .metric-card strong {
   font-family: var(--font-display);
   font-size: var(--fs-lead);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
@@ -1022,7 +1023,7 @@ button {
   background: color-mix(in srgb, var(--danger) 18%, var(--surface));
   color: var(--text);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .empty-state-subtitle {
@@ -1058,7 +1059,7 @@ button {
 
 .startup-toast-copy strong {
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .startup-toast-copy span {
@@ -1366,7 +1367,7 @@ button {
 
 .home-macro-label {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1374,7 +1375,7 @@ button {
 
 .home-macro-price {
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
   display: flex;
   align-items: baseline;
@@ -1399,7 +1400,7 @@ button {
   border-radius: var(--radius-pill);
   padding: 5px 10px;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -1463,7 +1464,7 @@ button {
 .pe-modal-header h3 {
   margin: 0;
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .pe-modal-tabs {
@@ -1483,7 +1484,7 @@ button {
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -1531,7 +1532,7 @@ button {
 
 .pe-stat strong {
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .pe-chart-svg {
@@ -1635,7 +1636,7 @@ button {
   border-radius: var(--radius-md);
   padding: 8px 14px;
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -1744,7 +1745,7 @@ button {
 .mf-title {
   margin: 0;
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.03em;
 }
 
@@ -1799,7 +1800,7 @@ button {
 
 .mf-sidebar-title {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
@@ -1812,7 +1813,7 @@ button {
 
 .mf-week-group-label {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   margin: 0 0 4px;
   padding: 0 4px;
@@ -1840,7 +1841,7 @@ button {
 .mf-week-btn.active {
   background: color-mix(in srgb, var(--accent) 25%, transparent);
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .mf-report {
@@ -1861,7 +1862,7 @@ button {
 .mf-report-title {
   margin: 0;
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mf-week-badge {
@@ -1871,7 +1872,7 @@ button {
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-radius: var(--radius-xs);
   padding: 2px 8px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .mf-macro-summary {
@@ -1883,7 +1884,7 @@ button {
 
 .mf-macro-label {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-muted);
@@ -1911,7 +1912,7 @@ button {
 .mf-section-title {
   margin: 0;
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text);
 }
@@ -1959,7 +1960,7 @@ button {
 
 .mf-sector-card-header strong {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mf-sector-card-reason {
@@ -1971,7 +1972,7 @@ button {
 
 .mf-badge {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
@@ -2089,7 +2090,7 @@ button {
   display: block;
   margin: 0;
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mf-stock-card-top small {
@@ -2106,7 +2107,7 @@ button {
   border-radius: var(--radius-pill);
   padding: 4px 8px;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -2339,7 +2340,7 @@ button {
 .mf-rotation-main-value {
   margin: 6px 0 2px;
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent);
 }
 
@@ -2395,7 +2396,7 @@ button {
 .mf-rotation-rank {
   font-size: var(--fs-small);
   color: var(--text-soft);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mf-rotation-sector {
@@ -2418,7 +2419,7 @@ button {
 }
 
 .mf-rotation-pct {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent);
   font-size: var(--fs-base);
 }
@@ -2453,7 +2454,7 @@ button {
   gap: 4px;
   font-size: var(--fs-small);
   color: var(--text-soft);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mf-rotation-controls select {
@@ -2472,7 +2473,7 @@ button {
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   align-self: flex-end;
 }
@@ -2525,13 +2526,13 @@ button {
 .mf-rotation-stock-rs {
   color: var(--text-muted);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mf-rotation-stock-return {
   color: var(--accent);
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
@@ -2670,7 +2671,7 @@ button {
   background: transparent;
   color: var(--text-soft);
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
@@ -2893,7 +2894,7 @@ button {
 
 .sector-heatmap-card-name {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.3;
@@ -2908,7 +2909,7 @@ button {
 .sector-heatmap-card-return {
   font-family: var(--font-display);
   font-size: var(--fs-lead);
-  font-weight: 700;
+  font-weight: 500;
   white-space: nowrap;
   line-height: 1;
 }
@@ -2976,7 +2977,7 @@ button {
 
 .sector-treemap-header span {
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: normal;
@@ -3001,7 +3002,7 @@ button {
 
 .sector-treemap-ticker {
   font-size: clamp(0.95rem, 1.45vw, 1.4rem);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.03em;
 }
 
@@ -3147,7 +3148,7 @@ button {
   background: rgba(26, 24, 20, 0.58);
   color: var(--text);
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease, background var(--dur-fast) ease;
@@ -3406,7 +3407,7 @@ button {
   background: rgba(163, 160, 151, 0.16);
   color: var(--text-soft);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .chart-grid-badge.positive {
@@ -3650,7 +3651,7 @@ button {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: color-mix(in srgb, var(--text) 90%, transparent);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -3675,7 +3676,7 @@ button {
   background: color-mix(in srgb, var(--accent, #58a6ff) 12%, transparent);
   color: var(--accent, #58a6ff);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
@@ -3766,7 +3767,7 @@ button {
 
 .panel h2 {
   font-size: var(--fs-title);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .panel-kicker {
@@ -3985,7 +3986,7 @@ button {
 .chart-display-settings-label {
   color: var(--text-muted);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4013,7 +4014,7 @@ button {
 
 .scanner-field > span {
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .scanner-field small {
@@ -4024,7 +4025,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -4274,7 +4275,7 @@ button {
 }
 
 .empty-state > div:first-child {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -4391,7 +4392,7 @@ button {
   padding: 10px 14px;
   color: var(--text-soft);
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .chart-color-settings summary::-webkit-details-marker {
@@ -5094,7 +5095,7 @@ button {
 
 .chart-circuit-band {
   color: var(--text);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .chart-circuit-uc {
@@ -5484,7 +5485,7 @@ button {
   padding: 6px 10px;
   border-radius: var(--radius-pill);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   border: 1px solid var(--line);
   white-space: nowrap;
 }
@@ -5562,7 +5563,7 @@ button {
   padding: 4px 8px;
   border-radius: var(--radius-xs);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   border: 1px solid var(--line);
   white-space: nowrap;
 }
@@ -5890,7 +5891,7 @@ button {
   border-color: color-mix(in srgb, var(--warning) 58%, transparent);
   color: var(--warning);
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* Previous / next chart navigation, bottom-right of the big chart. */
@@ -5989,7 +5990,7 @@ button {
   font-size: var(--fs-small);
   line-height: 1.45;
   border-radius: var(--radius-xl);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
@@ -6185,7 +6186,7 @@ button {
 
 .chart-pct-ruler-label {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--text-muted);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
@@ -6622,7 +6623,7 @@ button {
   margin-bottom: 10px;
   color: var(--text);
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .chart-toggle-row input {
@@ -6664,7 +6665,7 @@ button {
 
 .chart-favourite-option span {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .chart-favourite-option small {
@@ -6744,7 +6745,7 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .favorites-widget-action small {
@@ -6776,7 +6777,7 @@ button {
   gap: 8px;
   color: var(--text-soft);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -6828,7 +6829,7 @@ button {
 }
 
 .chart-rvol-label {
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .pocket-pivot-widget {
@@ -6890,7 +6891,7 @@ button {
 .pocket-pivot-control span {
   color: var(--text-soft);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -6953,7 +6954,7 @@ button {
 .pocket-pivot-notes-head span {
   color: var(--text-soft);
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -7081,7 +7082,7 @@ button {
 .earnings-widget-metrics strong,
 .earnings-widget-range strong {
   color: var(--text);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .earnings-widget-body table {
@@ -7459,7 +7460,7 @@ button {
 
 .chart-group-rank {
   color: var(--text-soft);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .chart-group-stock-button {
@@ -7500,7 +7501,7 @@ button {
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   color: #c7d2fe;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
   padding: 6px 12px;
   border-radius: var(--radius-xs);
@@ -8069,7 +8070,7 @@ button {
 .health-card-header h3 {
   margin: 0;
   font-size: var(--fs-title);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   letter-spacing: -0.01em;
 }
@@ -8089,7 +8090,7 @@ button {
   border-radius: var(--radius-pill);
   padding: 8px 14px;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -8261,7 +8262,7 @@ button {
 }
 
 .returns-field .scanner-label {
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 8px;
   color: var(--text);
   font-size: var(--fs-lead);
@@ -8441,7 +8442,7 @@ button {
 }
 
 .info-label {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-soft);
   min-width: 100px;
 }
@@ -8485,7 +8486,7 @@ button {
 
 .member-position {
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   margin-bottom: 8px;
 }
@@ -8536,14 +8537,14 @@ button {
 .metric-label {
   font-size: var(--fs-base);
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .metric-value {
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent);
 }
 
@@ -8612,7 +8613,7 @@ button {
 .comp-label {
   font-size: var(--fs-body);
   color: var(--text-soft);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .comp-position-item strong {
@@ -8653,7 +8654,7 @@ button {
   position: absolute;
   left: 0;
   color: #26a17b;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .competitors-list {
@@ -8751,7 +8752,7 @@ button {
   padding: 4px 10px;
   border-radius: var(--radius-lg);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -8841,7 +8842,7 @@ button {
 .news-impact {
   padding: 4px 10px;
   border-radius: var(--radius-xs);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -8903,7 +8904,7 @@ button {
   position: absolute;
   left: 0;
   color: var(--accent);
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .news-relevance {
@@ -8943,7 +8944,7 @@ button {
   display: block;
   font-size: var(--fs-lead);
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* Upcoming Events */
@@ -8965,7 +8966,7 @@ button {
 }
 
 .event-date {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent);
   min-width: 100px;
   text-align: right;
@@ -9128,7 +9129,7 @@ button {
 .rvol-widget-header:active { cursor: grabbing; }
 
 .rvol-widget-title {
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
 }
 .rvol-widget--sm .rvol-widget-title { font-size: var(--fs-micro); }
@@ -9151,7 +9152,7 @@ button {
 .rvol-size-btn {
   padding: 1px 5px;
   font-size: var(--fs-nano);
-  font-weight: 700;
+  font-weight: 500;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-xs);
   background: transparent;
@@ -9211,7 +9212,7 @@ button {
 
 .rvol-value {
   width: 44px;
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -9338,7 +9339,7 @@ button {
 .chart-ai-verdict {
   padding: 2px 10px;
   border-radius: var(--radius-pill);
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-small);
   letter-spacing: 0.06em;
 }
@@ -9354,7 +9355,7 @@ button {
   border: 1px solid var(--line-strong);
   color: var(--text-soft);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .chart-ai-headline { flex: 1 1 100%; font-size: var(--fs-body); }
@@ -9388,7 +9389,7 @@ button {
   gap: 10px;
 }
 
-.chart-ai-list-title { font-weight: 700; font-size: var(--fs-small); text-transform: uppercase; letter-spacing: 0.06em; }
+.chart-ai-list-title { font-weight: 500; font-size: var(--fs-small); text-transform: uppercase; letter-spacing: 0.06em; }
 .chart-ai-list-title.pos { color: var(--positive); }
 .chart-ai-list-title.neg { color: var(--negative); }
 
@@ -9725,7 +9726,7 @@ button {
 .chart-fs-title strong {
   font-family: var(--font-display);
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
@@ -9821,7 +9822,7 @@ button {
 
 .watchlist-picker-why label > span {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);

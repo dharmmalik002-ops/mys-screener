@@ -13,7 +13,7 @@
   color: var(--text-soft);
   font: inherit;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: color var(--transition-fast), border-color var(--transition-fast);
 }
@@ -38,11 +38,11 @@
 }
 
 .sdist-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
-.sdist-label { font-size: var(--fs-tiny); font-weight: 700; color: var(--text); }
+.sdist-label { font-size: var(--fs-tiny); font-weight: 500; color: var(--text); }
 .sdist-pct {
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -78,7 +78,7 @@
   font-size: var(--fs-micro);
   font-variant-numeric: tabular-nums;
 }
-.sdist-median.hits { color: var(--accent-on-tint); font-weight: 600; }
+.sdist-median.hits { color: var(--accent-on-tint); font-weight: 500; }
 .sdist-median.uni { color: var(--text-muted); }
 
 .sdist-note { margin: 0; font-size: var(--fs-micro); color: var(--text-muted); max-width: 78ch; }

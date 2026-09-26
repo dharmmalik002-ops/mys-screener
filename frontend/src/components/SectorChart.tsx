@@ -46,7 +46,7 @@ export function SectorChart({
         background: { type: ColorType.Solid, color: CHART_PAPER },
         textColor: CHART_PAPER_TEXT,
         fontSize: 11,
-        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif",
       },
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 } },

@@ -34,7 +34,7 @@ export function ContextStrip({ data, breadthSeries }: Props) {
       <article className="mkc-item">
         <span className="mkc-label">Edge paying</span>
         <strong>{num(data?.verdict?.win_rate ?? null, 1, "%")}</strong>
-        <Sparkline values={edgeSeries} color="var(--accent)" width={92} height={22} />
+        <Sparkline values={edgeSeries} color="var(--viz-orange)" width={92} height={22} />
         <em>weekly win rate, resolved weeks</em>
       </article>
 

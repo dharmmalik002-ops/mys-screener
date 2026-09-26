@@ -1,8 +1,7 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { activatable } from "../lib/activate";
 import { createPortal } from "react-dom";
-import { CalendarDays } from "lucide-react";
 
 import {
   getChart,
@@ -131,53 +130,108 @@ function getLogoUrl(symbol: string) {
    shared ./Sparkline component, which refuses to draw a curve from fewer than
    two real points instead of inventing one. */
 
-function Donut({ segments, size = 180 }: { segments: { value: number; color: string }[]; size?: number }) {
-  const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0);
-  const stroke = 11;
-  const radius = size / 2 - stroke;
-  const circumference = 2 * Math.PI * radius;
-  const cx = size / 2;
-  const cy = size / 2;
-  // A small gap between arcs keeps two adjacent colours from reading as one
-  // muddy band; round caps make each arc a distinct object.
-  const live = segments.filter((s) => s.value > 0).length;
-  const gap = live > 1 ? 7 : 0;
-  let offset = 0;
+/* ---------- Dashboard marks ------------------------------------------------
+   The house chart vocabulary: a tick meter (a row of hairline ticks, the
+   filled share standing taller in the data colour), a meter card built on it,
+   distribution bars that fade downward, and a hatched column chart whose
+   focused column fills with colour and carries an inverse tooltip pill. */
+
+function TickMeter({ pct, color, ticks = 48, label }: { pct: number; color: string; ticks?: number; label: string }) {
+  const clamped = Math.max(0, Math.min(100, Number.isFinite(pct) ? pct : 0));
+  const on = Math.round((clamped / 100) * ticks);
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true" className="homepro-donut" style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={cx} cy={cy} r={radius} stroke="var(--line)" strokeWidth={stroke} fill="none" />
-      <circle cx={cx} cy={cy} r={radius - stroke - 3} stroke="var(--line)" strokeWidth={1} fill="none" strokeDasharray="1 4" />
-      {total > 0 && segments.map((seg, i) => {
-        const frac = Math.max(0, seg.value) / total;
-        const dash = Math.max(0, frac * circumference - gap);
-        const element = dash > 0 ? (
-          <circle
-            key={i}
-            className="homepro-donut-arc"
-            cx={cx}
-            cy={cy}
-            r={radius}
-            stroke={seg.color}
-            strokeWidth={stroke}
-            fill="none"
-            strokeDasharray={`${dash} ${circumference - dash}`}
-            strokeDashoffset={-(offset + gap / 2)}
-            strokeLinecap="round"
-            style={{ "--arc-len": `${dash}` } as CSSProperties}
-          />
-        ) : null;
-        offset += frac * circumference;
-        return element;
+    <div
+      className="ol-tick-meter"
+      role="img"
+      aria-label={`${label}, ${Math.round(clamped)} percent`}
+      style={{ "--tick-color": color } as CSSProperties}
+    >
+      {Array.from({ length: ticks }, (_, i) => (
+        <span key={i} className={i < on ? "on" : undefined} style={i < on ? { transitionDelay: `${i * 6}ms` } : undefined} />
+      ))}
+    </div>
+  );
+}
+
+function MeterCard({
+  title,
+  value,
+  footLeft,
+  footRight,
+  pct,
+  color,
+  className,
+  onClick,
+}: {
+  title: string;
+  value: ReactNode;
+  footLeft: ReactNode;
+  footRight: ReactNode;
+  pct: number;
+  color: string;
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      className={`homepro-kpi ol-meter-card${className ? ` ${className}` : ""}${onClick ? " is-clickable" : ""}`}
+      {...(onClick ? activatable(onClick) : {})}
+    >
+      <div className="ol-meter-head">
+        <div className="homepro-kpi-label">{title}</div>
+        <div className="homepro-kpi-value">{value}</div>
+      </div>
+      <div className="ol-meter-bottom">
+        <div className="ol-meter-foot">
+          <span>{footLeft}</span>
+          <span>{footRight}</span>
+        </div>
+        <TickMeter pct={pct} color={color} label={title} />
+      </div>
+    </div>
+  );
+}
+
+function DistributionBars({ items }: { items: { label: string; value: number; color: string; note?: string }[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const max = Math.max(1, ...items.map((item) => item.value));
+  return (
+    <div className="ol-dist" onPointerLeave={() => setHover(null)}>
+      {items.map((item, i) => {
+        const h = Math.max(4, (item.value / max) * 100);
+        return (
+          <div
+            key={item.label}
+            className={`ol-dist-col${hover != null && hover !== i ? " is-dim" : ""}`}
+            onPointerEnter={() => setHover(i)}
+          >
+            <div className="ol-dist-meta">
+              <span className="ol-dist-label">{item.label}</span>
+              <span className="ol-dist-value">{item.value.toLocaleString("en-IN")}</span>
+              {item.note ? <span className="ol-dist-note">{item.note}</span> : null}
+            </div>
+            <div className="ol-dist-well">
+              <span
+                className="ol-dist-bar"
+                style={{
+                  height: `${h}%`,
+                  background: `linear-gradient(180deg, ${item.color} 0%, color-mix(in oklab, ${item.color} 18%, var(--card-flat)) 100%)`,
+                }}
+              >
+                <span className="ol-dist-hatch" />
+              </span>
+            </div>
+          </div>
+        );
       })}
-    </svg>
+    </div>
   );
 }
 
 function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
-  // These bars were <button>s with no onClick — they invited a click and did
-  // nothing. Clicking now PINS a day so the readout survives mouse-leave;
-  // clicking the pinned day again releases it.
+  // Clicking PINS a day so the readout survives mouse-leave; clicking the
+  // pinned day again releases it.
   const [pinnedIdx, setPinnedIdx] = useState<number | null>(null);
 
   if (!history || history.length === 0) {
@@ -189,10 +243,6 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   }
   const days = history.slice(-10);
   const focusedIdx = activeIdx ?? pinnedIdx ?? days.length - 1;
-  const focused = days[focusedIdx] ?? days[days.length - 1];
-  const focusedTotal = Math.max(1, focused.total);
-  const focusedAdvPct = (focused.advances / focusedTotal) * 100;
-  const focusedDecPct = (focused.declines / focusedTotal) * 100;
 
   const labelFor = (d: BreadthDayCounts, opts: { long?: boolean } = {}) => {
     const dt = new Date(d.date + "T00:00:00");
@@ -204,57 +254,44 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   };
 
   return (
-    <div className="homepro-breadth-history-wrap">
-      <div className="homepro-breadth-history-summary">
-        <div className="homepro-breadth-history-summary-date">
-          {labelFor(focused, { long: true })}
-        </div>
-        <div className="homepro-breadth-history-summary-pcts">
-          <span className="pos">↑ {focusedAdvPct.toFixed(1)}%</span>
-          <span className="muted">·</span>
-          <span className="neg">↓ {focusedDecPct.toFixed(1)}%</span>
-        </div>
-        <div className="homepro-breadth-history-summary-counts">
-          <span className="pos">{focused.advances.toLocaleString("en-IN")} adv</span>
-          <span className="neg">{focused.declines.toLocaleString("en-IN")} dec</span>
-          <span className="muted">{focused.unchanged.toLocaleString("en-IN")} flat</span>
-        </div>
-      </div>
-      <div className="homepro-breadth-history-bars" onMouseLeave={() => setActiveIdx(null)}>
-        {/* hover is transient; a pinned day persists after the pointer leaves */}
-        {days.map((d, idx) => {
-          const total = Math.max(1, d.total);
-          const advPct = (d.advances / total) * 100;
-          const decPct = (d.declines / total) * 100;
-          const uncPct = Math.max(0, 100 - advPct - decPct);
-          const advLeads = d.advances >= d.declines;
-          const isActive = idx === focusedIdx;
-          const isPinned = idx === pinnedIdx;
-          return (
-            <button
-              type="button"
-              className={`homepro-breadth-history-day${isActive ? " active" : ""}${isPinned ? " pinned" : ""}`}
-              key={d.date}
-              onMouseEnter={() => setActiveIdx(idx)}
-              onFocus={() => setActiveIdx(idx)}
-              onClick={() => setPinnedIdx((current) => (current === idx ? null : idx))}
-              aria-pressed={isPinned}
-              title={isPinned ? "Click to unpin this day" : "Click to pin this day"}
-              aria-label={`${labelFor(d, { long: true })}: ${d.advances} advancing, ${d.declines} declining, ${d.unchanged} flat`}
-            >
-              <div className="homepro-breadth-history-stack" aria-hidden="true">
-                <div className="homepro-breadth-history-seg adv" style={{ height: `${advPct}%` }} />
-                <div className="homepro-breadth-history-seg unc" style={{ height: `${uncPct}%` }} />
-                <div className="homepro-breadth-history-seg dec" style={{ height: `${decPct}%` }} />
-              </div>
-              <div className={`homepro-breadth-history-pct ${advLeads ? "pos" : "neg"}`}>
-                {Math.round(advPct)}%
-              </div>
-              <div className="homepro-breadth-history-date">{labelFor(d)}</div>
-            </button>
-          );
-        })}
-      </div>
+    <div className="ol-cols" onPointerLeave={() => setActiveIdx(null)}>
+      {days.map((d, idx) => {
+        const total = Math.max(1, d.total);
+        const advPct = (d.advances / total) * 100;
+        const advLeads = d.advances >= d.declines;
+        const color = advLeads ? "var(--viz-green)" : "var(--viz-pink)";
+        const isActive = idx === focusedIdx;
+        const isPinned = idx === pinnedIdx;
+        return (
+          <button
+            type="button"
+            className={`ol-col${isActive ? " is-active" : ""}`}
+            key={d.date}
+            style={{ "--col-color": color } as CSSProperties}
+            onPointerEnter={() => setActiveIdx(idx)}
+            onFocus={() => setActiveIdx(idx)}
+            onClick={() => setPinnedIdx((current) => (current === idx ? null : idx))}
+            aria-pressed={isPinned}
+            title={isPinned ? "Click to unpin this day" : "Click to pin this day"}
+            aria-label={`${labelFor(d, { long: true })}: ${d.advances} advancing, ${d.declines} declining, ${d.unchanged} flat`}
+          >
+            <span className="ol-col-well">
+              <span className="ol-col-bar" style={{ height: `${Math.max(6, advPct)}%` }}>
+                <span className="ol-col-hatch" />
+              </span>
+              {isActive ? (
+                <span className="ol-tip" style={{ left: "50%", top: `${100 - Math.max(6, advPct)}%` }}>
+                  <span className="ol-tip-body">
+                    {labelFor(d)} · {Math.round(advPct)}% adv
+                  </span>
+                  <span className="ol-tip-caret" />
+                </span>
+              ) : null}
+            </span>
+            <span className={`ol-chip${isActive ? " is-active" : ""}`}>{labelFor(d).split(" ")[0]}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -277,9 +314,9 @@ function XpGauge({ xp }: { xp: XpBreadthScore }) {
   const uid = useId().replace(/[:]/g, "");
   const LO = 5;
   const HI = 30;
-  const CX = 80;
-  const CY = 84;
-  const R = 62;
+  const CX = 120;
+  const CY = 118;
+  const R = 84;
   const polar = (r: number, deg: number): readonly [number, number] => {
     const rad = (deg * Math.PI) / 180;
     return [CX + r * Math.cos(rad), CY - r * Math.sin(rad)] as const;
@@ -291,57 +328,70 @@ function XpGauge({ xp }: { xp: XpBreadthScore }) {
   const arcPath = (a0: number, a1: number, r = R) => {
     const [x0, y0] = polar(r, a0);
     const [x1, y1] = polar(r, a1);
-    const large = Math.abs(a0 - a1) > 180 ? 1 : 0;
-    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
   };
-  // A 1.6° gap between bands turns one striped arc into five distinct segments.
-  const GAP = 1.6;
-  const segments = (xp.bands ?? [])
-    .map((band) => {
-      const v0 = Math.max(LO, band.min ?? LO);
-      const v1 = Math.min(HI, band.max ?? HI);
-      if (v1 <= v0) return null;
-      const a0 = angleFor(v0) - GAP / 2;
-      const a1 = angleFor(v1) + GAP / 2;
-      return a0 > a1 ? { color: band.color, path: arcPath(a0, a1), active: xp.xp_score >= v0 && xp.xp_score < v1 } : null;
-    })
-    .filter((seg): seg is { color: string; path: string; active: boolean } => seg !== null);
-  const needleAngle = angleFor(xp.xp_score);
-  const [kx, ky] = polar(R, needleAngle);
-  const [ix, iy] = polar(R - 16, needleAngle);
+  const valueAngle = angleFor(xp.xp_score);
+  const color = xp.regime_color;
+  // The tick ring: fine radial ticks every 4.5°, the ones already swept by
+  // the value standing out in the regime colour.
+  const ticks = Array.from({ length: 41 }, (_, i) => 180 - i * 4.5);
+  // Labels sit on the regime thresholds, so the dial reads its own bands.
+  const marks = [LO, ...(xp.bands ?? []).map((b) => b.min).filter((v): v is number => v != null && v > LO && v < HI), HI]
+    .sort((a, b) => a - b);
+  const [n0x, n0y] = polar(R - 30, valueAngle);
+  const [n1x, n1y] = polar(R + 30, valueAngle);
+  const [bx, by] = polar(R - 32, valueAngle);
+  const [lx, ly] = polar(R - 50, valueAngle + 5);
+  const [rx, ry] = polar(R - 50, valueAngle - 5);
   return (
     <div className="homepro-xp-gauge" title={`XP ${xp.xp_score.toFixed(2)} — ${xp.regime}`}>
-      <svg viewBox="0 0 160 100" role="img" aria-label={`XP breadth ${xp.xp_score.toFixed(2)}, ${xp.regime}`}>
+      <svg viewBox="0 0 240 132" role="meter" aria-valuemin={LO} aria-valuemax={HI} aria-valuenow={xp.xp_score} aria-label={`XP breadth ${xp.xp_score.toFixed(2)}, ${xp.regime}`}>
         <defs>
-          <filter id={`gauge-glow-${uid}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.4" />
-          </filter>
+          <linearGradient id={`gauge-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={CY - R - 10} x2="0" y2={CY}>
+            <stop offset="0%" stopColor={color} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.12} />
+          </linearGradient>
         </defs>
-        <path d={arcPath(180, 0, R)} fill="none" stroke="var(--line)" strokeWidth={11} strokeLinecap="round" />
-        {segments.map((seg, i) => (
-          <path
-            key={i}
-            d={seg.path}
-            fill="none"
-            stroke={seg.color}
-            strokeWidth={seg.active ? 7 : 5}
-            strokeLinecap="butt"
-            opacity={seg.active ? 1 : 0.38}
-          />
-        ))}
-        <line x1={ix} y1={iy} x2={kx} y2={ky} stroke="var(--text)" strokeWidth={1.4} strokeLinecap="round" opacity={0.7} />
-        <circle cx={kx} cy={ky} r={7} fill={xp.regime_color} opacity={0.45} filter={`url(#gauge-glow-${uid})`} />
-        <circle cx={kx} cy={ky} r={4.2} fill="var(--card-flat)" stroke={xp.regime_color} strokeWidth={2.2} />
+        {ticks.map((deg) => {
+          const [x0, y0] = polar(R + 12, deg);
+          const [x1, y1] = polar(R + 18, deg);
+          const swept = deg >= valueAngle;
+          return (
+            <line
+              key={deg}
+              x1={x0}
+              y1={y0}
+              x2={x1}
+              y2={y1}
+              stroke={swept ? color : "var(--track)"}
+              strokeWidth={1.2}
+              strokeLinecap="round"
+              opacity={swept ? 0.75 : 1}
+            />
+          );
+        })}
+        <path d={arcPath(180, 0)} fill="none" stroke="var(--muted-bg)" strokeWidth={16} strokeLinecap="round" />
+        <path d={arcPath(180, Math.min(179.5, valueAngle))} fill="none" stroke={`url(#gauge-${uid})`} strokeWidth={16} strokeLinecap="round" />
+        {marks.map((m) => {
+          const [tx, ty] = polar(R + 28, angleFor(m));
+          return (
+            <text key={m} x={tx} y={ty + 3} textAnchor={m === LO ? "end" : m === HI ? "start" : "middle"} className="homepro-xp-gauge-mark">
+              {m}
+            </text>
+          );
+        })}
+        <line x1={n0x} y1={n0y} x2={n1x} y2={n1y} stroke={color} strokeWidth={1.1} strokeDasharray="2.2 2.2" />
+        <polygon points={`${bx},${by} ${lx},${ly} ${rx},${ry}`} fill={color} stroke={color} strokeWidth={1.1} strokeLinejoin="round" />
         <text
           x={CX}
-          y={66}
+          y={CY - 6}
           textAnchor="middle"
           className="homepro-xp-gauge-score"
           style={{ "--regime-color": xp.regime_color } as CSSProperties}
         >
           {xp.xp_score.toFixed(2)}
         </text>
-        <text x={CX} y={82} textAnchor="middle" className="homepro-xp-gauge-regime">
+        <text x={CX} y={CY + 10} textAnchor="middle" className="homepro-xp-gauge-regime">
           {xp.regime}
         </text>
       </svg>
@@ -998,6 +1048,15 @@ export function HomePanel({
   }, [activeMarket]);
 
   const universeCount = dashboard?.universe_count ?? 0;
+  /** Share of today's 09:15–15:30 IST session elapsed: 0 before the open,
+      1 once it has closed (weekends read as the last session, complete). */
+  const sessionProgress = useMemo(() => {
+    const ist = new Date(nowTick + (new Date(nowTick).getTimezoneOffset() + 330) * 60_000);
+    const minutes = ist.getHours() * 60 + ist.getMinutes();
+    const weekday = ist.getDay() !== 0 && ist.getDay() !== 6;
+    if (!weekday) return 1;
+    return Math.max(0, Math.min(1, (minutes - (9 * 60 + 15)) / (6 * 60 + 15)));
+  }, [nowTick]);
   const marketStatusRaw = (dashboard?.market_status ?? "").toLowerCase();
   const marketOpen = marketStatusRaw.includes("open") || marketStatusRaw === "live";
 
@@ -1131,63 +1190,43 @@ export function HomePanel({
       <div className="homepro-row-top">
         {/* KPI cards */}
         <div className="homepro-kpis">
-          {/* Universe */}
-          <div className="homepro-kpi homepro-kpi-universe">
-            <div className="homepro-kpi-label">Universe</div>
-            <div className="homepro-kpi-value">{universeCount.toLocaleString("en-IN")}</div>
-            <div className="homepro-kpi-sub">Total Stocks</div>
-            {/* No sparkline and no "+12 vs yesterday": there is no universe-count
-                time series to draw, and the old ones were fabricated. */}
-            <div className="homepro-kpi-sub">Passing the liquidity &amp; market-cap floor</div>
-          </div>
-
-          {/* Market Status */}
-          <div className="homepro-kpi homepro-kpi-status">
-            <div className="homepro-kpi-label">Market Status</div>
-            <div className="homepro-kpi-value">
-              <span>{marketOpen ? "Open" : "Closed"}</span>
-              <span className={marketOpen ? "homepro-status-dot" : "homepro-status-dot closed"} />
-            </div>
-            <div className="homepro-kpi-sub">Market is {marketOpen ? "live" : "closed"}</div>
-            {/* The old sparkline here was a sine wave; the countdown was the
-                hardcoded string "Closes in 01:24:15" and never counted down. */}
-            <div className="homepro-kpi-sub">
-              {marketOpen ? `Closes in ${sessionCountdown}` : `Next session ${nextSessionLabel}`}
-            </div>
-          </div>
-
-          {/* EOD Date */}
-          <div className="homepro-kpi homepro-kpi-date">
-            <div className="homepro-kpi-label">EOD Date</div>
-            <div className="homepro-kpi-value" style={{ fontSize: "var(--fs-heading)" }}>{snapshotDateLabel || "—"}</div>
-            <div className="homepro-kpi-sub">Last Updated</div>
-            <div className="homepro-kpi-bottom">
-              <div className="homepro-kpi-icon" aria-hidden="true"><CalendarDays size={16} strokeWidth={2.2} /></div>
-              <div style={{ fontSize: "var(--fs-base)", fontWeight: 600 }}>{snapshotTimeLabel || "—"}</div>
-            </div>
-          </div>
-
-          {/* Advances / Declines */}
-          <div className="homepro-kpi homepro-kpi-breadth">
-            <div className="homepro-kpi-label">Advances / Declines</div>
-            <div className="homepro-kpi-value" style={{ fontSize: "var(--fs-heading)" }}>{advances} / {declines}</div>
-            <div className="homepro-kpi-sub">Stocks</div>
-            <div className="homepro-kpi-bottom">
-              <div style={{ position: "relative", width: 56, height: 56 }}>
-                <Donut
-                  size={56}
-                  segments={[
-                    { value: advances, color: "var(--positive)" },
-                    { value: declines, color: "var(--negative)" },
-                  ]}
-                />
-              </div>
-              <div style={{ display: "flex", gap: 12, fontSize: "var(--fs-small)", fontWeight: 700 }}>
-                <span style={{ color: "var(--positive)" }}>{Math.round(advPct)}%</span>
-                <span style={{ color: "var(--negative)" }}>{100 - Math.round(advPct)}%</span>
-              </div>
-            </div>
-          </div>
+          <MeterCard
+            title="Advancing"
+            value={advances.toLocaleString("en-IN")}
+            footLeft={`Of ${breadthTotal.toLocaleString("en-IN")} traded`}
+            footRight={`${advances}/${breadthTotal}`}
+            pct={advPct}
+            color="var(--viz-green)"
+          />
+          <MeterCard
+            title="Declining"
+            value={declines.toLocaleString("en-IN")}
+            footLeft={`Of ${breadthTotal.toLocaleString("en-IN")} traded`}
+            footRight={`${declines}/${breadthTotal}`}
+            pct={breadthTotal > 0 ? (declines / breadthTotal) * 100 : 0}
+            color="var(--viz-pink)"
+          />
+          <MeterCard
+            title="Breadth score"
+            value={xpBreadth ? xpBreadth.xp_score.toFixed(1) : "—"}
+            footLeft={xpBreadth?.regime ?? "Not computed yet"}
+            footRight="of 30"
+            pct={xpBreadth ? ((xpBreadth.xp_score - 5) / 25) * 100 : 0}
+            color="var(--viz-purple)"
+          />
+          <MeterCard
+            title="Market session"
+            value={
+              <span className="ol-session-value">
+                {marketOpen ? "Open" : "Closed"}
+                <span className={marketOpen ? "homepro-status-dot" : "homepro-status-dot closed"} />
+              </span>
+            }
+            footLeft={marketOpen ? `Closes in ${sessionCountdown}` : `Next ${nextSessionLabel}`}
+            footRight={`${universeCount.toLocaleString("en-IN")} stocks`}
+            pct={sessionProgress * 100}
+            color="var(--viz-orange)"
+          />
         </div>
 
       </div>
@@ -1310,39 +1349,17 @@ export function HomePanel({
             <h3>Market Breadth</h3>
           </div>
           <div className="homepro-breadth-body">
-            <div className="homepro-donut-wrap">
-              <Donut
-                segments={[
-                  { value: advances, color: "var(--positive)" },
-                  { value: declines, color: "var(--negative)" },
-                  { value: unchanged, color: "#cbd5e1" },
-                ]}
-              />
-              <div className="homepro-donut-center">
-                <div>
-                  <strong>{breadthTotal.toLocaleString("en-IN")}</strong>
-                  <small>Stocks</small>
-                </div>
-              </div>
-            </div>
-            <div className="homepro-legend">
-              <div className="homepro-legend-row">
-                <span><span className="homepro-legend-swatch" style={{ background: "var(--positive)" }} />Advancing</span>
-                <span><strong>{advances}</strong> ({((advances / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
-              </div>
-              <div className="homepro-legend-row">
-                <span><span className="homepro-legend-swatch" style={{ background: "var(--negative)" }} />Declining</span>
-                <span><strong>{declines}</strong> ({((declines / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
-              </div>
-              <div className="homepro-legend-row">
-                <span><span className="homepro-legend-swatch" style={{ background: "#cbd5e1" }} />Unchanged</span>
-                <span><strong>{unchanged}</strong> ({((unchanged / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
-              </div>
-            </div>
+            <DistributionBars
+              items={[
+                { label: "Advancing", value: advances, color: "var(--viz-green)", note: `${((advances / Math.max(1, breadthTotal)) * 100).toFixed(1)}%` },
+                { label: "Declining", value: declines, color: "var(--viz-pink)", note: `${((declines / Math.max(1, breadthTotal)) * 100).toFixed(1)}%` },
+                { label: "Unchanged", value: unchanged, color: "var(--viz-purple)", note: `${((unchanged / Math.max(1, breadthTotal)) * 100).toFixed(1)}%` },
+              ]}
+            />
 
             <div className="homepro-breadth-history">
               <div className="homepro-breadth-history-head">
-                <span>Last 10 Days A/D</span>
+                <span>Last 10 sessions · share advancing</span>
               </div>
               <BreadthHistoryChart history={breadthHistory} />
             </div>
@@ -1357,7 +1374,7 @@ export function HomePanel({
               <div className="homepro-nifty-price">
                 <strong>{niftyPrice !== null ? niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}</strong>
                 {niftyChange !== null && (
-                  <span style={{ color: niftyChange >= 0 ? "var(--positive)" : "var(--negative)", fontWeight: 700, fontSize: "var(--fs-base)" }}>
+                  <span style={{ color: niftyChange >= 0 ? "var(--positive)" : "var(--negative)", fontWeight: 500, fontSize: "var(--fs-base)" }}>
                     {formatReturn(niftyChange)}
                   </span>
                 )}

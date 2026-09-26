@@ -23,7 +23,7 @@
 .pfc-card h4 {
   margin: 0;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-soft);
@@ -77,7 +77,7 @@
   text-align: center;
 }
 
-.pfc-donut-centre strong { font-size: var(--fs-title); font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+.pfc-donut-centre strong { font-size: var(--fs-title); font-weight: 500; color: var(--text); letter-spacing: -0.02em; }
 .pfc-donut-centre small { max-width: 96px; font-size: var(--fs-nano); line-height: 1.25; color: var(--text-muted); }
 
 .pfc-legend { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; }
@@ -104,7 +104,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pfc-legend b { text-align: right; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pfc-legend b { text-align: right; color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
 .pfc-legend em {
   font-style: normal;
   text-align: right;
@@ -160,7 +160,7 @@
 
 .pfc-diverge b, .pfc-weights b {
   text-align: right;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   min-width: 0;
@@ -204,7 +204,7 @@
 }
 
 .pfc-stack-legend li { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-micro); color: var(--text-muted); }
-.pfc-stack-legend b { color: var(--text); font-weight: 600; }
+.pfc-stack-legend b { color: var(--text); font-weight: 500; }
 
 @media (max-width: 860px) {
   .pfc-donut-row { grid-template-columns: 1fr; justify-items: center; }

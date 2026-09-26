@@ -24,7 +24,7 @@ function smaAt(closes: number[], idx: number, span: number): number | null {
 
 const OVERLAYS = [
   { key: "ema10", label: "EMA10", color: "#3f86c2" },
-  { key: "ema21", label: "EMA21", color: "#b8861f" },
+  { key: "ema21", label: "EMA21", color: "#fc6200" },
   { key: "ema50", label: "EMA50", color: "#7c5cc4" },
   { key: "sma200", label: "SMA200", color: "#8b877d" },
 ] as const;
@@ -76,7 +76,7 @@ export function IndexCandleChart({ bars, height = 320 }: { bars: ChartBar[]; hei
         background: { type: ColorType.Solid, color: CHART_PAPER },
         textColor: CHART_PAPER_TEXT,
         fontSize: 11,
-        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif",
       },
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false },

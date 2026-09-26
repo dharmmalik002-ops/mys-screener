@@ -115,7 +115,7 @@ body.dark .groups-panel-pro {
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--gp-muted);
   cursor: pointer;
   transition: background var(--dur-fast), color var(--dur-fast);
@@ -146,7 +146,7 @@ body.dark .gp-pill.active {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gp-muted);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .gp-sort select {
@@ -155,7 +155,7 @@ body.dark .gp-pill.active {
   border-radius: var(--radius-md);
   padding: 7px 10px;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--gp-text);
   cursor: pointer;
 }
@@ -166,7 +166,7 @@ body.dark .gp-pill.active {
   border-radius: var(--radius-md);
   padding: 7px 10px;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--gp-text);
   background: var(--gp-card-bg-soft);
 }
@@ -260,7 +260,7 @@ body.dark .gp-pill.active {
 
 .gp-kpi-label {
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gp-muted);
@@ -269,7 +269,7 @@ body.dark .gp-pill.active {
 
 .gp-kpi-value {
   font-size: var(--fs-heading);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--gp-text);
   line-height: 1.1;
@@ -281,12 +281,12 @@ body.dark .gp-pill.active {
 
 .gp-kpi-value-sm {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .gp-kpi-sub {
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 6px;
 }
 
@@ -313,7 +313,7 @@ body.dark .gp-pill.active {
 .gp-card-head h3 {
   margin: 0;
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--gp-text);
 }
@@ -338,7 +338,7 @@ body.dark .gp-pill.active {
   padding: 5px 11px;
   border-radius: var(--radius-sm);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--gp-muted);
   cursor: pointer;
 }
@@ -383,14 +383,14 @@ body.dark .gp-pill.active {
 
 .gp-treemap-label {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   fill: #1a1814;
   pointer-events: none;
 }
 
 .gp-treemap-pct {
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   fill: rgba(26, 24, 20, 0.7);
   pointer-events: none;
 }
@@ -414,7 +414,7 @@ body.dark .gp-treemap-pct {
   margin-top: 10px;
   font-size: var(--fs-tiny);
   color: var(--gp-muted);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .gp-treemap-legend-item {
@@ -449,7 +449,7 @@ body.dark .gp-treemap-pct {
 .gp-trend-axis {
   font-size: var(--fs-micro);
   fill: var(--gp-muted);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .gp-trend-legend {
@@ -467,7 +467,7 @@ body.dark .gp-treemap-pct {
   padding: 5px 10px;
   border-radius: var(--radius-pill);
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .gp-trend-swatch {
@@ -486,7 +486,7 @@ body.dark .gp-treemap-pct {
 }
 
 .gp-trend-legend-pct {
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-tiny);
 }
 
@@ -509,7 +509,7 @@ body.dark .gp-treemap-pct {
   background: var(--gp-card-bg-soft);
   color: var(--gp-muted);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 12px 12px;
@@ -560,7 +560,7 @@ body.dark .gp-treemap-pct {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-small);
 }
 
@@ -616,7 +616,7 @@ body.dark .gp-treemap-pct {
 .gp-group-name-btn strong {
   color: var(--gp-text);
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.005em;
 }
 
@@ -663,7 +663,7 @@ body.dark .gp-treemap-pct {
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), color-mix(in srgb, var(--accent) 15%, transparent));
   color: var(--accent-strong);
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-small);
 }
 
@@ -680,7 +680,7 @@ body.dark .gp-score-chip {
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.16));
   color: #047857;
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -700,7 +700,7 @@ body.dark .gp-emerging {
   display: grid;
   place-items: center;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* volume bars */
@@ -778,7 +778,7 @@ body.dark .gp-emerging {
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: var(--accent-contrast);
   font-size: var(--fs-nano);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .gp-stock-text {
@@ -791,14 +791,14 @@ body.dark .gp-emerging {
 
 .gp-stock-sym {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--gp-text);
   letter-spacing: 0.02em;
 }
 
 .gp-stock-chg {
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .gp-rs-circle {
@@ -811,7 +811,7 @@ body.dark .gp-emerging {
   display: grid;
   place-items: center;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: #fff;
   flex: none;
@@ -881,7 +881,7 @@ body.dark .gp-emerging {
   display: inline-block;
   margin-left: 5px;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
 }
@@ -893,7 +893,7 @@ body.dark .gp-emerging {
 /* ----- Leadership breadth ----- */
 .gp-breadth {
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-small);
 }
 

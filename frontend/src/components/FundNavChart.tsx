@@ -28,7 +28,7 @@ import { NEGATIVE, POSITIVE } from "../lib/marketColors";
  * wide was the swing inside the period, not just where it ended.
  */
 
-const COMPARE_COLORS = ["#7c5cc4", "#b8861f", "#1f8f84", "#c0507a"];
+const COMPARE_COLORS = ["#7c5cc4", "#fc6200", "#1f8f84", "#c0507a"];
 
 export type FundNavChartMode = "growth" | "nav" | "candles";
 
@@ -204,7 +204,7 @@ export function FundNavChart({
         background: { type: ColorType.Solid, color: CHART_PAPER },
         textColor: CHART_PAPER_TEXT,
         fontSize: 11,
-        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif",
       },
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: drawdown?.length ? 0.28 : 0.08 } },

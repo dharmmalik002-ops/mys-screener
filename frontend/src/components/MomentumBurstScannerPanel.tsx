@@ -315,7 +315,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
     padding: "6px 8px",
     fontSize: "var(--fs-tiny)",
     color: "#9aa4b2",
-    fontWeight: 600,
+    fontWeight: 500,
     whiteSpace: "nowrap",
     cursor: "pointer",
     userSelect: "none",
@@ -366,7 +366,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
                     <span
                       style={{
                         fontSize: "var(--fs-micro)",
-                        fontWeight: 700,
+                        fontWeight: 500,
                         color: tagColor(p.tag),
                         textTransform: "uppercase",
                         letterSpacing: 0.3,
@@ -415,7 +415,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
                         background: "transparent",
                         color: "var(--accent)",
                         fontSize: "var(--fs-tiny)",
-                        fontWeight: 600,
+                        fontWeight: 500,
                         cursor: "pointer",
                         whiteSpace: "nowrap",
                       }}

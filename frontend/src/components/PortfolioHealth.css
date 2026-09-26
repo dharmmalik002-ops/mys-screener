@@ -40,7 +40,7 @@
 .pfh-finding h4 {
   margin: 0;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.4;
   color: var(--text);
   min-width: 0;
@@ -50,7 +50,7 @@
   flex: 0 0 auto;
   padding: 2px 7px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text-soft);
   background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.1));
@@ -106,7 +106,7 @@
 }
 
 .pfh-evidence b {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -139,7 +139,7 @@
 .pfh-plot-head h4 {
   margin: 0 0 3px;
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-soft);
@@ -265,7 +265,7 @@
 
 .pfh-standing-row b {
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -331,7 +331,7 @@
 .pfh-ai-note h4 {
   margin: 0;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.45;
   color: var(--text);
 }
@@ -353,7 +353,7 @@
 .pfh-ai-cols h5 {
   margin: 0 0 4px;
   font-size: var(--fs-nano);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-soft);

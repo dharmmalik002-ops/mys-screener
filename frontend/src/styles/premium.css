@@ -1,714 +1,804 @@
 /* ==========================================================================
    premium.css — the house look, loaded after overrides.css
    --------------------------------------------------------------------------
-   One visual language for the whole app: warm obsidian (dark) / ivory (light)
-   surfaces, a single champagne-gold accent, Geist for UI, Geist Mono for
-   numbers, Instrument Serif for a handful of editorial headlines.
+   A calm, flat dashboard language: white cards on an off-white page, no
+   borders or drop shadows on cards, the system SF Pro face at regular
+   weight, black for interaction and a small set of vivid DATA colours
+   (orange, pink, green, purple) that only ever paint charts and meters.
+   The dark theme is the same system inverted onto neutral charcoal.
+
+   This is the "Studio" design. Every selector is scoped to
+   :root[data-design="studio"] (set before first paint by index.html); the
+   Classic design lives in classic.css under its own scope. Only the shared
+   chart marks (.ol-*) are unscoped — both designs render them, each with its
+   own token values.
 
    Specificity: lazily-loaded panel CSS is injected AFTER this file, so any
-   rule here that must beat a panel's own rule is prefixed `html:root` —
-   (0,2,1) beats a panel's plain class and its `:root[data-theme] .x` (0,3,0)
-   only where we add one more class. mobile.css prefixes with `html ` (0,1,1)
-   and owns LAYOUT on phones, so the rules below stay on paint (colour,
-   border, shadow, type) and leave padding/size to the layout files.
+   rule here that must beat a panel's own rule is prefixed `html:root`.
+   mobile.css prefixes with `html ` and owns LAYOUT on phones, so the rules
+   below stay on paint (colour, border, shadow, type).
    ========================================================================== */
 
-:root {
-  /* Card surface: a flat fill with a faint top-lit sheen. */
-  --surface-card: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0) 140px), var(--card-flat);
-  --surface-raised: #1b1c21;
-  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  --gold-grad: linear-gradient(180deg, #e3c586 0%, #cfa75c 100%);
-  --gold-line: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
-  --row-hover: rgba(255, 255, 255, 0.028);
-  --tracking-tight: -0.018em;
-  --tracking-label: 0.09em;
+:root[data-design="studio"] {
+  /* Data colours — charts, meters and fills only, never text. */
+  --viz-orange: #fc6200;
+  --viz-orange-soft: #ff9857;
+  --viz-pink: #ea4c7d;
+  --viz-green: #66c398;
+  --viz-purple: #958dfc;
+  --viz-red: #fb3748;
+
+  /* Chrome */
+  --inverse: #ededed;
+  --inverse-ink: #111112;
+  --track: #2c2c30;
+  --muted-bg: #222225;
+  --chip-line: #333338;
+  --axis: #a0a0a0;
+  --legend: #9a9fb0;
+  --nav-ink: #a8a8a8;
+  --surface-raised: #26262a;
+  --card-highlight: none;
+  --row-hover: rgba(255, 255, 255, 0.03);
+
+  /* Hatching, three densities: -bar is the resting texture of an
+     unselected bar, -soft sits inside a tinted bar, -white on a colour. */
+  --hatch-bar: repeating-linear-gradient(60.34deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 3.95px);
+  --hatch-soft: repeating-linear-gradient(54.4deg, rgba(255, 255, 255, 0.07) 0 0.6px, transparent 0.6px 4.64px);
+  --hatch-white: repeating-linear-gradient(54.4deg, rgba(255, 255, 255, 0.35) 0 0.6px, transparent 0.6px 4.64px);
+
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-soft: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
-:root[data-theme="light"] {
-  --surface-card: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
+:root[data-design="studio"][data-theme="light"] {
+  --inverse: #222222;
+  --inverse-ink: #ffffff;
+  --track: #e8e8e8;
+  --muted-bg: #f3f4f4;
+  --chip-line: #dfe6e8;
+  --axis: #4c5051;
+  --legend: #666d80;
+  --nav-ink: #505050;
   --surface-raised: #ffffff;
-  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --gold-grad: linear-gradient(180deg, #957129 0%, #7a5b19 100%);
-  --row-hover: rgba(40, 33, 20, 0.035);
+  --row-hover: #fafafa;
+  --hatch-bar: repeating-linear-gradient(60.34deg, rgba(230, 230, 230, 0.7) 0 1px, transparent 1px 3.95px);
+  --hatch-soft: repeating-linear-gradient(54.4deg, rgba(230, 230, 230, 0.21) 0 0.6px, transparent 0.6px 4.64px);
+  --hatch-white: repeating-linear-gradient(54.4deg, rgba(255, 255, 255, 0.6) 0 0.6px, transparent 0.6px 4.64px);
 }
 
 /* ---------- Type ---------------------------------------------------------- */
 
-html body {
+html[data-design="studio"] body {
   font-family: var(--font-sans);
-  letter-spacing: -0.006em;
-  font-feature-settings: "tnum" 1, "cv11" 1;
-  text-rendering: optimizeLegibility;
-}
-
-html:root h1,
-html:root h2,
-html:root h3,
-html:root h4 {
-  letter-spacing: var(--tracking-tight);
-}
-
-::selection {
-  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  letter-spacing: -0.01em;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 
-/* Gold scrollbar thumb on hover only — resting state stays quiet. */
-::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--accent) 45%, transparent);
+html:root[data-design="studio"] h1,
+html:root[data-design="studio"] h2,
+html:root[data-design="studio"] h3,
+html:root[data-design="studio"] h4 {
+  font-weight: 400;
+  letter-spacing: -0.012em;
+}
+
+:root[data-design="studio"] ::selection {
+  background: color-mix(in srgb, var(--viz-purple) 28%, transparent);
+  color: var(--text);
 }
 
 /* ---------- Canvas -------------------------------------------------------- */
 
-.app-shell::before {
-  background: var(--app-bg-image);
+html[data-design="studio"] body,
+:root[data-design="studio"] .app-shell::before {
+  background: var(--bg);
 }
 
 /* ---------- Ticker ribbon ------------------------------------------------- */
 
-html:root .ticker-ribbon {
+html:root[data-design="studio"] .ticker-ribbon {
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
 
-html:root .ticker-ribbon::before {
+html:root[data-design="studio"] .ticker-ribbon::before {
   background: linear-gradient(90deg, var(--bg), transparent 6%, transparent 94%, var(--bg));
 }
 
-html:root .ticker-ribbon-item {
+html:root[data-design="studio"] .ticker-ribbon-item {
   gap: 7px;
   padding: 0 14px;
-  position: relative;
 }
 
-html:root .ticker-ribbon-item::after {
-  content: "";
-  position: absolute;
-  right: -14px;
-  top: 50%;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--line-strong);
-  transform: translateY(-50%);
-}
-
-html:root .ticker-ribbon-item span {
-  font-size: var(--fs-micro);
-  font-weight: 500;
-  letter-spacing: 0.08em;
+html:root[data-design="studio"] .ticker-ribbon-item span {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
 }
 
-html:root .ticker-ribbon-item strong {
-  font-family: var(--font-mono);
-  font-size: var(--fs-small);
+html:root[data-design="studio"] .ticker-ribbon-item strong {
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 500;
   color: var(--text);
-  letter-spacing: -0.01em;
 }
 
-html:root .ticker-ribbon-item small {
-  font-family: var(--font-mono);
-  font-size: var(--fs-tiny);
-  font-weight: 500;
+html:root[data-design="studio"] .ticker-ribbon-item small {
+  font-size: 11.5px;
+  font-weight: 400;
 }
 
 /* ---------- Top bar ------------------------------------------------------- */
 
-html:root[data-theme] .top-nav {
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 12px 32px -24px rgba(0, 0, 0, 0.6);
+html:root[data-design="studio"][data-theme] .top-nav {
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
 }
 
-:root[data-theme="light"] .top-nav {
-  box-shadow: 0 1px 0 rgba(40, 33, 20, 0.02);
+html:root[data-design="studio"] .top-nav .brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #0b0b0b;
+  border: 0;
+  box-shadow: none;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.02em;
 }
 
-html:root .top-nav .brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background:
-    radial-gradient(120% 120% at 30% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
-    var(--surface-raised);
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
-  box-shadow: var(--card-highlight), 0 6px 18px -8px color-mix(in srgb, var(--accent) 45%, transparent);
-  color: var(--accent);
-  font-family: var(--font-serif);
-  font-style: italic;
+:root[data-design="studio"]:not([data-theme="light"]) .top-nav .brand-mark {
+  background: #ffffff;
+  color: #0b0b0b;
+}
+
+html:root[data-design="studio"] .top-nav .brand-cluster h1 {
+  font-family: var(--font-sans);
   font-weight: 400;
-  font-size: 21px;
-  line-height: 1;
-  padding-bottom: 1px;
-}
-
-html:root .top-nav .brand-cluster h1 {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: 22px;
-  letter-spacing: -0.005em;
-  line-height: 1.05;
+  font-size: 18px;
+  letter-spacing: -0.18px;
   color: var(--text);
 }
 
-html:root .top-nav .brand-cluster h1 .brand-accent {
-  font-style: italic;
-  color: var(--accent);
+html:root[data-design="studio"] .top-nav .brand-cluster h1 .brand-accent {
+  font-style: normal;
+  color: var(--text-muted);
 }
 
-html:root .top-nav .brand-cluster .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+html:root[data-design="studio"] .top-nav .brand-cluster .eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-muted);
   opacity: 1;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
-/* The page tabs sit in one recessed rail — a segmented control — instead of
-   eleven separately outlined glass chips. */
-.nav-rail {
+/* The page tabs: one recessed track, the active tab a white pill in it. */
+:root[data-design="studio"] .nav-rail {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   flex: 0 0 auto;
-  padding: 3px;
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--text) 4%, transparent);
-  border: 1px solid var(--line);
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--muted-bg);
 }
 
-html:root[data-theme] .top-nav .nav-rail .nav-button {
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
   position: relative;
-  overflow: visible;
-  padding: 6px 11px;
-  border-radius: 8px;
-  border: 1px solid transparent;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 0;
   background: transparent;
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  color: var(--text-soft);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  color: var(--nav-ink);
+  font-size: 14.5px;
+  font-weight: 400;
+  letter-spacing: -0.16px;
   animation: none;
-  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  transition: color 150ms var(--ease-out-soft), background 150ms var(--ease-out-soft);
 }
 
-html:root[data-theme] .top-nav .nav-rail .nav-button::before {
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button::before,
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button::after {
   display: none;
 }
 
-html:root[data-theme] .top-nav .nav-rail .nav-button:hover {
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  background: color-mix(in srgb, var(--card-flat) 55%, transparent);
 }
 
 /* !important only because overrides.css paints every .nav-button.primary
-   solid accent with !important; the rail's active tab is the one exception. */
-html:root[data-theme] .top-nav .nav-rail .nav-button.primary {
+   solid accent with !important; the rail's active tab is the exception. */
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button.primary {
   color: var(--text) !important;
-  background: var(--surface-raised) !important;
-  border-color: var(--line-strong) !important;
-  box-shadow: var(--card-highlight), 0 1px 3px rgba(0, 0, 0, 0.35) !important;
-  font-weight: 600 !important;
+  background: var(--card-flat) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(10, 13, 20, 0.05) !important;
+  font-weight: 400 !important;
 }
 
-/* A hairline of gold under the active tab — the one place the accent shows
-   in the chrome at rest. */
-html:root[data-theme] .top-nav .nav-rail .nav-button.primary::after {
-  content: "";
-  display: block;
-  position: absolute;
-  left: 30%;
-  right: 30%;
-  bottom: -1px;
-  height: 1.5px;
-  border-radius: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail .nav-button.primary {
+  background: #2e2e32 !important;
 }
 
-:root[data-theme="light"] .top-nav .nav-rail .nav-button.primary {
-  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.08), 0 0 0 0.5px rgba(40, 30, 10, 0.04) !important;
-}
-
-/* Search, status pill and icon buttons: flat, hairline, no glass rim. */
-html:root[data-theme] .top-nav .status-pill::before,
-html:root[data-theme] .top-nav .icon-btn::before {
+/* Search, status pill and icon buttons: white, hairline, 8px corners. */
+html:root[data-design="studio"][data-theme] .top-nav .status-pill::before,
+html:root[data-design="studio"][data-theme] .top-nav .icon-btn::before {
   display: none;
 }
 
-html:root[data-theme] .top-nav .nav-search input,
-html:root[data-theme] .top-nav .nav-search-field input {
-  height: 34px;
-  background: color-mix(in srgb, var(--text) 4%, transparent);
+html:root[data-design="studio"][data-theme] .top-nav .nav-search input,
+html:root[data-design="studio"][data-theme] .top-nav .nav-search-field input {
+  height: 40px;
+  background: var(--card-flat);
   border: 1px solid var(--line);
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--text);
+  font-size: 14px;
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-search input::placeholder {
+  color: var(--text-muted);
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-search input:hover {
+  border-color: var(--track);
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-search input:focus {
+  border-color: var(--text-muted);
+  box-shadow: none;
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .status-pill,
+html:root[data-design="studio"][data-theme] .top-nav .icon-btn {
+  height: 40px;
+  background: var(--card-flat);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 8px;
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .icon-btn {
+  width: 40px;
+  color: var(--text);
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .status-pill {
+  color: var(--text-soft);
   font-size: 13px;
 }
 
-html:root[data-theme] .top-nav .nav-search input::placeholder {
-  color: var(--text-muted);
-}
-
-html:root[data-theme] .top-nav .nav-search input:focus {
-  background: var(--surface-raised);
-  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  box-shadow: var(--focus-ring);
-}
-
-html:root[data-theme] .top-nav .status-pill,
-html:root[data-theme] .top-nav .icon-btn {
-  background: color-mix(in srgb, var(--text) 4%, transparent);
-  border: 1px solid var(--line);
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  border-radius: 10px;
-}
-
-html:root[data-theme] .top-nav .status-pill {
-  color: var(--text-soft);
-  font-size: 12px;
-}
-
-html:root[data-theme] .top-nav .status-pill strong {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 12px;
-  color: var(--text);
-}
-
-html:root[data-theme] .top-nav .icon-btn:hover:not(:disabled) {
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-/* ---------- Cards --------------------------------------------------------- */
-
-html:root .panel,
-html:root .homepro-kpi,
-html:root .homepro-card,
-html:root .screener-sidebar-panel {
-  background: var(--surface-card);
-  border: 1px solid var(--line);
-  box-shadow: var(--card-highlight), var(--elev-2);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
-html:root .panel:hover,
-html:root .homepro-card:hover {
-  border-color: var(--line-strong);
-}
-
-html:root .homepro-kpi {
-  transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
-}
-
-html:root .homepro-kpi:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
-}
-
-/* KPI anatomy: a quiet label, a serif hero numeral, muted sub-lines. */
-html:root .homepro-kpi-label,
-html:root .homepro-card h3,
-html:root .panel-kicker {
+html:root[data-design="studio"][data-theme] .top-nav .status-pill strong {
   font-family: var(--font-sans);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-html:root .homepro-kpi-value {
-  font-family: var(--font-serif);
   font-weight: 400;
-  font-size: 38px;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  color: var(--text);
-  font-variant-numeric: lining-nums tabular-nums;
-}
-
-html:root .homepro-kpi-sub {
-  color: var(--text-muted);
-  font-size: 11.5px;
-}
-
-html:root .homepro-kpi-icon {
-  background: color-mix(in srgb, var(--text) 5%, transparent);
-  border: 1px solid var(--line);
-  color: var(--text-soft);
-}
-
-html:root .panel h2 {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  letter-spacing: var(--tracking-tight);
-}
-
-/* Home palette: the dashboard reads its own --hp-* tokens. */
-html:root .homepro {
-  --hp-card-bg: var(--card-flat);
-  --hp-border: var(--line);
-  --hp-muted: var(--text-muted);
-  --hp-violet: var(--violet);
-  --hp-shadow: var(--elev-2);
-}
-
-/* ---------- Buttons ------------------------------------------------------- */
-
-/* Primary actions inside pages (the nav rail is styled above). */
-html:root .nav-button.primary:not(.top-nav .nav-button) {
-  background: var(--gold-grad) !important;
-  color: var(--accent-contrast) !important;
-  border: 1px solid color-mix(in srgb, var(--accent-strong) 80%, #000) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent) !important;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-}
-
-html:root .nav-button.primary:not(.top-nav .nav-button):hover {
-  background: var(--gold-grad) !important;
-  filter: brightness(1.06);
-  border-color: color-mix(in srgb, var(--accent-strong) 80%, #000) !important;
-}
-
-html:root .nav-button.ghost:not(.top-nav .nav-button) {
-  border: 1px solid var(--line-strong);
-  background: color-mix(in srgb, var(--text) 3%, transparent);
+  font-size: 13px;
   color: var(--text);
 }
 
-html:root .nav-button.ghost:not(.top-nav .nav-button):hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-}
-
-/* Segmented pills: selected = raised neutral with gold text, not a solid
-   accent slab. Solid gold is reserved for the one primary action per view. */
-html:root .timeframe-pill.active,
-html:root .scanner-tab.active,
-html:root .indicator-pill.active,
-html:root .tool-pill.active,
-html:root .pe-modal-tab.active,
-html:root .mf-mode-tab.active,
-html:root .saved-scanner-chip.active {
-  background: color-mix(in srgb, var(--accent) 14%, var(--surface-raised)) !important;
-  color: var(--accent-on-tint) !important;
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
-  box-shadow: var(--card-highlight) !important;
-}
-
-/* ---------- Tables & rows ------------------------------------------------- */
-
-html:root .scan-row:hover {
-  background: var(--row-hover);
-}
-
-html:root .scan-row.active {
-  border-left: 2px solid var(--accent) !important;
-  background: color-mix(in srgb, var(--accent) 7%, transparent) !important;
-}
-
-html:root table thead th {
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-
-html:root table tbody tr {
-  transition: background var(--dur-fast) var(--ease-out);
-}
-
-/* ---------- Form fields --------------------------------------------------- */
-
-html:root input[type="text"],
-html:root input[type="search"],
-html:root input[type="number"],
-html:root input[type="date"],
-html:root select,
-html:root textarea {
-  caret-color: var(--accent);
-}
-
-html:root input[type="checkbox"]::before {
-  background: var(--accent-contrast);
-}
-
-/* ---------- Chart surfaces ------------------------------------------------ */
-
-/* Tooltips anywhere in the app share one elevated card. */
-html:root .chart-tooltip,
-html:root .rrg-tooltip,
-html:root .treemap-tooltip,
-html:root [class*="-tooltip"][role="tooltip"] {
-  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--elev-3);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-radius: 10px;
+html:root[data-design="studio"][data-theme] .top-nav .icon-btn:hover:not(:disabled) {
   color: var(--text);
+  border-color: var(--track);
+  background: var(--muted-bg);
 }
 
-/* ---------- Footer -------------------------------------------------------- */
-
-html:root .app-footer,
-html:root footer.site-footer {
-  color: var(--text-muted);
-  border-top: 1px solid var(--line);
-}
-
-/* The status pill's schedule label is long; below a wide desktop the dot and
-   the snapshot date carry it, and the refresh/theme buttons stay on screen. */
 @media (max-width: 1680px) {
-  html:root .top-nav .status-pill > span:not(.status-dot):not(.status-pill-sep),
-  html:root .top-nav .status-pill-sep {
+  html:root[data-design="studio"] .top-nav .status-pill > span:not(.status-dot):not(.status-pill-sep),
+  html:root[data-design="studio"] .top-nav .status-pill-sep {
     display: none;
   }
 }
 
 @media (min-width: 769px) {
-  html:root .top-nav {
-    padding: 10px 22px;
+  html:root[data-design="studio"] .top-nav {
+    padding: 12px 22px;
   }
-  html:root .top-nav .nav-controls {
-    gap: 8px;
+  html:root[data-design="studio"] .top-nav .nav-controls {
+    gap: 10px;
   }
-}
-
-@media (min-width: 769px) {
-  html:root .top-nav .nav-search {
+  html:root[data-design="studio"] .top-nav .nav-search {
     min-width: 150px;
     flex: 1 1 220px;
   }
-  html:root[data-theme] .top-nav .nav-search input,
-  html:root[data-theme] .top-nav .nav-search-field input {
+  html:root[data-design="studio"][data-theme] .top-nav .nav-search input,
+  html:root[data-design="studio"][data-theme] .top-nav .nav-search-field input {
     min-width: 0;
   }
 }
 
 @media (max-width: 1360px) and (min-width: 769px) {
-  html:root[data-theme] .top-nav .nav-rail .nav-button {
-    padding: 6px 8px;
-    font-size: 12.5px;
+  html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 0 9px;
+    font-size: 13.5px;
   }
-  html:root .top-nav .brand-cluster .eyebrow {
+  html:root[data-design="studio"] .top-nav .brand-cluster .eyebrow {
     display: none;
   }
 }
 
-/* ---------- Chart panel header ------------------------------------------- */
-
-/* The company name is the page's headline; it gets the editorial serif. */
-html:root .chart-panel .panel-header h2 {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: 26px;
-  letter-spacing: -0.005em;
-  line-height: 1.1;
-}
-
-html:root .chart-panel .panel-header .panel-kicker,
-html:root .chart-panel .panel-header .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-}
-
-/* ---------- Selected state, shared ---------------------------------------
-   Segmented tabs across the pages each painted their own solid-accent pill,
-   so a single view could carry five gold slabs. Selected now means a raised
-   neutral chip with gold text; solid gold is kept for the one primary action
-   per view. */
-html:root .gp-tab.active,
-html:root .tm-seg-btn.active,
-html:root .study-filters button.active,
-html:root .study-tools button.active,
-html:root .study-styles button.active,
-html:root .home-market-toggle-btn.active,
-html:root .mf-week-btn.active,
-html:root .top-nav .mode-switch .tool-pill.active,
-html:root .homepro-tf.active,
-html:root .tj-tabbtn.active,
-html:root .tj-toggle-btn.active,
-html:root .study-view-toggle button.on,
-html:root .rrg-seg-btn.active {
-  background: color-mix(in srgb, var(--accent) 13%, var(--surface-raised)) !important;
-  color: var(--accent-on-tint) !important;
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
-  box-shadow: var(--card-highlight), 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent) !important;
-  font-weight: 600 !important;
-}
-
-/* Solid-gold call-to-action: one recipe wherever a page has its primary. */
-html:root .gp-export-btn:not(:disabled),
-html:root .study-next,
-html:root .gsw-compare-btn {
-  background: var(--gold-grad);
-  color: var(--accent-contrast);
-  border: 1px solid color-mix(in srgb, var(--accent-strong) 80%, #000);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent);
-}
-
-html:root .gp-export-btn:not(:disabled):hover,
-html:root .study-next:hover,
-html:root .gsw-compare-btn:hover {
-  filter: brightness(1.06);
-}
-
-/* ---------- Editorial headlines ------------------------------------------
-   Page titles and the few numbers a page exists to show are set in the
-   serif. Everything dense — tables, chips, axes, labels — stays in Geist. */
-html:root .panel > .panel-header h2,
-html:root .sh-title,
-html:root .today-head h2,
-html:root .mfp-head-title h2,
-html:root .tj-brand-name,
-html:root .study-head-left h2 {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: 28px;
-  letter-spacing: -0.005em;
-  line-height: 1.08;
-}
-
-html:root .mkx-number strong {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: 56px;
-  line-height: 0.95;
-  letter-spacing: -0.015em;
-  font-variant-numeric: lining-nums tabular-nums;
-}
-
-html:root .mkc-item strong:not(.mkc-word) {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: 30px;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  font-variant-numeric: lining-nums tabular-nums;
-}
-
-html:root .mkc-item strong.mkc-word {
-  font-weight: 600;
-}
-
-/* Phones: the tabs move to the bottom bar, so the rail would render as an
-   empty recessed dot beside the brand. */
+/* Phones: the tabs move to the bottom bar, so the rail would be an empty
+   recessed dot beside the brand. */
 @media (max-width: 768px) {
-  html:root .top-nav .nav-rail {
+  html:root[data-design="studio"] .top-nav .nav-rail {
     display: none;
   }
 }
 
-/* Zoom-by-wheel is a pointer affordance; touch screens pinch the page. */
-@media (pointer: coarse), (max-width: 768px) {
-  html:root .homepro-xp-zoom-hint {
-    display: none;
-  }
+/* ---------- Cards --------------------------------------------------------- */
+
+html:root[data-design="studio"] .panel,
+html:root[data-design="studio"] .homepro-kpi,
+html:root[data-design="studio"] .homepro-card,
+html:root[data-design="studio"] .screener-sidebar-panel {
+  background: var(--card-flat);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
-/* Touch scrubbing on the home charts: a horizontal drag moves the crosshair,
-   a vertical one still scrolls the page. */
-.homepro-xp-svg,
-.homepro-nifty-chart svg {
-  touch-action: pan-y;
+html:root[data-design="studio"] .panel:hover,
+html:root[data-design="studio"] .homepro-card:hover,
+html:root[data-design="studio"] .homepro-kpi:hover {
+  border-color: transparent;
+  transform: none;
 }
 
-/* Screener: "Run Scanner" / "Apply Filters" are the view's actions and keep
-   solid gold; the query builder's add-filter and AND/OR toggle are editing
-   affordances and read as tinted chips. */
-html:root .sh-btn.sh-btn-primary {
-  background: var(--gold-grad);
-  color: var(--accent-contrast);
-  border-color: color-mix(in srgb, var(--accent-strong) 80%, #000);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent);
-}
-
-html:root .qb-op-toggle,
-html:root .qb-action.qb-action-primary {
-  background: color-mix(in srgb, var(--accent) 13%, var(--surface-raised));
-  color: var(--accent-on-tint);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  box-shadow: var(--card-highlight);
-}
-
-html:root .qb-action.qb-action-primary:hover:not(:disabled),
-html:root .qb-op-toggle:hover {
-  background: color-mix(in srgb, var(--accent) 20%, var(--surface-raised));
-}
-
-/* ---------- Big charts: white paper, no lines ----------------------------
-   The chart canvases (ChartPanel, Chart Gym, Markets index, sector and fund
-   NAV charts) draw on plain white in both themes. Everything floating ON
-   the canvas — tool rail, zoom/nav buttons, hint pills — reads the light
-   token set here, so it sits on the paper instead of punching dark holes
-   in it. Scoped to the stage, so the dark UI around the chart is untouched. */
-html:root .chart-stage,
-html:root .study-chart-wrap {
-  --surface: rgba(255, 255, 255, 0.92);
-  --surface-strong: rgba(255, 255, 255, 0.96);
-  --surface-soft: rgba(245, 243, 238, 0.9);
-  --surface-raised: #ffffff;
-  --card-flat: #ffffff;
-  --line: rgba(40, 33, 20, 0.10);
-  --line-strong: rgba(40, 33, 20, 0.18);
-  --text: #1a1814;
-  --text-soft: #57534a;
-  --text-muted: #6b665b;
-  --accent: #86641f;
-  --accent-strong: #6f5214;
-  --accent-on-tint: #6f5214;
-  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+/* Titles: sentence case, regular weight, 18px ink — the size carries the
+   hierarchy, not the weight or the caps. */
+html:root[data-design="studio"] .homepro-kpi-label,
+html:root[data-design="studio"] .homepro-card h3 {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.18px;
+  text-transform: none;
   color: var(--text);
 }
 
-html:root .chart-stage .chart-canvas,
-html:root .study-chart-wrap,
-html:root .icc-chart,
-html:root .fnc-wrap .tv-lightweight-charts {
+html:root[data-design="studio"] .panel-kicker {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+html:root[data-design="studio"] .homepro-kpi-value {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+html:root[data-design="studio"] .homepro-kpi-sub {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+html:root[data-design="studio"] .homepro-kpi-icon {
+  background: var(--muted-bg);
+  border: 0;
+  color: var(--text);
+}
+
+html:root[data-design="studio"] .homepro {
+  --hp-card-bg: var(--card-flat);
+  --hp-border: var(--line);
+  --hp-muted: var(--text-muted);
+  --hp-violet: var(--viz-purple);
+  --hp-shadow: none;
+}
+
+/* Page titles and the few numbers a page exists to show. */
+html:root[data-design="studio"] .panel > .panel-header h2,
+html:root[data-design="studio"] .sh-title,
+html:root[data-design="studio"] .today-head h2,
+html:root[data-design="studio"] .mfp-head-title h2,
+html:root[data-design="studio"] .tj-brand-name,
+html:root[data-design="studio"] .study-head-left h2 {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+html:root[data-design="studio"] .chart-panel .panel-header h2 {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+html:root[data-design="studio"] .chart-panel .panel-header .panel-kicker,
+html:root[data-design="studio"] .chart-panel .panel-header .eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+html:root[data-design="studio"] .panel h2 {
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+html:root[data-design="studio"] .mkx-number strong {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+html:root[data-design="studio"] .mkc-item strong:not(.mkc-word) {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Prices and returns: the sans with tabular figures, not a monospace. */
+html:root[data-design="studio"] .positive-text,
+html:root[data-design="studio"] .negative-text {
+  font-family: var(--font-sans) !important;
+  font-weight: 500;
+}
+
+/* ---------- Buttons ------------------------------------------------------- */
+
+/* Primary actions inside pages: solid ink, the one filled button per view. */
+html:root[data-design="studio"] .nav-button.primary:not(.top-nav .nav-button),
+html:root[data-design="studio"] .gp-export-btn:not(:disabled),
+html:root[data-design="studio"] .study-next,
+html:root[data-design="studio"] .gsw-compare-btn,
+html:root[data-design="studio"] .sh-btn.sh-btn-primary {
+  background: var(--inverse) !important;
+  color: var(--inverse-ink) !important;
+  border: 1px solid var(--inverse) !important;
+  box-shadow: none !important;
+  font-weight: 400;
+  border-radius: 8px;
+  transition: transform 150ms var(--ease-out-soft), opacity 150ms var(--ease-out-soft);
+}
+
+html:root[data-design="studio"] .nav-button.primary:not(.top-nav .nav-button):hover,
+html:root[data-design="studio"] .gp-export-btn:not(:disabled):hover,
+html:root[data-design="studio"] .study-next:hover,
+html:root[data-design="studio"] .gsw-compare-btn:hover,
+html:root[data-design="studio"] .sh-btn.sh-btn-primary:hover {
+  opacity: 0.88;
+  filter: none;
+}
+
+/* Secondary: white, hairline, the faintest lift. */
+html:root[data-design="studio"] .nav-button.ghost:not(.top-nav .nav-button) {
+  border: 1px solid var(--line);
+  background: var(--card-flat);
+  color: var(--text-soft);
+  box-shadow: 0 1px 2px rgba(10, 13, 20, 0.03);
+  border-radius: 8px;
+}
+
+html:root[data-design="studio"] .nav-button.ghost:not(.top-nav .nav-button):hover {
+  border-color: var(--track);
+  color: var(--text);
+  background: var(--muted-bg);
+}
+
+:root[data-design="studio"] button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* ---------- Selected state, shared ---------------------------------------
+   Segmented tabs and chips: the selected one is an inverse chip (black on
+   light, white on dark), the reference's active month label. */
+html:root[data-design="studio"] .timeframe-pill.active,
+html:root[data-design="studio"] .scanner-tab.active,
+html:root[data-design="studio"] .indicator-pill.active,
+html:root[data-design="studio"] .tool-pill.active,
+html:root[data-design="studio"] .pe-modal-tab.active,
+html:root[data-design="studio"] .mf-mode-tab.active,
+html:root[data-design="studio"] .saved-scanner-chip.active,
+html:root[data-design="studio"] .gp-tab.active,
+html:root[data-design="studio"] .tm-seg-btn.active,
+html:root[data-design="studio"] .study-filters button.active,
+html:root[data-design="studio"] .study-tools button.active,
+html:root[data-design="studio"] .study-styles button.active,
+html:root[data-design="studio"] .home-market-toggle-btn.active,
+html:root[data-design="studio"] .mf-week-btn.active,
+html:root[data-design="studio"] .top-nav .mode-switch .tool-pill.active,
+html:root[data-design="studio"] .homepro-tf.active,
+html:root[data-design="studio"] .tj-tabbtn.active,
+html:root[data-design="studio"] .tj-toggle-btn.active,
+html:root[data-design="studio"] .study-view-toggle button.on,
+html:root[data-design="studio"] .rrg-seg-btn.active,
+html:root[data-design="studio"] .qb-op-toggle {
+  background: var(--inverse) !important;
+  color: var(--inverse-ink) !important;
+  border-color: var(--inverse) !important;
+  box-shadow: none !important;
+  font-weight: 400 !important;
+}
+
+html:root[data-design="studio"] .qb-action.qb-action-primary {
+  background: var(--card-flat);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(10, 13, 20, 0.03);
+}
+
+html:root[data-design="studio"] .qb-action.qb-action-primary:hover:not(:disabled) {
+  background: var(--muted-bg);
+}
+
+/* Screener sidebar: the active scanner is a quiet muted row, not an
+   outlined accent slab. */
+html:root[data-design="studio"] .screener-nav-button.active {
+  background: var(--muted-bg) !important;
+  border-color: transparent !important;
+  border-left: 3px solid var(--inverse) !important;
+}
+
+html:root[data-design="studio"] .screener-nav-button.active .screener-nav-main strong {
+  color: var(--text);
+}
+
+/* ---------- Tables & rows ------------------------------------------------- */
+
+html:root[data-design="studio"] .scan-row:hover {
+  background: var(--row-hover);
+}
+
+html:root[data-design="studio"] .scan-row.active {
+  border-left: 2px solid var(--inverse) !important;
+  background: var(--muted-bg) !important;
+}
+
+html:root[data-design="studio"] table thead th {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+html:root[data-design="studio"] table tbody tr {
+  transition: background 150ms var(--ease-out-soft);
+}
+
+html:root[data-design="studio"] input[type="text"],
+html:root[data-design="studio"] input[type="search"],
+html:root[data-design="studio"] input[type="number"],
+html:root[data-design="studio"] input[type="date"],
+html:root[data-design="studio"] select,
+html:root[data-design="studio"] textarea {
+  caret-color: var(--text);
+}
+
+html:root[data-design="studio"] input[type="checkbox"]:checked {
+  background: var(--inverse);
+  border-color: var(--inverse);
+}
+
+html:root[data-design="studio"] input[type="checkbox"]::before {
+  background: var(--inverse-ink);
+}
+
+/* ---------- Tooltips ------------------------------------------------------
+   One tooltip everywhere: a small inverse pill. */
+html:root[data-design="studio"] .chart-tooltip,
+html:root[data-design="studio"] .rrg-tooltip,
+html:root[data-design="studio"] .treemap-tooltip,
+html:root[data-design="studio"] [class*="-tooltip"][role="tooltip"] {
+  background: var(--inverse);
+  color: var(--inverse-ink);
+  border: 0;
+  box-shadow: 0 8px 24px rgba(10, 13, 20, 0.14);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 6px;
+}
+
+/* ---------- Big charts: white paper, no lines ----------------------------
+   The chart canvases draw on plain white in both themes. Everything
+   floating ON the canvas reads the light token set here, so it sits on the
+   paper instead of punching dark holes in it. */
+html:root[data-design="studio"] .chart-stage,
+html:root[data-design="studio"] .study-chart-wrap {
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-soft: #fafafa;
+  --surface-raised: #ffffff;
+  --card-flat: #ffffff;
+  --muted-bg: #f3f4f4;
+  --line: #ebebeb;
+  --line-strong: #dfe6e8;
+  --text: #222222;
+  --text-soft: #5c5c5c;
+  --text-muted: #767676;
+  --accent: #222222;
+  --accent-strong: #0b0b0b;
+  --accent-on-tint: #0b0b0b;
+  --inverse: #222222;
+  --inverse-ink: #ffffff;
+  color: var(--text);
+}
+
+html:root[data-design="studio"] .chart-stage {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+html:root[data-design="studio"] .chart-stage .chart-canvas,
+html:root[data-design="studio"] .study-chart-wrap,
+html:root[data-design="studio"] .icc-chart,
+html:root[data-design="studio"] .fnc-wrap .tv-lightweight-charts {
   background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
 }
 
-html:root .chart-stage .chart-tool-rail {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.06), 0 8px 20px -12px rgba(40, 30, 10, 0.25);
+:root[data-design="studio"]:not([data-theme="light"]) .chart-stage .chart-canvas,
+:root[data-design="studio"]:not([data-theme="light"]) .study-chart-wrap {
+  box-shadow: 0 0 0 1px #2a2a2d;
 }
 
-html:root .chart-stage .chart-stage-action-button,
-html:root .chart-stage .chart-stage-nav-button {
+html:root[data-design="studio"] .chart-stage .chart-tool-rail {
   background: #ffffff;
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.08);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(10, 13, 20, 0.05);
 }
 
-/* The stage itself can be far taller than the canvas (it stretches with the
-   page grid); only the canvas is paper, the stage stays see-through. */
-html:root .chart-stage {
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
+html:root[data-design="studio"] .chart-stage .chart-stage-action-button,
+html:root[data-design="studio"] .chart-stage .chart-stage-nav-button {
+  background: #ffffff;
+  color: var(--text);
+  border-color: var(--line);
+  box-shadow: 0 1px 2px rgba(10, 13, 20, 0.05);
+}
+
+/* ---------- Charts: shared marks -----------------------------------------
+   Axis chips (x labels sit in small outlined chips), the tooltip pill and
+   the tick meter. */
+.ol-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 16px;
+  border: 1px solid var(--chip-line);
+  background: var(--muted-bg);
+  color: var(--axis);
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background 150ms var(--ease-out-soft), color 150ms var(--ease-out-soft), border-color 150ms var(--ease-out-soft);
+}
+
+.ol-chip.is-active {
+  background: var(--inverse);
+  border-color: var(--inverse);
+  color: var(--inverse-ink);
+}
+
+.ol-tip {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  transition: left 150ms var(--ease-out-soft), top 150ms var(--ease-out-soft), opacity 150ms var(--ease-out-soft);
+}
+
+.ol-tip-body {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--inverse);
+  color: var(--inverse-ink);
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.ol-tip-caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--inverse);
+}
+
+.ol-tick-meter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+}
+
+.ol-tick-meter > span {
+  width: 2px;
+  height: 26px;
+  border-radius: 16px;
+  background: var(--track);
+  transition: height 300ms var(--ease-out-soft), background 300ms var(--ease-out-soft);
+}
+
+.ol-tick-meter > span.on {
+  height: 30px;
+  background: var(--tick-color, var(--viz-orange));
+}
+
+.ol-meter-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
+/* Touch scrubbing on the home charts. */
+:root[data-design="studio"] .homepro-xp-svg,
+:root[data-design="studio"] .homepro-nifty-chart svg {
+  touch-action: pan-y;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  html:root[data-design="studio"] .homepro-xp-zoom-hint {
+    display: none;
+  }
+}
+
+html:root[data-design="studio"] .app-footer,
+html:root[data-design="studio"] footer.site-footer {
+  color: var(--text-muted);
+  border-top: 1px solid var(--line);
+}
+
+/* Narrow cards: every other tick, so the meter keeps its hairline rhythm
+   instead of fusing into a solid block. */
+@media (max-width: 540px) {
+  .ol-tick-meter > span:nth-child(2n) {
+    display: none;
+  }
+}
+
+/* Eleven tabs, the search, the status pill and three icon buttons need a
+   little more than 1440px at full padding; tighten the tabs below 1500px so
+   the design and theme switches never scroll out of the header. */
+@media (max-width: 1500px) and (min-width: 1361px) {
+  html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 0 8px;
+    font-size: 14px;
+  }
 }

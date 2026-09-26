@@ -38,7 +38,7 @@
 .empty-state-title {
   margin: 0;
   font-size: var(--fs-base);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -65,7 +65,7 @@
   background: var(--accent-strong);
   color: var(--accent-contrast);
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--dur-fast) ease;
 }

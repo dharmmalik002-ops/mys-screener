@@ -19,13 +19,13 @@
 .sar-eyebrow {
   margin: 0 0 2px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.sar-head h3 { margin: 0; font-size: 17px; font-weight: 650; color: var(--text); }
+.sar-head h3 { margin: 0; font-size: 17px; font-weight: 500; color: var(--text); }
 
 .sar-count { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
@@ -52,7 +52,7 @@
   color: var(--accent, #3b82f6);
   border-color: currentColor;
   background: color-mix(in srgb, var(--accent, #3b82f6) 13%, transparent);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sar-field { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
@@ -106,7 +106,7 @@
 
 .sar-stats span {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -114,7 +114,7 @@
 
 .sar-stats strong { font-size: 17px; font-weight: 680; color: var(--text); font-variant-numeric: tabular-nums; }
 
-.sar-delta { font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.sar-delta { font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
 .sar-delta--up { color: var(--positive); }
 .sar-delta--down { color: var(--negative); }
 .sar-delta--flat { color: var(--text-muted); }
@@ -160,7 +160,7 @@
 .sar-row span:not(.sar-sig):not(.sar-outcome) { font-variant-numeric: tabular-nums; color: var(--text-muted); }
 
 .sar-sig { min-width: 0; }
-.sar-sig strong { display: block; color: var(--text); font-weight: 650; }
+.sar-sig strong { display: block; color: var(--text); font-weight: 500; }
 .sar-sig em { display: block; font-style: normal; font-size: 11px; color: var(--text-muted); }
 .sar-sig small {
   display: block;

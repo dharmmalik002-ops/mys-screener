@@ -6,8 +6,10 @@ import "./styles/app.css";
 // nav-modern, top-bar-modern) where a rule's winner depended on which file it
 // lived in; they are now merged in that same order inside overrides.css.
 import "./styles/overrides.css";
-// House look: palette, type and chrome. After overrides, before the phone layer.
+// The two selectable designs, each scoped to :root[data-design="…"]:
+// Studio (default) and Classic. After overrides, before the phone layer.
 import "./styles/premium.css";
+import "./styles/classic.css";
 // Phone layer. Lazily-loaded panel CSS is injected AFTER this file, so it
 // cannot rely on load order — every rule inside is `html `-prefixed to win on
 // specificity instead. See the header comment there.
@@ -30,11 +32,11 @@ class RootErrorBoundary extends React.Component<
         <div style={{
           minHeight: "100vh", display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
-          background: "#0a0a0c", color: "#fff", fontFamily: "system-ui",
+          background: "#f8f8f8", color: "#222", fontFamily: "system-ui",
           padding: "2rem", textAlign: "center",
         }}>
           <div style={{ fontSize: "var(--fs-jumbo)", marginBottom: "1rem" }}>⚠️</div>
-          <h2 style={{ fontSize: "var(--fs-title)", fontWeight: 700, marginBottom: "0.5rem" }}>
+          <h2 style={{ fontSize: "var(--fs-title)", fontWeight: 500, marginBottom: "0.5rem" }}>
             Something went wrong
           </h2>
           <p style={{ fontSize: "var(--fs-body)", color: "rgba(255,255,255,0.6)", marginBottom: "1.5rem", maxWidth: 400 }}>
@@ -43,7 +45,7 @@ class RootErrorBoundary extends React.Component<
           <button
             onClick={() => window.location.reload()}
             style={{
-              background: "var(--accent, #d4af6a)", color: "#17130a", border: "none",
+              background: "var(--accent, #222222)", color: "#ffffff", border: "none",
               borderRadius: "8px", padding: "0.6rem 1.4rem", cursor: "pointer", fontSize: "var(--fs-body)",
             }}
           >

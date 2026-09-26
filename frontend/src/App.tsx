@@ -8,6 +8,7 @@ import {
   Landmark,
   Layers,
   Moon,
+  Palette,
   NotebookPen,
   Radar,
   RefreshCw,
@@ -157,7 +158,15 @@ const CHART_DRAWINGS_KEY = "mr-malik-chart-drawings:v1";
 const CHART_RESPONSE_CACHE_KEY = "mr-malik-chart-response-cache:v3";
 const GROUP_WIDGET_RECT_KEY = "mr-malik-group-widget-rect:v1";
 const GROUP_WIDGET_OPEN_KEY = "mr-malik-group-widget-open:v1";
-const THEME_KEY = "mr-malik-theme:v1";
+// v2: the light theme became the house look (2026-09-26). Bumping the key
+// resets everyone to it once; the toggle still remembers a switch to dark.
+const THEME_KEY = "mr-malik-theme:v2";
+// Which design the app wears: "studio" (default, the flat SF Pro look) or
+// "classic" (obsidian / ivory with champagne gold). Orthogonal to light/dark.
+// index.html applies it before first paint; switching reloads the page so the
+// canvas charts and the regime palette, which read it once at load, follow.
+const DESIGN_KEY = "mr-malik-design:v1";
+type DesignKey = "studio" | "classic";
 
 type GroupWidgetRect = { x: number; y: number; width: number; height: number };
 
@@ -751,8 +760,8 @@ function normalizeIndicatorKeys(value: unknown): IndicatorKey[] {
 //   2026-09-26:  the first house palette (pale gold/steel/lavender), too
 //                light once the default chart canvas became white.
 const LEGACY_CHART_COLOR_DEFAULTS: Partial<Record<keyof ChartColorSettings, string[]>> = {
-  ema10: ["#ff7a59", "#e8a07a"],
-  ema20: ["#f7b955", "#d4af6a"],
+  ema10: ["#ff7a59", "#e8a07a", "#e07b4f"],
+  ema20: ["#f7b955", "#d4af6a", "#c9971f"],
   ema50: ["#00d2ff", "#7fb4d9"],
   ema200: ["#8b949e", "#a39e93"],
   vwap: ["#39ff14", "#b39ddb"],
@@ -1410,12 +1419,19 @@ function prunePersistedChartCache(cache: Record<string, PersistedChartCacheEntry
   );
 }
 
+function readDesign(): DesignKey {
+  if (typeof document === "undefined") {
+    return "studio";
+  }
+  return document.documentElement.dataset.design === "classic" ? "classic" : "studio";
+}
+
 function readTheme(): ThemeKey {
   if (typeof window === "undefined") {
-    return "dark";
+    return "light";
   }
   const saved = window.localStorage.getItem(THEME_KEY);
-  return saved === "light" || saved === "linen" ? "light" : "dark";
+  return saved === "dark" ? "dark" : "light";
 }
 
 function readActiveMarket(): MarketKey {
@@ -2029,6 +2045,17 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [scanLoading, setScanLoading] = useState(false);
   const [showScannerSettings, setShowScannerSettings] = useState(true);
   const [theme, setTheme] = useState<ThemeKey>(readTheme);
+  const [design] = useState<DesignKey>(readDesign);
+  const switchDesign = useCallback(() => {
+    const next: DesignKey = design === "classic" ? "studio" : "classic";
+    try {
+      window.localStorage.setItem(DESIGN_KEY, next);
+    } catch {
+      // storage blocked: the attribute still flips for this page load below
+    }
+    document.documentElement.dataset.design = next;
+    window.location.reload();
+  }, [design]);
   const [watchlists, setWatchlists] = useState<LocalWatchlist[]>(initialWatchlists);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
@@ -5911,6 +5938,16 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             aria-label="Toggle theme"
           >
             {theme === "dark" ? <Sun size={15} strokeWidth={2.2} /> : <Moon size={15} strokeWidth={2.2} />}
+          </button>
+
+          <button
+            type="button"
+            className="icon-btn design-switch"
+            onClick={switchDesign}
+            title={design === "classic" ? "Switch to the Studio design" : "Switch to the Classic design (obsidian & gold)"}
+            aria-label={design === "classic" ? "Switch to the Studio design" : "Switch to the Classic design"}
+          >
+            <Palette size={15} strokeWidth={2.2} />
           </button>
         </div>
       </header>

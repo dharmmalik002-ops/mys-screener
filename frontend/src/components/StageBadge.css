@@ -13,7 +13,7 @@
   border-radius: 999px;
   border: 1px solid currentColor;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.03em;
   white-space: nowrap;
   cursor: default;
@@ -26,7 +26,7 @@
 .stgb--base    { color: var(--accent, #3b82f6); background: color-mix(in srgb, var(--accent, #3b82f6) 13%, transparent); }
 .stgb--top     { color: var(--warning, #d97706); background: color-mix(in srgb, var(--warning, #d97706) 13%, transparent); }
 .stgb--decline { color: var(--negative); background: color-mix(in srgb, var(--negative) 13%, transparent); }
-.stgb--none    { color: var(--text-muted); border-color: var(--line); font-weight: 600; }
+.stgb--none    { color: var(--text-muted); border-color: var(--line); font-weight: 500; }
 
 .stgb-card {
   position: absolute;
@@ -53,7 +53,7 @@
   cursor: auto;
 }
 
-.stgb-card strong { font-size: 13px; font-weight: 700; color: inherit; }
+.stgb-card strong { font-size: 13px; font-weight: 500; color: inherit; }
 .stgb-blurb { color: var(--text); }
 .stgb-note { color: var(--text-muted); }
 

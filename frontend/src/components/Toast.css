@@ -60,7 +60,7 @@
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--dur-fast) ease;
 }

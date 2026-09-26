@@ -79,7 +79,7 @@
 
 .pfd-label {
   font-size: var(--fs-nano);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -105,7 +105,7 @@
 .pfd-hero-value {
   margin: 0;
   font-size: clamp(30px, 5.2vw, 46px);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: -0.025em;
   color: var(--text);
@@ -125,7 +125,7 @@
   gap: 6px;
   padding: 3px 10px;
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--radius-pill);
   background: var(--pfd-panel-hover);
   color: var(--text-soft);
@@ -145,7 +145,7 @@
 }
 
 .pfd-split { display: flex; flex-direction: column; gap: 3px; min-width: 96px; }
-.pfd-split strong { font-size: var(--fs-lead); font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+.pfd-split strong { font-size: var(--fs-lead); font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
 .pfd-split small { font-size: var(--fs-micro); line-height: 1.35; color: var(--text-muted); max-width: 150px; }
 
 /* -------------------------------------------------------------- panels */
@@ -172,7 +172,7 @@
 .pfd-panel-head h3 {
   margin: 0;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-soft);
@@ -199,7 +199,7 @@
 .pfd-range {
   padding: 4px 10px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--text-muted);
   background: none;
@@ -222,9 +222,9 @@
   min-height: 26px;
 }
 
-.pfd-chart-value { font-size: var(--fs-title); font-weight: 600; color: var(--text); letter-spacing: -0.015em; }
+.pfd-chart-value { font-size: var(--fs-title); font-weight: 500; color: var(--text); letter-spacing: -0.015em; }
 
-.pfd-chart-delta { font-size: var(--fs-small); font-weight: 600; color: var(--text-muted); }
+.pfd-chart-delta { font-size: var(--fs-small); font-weight: 500; color: var(--text-muted); }
 .pfd-chart-delta em { font-style: normal; opacity: 0.8; }
 
 .pfd-chart-date { margin-left: auto; font-size: var(--fs-micro); color: var(--text-muted); }
@@ -262,7 +262,7 @@
   text-align: center;
 }
 
-.pfd-donut-centre strong { font-size: var(--fs-heading); font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+.pfd-donut-centre strong { font-size: var(--fs-heading); font-weight: 500; color: var(--text); letter-spacing: -0.02em; }
 .pfd-donut-centre small { max-width: 108px; font-size: var(--fs-nano); line-height: 1.25; color: var(--text-muted); }
 
 .pfd-legend { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; }
@@ -283,7 +283,7 @@
 .pfd-legend li.is-active { background: var(--pfd-panel-hover); }
 .pfd-legend i { width: 9px; height: 9px; border-radius: var(--radius-xs); }
 .pfd-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfd-legend b { text-align: right; color: var(--text); font-weight: 600; }
+.pfd-legend b { text-align: right; color: var(--text); font-weight: 500; }
 .pfd-legend em { font-style: normal; text-align: right; font-size: var(--fs-micro); color: var(--text-muted); }
 
 /* -------------------------------------------------------------- bars */
@@ -305,7 +305,7 @@
 
 .pfd-bars li:hover { background: var(--pfd-panel-hover); }
 .pfd-bars-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfd-bars b { text-align: right; color: var(--text); font-weight: 600; }
+.pfd-bars b { text-align: right; color: var(--text); font-weight: 500; }
 .pfd-bars em { font-style: normal; text-align: right; font-size: var(--fs-micro); }
 
 .pfd-bar, .pfd-weight > i {
@@ -343,7 +343,7 @@
 .pfd-table thead th {
   padding-bottom: 6px;
   font-size: var(--fs-nano);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -354,7 +354,7 @@
 .pfd-table tbody tr:last-child td { border-bottom: 0; }
 .pfd-table tbody tr { transition: background 140ms ease; }
 .pfd-table tbody tr:hover { background: var(--pfd-panel-hover); }
-.pfd-strong { color: var(--text); font-weight: 600; }
+.pfd-strong { color: var(--text); font-weight: 500; }
 
 .pfd-table td em {
   display: block;
@@ -366,7 +366,7 @@
 .pfd-fund {
   padding: 0;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   font-family: inherit;
   text-align: left;
   color: var(--text);
@@ -404,7 +404,7 @@
 .pfd-actions button {
   padding: 3px 8px;
   font-size: var(--fs-micro);
-  font-weight: 600;
+  font-weight: 500;
   font-family: inherit;
   color: var(--text-muted);
   background: none;
@@ -484,7 +484,7 @@
 .pfd-sip-date { color: var(--text-muted); }
 .pfd-sip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfd-sips i { font-style: normal; font-size: var(--fs-micro); text-transform: capitalize; color: var(--text-muted); }
-.pfd-sips b { text-align: right; color: var(--text); font-weight: 600; }
+.pfd-sips b { text-align: right; color: var(--text); font-weight: 500; }
 
 .pfd-tag-sip {
   padding: 0 6px;

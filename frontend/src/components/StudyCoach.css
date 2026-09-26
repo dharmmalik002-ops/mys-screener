@@ -73,7 +73,7 @@
 
 .coach-headline {
   font-size: 0.9rem !important;
-  font-weight: 600;
+  font-weight: 500;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--line);
 }
@@ -97,7 +97,7 @@
 }
 
 .coach-evidence { color: var(--text-muted); }
-.coach-rule { font-weight: 600; }
+.coach-rule { font-weight: 500; }
 
 .coach-confidence {
   margin-top: 12px !important;

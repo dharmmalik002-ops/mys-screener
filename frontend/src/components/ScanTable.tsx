@@ -244,7 +244,7 @@ function sectorAccentColor(label: string): string {
   const palette = [
     "#86c29a",
     "#7fb4d9",
-    "#d4af6a",
+    "#fc6200",
     "#d48850",
     "#b39ddb",
     "#4fb3a9",
@@ -412,7 +412,7 @@ function fallbackSparkline(returnPct: number) {
 const VOLUME_TIER_BADGES: Record<string, { code: string; title: string; color: string }> = {
   "Monthly volume high": { code: "HMV", title: "Highest Monthly Volume", color: "var(--negative)" },
   "Quarterly volume high": { code: "HQV", title: "Highest Quarterly Volume", color: "var(--positive)" },
-  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#c29b52" },
+  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#222222" },
   "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#17150f" },
 };
 
@@ -1056,7 +1056,7 @@ export function ScanTable({
                     display: "inline-block",
                     marginLeft: 6,
                     fontSize: "var(--fs-nano)",
-                    fontWeight: 700,
+                    fontWeight: 500,
                     letterSpacing: "0.04em",
                     lineHeight: "14px",
                     color: "#fff",
@@ -1132,7 +1132,7 @@ export function ScanTable({
                 title={volBadge.title}
                 style={{
                   fontSize: "var(--fs-nano)",
-                  fontWeight: 700,
+                  fontWeight: 500,
                   letterSpacing: "0.03em",
                   color: "#fff",
                   background: volBadge.color,

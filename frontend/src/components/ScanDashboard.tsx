@@ -27,10 +27,10 @@ type ScanDashboardProps = {
 type CapBucket = { key: string; label: string; min: number; max: number; color: string };
 
 const CAP_BUCKETS: CapBucket[] = [
-  { key: "mega", label: "Mega", min: 200000, max: Infinity, color: "#d4af6a" },
+  { key: "mega", label: "Mega", min: 200000, max: Infinity, color: "#958dfc" },
   { key: "large", label: "Large", min: 50000, max: 200000, color: "#b39ddb" },
   { key: "mid", label: "Mid", min: 10000, max: 50000, color: "#d98ba0" },
-  { key: "small", label: "Small", min: 1000, max: 10000, color: "#d4af6a" },
+  { key: "small", label: "Small", min: 1000, max: 10000, color: "#958dfc" },
   { key: "micro", label: "Micro", min: 0, max: 1000, color: "var(--positive)" },
 ];
 
@@ -162,7 +162,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
 
   /* Mini donut for "Groups" summary card — top 5 groups + "Other" */
   const groupsDonutData = useMemo(() => {
-    const palette = ["#d4af6a", "#b39ddb", "#d98ba0", "#d4af6a", "var(--positive)"];
+    const palette = ["#958dfc", "#b39ddb", "#d98ba0", "#958dfc", "var(--positive)"];
     const top = groupCounts.slice(0, 5).map((g, i) => ({
       name: g.name,
       value: g.count,
@@ -195,7 +195,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
       fullName: g.name,
       count: g.count,
       // Diminishing fill intensity by rank
-      fill: i === 0 ? "#d4af6a" : i < 3 ? "#e6c88c" : "#efdcb2",
+      fill: i === 0 ? "#958dfc" : i < 3 ? "#c3bdfd" : "#efdcb2",
     }));
   }, [groupCounts]);
 
@@ -359,7 +359,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: "rgba(212, 175, 106, 0.08)" }}
+                    cursor={{ fill: "rgba(149, 141, 252, 0.08)" }}
                     formatter={(value) => [`${value} stocks`, "Count"]}
                     labelFormatter={(_l, payload) =>
                       (payload?.[0]?.payload as { fullName?: string })?.fullName ?? _l

@@ -27,7 +27,7 @@ function emaSeries(closes: number[], span: number): (number | null)[] {
 
 const OVERLAYS = [
   { key: "ema10", span: 10, color: "#3f86c2", width: 1 },
-  { key: "ema21", span: 21, color: "#b8861f", width: 1 },
+  { key: "ema21", span: 21, color: "#fc6200", width: 1 },
   { key: "ema50", span: 50, color: "#7c5cc4", width: 2 },
 ] as const;
 
@@ -179,7 +179,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         background: { type: ColorType.Solid, color: CHART_PAPER },
         textColor: CHART_PAPER_TEXT,
         fontSize: 11,
-        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif",
       },
       // No grid: it competes with the trendlines and measurements drawn on top.
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
@@ -304,7 +304,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         value: Number(b.volume ?? 0),
         color:
           entryIndex != null && i >= entryIndex
-            ? "rgba(212,175,106,0.55)"
+            ? "rgba(252,98,0,0.55)"
             : i > visible.triggerIndex
               ? "rgba(163,160,151,0.40)"
               : b.close >= b.open
@@ -340,7 +340,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       markers.push({
         time: entryBar.time as UTCTimestamp,
         position: "belowBar" as const,
-        color: "#b8861f",
+        color: "#fc6200",
         shape: "arrowUp" as const,
         text: "entry",
       });
@@ -363,7 +363,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
     if (entryPrice != null && Number.isFinite(entryPrice)) {
       entryLineRef.current = price.createPriceLine({
         price: entryPrice,
-        color: "#b8861f",
+        color: "#fc6200",
         lineWidth: 1,
         lineStyle: LineStyle.Dashed,
         axisLabelVisible: true,
@@ -453,7 +453,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       if (d.kind === "measure") {
         const move = ((d.to.price - d.from.price) / d.from.price) * 100;
         const label = `${move >= 0 ? "+" : ""}${move.toFixed(2)}%  ${fmt(Math.abs(d.to.price - d.from.price))}  ${barsBetween(d.from.time, d.to.time)} bars`;
-        ctx.font = "11px 'Geist Mono', Menlo, monospace";
+        ctx.font = "11px -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
         const w = ctx.measureText(label).width + 10;
         const bx = Math.min(p1.x, p2.x) + Math.abs(p2.x - p1.x) / 2 - w / 2;
         const by = Math.min(p1.y, p2.y) - 20;
@@ -478,9 +478,9 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       const w = Math.abs(snip.x1 - snip.x0);
       const h = Math.abs(snip.y1 - snip.y0);
       ctx.save();
-      ctx.fillStyle = "rgba(212,175,106,0.12)";
+      ctx.fillStyle = "rgba(252,98,0,0.12)";
       ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = "#b8861f";
+      ctx.strokeStyle = "#fc6200";
       ctx.setLineDash([5, 4]);
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y, w, h);

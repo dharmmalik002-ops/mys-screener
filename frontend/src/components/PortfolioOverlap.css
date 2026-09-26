@@ -53,7 +53,7 @@
 .pov-bar-fill.is-very_high { background: var(--pfd-down, var(--negative)); }
 
 .pov-bar-cell b {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
@@ -101,7 +101,7 @@
 .pov-shared th {
   padding: 4px 8px;
   font-size: var(--fs-nano);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   text-align: right;
@@ -122,7 +122,7 @@
 }
 
 .pov-shared tbody tr:hover { background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.06)); }
-.pov-shared .pov-strong { color: var(--text); font-weight: 600; }
+.pov-shared .pov-strong { color: var(--text); font-weight: 500; }
 
 .pov-more, .pov-detail-foot {
   margin: 0;

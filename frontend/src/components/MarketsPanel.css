@@ -29,7 +29,7 @@
 
 .mk-verdict {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -57,7 +57,7 @@
   border-radius: var(--radius-md);
   border: 1px dashed var(--line);
   font-size: var(--fs-base);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .mk-muted { color: var(--text-muted); }
@@ -81,7 +81,7 @@
 }
 
 .mk-ai-headline {
-  font-weight: 700;
+  font-weight: 500;
   font-size: var(--fs-lead);
   margin-bottom: 6px;
 }
@@ -104,7 +104,7 @@
 
 .mk-compare-head {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -134,7 +134,7 @@
 
 .mk-card-hdr {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -142,7 +142,7 @@
 
 .mk-big {
   font-size: var(--fs-title);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -171,7 +171,7 @@
 
 .mk-week-hdr {
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 10px;
@@ -189,7 +189,7 @@
 
 .mk-week-sub {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 6px;
@@ -228,7 +228,7 @@
   border: none;
   background: none;
   color: inherit;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   padding: 0;
   font-size: var(--fs-base);
@@ -249,7 +249,7 @@
   background: transparent;
   color: inherit;
   font-size: var(--fs-small);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 .mk-chip small { font-weight: 500; }
@@ -277,7 +277,7 @@
 
 .mk-posture-item span {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -310,7 +310,7 @@
   line-height: 1.45;
 }
 
-.mk-pos-cat { font-weight: 700; font-size: var(--fs-small); letter-spacing: 0.03em; text-transform: uppercase; }
+.mk-pos-cat { font-weight: 500; font-size: var(--fs-small); letter-spacing: 0.03em; text-transform: uppercase; }
 .mk-pos-row.cat-failed-breakout, .mk-pos-row.cat-broken-trend { border-color: rgba(242, 54, 69, 0.5); }
 .mk-pos-row.cat-failed-breakout .mk-pos-cat, .mk-pos-row.cat-broken-trend .mk-pos-cat { color: var(--candle-down); }
 .mk-pos-row.cat-damaged, .mk-pos-row.cat-testing-21-ema { border-color: rgba(247, 185, 85, 0.5); }
@@ -379,8 +379,8 @@
   transition: border-color var(--dur-fast) ease-out;
 }
 .mk-bigcard:hover { border-color: rgba(8, 153, 129, 0.55); }
-.mk-bigcard-num { font-size: var(--fs-display); font-weight: 700; font-variant-numeric: tabular-nums; }
-.mk-bigcard-label { font-size: var(--fs-body); font-weight: 600; }
+.mk-bigcard-num { font-size: var(--fs-display); font-weight: 500; font-variant-numeric: tabular-nums; }
+.mk-bigcard-label { font-size: var(--fs-body); font-weight: 500; }
 .mk-bigcard-sub { font-size: var(--fs-small); color: var(--text-muted); margin-top: 3px; }
 
 .mk-affinity { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: var(--fs-small); color: var(--text-muted); margin-bottom: 10px; }
@@ -395,9 +395,9 @@
   font-size: var(--fs-title); line-height: 1; cursor: pointer; padding: 0 2px;
 }
 .mk-focus-remove:hover { color: var(--candle-down); }
-.mk-focus-setup { font-size: var(--fs-small); font-weight: 600; margin: 2px 0; }
+.mk-focus-setup { font-size: var(--fs-small); font-weight: 500; margin: 2px 0; }
 .mk-focus-plan { font-size: var(--fs-small); line-height: 1.5; margin: 4px 0; }
-.mk-focus-plan em { font-style: normal; font-weight: 700; color: var(--text-muted); }
+.mk-focus-plan em { font-style: normal; font-weight: 500; color: var(--text-muted); }
 
 .mk-removed { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: var(--fs-small); color: var(--text-muted); margin-top: 10px; }
 .mk-restore { cursor: pointer; background: transparent; }
@@ -458,7 +458,7 @@
   align-items: center;
   gap: 6px;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -467,7 +467,7 @@
 .mko-verdict-word {
   font-family: var(--font-display);
   font-size: var(--fs-display);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
 }
 
@@ -527,7 +527,7 @@
 
 .mko-why-title {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -582,7 +582,7 @@
 
 .mko-index-head strong {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .mko-index-price {
@@ -597,7 +597,7 @@
   align-items: center;
   gap: 4px;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
@@ -667,7 +667,7 @@
 
 .mko-signals-head {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -713,7 +713,7 @@
 .mko-signal-weight {
   margin-left: auto;
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   border: 1px solid var(--line);
   border-radius: var(--radius-xs);
@@ -731,7 +731,7 @@
 
 .mko-section-hdr {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -786,7 +786,7 @@
 .mko-under-para strong {
   display: block;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-soft);
@@ -814,7 +814,7 @@
   border-radius: var(--radius-pill);
   padding: 3px 10px;
   font-size: var(--fs-small);
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   background: var(--surface-soft);

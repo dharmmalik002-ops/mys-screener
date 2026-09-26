@@ -33,7 +33,7 @@
 
 .mkx-label {
   font-size: var(--fs-tiny);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -42,7 +42,7 @@
 .mkx-number strong {
   font-size: var(--fs-hero);
   line-height: 1;
-  font-weight: 650;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
@@ -52,7 +52,7 @@
   align-items: baseline;
   gap: 8px;
   font-size: var(--fs-body);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -90,7 +90,7 @@
   color: var(--text);
   border-color: currentColor;
   background: color-mix(in srgb, var(--text) 8%, transparent);
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .mkx-ok .mkx-step.on     { color: var(--positive); background: color-mix(in srgb, var(--positive) 14%, transparent); }
@@ -123,7 +123,7 @@
 
 .mkx-arith dt {
   font-size: var(--fs-tiny);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -133,7 +133,7 @@
 .mkx-arith dd {
   margin: 0;
   font-size: var(--fs-title);
-  font-weight: 650;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }

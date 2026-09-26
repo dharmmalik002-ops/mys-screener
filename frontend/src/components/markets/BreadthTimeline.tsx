@@ -32,10 +32,10 @@ type SeriesKey =
 
 /** Every series the chart knows how to draw, in plot order. */
 const SERIES: Array<{ key: SeriesKey; name: string; short: string; stroke: string; width: number }> = [
-  { key: "above_ema21_pct", name: "% above 21-EMA", short: "21 EMA", stroke: "var(--accent)", width: 1.6 },
-  { key: "above_ema20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--accent)", width: 1.6 },
-  { key: "above_ma20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--accent)", width: 1.6 },
-  { key: "above_ma50_pct", name: "% above 50-DMA", short: "50 DMA", stroke: "var(--amber)", width: 1.5 },
+  { key: "above_ema21_pct", name: "% above 21-EMA", short: "21 EMA", stroke: "var(--viz-orange)", width: 1.6 },
+  { key: "above_ema20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--viz-orange)", width: 1.6 },
+  { key: "above_ma20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--viz-orange)", width: 1.6 },
+  { key: "above_ma50_pct", name: "% above 50-DMA", short: "50 DMA", stroke: "var(--viz-purple)", width: 1.5 },
   { key: "above_sma200_pct", name: "% above 200-DMA", short: "200 DMA", stroke: "var(--text-muted)", width: 1.3 },
 ];
 
