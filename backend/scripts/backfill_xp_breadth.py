@@ -6,7 +6,15 @@ chart has depth from day one. Run this LOCALLY (NSE archives are reachable from
 Indian IPs; BSE works from anywhere) — it is intentionally kept off the HF
 Space and GitHub Actions because it downloads many days of EOD files.
 
+Also writes backend/data/nse_breadth_history.json — the whole-market advance/
+decline rows the Home page's Market Breadth card reads.
+
+NSE's own bhavcopy is read first (the authoritative print, with the exchange's
+own previous close); BSE only for a day NSE cannot serve. ``--cache-dir``
+reads/writes the raw NSE CSVs there, so a re-run needs no network.
+
 Usage:
+    python backend/scripts/backfill_xp_breadth.py --start 2024-09-02 --cache-dir /tmp/nse
     python backend/scripts/backfill_xp_breadth.py --days 400
     python backend/scripts/backfill_xp_breadth.py --start 2024-01-01 --end 2026-05-29
     # calibrate the regime bands to the author's published values:
@@ -32,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import generate_bhavcopy_patch as g  # noqa: E402
+from app.services import nse_breadth  # noqa: E402
 from app.services.xp_breadth import (  # noqa: E402
     CONST,
     OUTPUT_CLAMP,
@@ -48,17 +57,31 @@ logger = logging.getLogger("backfill_xp_breadth")
 METRIC_KEYS = ("date", "total", "advancers_4p5", "decliners", "ma10_pct", "ma20_pct")
 
 
-def _fetch_full_bhav(trade_date: date) -> dict[str, dict] | None:
-    """Full all-equity bhavcopy for a date: BSE first (global), then NSE archive."""
-    rows = g._fetch_from_bse(trade_date)
-    if rows:
-        return rows
-    csv_text = g._fetch_bhavcopy_csv(trade_date)
+def _nse_csv(trade_date: date, cache_dir: Path | None) -> str | None:
+    name = f"BhavCopy_NSE_CM_0_0_0_{trade_date.strftime('%Y%m%d')}_F_0000.csv"
+    if cache_dir is not None and (cache_dir / name).exists():
+        return (cache_dir / name).read_text(encoding="utf-8")
+    text = g._fetch_bhavcopy_csv(trade_date)
+    if text and cache_dir is not None:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        (cache_dir / name).write_text(text, encoding="utf-8")
+    return text
+
+
+def _fetch_full_bhav(trade_date: date, cache_dir: Path | None = None) -> tuple[dict[str, dict] | None, dict | None]:
+    """(XP input, whole-market breadth row) for a date. NSE first; BSE only
+    when NSE has no file, and then there is no whole-market row (BSE does not
+    carry every NSE stock)."""
+    csv_text = _nse_csv(trade_date, cache_dir)
     if csv_text:
-        parsed = g._parse_bhavcopy_csv(csv_text)
-        if parsed:
-            return parsed
-    return None
+        rows = nse_breadth.parse_rows(csv_text)
+        if rows:
+            return nse_breadth.xp_input(rows), nse_breadth.day_row(trade_date.isoformat(), rows)
+    if cache_dir is not None:
+        # A local archive that lacks the day means NSE never published one:
+        # a holiday. Asking BSE would only fetch the same closed market.
+        return None, None
+    return g._fetch_from_bse(trade_date), None
 
 
 def _trading_days(start: date, end: date) -> list[date]:
@@ -78,6 +101,7 @@ def main() -> int:
     parser.add_argument("--end", type=str, default=None, help="End date YYYY-MM-DD (default: last weekday).")
     parser.add_argument("--anchor", action="append", default=[], help="date=XP published-value pair for band calibration; repeatable.")
     parser.add_argument("--const", type=float, default=None, help="Force a specific calibration constant (overrides --anchor).")
+    parser.add_argument("--cache-dir", type=str, default=None, help="Folder of raw NSE bhavcopy CSVs to read (and fill).")
     args = parser.parse_args()
 
     end = datetime.strptime(args.end, "%Y-%m-%d").date() if args.end else g._last_trading_day()
@@ -126,11 +150,26 @@ def main() -> int:
     if nse_filter is None:
         logger.warning("nse_equity_symbols.json missing; computing over ALL bhavcopy equities")
 
+    cache_dir = Path(args.cache_dir) if args.cache_dir else None
     rolling: dict[str, list] = {}
     metrics_history: list[dict] = []
+    market_rows: list[dict] = []
     fetched = 0
-    for d in _trading_days(start, end):
-        bhav = _fetch_full_bhav(d)
+    sessions = _trading_days(start, end)
+    if cache_dir is not None:
+        # NSE occasionally trades on a weekend (the 2025-02-01 Budget-day
+        # session); a file in the archive is the proof, so include those too.
+        extra = []
+        d = start
+        while d <= end:
+            if d.weekday() >= 5 and (cache_dir / f"BhavCopy_NSE_CM_0_0_0_{d.strftime('%Y%m%d')}_F_0000.csv").exists():
+                extra.append(d)
+            d += timedelta(days=1)
+        sessions = sorted(sessions + extra)
+    for d in sessions:
+        bhav, market_row = _fetch_full_bhav(d, cache_dir)
+        if market_row:
+            market_rows.append(market_row)
         if not bhav:
             continue  # holiday or unavailable
         metrics, rolling = daily_breadth_metrics(d.isoformat(), bhav, rolling, symbol_filter=nse_filter)
@@ -164,7 +203,7 @@ def main() -> int:
     out_doc = {
         "generated_at": datetime.now(g.IST).isoformat(),
         "rolling_date": metrics_history[-1]["date"],
-        "source": "BACKFILL",
+        "source": "BACKFILL-NSE" if cache_dir or market_rows else "BACKFILL",
         "const": const,
         "out_scale": out_scale,
         "out_offset": out_offset,
@@ -177,6 +216,17 @@ def main() -> int:
     }
     g.XP_HISTORY_PATH.write_text(json.dumps(out_doc, separators=(",", ":")), encoding="utf-8")
     g.XP_ROLLING_PATH.write_text(json.dumps(rolling, separators=(",", ":")), encoding="utf-8")
+
+    if market_rows:
+        market_path = g.DATA_DIR / nse_breadth.HISTORY_FILENAME
+        market_doc = {
+            "generated_at": datetime.now(g.IST).isoformat(),
+            "universe": nse_breadth.UNIVERSE_LABEL,
+            "source": "NSE bhavcopy",
+            "days": nse_breadth.merge_days([], market_rows),
+        }
+        market_path.write_text(json.dumps(market_doc, separators=(",", ":")), encoding="utf-8")
+        logger.info("Wrote %s (%s sessions)", market_path.name, len(market_doc["days"]))
 
     live = [r for r in series if not r["warmup"]]
     logger.info(

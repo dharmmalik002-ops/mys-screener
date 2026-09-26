@@ -282,6 +282,12 @@
   align-items: center;
 }
 
+.homepro-card-sub {
+  font-size: var(--fs-tiny, 11px);
+  color: var(--hp-muted, var(--text-muted));
+  white-space: nowrap;
+}
+
 .homepro-card h3 {
   font-size: var(--fs-small);
   font-weight: 500;

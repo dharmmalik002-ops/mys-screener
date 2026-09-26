@@ -1069,6 +1069,9 @@ export function HomePanel({
   const breadthToday = dashboard?.breadth_today ?? null;
   const breadthHistory = dashboard?.breadth_history ?? [];
   const breadthTotal = breadthToday?.total ?? 0;
+  // Exchange counts cover every NSE mainboard stock; the fallback counts the
+  // scan universe, so the label says which one is on screen.
+  const breadthUniverseShort = breadthToday?.universe ? "NSE stocks" : "traded";
   const advances = breadthToday?.advances ?? 0;
   const declines = breadthToday?.declines ?? 0;
   const unchanged = breadthToday?.unchanged ?? 0;
@@ -1193,7 +1196,7 @@ export function HomePanel({
           <MeterCard
             title="Advancing"
             value={advances.toLocaleString("en-IN")}
-            footLeft={`Of ${breadthTotal.toLocaleString("en-IN")} traded`}
+            footLeft={`Of ${breadthTotal.toLocaleString("en-IN")} ${breadthUniverseShort}`}
             footRight={`${advances}/${breadthTotal}`}
             pct={advPct}
             color="var(--viz-green)"
@@ -1201,7 +1204,7 @@ export function HomePanel({
           <MeterCard
             title="Declining"
             value={declines.toLocaleString("en-IN")}
-            footLeft={`Of ${breadthTotal.toLocaleString("en-IN")} traded`}
+            footLeft={`Of ${breadthTotal.toLocaleString("en-IN")} ${breadthUniverseShort}`}
             footRight={`${declines}/${breadthTotal}`}
             pct={breadthTotal > 0 ? (declines / breadthTotal) * 100 : 0}
             color="var(--viz-pink)"
@@ -1347,6 +1350,11 @@ export function HomePanel({
         <div className="homepro-card">
           <div className="homepro-card-head">
             <h3>Market Breadth</h3>
+            {breadthToday?.universe ? (
+              <span className="homepro-card-sub" title="Counted from NSE's official end-of-day bhavcopy: EQ, BE and BZ series shares. ETFs, SME, bonds and REIT/InvIT units excluded.">
+                {breadthToday.universe} · NSE bhavcopy
+              </span>
+            ) : null}
           </div>
           <div className="homepro-breadth-body">
             <DistributionBars

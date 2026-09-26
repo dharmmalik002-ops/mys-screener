@@ -141,6 +141,11 @@ jobs:
           if [ -f backend/data/breadth_mcap_history.json ]; then
             git add backend/data/breadth_mcap_history.json || true
           fi
+          # Whole-market advance/decline counts from NSE's own bhavcopy — the
+          # Home page's Market Breadth card and its 10-session chart.
+          if [ -f backend/data/nse_breadth_history.json ]; then
+            git add backend/data/nse_breadth_history.json || true
+          fi
           # Rolling authoritative EOD bars (one small dated file per session +
           # manifest) the backend uses to fill any recent candle Yahoo drops.
           # -A picks up newly added AND pruned (removed) session files.

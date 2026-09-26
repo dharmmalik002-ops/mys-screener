@@ -758,6 +758,9 @@ class BreadthDayCounts(BaseModel):
     declines: int
     unchanged: int
     total: int
+    # Which stocks were counted, e.g. "All NSE mainboard stocks". None on the
+    # snapshot fallback, which counts the scan universe instead.
+    universe: str | None = None
 
 
 class XpBreadthPoint(BaseModel):

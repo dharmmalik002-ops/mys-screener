@@ -411,6 +411,16 @@ def _fetch_from_yfinance(trade_date: date, extra_tickers: list[str] | None = Non
         sub = sub.dropna(subset=["Close"])
         if sub.empty:
             return None
+        # The newest bar must BE the target session. On a holiday (or a day
+        # Yahoo has not printed yet) the newest bar is the previous session,
+        # and returning it stamped the prior close under a date the market
+        # never traded — 2026-09-14 (Ganesh Chaturthi) got Friday's prices,
+        # and a breadth row, that way.
+        try:
+            if sub.index[-1].date() != trade_date:
+                return None
+        except AttributeError:
+            pass
         latest = sub.iloc[-1]
         c = float(latest.get("Close") or 0)
         if c <= 0:
@@ -1799,6 +1809,54 @@ def update_price_band_changes(target: date, *, days_back: int = BAND_CHANGES_RES
         logger.warning("price-band-changes update failed: %s", exc)
 
 
+def _update_exchange_breadth(trade_date: date) -> bool:
+    """Market breadth from NSE's own bhavcopy — the XP inputs and the Home
+    page's whole-market advance/decline row. Returns True when NSE published
+    a file for the session and both were written from it.
+
+    NSE is the authoritative print for NSE stocks and carries the exchange's
+    own previous close. The price patch below prefers yfinance closes, but
+    breadth must not: Yahoo drops sessions, and a dropped session makes the
+    "previous close" two sessions old, so a two-day move is counted as one
+    (2026-09-18 read 230 stocks up 4.5% against NSE's 162). A holiday has no
+    NSE file, so this can never write a row for a day the market was shut.
+    """
+    from app.services import nse_breadth
+
+    csv_text = _fetch_bhavcopy_csv(trade_date)
+    if not csv_text:
+        logger.info("Exchange breadth: no NSE bhavcopy for %s; breadth falls back to BSE", trade_date)
+        return False
+    rows = nse_breadth.parse_rows(csv_text)
+    row = nse_breadth.day_row(trade_date.isoformat(), rows)
+    if row is None:
+        logger.warning("Exchange breadth: NSE bhavcopy for %s had no usable mainboard rows", trade_date)
+        return False
+
+    path = DATA_DIR / nse_breadth.HISTORY_FILENAME
+    existing: dict = {}
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                existing = loaded
+        except ValueError:
+            existing = {}
+    doc = {
+        "generated_at": datetime.now(IST).isoformat(),
+        "universe": nse_breadth.UNIVERSE_LABEL,
+        "source": "NSE bhavcopy",
+        "days": nse_breadth.merge_days(existing.get("days") or [], [row]),
+    }
+    path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+    logger.info(
+        "Exchange breadth %s: %s up / %s down / %s unchanged of %s NSE mainboard stocks",
+        row["date"], row["advances"], row["declines"], row["unchanged"], row["total"],
+    )
+    _update_xp_breadth(trade_date, nse_breadth.xp_input(rows), "NSE")
+    return True
+
+
 def main() -> int:
     # Maintain the rolling authoritative EOD-bars store (last 12 sessions) that
     # the backend uses to fill any recent candle Yahoo drops from its chart
@@ -1849,6 +1907,13 @@ def main() -> int:
     # fixed band). Same failure-isolation as above.
     update_price_bands(target)
 
+    # Breadth first, from the exchange, before any phase can return early.
+    exchange_breadth = False
+    try:
+        exchange_breadth = _update_exchange_breadth(target)
+    except Exception as exc:  # breadth must never block the price patch
+        logger.warning("Exchange breadth failed for %s (%s); falling back to BSE", target, exc)
+
     # --- Phase 1: BSE bhavcopy (no geo-blocking, available ~4:24 PM IST) merged with yfinance NSE bars. ---
     # The universe is NSE-keyed (.NS), so yfinance .NS data IS the authoritative
     # NSE feed and is preferred over BSE-segment OHLC for any symbol it covers.
@@ -1865,10 +1930,11 @@ def main() -> int:
         # breadth is behind can't freeze the XP score. _update_xp_breadth is
         # idempotent on date, so recomputing an already-stored day is harmless.
         merged = _merge_bse_with_yfinance(bse_symbols, target, extra_tickers=extra_yf_tickers)
-        breadth_src = dict(bse_symbols)
-        if merged:
-            breadth_src.update(merged)
-        _update_xp_breadth(target, breadth_src, "YF+BSE")
+        # Breadth reads BSE's own file (its PREVCLOSE is the exchange's) and
+        # never the yfinance overlay — see _update_exchange_breadth. Only
+        # needed when NSE's file was unavailable.
+        if not exchange_breadth:
+            _update_xp_breadth(target, bse_symbols, "BSE")
         if _patch_already_current(target):
             logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", target.isoformat(), len(bse_symbols))
             return 0
@@ -1889,7 +1955,8 @@ def main() -> int:
         if symbols:
             symbols = {s: r for s, r in symbols.items() if _is_record_sane(r, sym=s)}
             if symbols:
-                _update_xp_breadth(target, symbols, "NSE")
+                if not exchange_breadth:
+                    _update_xp_breadth(target, symbols, "NSE")
                 if _patch_already_current(target):
                     logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", target.isoformat(), len(symbols))
                     return 0
@@ -1907,7 +1974,8 @@ def main() -> int:
             # unavailable the yfinance fallback MUST still advance the XP breadth
             # series — otherwise a BSE outage silently freezes the dashboard's
             # breadth score (this is exactly what stranded breadth at 2026-06-02).
-            _update_xp_breadth(target, yf_symbols, "YFINANCE")
+            if not exchange_breadth:
+                _update_xp_breadth(target, yf_symbols, "YFINANCE")
             if _patch_already_current(target):
                 logger.info("Price patch already current for %s. Breadth refreshed; no price update needed.", target.isoformat())
                 return 0

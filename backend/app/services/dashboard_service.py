@@ -1099,11 +1099,43 @@ class DashboardService:
         days: int = 10,
     ) -> list[BreadthDayCounts]:
         cached = self._breadth_history_cache
-        if cached is not None and cached[0] >= snapshot_updated_at and len(cached[1]) >= days:
+        if cached is not None and cached[0] >= snapshot_updated_at:
             return cached[1][-days:]
         history = self._breadth_history_from_chart_cache(snapshots, days=days)
+        # A session counted off a sliver of the universe is a reading of that
+        # sliver, not of the market (the Space's cache once held 4 symbols).
+        floor = max(1, int(len(snapshots) * 0.8))
+        history = [row for row in history if row.total >= floor]
         self._breadth_history_cache = (snapshot_updated_at, history)
         return history
+
+    def _load_exchange_breadth(self, days: int = 10) -> list[BreadthDayCounts]:
+        """Whole-market advance/decline rows from NSE's bhavcopy (newest last),
+        written by the daily bhavcopy job. Empty when the file is absent, which
+        sends the caller to the snapshot fallback."""
+        from app.services import nse_breadth
+
+        doc = self._read_json_dict(self._legacy_data_dir() / nse_breadth.HISTORY_FILENAME)
+        rows = doc.get("days") if isinstance(doc, dict) else None
+        if not isinstance(rows, list):
+            return []
+        universe = str(doc.get("universe") or nse_breadth.UNIVERSE_LABEL)
+        out: list[BreadthDayCounts] = []
+        for row in rows[-days:]:
+            try:
+                out.append(
+                    BreadthDayCounts(
+                        date=str(row["date"]),
+                        advances=int(row["advances"]),
+                        declines=int(row["declines"]),
+                        unchanged=int(row["unchanged"]),
+                        total=int(row["total"]),
+                        universe=universe,
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+        return out
 
     def _load_xp_breadth(self, history_days: int = 450) -> XpBreadthScore | None:
         """Load the precomputed XP market breadth score (written by the daily
@@ -1278,10 +1310,20 @@ class DashboardService:
                 )
             )
 
-        breadth_today = self._breadth_today_from_snapshots(scan_snapshots)
-        breadth_history = await asyncio.to_thread(
-            self._breadth_history_cached, scan_snapshots, snapshot_updated_at, 10
-        )
+        # The exchange's own counts when the daily job has published them; the
+        # scan snapshots only as a fallback, and then without a history — the
+        # per-stock chart cache it used to be built from is gitignored and held
+        # four symbols on the Space, which the 10-session chart then plotted as
+        # if it were the market.
+        exchange_breadth = await asyncio.to_thread(self._load_exchange_breadth, 10)
+        if exchange_breadth:
+            breadth_today = exchange_breadth[-1]
+            breadth_history = exchange_breadth
+        else:
+            breadth_today = self._breadth_today_from_snapshots(scan_snapshots)
+            breadth_history = await asyncio.to_thread(
+                self._breadth_history_cached, scan_snapshots, snapshot_updated_at, 10
+            )
         xp_breadth = await asyncio.to_thread(self._load_xp_breadth)
 
         response = DashboardResponse(

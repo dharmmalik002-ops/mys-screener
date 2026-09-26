@@ -79,6 +79,8 @@ export type BreadthDayCounts = {
   declines: number;
   unchanged: number;
   total: number;
+  /** Which stocks were counted, e.g. "All NSE mainboard stocks". */
+  universe?: string | null;
 };
 
 export type XpBreadthPoint = {
@@ -1278,6 +1280,7 @@ function normalizeBreadthDayCounts(value: unknown): BreadthDayCounts | null {
     declines: readNumber(value.declines),
     unchanged: readNumber(value.unchanged),
     total: readNumber(value.total),
+    universe: typeof value.universe === "string" ? value.universe : null,
   };
 }
 

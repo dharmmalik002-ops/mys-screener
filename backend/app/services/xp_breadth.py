@@ -41,6 +41,10 @@ W_DECLINERS = -0.067
 W_MA20 = -0.077
 
 ADVANCER_PCT_THRESHOLD = 4.5  # a stock up >= 4.5% on the day counts as a 4.5% advancer
+# Previous-close restatements smaller than this are rounding or a BSE/NSE
+# print difference, not a corporate action. The smallest common action, a
+# 1:10 bonus, restates the close by ~9%.
+SPLIT_RESTATEMENT_TOLERANCE = 0.03
 MA_SHORT = 10
 MA_LONG = 20
 
@@ -119,8 +123,9 @@ def daily_breadth_metrics(
     a symbol's first day simply counts as "below" (warm-up).
 
     ``bhav``     : {symbol: {"c": close, "p": prev_close, ...}} for the day.
-    ``ma_state`` : {symbol: [ema_short, ema_long]} as of the PRIOR day. Not
-                   mutated; an updated copy is returned.
+    ``ma_state`` : {symbol: [ema_short, ema_long, last_close]} as of the PRIOR
+                   day (the 2-float form without last_close is still read).
+                   Not mutated; an updated copy is returned.
 
     Returns (metrics, updated_ma_state) where metrics has keys:
         date, total, advancers_4p5, decliners, ma10_pct, ma20_pct
@@ -156,9 +161,21 @@ def daily_breadth_metrics(
             ema_s = close  # seed on first sight
             ema_l = close
         else:
-            ema_s = alpha_s * close + (1.0 - alpha_s) * float(st[0])
-            ema_l = alpha_l * close + (1.0 - alpha_l) * float(st[1])
-        new_state[sym] = [round(ema_s, 4), round(ema_l, 4)]
+            prior_s = float(st[0])
+            prior_l = float(st[1])
+            # Corporate actions: the exchange restates the previous close on
+            # the ex-date (a 1:2 split halves it), but the stored EMAs are in
+            # the old units. Left alone, a split stock reads "below its EMA"
+            # for weeks. Rescale the state by the restatement whenever the
+            # exchange's previous close disagrees with the close we last saw.
+            last_seen = float(st[2]) if len(st) >= 3 and st[2] else 0.0
+            if last_seen > 0 and prev > 0 and abs(prev / last_seen - 1.0) > SPLIT_RESTATEMENT_TOLERANCE:
+                factor = prev / last_seen
+                prior_s *= factor
+                prior_l *= factor
+            ema_s = alpha_s * close + (1.0 - alpha_s) * prior_s
+            ema_l = alpha_l * close + (1.0 - alpha_l) * prior_l
+        new_state[sym] = [round(ema_s, 4), round(ema_l, 4), round(close, 4)]
 
         if close > ema_s:
             above10 += 1
