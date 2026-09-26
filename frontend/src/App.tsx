@@ -740,21 +740,33 @@ function normalizeIndicatorKeys(value: unknown): IndicatorKey[] {
   return indicators.length > 0 ? indicators : ["ema20", "ema50"];
 }
 
-// Pre-2026-07 defaults. Saved preferences pin whatever the defaults were at
-// save time, so without this mapping every existing install would keep the
-// old neon candles forever. A stored value matching an old default is treated
-// as "never customized" and upgraded to the current default.
-const LEGACY_CHART_COLOR_DEFAULTS: Partial<Record<keyof ChartColorSettings, string>> = {
-  candleUp: "#00d2ff",
-  candleDown: "#ff3131",
-  volumeUp: "#00d2ff",
-  volumeDown: "#ff3131",
+// Earlier defaults. Saved preferences pin whatever the defaults were at save
+// time, so without this mapping every existing install would keep the old
+// palette forever. A stored value matching ANY earlier default is treated as
+// "never customized" and upgraded to the current default; a colour the user
+// actually picked is left alone.
+//   pre-2026-07: neon cyan/red candles
+//   pre-2026-09: TradingView #089981/#f23645 candles, neon #39ff14 RS/VWAP,
+//                cyan EMA50 — replaced by the house palette in chartDefaults.
+const LEGACY_CHART_COLOR_DEFAULTS: Partial<Record<keyof ChartColorSettings, string[]>> = {
+  ema10: ["#ff7a59"],
+  ema20: ["#f7b955"],
+  ema50: ["#00d2ff"],
+  ema200: ["#8b949e"],
+  vwap: ["#39ff14"],
+  candleUp: ["#00d2ff", "#089981"],
+  candleDown: ["#ff3131", "#f23645"],
+  candleExpansion: ["#ffb01f"],
+  volumeUp: ["#00d2ff", "#089981"],
+  volumeDown: ["#ff3131", "#f23645"],
+  rsLine: ["#39ff14"],
+  rsMarker: ["#39ff14"],
 };
 
 function migrateChartColor(key: keyof ChartColorSettings, value: unknown): string | null {
   if (typeof value !== "string") return null;
   const legacy = LEGACY_CHART_COLOR_DEFAULTS[key];
-  if (legacy && value.trim().toLowerCase() === legacy) {
+  if (legacy && legacy.includes(value.trim().toLowerCase())) {
     return String(DEFAULT_CHART_COLORS[key]);
   }
   return value;
@@ -766,19 +778,21 @@ function normalizeChartColors(value: unknown): ChartColorSettings {
   }
 
   const candidate = value as Partial<Record<keyof ChartColorSettings, unknown>>;
+  const color = (key: Exclude<keyof ChartColorSettings, "rsMarkerSize">) =>
+    migrateChartColor(key, candidate[key]) ?? String(DEFAULT_CHART_COLORS[key]);
   return {
-    ema10: typeof candidate.ema10 === "string" ? candidate.ema10 : DEFAULT_CHART_COLORS.ema10,
-    ema20: typeof candidate.ema20 === "string" ? candidate.ema20 : DEFAULT_CHART_COLORS.ema20,
-    ema50: typeof candidate.ema50 === "string" ? candidate.ema50 : DEFAULT_CHART_COLORS.ema50,
-    ema200: typeof candidate.ema200 === "string" ? candidate.ema200 : DEFAULT_CHART_COLORS.ema200,
-    vwap: typeof candidate.vwap === "string" ? candidate.vwap : DEFAULT_CHART_COLORS.vwap,
-    candleUp: migrateChartColor("candleUp", candidate.candleUp) ?? DEFAULT_CHART_COLORS.candleUp,
-    candleDown: migrateChartColor("candleDown", candidate.candleDown) ?? DEFAULT_CHART_COLORS.candleDown,
-    candleExpansion: typeof candidate.candleExpansion === "string" ? candidate.candleExpansion : DEFAULT_CHART_COLORS.candleExpansion,
-    volumeUp: migrateChartColor("volumeUp", candidate.volumeUp) ?? DEFAULT_CHART_COLORS.volumeUp,
-    volumeDown: migrateChartColor("volumeDown", candidate.volumeDown) ?? DEFAULT_CHART_COLORS.volumeDown,
-    rsLine: typeof candidate.rsLine === "string" ? candidate.rsLine : DEFAULT_CHART_COLORS.rsLine,
-    rsMarker: typeof candidate.rsMarker === "string" ? candidate.rsMarker : DEFAULT_CHART_COLORS.rsMarker,
+    ema10: color("ema10"),
+    ema20: color("ema20"),
+    ema50: color("ema50"),
+    ema200: color("ema200"),
+    vwap: color("vwap"),
+    candleUp: color("candleUp"),
+    candleDown: color("candleDown"),
+    candleExpansion: color("candleExpansion"),
+    volumeUp: color("volumeUp"),
+    volumeDown: color("volumeDown"),
+    rsLine: color("rsLine"),
+    rsMarker: color("rsMarker"),
     rsMarkerSize:
       typeof candidate.rsMarkerSize === "number" && Number.isFinite(candidate.rsMarkerSize)
         ? Math.min(8, Math.max(0.5, Number(candidate.rsMarkerSize.toFixed(1))))
@@ -5798,27 +5812,32 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       <header className="top-nav">
         <div className="brand-stack">
           <div className="brand-cluster">
-            <div className="brand-mark">MM</div>
+            <div className="brand-mark" aria-hidden="true">M</div>
             <div>
               <p className="eyebrow">{brandEyebrow}</p>
-              <h1>Mr. Malik Scanner</h1>
+              <h1>
+                Mr. Malik <span className="brand-accent">Scanner</span>
+              </h1>
             </div>
           </div>
         </div>
 
         <div className="nav-controls">
-          {NAV_PAGES.map(({ page, label }) => (
-            <button
-              key={page}
-              type="button"
-              className={activePage === page ? "nav-button primary" : "nav-button ghost"}
-              onClick={() => handleNavigate(page)}
-              onMouseEnter={() => prefetchPageModules(page)}
-              onFocus={() => prefetchPageModules(page)}
-            >
-              {label}
-            </button>
-          ))}
+          <nav className="nav-rail" aria-label="Pages">
+            {NAV_PAGES.map(({ page, label }) => (
+              <button
+                key={page}
+                type="button"
+                className={activePage === page ? "nav-button primary" : "nav-button ghost"}
+                aria-current={activePage === page ? "page" : undefined}
+                onClick={() => handleNavigate(page)}
+                onMouseEnter={() => prefetchPageModules(page)}
+                onFocus={() => prefetchPageModules(page)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
 
           <form
             className="nav-search"

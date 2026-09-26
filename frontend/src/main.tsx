@@ -6,6 +6,8 @@ import "./styles/app.css";
 // nav-modern, top-bar-modern) where a rule's winner depended on which file it
 // lived in; they are now merged in that same order inside overrides.css.
 import "./styles/overrides.css";
+// House look: palette, type and chrome. After overrides, before the phone layer.
+import "./styles/premium.css";
 // Phone layer. Lazily-loaded panel CSS is injected AFTER this file, so it
 // cannot rely on load order — every rule inside is `html `-prefixed to win on
 // specificity instead. See the header comment there.
@@ -28,7 +30,7 @@ class RootErrorBoundary extends React.Component<
         <div style={{
           minHeight: "100vh", display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
-          background: "#0c0c1d", color: "#fff", fontFamily: "system-ui",
+          background: "#0a0a0c", color: "#fff", fontFamily: "system-ui",
           padding: "2rem", textAlign: "center",
         }}>
           <div style={{ fontSize: "var(--fs-jumbo)", marginBottom: "1rem" }}>⚠️</div>
@@ -41,7 +43,7 @@ class RootErrorBoundary extends React.Component<
           <button
             onClick={() => window.location.reload()}
             style={{
-              background: "var(--accent, #7c6aff)", color: "#fff", border: "none",
+              background: "var(--accent, #d4af6a)", color: "#17130a", border: "none",
               borderRadius: "8px", padding: "0.6rem 1.4rem", cursor: "pointer", fontSize: "var(--fs-body)",
             }}
           >

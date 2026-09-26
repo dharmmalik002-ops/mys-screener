@@ -64,16 +64,16 @@ function readPalette(node: Element | null): Palette {
   const read = (token: string, fallback: string) =>
     styles.getPropertyValue(token).trim() || fallback;
   return {
-    line: read(PALETTE_TOKENS.line, "#38bdf8"),
-    lineSoft: read(PALETTE_TOKENS.lineSoft, "rgba(56,189,248,0.28)"),
-    lineFaint: read(PALETTE_TOKENS.lineFaint, "rgba(56,189,248,0.01)"),
-    costLine: read(PALETTE_TOKENS.costLine, "rgba(148,163,184,0.55)"),
-    grid: read(PALETTE_TOKENS.grid, "rgba(148,163,184,0.09)"),
-    crosshair: read(PALETTE_TOKENS.crosshair, "rgba(56,189,248,0.5)"),
-    chartBg: read(PALETTE_TOKENS.chartBg, "#0b1120"),
+    line: read(PALETTE_TOKENS.line, "#7fb4d9"),
+    lineSoft: read(PALETTE_TOKENS.lineSoft, "rgba(127,180,217,0.28)"),
+    lineFaint: read(PALETTE_TOKENS.lineFaint, "rgba(127,180,217,0.01)"),
+    costLine: read(PALETTE_TOKENS.costLine, "rgba(163,160,151,0.55)"),
+    grid: read(PALETTE_TOKENS.grid, "rgba(163,160,151,0.09)"),
+    crosshair: read(PALETTE_TOKENS.crosshair, "rgba(127,180,217,0.5)"),
+    chartBg: read(PALETTE_TOKENS.chartBg, "#0e0d0a"),
     up: read(PALETTE_TOKENS.up, POSITIVE),
     down: read(PALETTE_TOKENS.down, NEGATIVE),
-    text: read(PALETTE_TOKENS.text, "#64748b"),
+    text: read(PALETTE_TOKENS.text, "#8b877d"),
     ramp: RAMP_TOKENS.map((token, index) => read(token, `hsl(${200 + index * 12} 80% 55%)`)),
   };
 }
@@ -230,7 +230,7 @@ function ValueChart({
         background: { type: ColorType.Solid, color: "transparent" },
         textColor,
         fontSize: 11,
-        fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
       // "₹21.7L" rather than "2170551" — a seven-digit axis label is the
       // fastest way to make a chart look unfinished.

@@ -35,7 +35,7 @@
   max-width: 120px;
   height: 8px;
   border-radius: var(--radius-pill);
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.12));
   overflow: hidden;
 }
 
@@ -71,7 +71,7 @@
 
 /* ----------------------------------------------------------- shared stocks */
 
-.pov-detail-row > td { padding: 0; background: var(--pfd-panel, rgba(148, 163, 184, 0.04)); }
+.pov-detail-row > td { padding: 0; background: var(--pfd-panel, rgba(163, 160, 151, 0.04)); }
 
 .pov-detail {
   display: flex;
@@ -106,7 +106,7 @@
   text-transform: uppercase;
   text-align: right;
   color: var(--text-muted);
-  border-bottom: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-bottom: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   /* Fund names are long; let the header wrap rather than stretch the table. */
   max-width: 160px;
   overflow-wrap: anywhere;
@@ -121,7 +121,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.pov-shared tbody tr:hover { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.06)); }
+.pov-shared tbody tr:hover { background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.06)); }
 .pov-shared .pov-strong { color: var(--text); font-weight: 600; }
 
 .pov-more, .pov-detail-foot {
@@ -155,7 +155,7 @@
   font-size: var(--fs-micro);
   color: var(--text-soft);
   background: transparent;
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.2));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.2));
   border-radius: var(--radius-pill);
   cursor: pointer;
   white-space: nowrap;

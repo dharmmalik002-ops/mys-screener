@@ -5,9 +5,9 @@
 .groups-panel-pro {
   --gp-bg: transparent;
   --gp-card-bg: #ffffff;
-  --gp-card-bg-soft: #f8fafc;
-  --gp-border: rgba(15, 23, 42, 0.08);
-  --gp-border-strong: rgba(15, 23, 42, 0.14);
+  --gp-card-bg-soft: #faf9f6;
+  --gp-border: rgba(26, 24, 20, 0.08);
+  --gp-border-strong: rgba(26, 24, 20, 0.14);
   --gp-muted: var(--text-muted);
   --gp-text: var(--text);
   --gp-green: var(--positive);
@@ -105,7 +105,7 @@ body.dark .groups-panel-pro {
   display: inline-flex;
   gap: 4px;
   padding: 3px;
-  background: rgba(99, 102, 241, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   border-radius: var(--radius-md);
 }
 
@@ -127,14 +127,14 @@ body.dark .groups-panel-pro {
 
 .gp-pill.active {
   background: #fff;
-  color: #4338ca;
+  color: var(--accent-strong);
   box-shadow: var(--elev-1);
 }
 
 :root[data-theme="dark"] .gp-pill.active,
 :root.dark .gp-pill.active,
 body.dark .gp-pill.active {
-  background: rgba(99, 102, 241, 0.5);
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
   color: #fff;
 }
 
@@ -229,7 +229,7 @@ body.dark .gp-pill.active {
 .gp-kpi-total::before { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), transparent 60%); }
 .gp-kpi-top::before { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent 60%); }
 .gp-kpi-low::before { background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent 60%); }
-.gp-kpi-avg::before { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent 60%); }
+.gp-kpi-avg::before { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%); }
 .gp-kpi-adv::before { background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 60%); }
 
 .gp-kpi:hover {
@@ -377,34 +377,34 @@ body.dark .gp-pill.active {
 }
 
 .gp-treemap-cell:hover rect {
-  stroke: rgba(15, 23, 42, 0.4);
+  stroke: rgba(26, 24, 20, 0.4);
   stroke-width: 2;
 }
 
 .gp-treemap-label {
   font-size: var(--fs-tiny);
   font-weight: 700;
-  fill: #0f172a;
+  fill: #1a1814;
   pointer-events: none;
 }
 
 .gp-treemap-pct {
   font-size: var(--fs-micro);
   font-weight: 600;
-  fill: rgba(15, 23, 42, 0.7);
+  fill: rgba(26, 24, 20, 0.7);
   pointer-events: none;
 }
 
 :root[data-theme="dark"] .gp-treemap-label,
 :root.dark .gp-treemap-label,
 body.dark .gp-treemap-label {
-  fill: #f1f5f9;
+  fill: #f3f1ec;
 }
 
 :root[data-theme="dark"] .gp-treemap-pct,
 :root.dark .gp-treemap-pct,
 body.dark .gp-treemap-pct {
-  fill: rgba(241, 245, 249, 0.8);
+  fill: rgba(243, 241, 236, 0.8);
 }
 
 .gp-treemap-legend {
@@ -572,8 +572,8 @@ body.dark .gp-treemap-pct {
 }
 
 .gp-rank-silver {
-  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
-  color: #1f2937;
+  background: linear-gradient(135deg, #e8e5de, #a3a097);
+  color: #26241f;
   font-size: var(--fs-title);
   box-shadow: 0 4px 10px rgba(156, 163, 175, 0.25);
 }
@@ -661,8 +661,8 @@ body.dark .gp-treemap-pct {
   display: inline-block;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(99, 102, 241, 0.15));
-  color: #4338ca;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), color-mix(in srgb, var(--accent) 15%, transparent));
+  color: var(--accent-strong);
   font-weight: 700;
   font-size: var(--fs-small);
 }
@@ -751,8 +751,8 @@ body.dark .gp-emerging {
 }
 
 .gp-stock-chip:hover {
-  background: rgba(99, 102, 241, 0.08);
-  border-color: rgba(99, 102, 241, 0.3);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .gp-stock-chip.active {

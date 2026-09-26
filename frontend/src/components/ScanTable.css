@@ -5,9 +5,9 @@
 .st-card {
   --st-primary: var(--accent);
   --st-primary-strong: var(--accent-strong);
-  --st-bg: #f9fafb;
+  --st-bg: #fbfaf7;
   --st-surface: #ffffff;
-  --st-border: #e5e7eb;
+  --st-border: #e8e5de;
   --st-text: var(--text);
   --st-text-soft: var(--text-soft);
   --st-pos: var(--positive);
@@ -145,12 +145,12 @@
 }
 
 .st-pop-item:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   color: var(--st-primary, var(--accent));
 }
 
 .st-pop-item.is-active {
-  background: rgba(99, 102, 241, 0.14);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--st-primary-strong, var(--accent-strong));
   font-weight: 600;
 }
@@ -441,8 +441,8 @@
 
 /* ----- Active row ----- */
 .st-card .scan-row.st-row.active {
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(99, 102, 241, 0.06);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   box-shadow: inset 3px 0 0 var(--st-primary, var(--accent));
 }
 
@@ -454,7 +454,7 @@
 
 :root[data-theme="dark"] .st-card .scan-row.st-row:hover,
 .theme-dark .st-card .scan-row.st-row:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 

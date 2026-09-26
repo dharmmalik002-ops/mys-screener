@@ -1717,7 +1717,7 @@
 :root[data-theme="light"] .tj-textarea,
 :root[data-theme="light"] .tj-equity-input {
   background: #fff;
-  border-color: #cbd5e1;
+  border-color: #d6d2c8;
 }
 :root[data-theme="light"] .tj-input:focus,
 :root[data-theme="light"] .tj-select:focus,
@@ -1731,18 +1731,18 @@
   box-shadow: var(--elev-3);
 }
 :root[data-theme="light"] .tj-cloud-badge {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: #f3f1ec;
+  border-color: #d6d2c8;
 }
 :root[data-theme="light"] .tj-table th {
-  background: #f1f5f9;
-  color: #475569;
+  background: #f3f1ec;
+  color: #57534a;
 }
 :root[data-theme="light"] .tj-table tbody tr:hover td {
-  background: #f8fafc;
+  background: #faf9f6;
 }
 :root[data-theme="light"] .tj-table td {
-  border-bottom-color: #e2e8f0;
+  border-bottom-color: #e7e3da;
 }
 :root[data-theme="light"] .tj-kcard {
   background: #fff;
@@ -1751,30 +1751,30 @@
   background: #fff;
 }
 :root[data-theme="light"] .tj-kcol {
-  background: #f8fafc;
+  background: #faf9f6;
 }
 :root[data-theme="light"] .tj-kpi {
   background: #fff;
 }
 :root[data-theme="light"] .tj-sizer-box {
-  background: #f1f5f9;
+  background: #f3f1ec;
 }
 :root[data-theme="light"] .tj-news-card {
   background: #fff;
 }
 :root[data-theme="light"] .tj-chip {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: #f3f1ec;
+  border-color: #d6d2c8;
 }
 :root[data-theme="light"] .tj-kcard-setup,
 :root[data-theme="light"] .tj-kcard-qty,
 :root[data-theme="light"] .tj-kcol-badge {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
+  background: #f3f1ec;
+  border-color: #e7e3da;
 }
 :root[data-theme="light"] .tj-action-btn.ghost {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: #f3f1ec;
+  border-color: #d6d2c8;
 }
 
 /* ============================================================================
@@ -2387,11 +2387,11 @@
 }
 
 :root[data-theme="light"] .tj-root .tj-dow-cell {
-  background: #f8fafc;
+  background: #faf9f6;
 }
 
 :root[data-theme="light"] .tj-root .tj-setup-bar-track {
-  background: #f1f5f9;
+  background: #f3f1ec;
 }
 
 :root[data-theme="light"] .tj-root .tj-board-row:hover {

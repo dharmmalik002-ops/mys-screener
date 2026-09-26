@@ -1,3 +1,5 @@
+import { regimeColor } from "./marketColors";
+
 export type ScanDescriptor = {
   id: string;
   name: string;
@@ -1244,7 +1246,7 @@ function normalizeXpBreadthScore(value: unknown): XpBreadthScore | null {
     date,
     xp_score: readNumber(value.xp_score),
     regime: readString(value.regime),
-    regime_color: readString(value.regime_color, "#888888"),
+    regime_color: regimeColor(readString(value.regime), readString(value.regime_color, "#888888")),
     universe: value.universe == null ? null : readString(value.universe),
     history: mapArray(value.history, (item) => {
       const raw = isRecord(item) ? item : {};
@@ -1252,7 +1254,7 @@ function normalizeXpBreadthScore(value: unknown): XpBreadthScore | null {
         date: readString(raw.date),
         xp_score: readNumber(raw.xp_score),
         regime: readString(raw.regime),
-        regime_color: readString(raw.regime_color, "#888888"),
+        regime_color: regimeColor(readString(raw.regime), readString(raw.regime_color, "#888888")),
         warmup: raw.warmup === true,
       } as XpBreadthPoint;
     }).filter((item) => item.date !== ""),
@@ -1260,7 +1262,7 @@ function normalizeXpBreadthScore(value: unknown): XpBreadthScore | null {
       const raw = isRecord(item) ? item : {};
       return {
         label: readString(raw.label),
-        color: readString(raw.color, "#888888"),
+        color: regimeColor(readString(raw.label), readString(raw.color, "#888888")),
         min: raw.min == null ? null : readNumber(raw.min),
         max: raw.max == null ? null : readNumber(raw.max),
       } as XpRegimeBand;

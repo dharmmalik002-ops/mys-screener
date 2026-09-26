@@ -3,8 +3,8 @@
   flex-direction: column;
   gap: 10px;
   padding: 14px 16px;
-  background: rgba(148, 163, 184, 0.035);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(163, 160, 151, 0.035);
+  border: 1px solid rgba(163, 160, 151, 0.14);
   border-radius: var(--radius-lg);
 }
 
@@ -26,16 +26,16 @@
   transition: all 140ms ease;
 }
 
-.pfs-modes button:hover { color: var(--text-soft); background: rgba(148, 163, 184, 0.08); }
-.pfs-modes button.is-active { color: #0b1120; background: #38bdf8; }
+.pfs-modes button:hover { color: var(--text-soft); background: rgba(163, 160, 151, 0.08); }
+.pfs-modes button.is-active { color: #0e0d0a; background: var(--accent-3); }
 
 .pfs-search {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 7px 11px;
-  background: rgba(148, 163, 184, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(163, 160, 151, 0.06);
+  border: 1px solid rgba(163, 160, 151, 0.16);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
@@ -75,7 +75,7 @@
   transition: background 140ms ease;
 }
 
-.pfs-results li:hover { background: rgba(148, 163, 184, 0.07); }
+.pfs-results li:hover { background: rgba(163, 160, 151, 0.07); }
 
 .pfs-result-name {
   display: flex;
@@ -93,7 +93,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(163, 160, 151, 0.2);
   border-radius: var(--radius-pill);
   cursor: help;
 }
@@ -107,16 +107,16 @@
   font-size: var(--fs-micro);
   font-weight: 600;
   font-family: inherit;
-  color: #38bdf8;
+  color: var(--accent-3);
   background: none;
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  border: 1px solid color-mix(in srgb, var(--accent-3) 40%, transparent);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 140ms ease;
 }
 
-.pfs-add:hover:not(:disabled) { background: rgba(56, 189, 248, 0.14); }
-.pfs-add:disabled { color: var(--text-muted); border-color: rgba(148, 163, 184, 0.2); cursor: default; }
+.pfs-add:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-3) 14%, transparent); }
+.pfs-add:disabled { color: var(--text-muted); border-color: rgba(163, 160, 151, 0.2); cursor: default; }
 
 .pfs-empty, .pfs-hint, .pfs-note {
   margin: 0;
@@ -126,7 +126,7 @@
   color: var(--text-muted);
 }
 
-.pfs-note { color: #38bdf8; }
+.pfs-note { color: var(--accent-3); }
 
 .pfs-drop {
   position: relative;
@@ -137,12 +137,12 @@
   padding: 26px 18px;
   text-align: center;
   color: var(--text-muted);
-  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border: 1px dashed rgba(163, 160, 151, 0.3);
   border-radius: var(--radius-md);
   transition: border-color 140ms ease, background 140ms ease;
 }
 
-.pfs-drop:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 189, 248, 0.04); }
+.pfs-drop:hover { border-color: color-mix(in srgb, var(--accent-3) 50%, transparent); background: color-mix(in srgb, var(--accent-3) 4%, transparent); }
 
 .pfs-drop input {
   position: absolute;

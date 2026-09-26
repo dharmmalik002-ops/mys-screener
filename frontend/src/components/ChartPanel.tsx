@@ -458,32 +458,34 @@ const CHART_PALETTES: Record<
   }
 > = {
   current: {
-    label: "Current",
-    background: "#0d1117",
-    textColor: "#8b949e",
-    gridColor: "rgba(0, 210, 255, 0.07)",
-    crosshairColor: "rgba(0, 210, 255, 0.22)",
-    borderColor: "rgba(48, 54, 61, 0.95)",
+    // House dark canvas: warm obsidian, a whisper of grid, gold crosshair.
+    label: "Obsidian",
+    background: "#0f1013",
+    textColor: "#8b877d",
+    gridColor: "rgba(255, 255, 255, 0.035)",
+    crosshairColor: "rgba(212, 175, 106, 0.45)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     upColor: CANDLE_UP,
     downColor: CANDLE_DOWN,
-    volumeUpColor: "rgba(8, 153, 129, 0.38)",
-    volumeDownColor: "rgba(242, 54, 69, 0.35)",
-    rsLineColor: "#39ff14",
-    rsMarkerColor: "#39ff14",
+    volumeUpColor: "rgba(34, 171, 148, 0.34)",
+    volumeDownColor: "rgba(247, 82, 95, 0.32)",
+    rsLineColor: "#c3a6ec",
+    rsMarkerColor: "#c3a6ec",
   },
   editorial: {
-    label: "Editorial",
-    background: "#fcfbff",
-    textColor: "#48536a",
-    gridColor: "rgba(117, 83, 201, 0.08)",
-    crosshairColor: "rgba(117, 83, 201, 0.25)",
-    borderColor: "rgba(154, 132, 202, 0.48)",
-    upColor: "#7b61ff",
-    downColor: "#ff6b6b",
-    volumeUpColor: "rgba(123, 97, 255, 0.28)",
-    volumeDownColor: "rgba(255, 107, 107, 0.25)",
-    rsLineColor: "#00a6a6",
-    rsMarkerColor: "#8f2dff",
+    // Ivory paper for print-like reading in daylight.
+    label: "Ivory",
+    background: "#fbfaf7",
+    textColor: "#57534a",
+    gridColor: "rgba(40, 33, 20, 0.05)",
+    crosshairColor: "rgba(134, 100, 31, 0.45)",
+    borderColor: "rgba(40, 33, 20, 0.14)",
+    upColor: "#1d7a63",
+    downColor: "#c2453d",
+    volumeUpColor: "rgba(29, 122, 99, 0.26)",
+    volumeDownColor: "rgba(194, 69, 61, 0.24)",
+    rsLineColor: "#6a4fc4",
+    rsMarkerColor: "#6a4fc4",
   },
   mono: {
     // Monochrome pro theme: white canvas, hollow up-candles / solid black
@@ -1030,11 +1032,11 @@ function withOpacity(color: string, opacity: number) {
 // Shared chart chrome. E1 (create) and E2 (re-apply options) both read these,
 // so axis typography and crosshair styling can never drift apart.
 const CHART_FONT_FAMILY =
-  'Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
+  '"Geist Mono", "SF Mono", ui-monospace, Menlo, monospace';
 // One solid neutral for the crosshair axis pills in every palette —
 // lightweight-charts picks the label text colour from its luminance, so this
 // reads correctly on both the dark and the light (Editorial) canvas.
-const CROSSHAIR_LABEL_BG = "#2a2e39";
+const CROSSHAIR_LABEL_BG = "#2a2722";
 
 // How much deeper the wick sits than the candle body (negative = darker).
 const WICK_SHADE = -0.18;
@@ -3046,9 +3048,10 @@ export function ChartPanel({
         fontSize: 11,
       },
       grid: {
-        // Editorial style: plain background, no grid lines in either theme.
+        // A whisper of horizontal grid (price levels) and no vertical lines:
+        // enough structure to read a level, never enough to compete with bars.
         vertLines: { visible: false },
-        horzLines: { visible: false },
+        horzLines: { visible: true, color: palette.gridColor, style: LineStyle.Solid },
       },
       crosshair: buildCrosshairOptions(palette.crosshairColor),
       leftPriceScale: {
@@ -3356,6 +3359,10 @@ export function ChartPanel({
         fontFamily: CHART_FONT_FAMILY,
         fontSize: 11,
       },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { visible: true, color: palette.gridColor, style: LineStyle.Solid },
+      },
       crosshair: buildCrosshairOptions(palette.crosshairColor),
       leftPriceScale: { visible: false, borderColor: palette.borderColor },
       rightPriceScale: {
@@ -3399,7 +3406,7 @@ export function ChartPanel({
     volumeSmaSeriesRef.current?.applyOptions({
       color: monoVolume ? "rgba(60, 66, 87, 0.75)" : withOpacity(chartColors.volumeUp, 0.92),
     });
-  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle, chartPalette, isBarStyle, monoVolume]);
+  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle, chartPalette, isBarStyle, monoVolume]);
 
   // ── E3: candle + volume data (incremental, zoom-preserving) ──────────────
   useEffect(() => {

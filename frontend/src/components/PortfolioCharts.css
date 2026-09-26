@@ -7,8 +7,8 @@
   flex-direction: column;
   gap: 8px;
   padding: 14px 16px;
-  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel, rgba(163, 160, 151, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   border-radius: var(--radius-lg);
   min-width: 0;
   /* The box the content must stay inside. Without this a fixed-width legend
@@ -97,7 +97,7 @@
   transition: background 140ms ease;
 }
 
-.pfc-legend li.is-active { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
+.pfc-legend li.is-active { background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.08)); }
 .pfc-legend span, .pfc-legend b, .pfc-legend em {
   min-width: 0;
   overflow: hidden;
@@ -130,7 +130,7 @@
 }
 
 .pfc-diverge li.is-clickable, .pfc-weights li.is-clickable { cursor: pointer; }
-.pfc-diverge li:hover, .pfc-weights li:hover { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
+.pfc-diverge li:hover, .pfc-weights li:hover { background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.08)); }
 
 .pfc-diverge-label, .pfc-weights-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -139,7 +139,7 @@
   display: block;
   height: 8px;
   border-radius: var(--radius-pill);
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.1));
   overflow: hidden;
 }
 
@@ -149,7 +149,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--pfd-hairline, rgba(148, 163, 184, 0.3));
+  background: var(--pfd-hairline, rgba(163, 160, 151, 0.3));
 }
 
 .pfc-fill { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-pill); }
@@ -189,7 +189,7 @@
   height: 12px;
   border-radius: var(--radius-pill);
   overflow: hidden;
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.1));
 }
 
 .pfc-stack > i { display: block; height: 100%; transition: width 220ms ease; }

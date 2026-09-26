@@ -5,9 +5,9 @@
 .sf-root {
   --sf-primary: var(--accent);
   --sf-primary-strong: var(--accent-strong);
-  --sf-bg: #f9fafb;
+  --sf-bg: #fbfaf7;
   --sf-surface: #ffffff;
-  --sf-border: #e5e7eb;
+  --sf-border: #e8e5de;
   --sf-text: var(--text);
   --sf-text-soft: var(--text-soft);
   --sf-pos: var(--positive);
@@ -97,7 +97,7 @@
 }
 
 .sf-icon-indigo {
-  background: rgba(99, 102, 241, 0.14);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--sf-primary);
 }
 .sf-icon-violet {
@@ -207,7 +207,7 @@
 }
 
 .sf-mover:hover {
-  background: rgba(99, 102, 241, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 /* These rows are now clickable. A transparent overlay button covers the row so

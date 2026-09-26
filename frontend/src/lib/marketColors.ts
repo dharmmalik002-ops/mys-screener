@@ -17,10 +17,29 @@
  */
 
 /** Mirrors --positive in styles/app.css. */
-export const POSITIVE = "#22c55e";
+export const POSITIVE = "#34c28a";
 /** Mirrors --negative in styles/app.css. */
-export const NEGATIVE = "#ef4444";
+export const NEGATIVE = "#ef6461";
 /** Mirrors --candle-up in styles/app.css. */
-export const CANDLE_UP = "#089981";
+export const CANDLE_UP = "#22ab94";
 /** Mirrors --candle-down in styles/app.css. */
-export const CANDLE_DOWN = "#f23645";
+export const CANDLE_DOWN = "#f7525f";
+
+/**
+ * House palette for the five XP breadth regimes. The backend ships stock
+ * Open Color hexes (#94d82d lime, #f59f00 orange …) that read as a default
+ * chart library; the UI maps them here, once, at the API boundary, so every
+ * gauge, line, legend and journal marker agrees. Unknown labels keep the
+ * server's colour.
+ */
+const REGIME_PALETTE: Record<string, string> = {
+  "Extremely Strong": "#2fb67f",
+  "Swing-Friendly": "#86c29a",
+  "Progressive Exposure": "#d4af6a",
+  "Choppy / Spurt Only": "#d48850",
+  "Avoid Longs": "#e0605c",
+};
+
+export function regimeColor(label: string, fallback: string): string {
+  return REGIME_PALETTE[label] ?? fallback;
+}

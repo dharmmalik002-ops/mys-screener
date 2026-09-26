@@ -1,3 +1,4 @@
+import { premiumCrosshair } from "../lib/chartDefaults";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorType, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import type { ChartBar } from "../lib/api";
@@ -22,10 +23,10 @@ function smaAt(closes: number[], idx: number, span: number): number | null {
 }
 
 const OVERLAYS = [
-  { key: "ema10", label: "EMA10", color: "#22d3ee" },
-  { key: "ema21", label: "EMA21", color: "#f59e0b" },
-  { key: "ema50", label: "EMA50", color: "#8b5cf6" },
-  { key: "sma200", label: "SMA200", color: "#64748b" },
+  { key: "ema10", label: "EMA10", color: "#7fb4d9" },
+  { key: "ema21", label: "EMA21", color: "#d4af6a" },
+  { key: "ema50", label: "EMA50", color: "#b39ddb" },
+  { key: "sma200", label: "SMA200", color: "#8b877d" },
 ] as const;
 
 type OverlayKey = (typeof OVERLAYS)[number]["key"];
@@ -69,8 +70,8 @@ export function IndexCandleChart({ bars, height = 320 }: { bars: ChartBar[]; hei
     if (!node || computed.clean.length < 2) return;
 
     const styles = getComputedStyle(document.documentElement);
-    const textColor = styles.getPropertyValue("--text-muted").trim() || "#64748b";
-    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(100,140,200,0.15)";
+    const textColor = styles.getPropertyValue("--text-muted").trim() || "#8b877d";
+    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(255, 255, 255, 0.05)";
 
     const chart = createChart(node, {
       height,
@@ -78,15 +79,15 @@ export function IndexCandleChart({ bars, height = 320 }: { bars: ChartBar[]; hei
         background: { type: ColorType.Solid, color: "transparent" },
         textColor,
         fontSize: 11,
-        fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
       grid: {
-        vertLines: { color: lineColor },
+        vertLines: { visible: false },
         horzLines: { color: lineColor },
       },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, rightOffset: 4 },
-      crosshair: { horzLine: { labelVisible: true }, vertLine: { labelVisible: true } },
+      crosshair: premiumCrosshair(),
       autoSize: true,
     });
     chartRef.current = chart;

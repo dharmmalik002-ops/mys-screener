@@ -1,3 +1,4 @@
+import { premiumCrosshair } from "../lib/chartDefaults";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorType, LineStyle, createChart, type IChartApi, type ISeriesApi } from "lightweight-charts";
 import type { MfBenchmarkLine, MfSeriesLine } from "../lib/api";
@@ -27,7 +28,7 @@ import { NEGATIVE, POSITIVE } from "../lib/marketColors";
  * wide was the swing inside the period, not just where it ended.
  */
 
-const COMPARE_COLORS = ["#8b5cf6", "#f59e0b", "#06b6d4", "#ec4899"];
+const COMPARE_COLORS = ["#b39ddb", "#d4af6a", "#4fb3a9", "#d98ba0"];
 
 export type FundNavChartMode = "growth" | "nav" | "candles";
 
@@ -164,7 +165,7 @@ export function FundNavChart({
       out.push({
         key: `bm-${benchmark.key}`,
         label: benchmark.label ?? "Benchmark",
-        color: "#94a3b8",
+        color: "#a3a097",
         dashed: true,
         width: 2,
         points: benchmark.dates
@@ -196,8 +197,8 @@ export function FundNavChart({
     if (!node || (!lines.length && !candles.length)) return;
 
     const styles = getComputedStyle(document.documentElement);
-    const textColor = styles.getPropertyValue("--text-muted").trim() || "#64748b";
-    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(100,140,200,0.15)";
+    const textColor = styles.getPropertyValue("--text-muted").trim() || "#8b877d";
+    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(255, 255, 255, 0.05)";
 
     const chart = createChart(node, {
       height,
@@ -205,12 +206,12 @@ export function FundNavChart({
         background: { type: ColorType.Solid, color: "transparent" },
         textColor,
         fontSize: 11,
-        fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
-      grid: { vertLines: { color: lineColor }, horzLines: { color: lineColor } },
+      grid: { vertLines: { visible: false }, horzLines: { color: lineColor } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: drawdown?.length ? 0.28 : 0.08 } },
       timeScale: { borderVisible: false, rightOffset: 2, fixLeftEdge: true, fixRightEdge: true },
-      crosshair: { horzLine: { labelVisible: true }, vertLine: { labelVisible: true } },
+      crosshair: premiumCrosshair(),
       handleScale: { axisPressedMouseMove: { time: true, price: false } },
       autoSize: true,
     });
@@ -299,8 +300,8 @@ export function FundNavChart({
         const ribbon = chart.addAreaSeries({
           priceScaleId: "drawdown",
           lineColor: NEGATIVE,
-          topColor: "rgba(239,68,68,0.02)",
-          bottomColor: "rgba(239,68,68,0.28)",
+          topColor: "rgba(239,100,97,0.02)",
+          bottomColor: "rgba(239,100,97,0.28)",
           lineWidth: 1,
           priceLineVisible: false,
           lastValueVisible: false,

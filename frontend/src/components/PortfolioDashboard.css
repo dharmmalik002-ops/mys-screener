@@ -13,27 +13,27 @@
      nothing and silently blanked every chart colour on the dark theme. */
   --pfd-up: var(--positive);
   --pfd-down: var(--negative);
-  --pfd-line: #38bdf8;
-  --pfd-line-soft: rgba(56, 189, 248, 0.28);
-  --pfd-line-faint: rgba(56, 189, 248, 0.01);
-  --pfd-cost-line: rgba(148, 163, 184, 0.55);
-  --pfd-grid: rgba(148, 163, 184, 0.10);
-  --pfd-crosshair: rgba(56, 189, 248, 0.50);
-  --pfd-hairline: rgba(148, 163, 184, 0.15);
-  --pfd-panel: rgba(148, 163, 184, 0.04);
-  --pfd-panel-hover: rgba(148, 163, 184, 0.09);
-  --pfd-chart-bg: #0b1120;
-  --pfd-on-accent: #0b1120;
+  --pfd-line: var(--accent-3);
+  --pfd-line-soft: color-mix(in srgb, var(--accent-3) 28%, transparent);
+  --pfd-line-faint: color-mix(in srgb, var(--accent-3) 1%, transparent);
+  --pfd-cost-line: rgba(163, 160, 151, 0.55);
+  --pfd-grid: rgba(163, 160, 151, 0.10);
+  --pfd-crosshair: color-mix(in srgb, var(--accent-3) 50%, transparent);
+  --pfd-hairline: rgba(163, 160, 151, 0.15);
+  --pfd-panel: rgba(163, 160, 151, 0.04);
+  --pfd-panel-hover: rgba(163, 160, 151, 0.09);
+  --pfd-chart-bg: #0e0d0a;
+  --pfd-on-accent: #0e0d0a;
   --pfd-up-soft: rgba(52, 211, 153, 0.14);
   --pfd-down-soft: rgba(251, 113, 133, 0.13);
 
   /* Categorical ramp: cool hues stepping to violet, mid-tone at both ends so
      it survives either background. */
   --pfd-ramp-1: #7dd3fc;
-  --pfd-ramp-2: #38bdf8;
+  --pfd-ramp-2: var(--accent-3);
   --pfd-ramp-3: #22d3ee;
   --pfd-ramp-4: #2dd4bf;
-  --pfd-ramp-5: #818cf8;
+  --pfd-ramp-5: var(--accent-on-tint);
   --pfd-ramp-6: #a78bfa;
   --pfd-ramp-7: #c084fc;
   --pfd-ramp-8: #e879f9;
@@ -48,17 +48,17 @@
 :root[data-theme="light"] .pfd {
   --pfd-up: var(--positive);
   --pfd-down: var(--negative);
-  --pfd-line: #2563eb;
-  --pfd-line-soft: rgba(37, 99, 235, 0.20);
-  --pfd-line-faint: rgba(37, 99, 235, 0.02);
-  --pfd-cost-line: rgba(71, 85, 105, 0.55);
-  --pfd-grid: rgba(71, 85, 105, 0.14);
-  --pfd-crosshair: rgba(37, 99, 235, 0.55);
-  --pfd-hairline: rgba(71, 85, 105, 0.18);
+  --pfd-line: var(--accent-strong);
+  --pfd-line-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --pfd-line-faint: color-mix(in srgb, var(--accent) 2%, transparent);
+  --pfd-cost-line: rgba(87, 83, 74, 0.55);
+  --pfd-grid: rgba(87, 83, 74, 0.14);
+  --pfd-crosshair: color-mix(in srgb, var(--accent) 55%, transparent);
+  --pfd-hairline: rgba(87, 83, 74, 0.18);
   --pfd-panel: rgba(255, 255, 255, 0.62);
-  --pfd-panel-hover: rgba(71, 85, 105, 0.08);
+  --pfd-panel-hover: rgba(87, 83, 74, 0.08);
   --pfd-chart-bg: #ffffff;
-  --pfd-on-accent: #f8fafc;
+  --pfd-on-accent: #faf9f6;
   --pfd-up-soft: rgba(21, 128, 61, 0.12);
   --pfd-down-soft: rgba(220, 38, 38, 0.10);
 
@@ -67,7 +67,7 @@
   --pfd-ramp-2: #0369a1;
   --pfd-ramp-3: #0e7490;
   --pfd-ramp-4: #0f766e;
-  --pfd-ramp-5: #4338ca;
+  --pfd-ramp-5: var(--accent-strong);
   --pfd-ramp-6: #6d28d9;
   --pfd-ramp-7: #a21caf;
   --pfd-ramp-8: #be185d;

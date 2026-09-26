@@ -5,9 +5,9 @@
 .sd-root {
   --sd-primary: var(--accent);
   --sd-primary-strong: var(--accent-strong);
-  --sd-bg: #f9fafb;
+  --sd-bg: #fbfaf7;
   --sd-surface: #ffffff;
-  --sd-border: #e5e7eb;
+  --sd-border: #e8e5de;
   --sd-text: var(--text);
   --sd-text-soft: var(--text-soft);
   --sd-pos: var(--positive);

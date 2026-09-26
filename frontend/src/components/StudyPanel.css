@@ -41,7 +41,7 @@
 
 .study-hint {
   margin-left: 10px;
-  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--text-soft);
 }
@@ -113,7 +113,7 @@
 }
 
 .study-entry {
-  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.76rem;
   color: var(--text-soft);
 }
@@ -200,7 +200,7 @@
   border-radius: var(--radius-sm);
   background: var(--surface-strong);
   color: var(--text);
-  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
 }
 
@@ -597,7 +597,7 @@
   border: 1px solid var(--line-strong, var(--line));
   border-radius: 3px;
   background: var(--surface-strong);
-  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
 }
 

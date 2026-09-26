@@ -27,10 +27,10 @@ type ScanDashboardProps = {
 type CapBucket = { key: string; label: string; min: number; max: number; color: string };
 
 const CAP_BUCKETS: CapBucket[] = [
-  { key: "mega", label: "Mega", min: 200000, max: Infinity, color: "#6366f1" },
-  { key: "large", label: "Large", min: 50000, max: 200000, color: "#8b5cf6" },
-  { key: "mid", label: "Mid", min: 10000, max: 50000, color: "#ec4899" },
-  { key: "small", label: "Small", min: 1000, max: 10000, color: "#f59e0b" },
+  { key: "mega", label: "Mega", min: 200000, max: Infinity, color: "#d4af6a" },
+  { key: "large", label: "Large", min: 50000, max: 200000, color: "#b39ddb" },
+  { key: "mid", label: "Mid", min: 10000, max: 50000, color: "#d98ba0" },
+  { key: "small", label: "Small", min: 1000, max: 10000, color: "#d4af6a" },
   { key: "micro", label: "Micro", min: 0, max: 1000, color: "var(--positive)" },
 ];
 
@@ -162,7 +162,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
 
   /* Mini donut for "Groups" summary card — top 5 groups + "Other" */
   const groupsDonutData = useMemo(() => {
-    const palette = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "var(--positive)"];
+    const palette = ["#d4af6a", "#b39ddb", "#d98ba0", "#d4af6a", "var(--positive)"];
     const top = groupCounts.slice(0, 5).map((g, i) => ({
       name: g.name,
       value: g.count,
@@ -170,7 +170,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
     }));
     const otherCount = groupCounts.slice(5).reduce((sum, g) => sum + g.count, 0);
     if (otherCount > 0) {
-      top.push({ name: "Other", value: otherCount, color: "#cbd5e1" });
+      top.push({ name: "Other", value: otherCount, color: "#d6d2c8" });
     }
     return top;
   }, [groupCounts]);
@@ -195,7 +195,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
       fullName: g.name,
       count: g.count,
       // Diminishing fill intensity by rank
-      fill: i === 0 ? "#6366f1" : i < 3 ? "#818cf8" : "#a5b4fc",
+      fill: i === 0 ? "#d4af6a" : i < 3 ? "#e6c88c" : "#efdcb2",
     }));
   }, [groupCounts]);
 
@@ -292,7 +292,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                       ]}
                       contentStyle={{
                         background: "#fff",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid #e8e5de",
                         borderRadius: 8,
                         fontSize: "var(--fs-small)",
                       }}
@@ -359,14 +359,14 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: "rgba(99, 102, 241, 0.08)" }}
+                    cursor={{ fill: "rgba(212, 175, 106, 0.08)" }}
                     formatter={(value) => [`${value} stocks`, "Count"]}
                     labelFormatter={(_l, payload) =>
                       (payload?.[0]?.payload as { fullName?: string })?.fullName ?? _l
                     }
                     contentStyle={{
                       background: "#fff",
-                      border: "1px solid #e5e7eb",
+                      border: "1px solid #e8e5de",
                       borderRadius: 8,
                       fontSize: "var(--fs-small)",
                     }}

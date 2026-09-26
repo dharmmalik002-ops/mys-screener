@@ -1,3 +1,4 @@
+import { premiumCrosshair } from "../lib/chartDefaults";
 import { useEffect, useRef } from "react";
 import { ColorType, LineStyle, createChart } from "lightweight-charts";
 import type { MfSectorSeries } from "../lib/api";
@@ -36,8 +37,8 @@ export function SectorChart({
     const styles = getComputedStyle(document.documentElement);
     const read = (token: string, fallback: string) =>
       styles.getPropertyValue(token).trim() || fallback;
-    const textColor = read("--text-muted", "#64748b");
-    const gridColor = read("--line", "rgba(100,140,200,0.15)");
+    const textColor = read("--text-muted", "#8b877d");
+    const gridColor = read("--line", "rgba(255, 255, 255, 0.05)");
     const up = read("--pfd-up", POSITIVE);
     const down = read("--pfd-down", NEGATIVE);
 
@@ -47,12 +48,12 @@ export function SectorChart({
         background: { type: ColorType.Solid, color: "transparent" },
         textColor,
         fontSize: 11,
-        fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
-      grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
+      grid: { vertLines: { visible: false }, horzLines: { color: gridColor } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 } },
       timeScale: { borderVisible: false, rightOffset: 2, fixLeftEdge: true, fixRightEdge: true },
-      crosshair: { horzLine: { labelVisible: true }, vertLine: { labelVisible: true } },
+      crosshair: premiumCrosshair(),
       autoSize: true,
     });
 
@@ -92,9 +93,9 @@ export function SectorChart({
       }
     } else {
       const line = chart.addAreaSeries({
-        lineColor: read("--pfd-line", "#38bdf8"),
-        topColor: read("--pfd-line-soft", "rgba(56,189,248,0.25)"),
-        bottomColor: read("--pfd-line-faint", "rgba(56,189,248,0.01)"),
+        lineColor: read("--pfd-line", "#7fb4d9"),
+        topColor: read("--pfd-line-soft", "rgba(127,180,217,0.25)"),
+        bottomColor: read("--pfd-line-faint", "rgba(127,180,217,0.01)"),
         lineWidth: 2,
         priceLineVisible: false,
         priceFormat: { type: "price", precision: 2, minMove: 0.01 },
@@ -110,7 +111,7 @@ export function SectorChart({
       .filter((point): point is { time: string; value: number } => typeof point.value === "number");
     if (maPoints.length > 5) {
       const ma = chart.addLineSeries({
-        color: read("--pfd-cost-line", "rgba(148,163,184,0.75)"),
+        color: read("--pfd-cost-line", "rgba(163,160,151,0.75)"),
         lineWidth: 2,
         lineStyle: LineStyle.Dashed,
         priceLineVisible: false,

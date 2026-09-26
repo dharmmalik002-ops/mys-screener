@@ -18,8 +18,8 @@
   padding: 12px 14px 26px;
   min-width: 0;
   overflow: hidden;
-  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel, rgba(163, 160, 151, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   /* The tone is carried by one edge rather than a full tint — a wall of red
      cards reads as alarm, which these findings are not. */
   border-left-width: 2px;
@@ -53,7 +53,7 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-soft);
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.1));
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
@@ -129,8 +129,8 @@
   gap: 10px;
   margin-top: 14px;
   padding: 14px 16px;
-  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel, rgba(163, 160, 151, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   border-radius: var(--radius-lg);
   min-width: 0;
   overflow: hidden;
@@ -224,7 +224,7 @@
   display: block;
   height: 10px;
   border-radius: var(--radius-pill);
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.12));
 }
 
 /* The category average. Everything on this chart is read relative to it, so
@@ -235,7 +235,7 @@
   top: -2px;
   bottom: -2px;
   width: 1px;
-  background: var(--pfd-hairline, rgba(148, 163, 184, 0.45));
+  background: var(--pfd-hairline, rgba(163, 160, 151, 0.45));
 }
 
 .pfh-standing-fill {
@@ -302,7 +302,7 @@
   font-size: var(--fs-tiny);
   color: var(--text-soft);
   background: transparent;
-  border: 1px dashed var(--pfd-hairline, rgba(148, 163, 184, 0.3));
+  border: 1px dashed var(--pfd-hairline, rgba(163, 160, 151, 0.3));
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: color 140ms ease, border-color 140ms ease;
@@ -323,8 +323,8 @@
   flex-direction: column;
   gap: 8px;
   padding: 14px 16px;
-  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel, rgba(163, 160, 151, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   border-radius: var(--radius-lg);
 }
 
@@ -362,7 +362,7 @@
 .pfh-ai-cols ul { margin: 0; padding-left: 15px; display: flex; flex-direction: column; gap: 3px; }
 .pfh-ai-cols li { font-size: var(--fs-micro); line-height: 1.6; color: var(--text-muted); }
 
-.pfh-ai-watch { border-top: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14)); padding-top: 8px; }
+.pfh-ai-watch { border-top: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14)); padding-top: 8px; }
 .pfh-ai-watch b { color: var(--text-soft); }
 
 .pfh-disclaimer { margin-top: 12px; }

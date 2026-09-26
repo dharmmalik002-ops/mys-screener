@@ -242,14 +242,14 @@ function formatPrice(value: number, market: MarketKey) {
 
 function sectorAccentColor(label: string): string {
   const palette = [
-    "#5dd6a2",
-    "#58a6ff",
-    "#f7b955",
-    "#ff8a65",
-    "#c792ea",
-    "#5eead4",
-    "#f472b6",
-    "#a3e635",
+    "#86c29a",
+    "#7fb4d9",
+    "#d4af6a",
+    "#d48850",
+    "#b39ddb",
+    "#4fb3a9",
+    "#d98ba0",
+    "#bfb6a3",
   ];
   let hash = 0;
   for (const character of label) {
@@ -412,8 +412,8 @@ function fallbackSparkline(returnPct: number) {
 const VOLUME_TIER_BADGES: Record<string, { code: string; title: string; color: string }> = {
   "Monthly volume high": { code: "HMV", title: "Highest Monthly Volume", color: "var(--negative)" },
   "Quarterly volume high": { code: "HQV", title: "Highest Quarterly Volume", color: "var(--positive)" },
-  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#2563eb" },
-  "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#111827" },
+  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#c29b52" },
+  "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#17150f" },
 };
 
 function formatVolumeDate(value: string | null | undefined): string {
@@ -700,7 +700,7 @@ export function ScanTable({
           key: "gheader:unranked",
           type: "header",
           sector: "Ungrouped",
-          accent: "#94a3b8",
+          accent: "#a3a097",
           summary: undefined,
           subtitle: `${groupBuckets.unranked.length} stock${groupBuckets.unranked.length === 1 ? "" : "s"} without a resolved group`,
           count: groupBuckets.unranked.length,
@@ -1303,8 +1303,8 @@ export function ScanTable({
                 fontSize: "var(--fs-small)",
                 lineHeight: "24px",
                 borderRadius: 6,
-                border: "1px solid var(--border, #2d3340)",
-                background: "var(--input-bg, rgba(13,17,23,0.6))",
+                border: "1px solid var(--border, #2a2722)",
+                background: "var(--input-bg, rgba(14,15,18,0.6))",
                 color: "inherit",
                 width: 200,
                 outline: "none",

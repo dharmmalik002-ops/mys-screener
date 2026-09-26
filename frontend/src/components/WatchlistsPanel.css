@@ -6,9 +6,9 @@
 .wl-card {
   --st-primary: var(--accent);
   --st-primary-strong: var(--accent-strong);
-  --st-bg: #f9fafb;
+  --st-bg: #fbfaf7;
   --st-surface: #ffffff;
-  --st-border: #e5e7eb;
+  --st-border: #e8e5de;
   --st-text: var(--text);
   --st-text-soft: var(--text-soft);
   --st-pos: var(--positive);
@@ -54,8 +54,8 @@
 }
 
 .wl-nav-row.is-active {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: rgba(99, 102, 241, 0.06);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
@@ -222,7 +222,7 @@
   z-index: 1000;
   width: 220px;
   background: #ffffff;
-  color: #111827;
+  color: #17150f;
 }
 
 :root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal,
@@ -232,18 +232,18 @@
      is the palette's opaque raised surface. */
   background: var(--card-flat);
   color: var(--text);
-  border-color: rgba(148, 163, 184, 0.25);
+  border-color: rgba(163, 160, 151, 0.25);
   box-shadow: var(--elev-3);
 }
 
 :root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal .wl-move-item,
 .theme-dark .wl-move-pop.wl-move-pop--portal .wl-move-item {
-  color: #e5e7eb;
+  color: #e8e5de;
 }
 
 :root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal .wl-move-heading,
 .theme-dark .wl-move-pop.wl-move-pop--portal .wl-move-heading {
-  color: #94a3b8;
+  color: #a3a097;
 }
 
 .wl-move-item {
@@ -273,7 +273,7 @@
 }
 
 .wl-move-item:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   color: var(--st-primary, #6366f1);
 }
 
@@ -373,8 +373,8 @@
 }
 
 .wl-card .scan-row.wl-row.active {
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(99, 102, 241, 0.06);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   box-shadow: inset 3px 0 0 var(--st-primary);
 }
 
@@ -385,7 +385,7 @@
 
 :root[data-theme="dark"] .wl-card .scan-row.wl-row:hover,
 .theme-dark .wl-card .scan-row.wl-row:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .wl-row-checkbox {
@@ -546,7 +546,7 @@
 .watchlist-import-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(26, 24, 20, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -570,7 +570,7 @@
 :root[data-theme="dark"] .watchlist-import-modal,
 .theme-dark .watchlist-import-modal {
   background: #11182a;
-  color: #e2e8f0;
+  color: #e7e3da;
 }
 
 .watchlist-import-modal header {
@@ -590,7 +590,7 @@
 }
 
 .watchlist-import-hint code {
-  background: rgba(99, 102, 241, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   padding: 0.1em 0.35em;
   border-radius: var(--radius-xs);
   font-size: var(--fs-small);
@@ -602,7 +602,7 @@
   min-height: 140px;
   padding: 0.6rem 0.7rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  border: 1px solid rgba(163, 160, 151, 0.4);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--fs-base);
   background: rgba(248, 250, 252, 0.7);
@@ -611,7 +611,7 @@
 
 :root[data-theme="dark"] .watchlist-import-modal textarea,
 .theme-dark .watchlist-import-modal textarea {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(26, 24, 20, 0.6);
 }
 
 .watchlist-import-message {
@@ -629,7 +629,7 @@
 }
 
 .watchlist-import-modal .st-btn.primary {
-  background: rgba(99, 102, 241, 1);
+  background: color-mix(in srgb, var(--accent) 100%, transparent);
   color: #fff;
   border-color: transparent;
 }

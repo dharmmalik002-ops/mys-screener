@@ -5,9 +5,9 @@
 .sh-root {
   --sh-primary: var(--accent);
   --sh-primary-strong: var(--accent-strong);
-  --sh-bg: #f9fafb;
+  --sh-bg: #fbfaf7;
   --sh-surface: #ffffff;
-  --sh-border: #e5e7eb;
+  --sh-border: #e8e5de;
   --sh-text: var(--text);
   --sh-text-soft: var(--text-soft);
   --sh-muted: var(--text-muted);
@@ -117,7 +117,7 @@
 .sh-icon-btn:hover {
   border-color: var(--sh-primary);
   color: var(--sh-primary);
-  background: rgba(99, 102, 241, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .sh-icon-confirm {
@@ -150,7 +150,7 @@
   gap: 6px;
   padding: 3px 10px;
   border-radius: var(--radius-pill);
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   color: var(--accent-on-tint);
   font-weight: 600;
   font-size: var(--fs-small);
@@ -158,8 +158,8 @@
 
 :root[data-theme="dark"] .sh-count,
 .theme-dark .sh-count {
-  background: rgba(99, 102, 241, 0.18);
-  color: #a5b4fc;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-on-tint);
 }
 
 .sh-count.is-loading {
@@ -210,7 +210,7 @@
 .sh-btn-ghost:hover:not(:disabled) {
   border-color: var(--sh-primary);
   color: var(--sh-primary);
-  background: rgba(99, 102, 241, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .sh-btn-primary {

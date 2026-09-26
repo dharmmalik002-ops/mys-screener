@@ -7,9 +7,9 @@
   --ss-primary: var(--accent);
   --ss-primary-soft: color-mix(in srgb, var(--accent) 12%, transparent);
   --ss-primary-strong: var(--accent-strong);
-  --ss-bg: #f9fafb;
+  --ss-bg: #fbfaf7;
   --ss-surface: #ffffff;
-  --ss-border: #e5e7eb;
+  --ss-border: #e8e5de;
   --ss-text: var(--text);
   --ss-text-soft: var(--text-soft);
   --ss-muted: var(--text-muted);

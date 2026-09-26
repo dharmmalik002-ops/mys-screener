@@ -133,33 +133,40 @@ function getLogoUrl(symbol: string) {
 
 function Donut({ segments, size = 180 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0);
-  const radius = size / 2 - 12;
+  const stroke = 11;
+  const radius = size / 2 - stroke;
   const circumference = 2 * Math.PI * radius;
-  let offset = 0;
   const cx = size / 2;
   const cy = size / 2;
+  // A small gap between arcs keeps two adjacent colours from reading as one
+  // muddy band; round caps make each arc a distinct object.
+  const live = segments.filter((s) => s.value > 0).length;
+  const gap = live > 1 ? 7 : 0;
+  let offset = 0;
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={cx} cy={cy} r={radius} stroke="rgba(15,23,42,0.06)" strokeWidth="18" fill="none" />
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true" className="homepro-donut" style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={cx} cy={cy} r={radius} stroke="var(--line)" strokeWidth={stroke} fill="none" />
+      <circle cx={cx} cy={cy} r={radius - stroke - 3} stroke="var(--line)" strokeWidth={1} fill="none" strokeDasharray="1 4" />
       {total > 0 && segments.map((seg, i) => {
         const frac = Math.max(0, seg.value) / total;
-        const dash = frac * circumference;
-        const gap = circumference - dash;
-        const element = (
+        const dash = Math.max(0, frac * circumference - gap);
+        const element = dash > 0 ? (
           <circle
             key={i}
+            className="homepro-donut-arc"
             cx={cx}
             cy={cy}
             r={radius}
             stroke={seg.color}
-            strokeWidth="18"
+            strokeWidth={stroke}
             fill="none"
-            strokeDasharray={`${dash} ${gap}`}
-            strokeDashoffset={-offset}
-            strokeLinecap="butt"
+            strokeDasharray={`${dash} ${circumference - dash}`}
+            strokeDashoffset={-(offset + gap / 2)}
+            strokeLinecap="round"
+            style={{ "--arc-len": `${dash}` } as CSSProperties}
           />
-        );
-        offset += dash;
+        ) : null;
+        offset += frac * circumference;
         return element;
       })}
     </svg>
@@ -267,11 +274,12 @@ const XP_BAND_OPACITY: Record<string, number> = {
    instead of a bare number in a colored box. Domain [5, 30] covers the bands
    (Avoid <9.5 … Extremely Strong >25) with visible headroom either side. */
 function XpGauge({ xp }: { xp: XpBreadthScore }) {
+  const uid = useId().replace(/[:]/g, "");
   const LO = 5;
   const HI = 30;
   const CX = 80;
   const CY = 84;
-  const R = 60;
+  const R = 62;
   const polar = (r: number, deg: number): readonly [number, number] => {
     const rad = (deg * Math.PI) / 180;
     return [CX + r * Math.cos(rad), CY - r * Math.sin(rad)] as const;
@@ -280,38 +288,60 @@ function XpGauge({ xp }: { xp: XpBreadthScore }) {
     const t = (Math.min(HI, Math.max(LO, value)) - LO) / (HI - LO);
     return 180 - 180 * t;
   };
-  const arcPath = (a0: number, a1: number) => {
-    const [x0, y0] = polar(R, a0);
-    const [x1, y1] = polar(R, a1);
-    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${R} ${R} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  const arcPath = (a0: number, a1: number, r = R) => {
+    const [x0, y0] = polar(r, a0);
+    const [x1, y1] = polar(r, a1);
+    const large = Math.abs(a0 - a1) > 180 ? 1 : 0;
+    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
   };
+  // A 1.6° gap between bands turns one striped arc into five distinct segments.
+  const GAP = 1.6;
   const segments = (xp.bands ?? [])
     .map((band) => {
       const v0 = Math.max(LO, band.min ?? LO);
       const v1 = Math.min(HI, band.max ?? HI);
-      return v1 > v0 ? { color: band.color, path: arcPath(angleFor(v0), angleFor(v1)) } : null;
+      if (v1 <= v0) return null;
+      const a0 = angleFor(v0) - GAP / 2;
+      const a1 = angleFor(v1) + GAP / 2;
+      return a0 > a1 ? { color: band.color, path: arcPath(a0, a1), active: xp.xp_score >= v0 && xp.xp_score < v1 } : null;
     })
-    .filter((seg): seg is { color: string; path: string } => seg !== null);
+    .filter((seg): seg is { color: string; path: string; active: boolean } => seg !== null);
   const needleAngle = angleFor(xp.xp_score);
-  const [nx, ny] = polar(R - 14, needleAngle);
-  const [tx, ty] = polar(R + 4, needleAngle);
+  const [kx, ky] = polar(R, needleAngle);
+  const [ix, iy] = polar(R - 16, needleAngle);
   return (
     <div className="homepro-xp-gauge" title={`XP ${xp.xp_score.toFixed(2)} — ${xp.regime}`}>
       <svg viewBox="0 0 160 100" role="img" aria-label={`XP breadth ${xp.xp_score.toFixed(2)}, ${xp.regime}`}>
+        <defs>
+          <filter id={`gauge-glow-${uid}`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.4" />
+          </filter>
+        </defs>
+        <path d={arcPath(180, 0, R)} fill="none" stroke="var(--line)" strokeWidth={11} strokeLinecap="round" />
         {segments.map((seg, i) => (
-          <path key={i} d={seg.path} fill="none" stroke={seg.color} strokeWidth={9} opacity={0.92} />
+          <path
+            key={i}
+            d={seg.path}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth={seg.active ? 7 : 5}
+            strokeLinecap="butt"
+            opacity={seg.active ? 1 : 0.38}
+          />
         ))}
-        <line x1={nx} y1={ny} x2={tx} y2={ty} stroke="var(--text)" strokeWidth={2.6} strokeLinecap="round" />
+        <line x1={ix} y1={iy} x2={kx} y2={ky} stroke="var(--text)" strokeWidth={1.4} strokeLinecap="round" opacity={0.7} />
+        <circle cx={kx} cy={ky} r={7} fill={xp.regime_color} opacity={0.45} filter={`url(#gauge-glow-${uid})`} />
+        <circle cx={kx} cy={ky} r={4.2} fill="var(--card-flat)" stroke={xp.regime_color} strokeWidth={2.2} />
         <text
           x={CX}
-          y={62}
+          y={66}
           textAnchor="middle"
           className="homepro-xp-gauge-score"
           style={{ "--regime-color": xp.regime_color } as CSSProperties}
         >
           {xp.xp_score.toFixed(2)}
         </text>
-        <text x={CX} y={80} textAnchor="middle" className="homepro-xp-gauge-regime">
+        <text x={CX} y={82} textAnchor="middle" className="homepro-xp-gauge-regime">
           {xp.regime}
         </text>
       </svg>
@@ -319,9 +349,10 @@ function XpGauge({ xp }: { xp: XpBreadthScore }) {
   );
 }
 
-function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: number }) {
+function XpBreadthChart({ xp, height = 260 }: { xp: XpBreadthScore; height?: number }) {
   const uid = useId().replace(/[:]/g, "");
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const [width, setWidth] = useState(960);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [zoomN, setZoomN] = useState<number | null>(null); // sessions to show; null = all
@@ -344,6 +375,27 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
   const maxN = allPoints.length;
   const minN = Math.min(20, maxN);
   const winN = Math.max(minN, Math.min(zoomN ?? maxN, maxN));
+
+  // Ctrl/⌘ + wheel (and trackpad pinch, which arrives as ctrlKey) zooms the
+  // plot. A plain wheel is left alone so the page still scrolls past the
+  // chart. Bound natively because React's onWheel is passive and cannot
+  // preventDefault the browser's own page zoom.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el || maxN <= minN) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      setZoomN((current) => {
+        const base = Math.max(minN, Math.min(current ?? maxN, maxN));
+        const next = event.deltaY > 0 ? Math.round(base * 1.12) : Math.round(base / 1.12);
+        return Math.max(minN, Math.min(maxN, next));
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [maxN, minN]);
+
   const points = allPoints.slice(-winN);
   if (points.length < 2) {
     return (
@@ -353,15 +405,15 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
     );
   }
 
-  const padL = 12;
+  const padL = 34;
   // Phone widths: the in-chart regime labels ("Progressive Exposure") are
-  // wider than the 78px gutter reserved for them, so they used to spill past
-  // the card edge and get clipped. Drop both the gutter and the labels below
+  // wider than the gutter reserved for them, so they used to spill past the
+  // card edge and get clipped. Drop both the gutter and the labels below
   // 520px — the legend directly under the chart names every band anyway.
   const compact = width < 520;
-  const padR = compact ? 12 : 78; // gutter for regime labels
-  const padT = 18;
-  const padB = 26;
+  const padR = compact ? 12 : 120; // gutter for regime labels
+  const padT = 14;
+  const padB = 28;
   const innerW = Math.max(10, width - padL - padR);
   const innerH = Math.max(10, height - padT - padB);
 
@@ -399,15 +451,21 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
   const baseY = padT + innerH;
   const areaPath = `${linePath} L${pts[pts.length - 1][0].toFixed(1)},${baseY.toFixed(1)} L${pts[0][0].toFixed(1)},${baseY.toFixed(1)} Z`;
 
+  const hovering = hoverIdx != null;
   const hi = hoverIdx == null ? points.length - 1 : Math.max(0, Math.min(points.length - 1, hoverIdx));
   const hovered = points[hi];
+  const prevPoint = hi > 0 ? points[hi - 1] : null;
+  const hoverDelta = prevPoint ? hovered.xp_score - prevPoint.xp_score : null;
   const hx = x(hi);
   const hyv = y(hovered.xp_score);
-  const lineColor = xp.regime_color;
 
   const fmtDate = (d: string) => {
     const dt = new Date(d);
     return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
+  const fmtTick = (d: string) => {
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
   };
 
   // Visible regime bands (clipped to the current y-range) for shading + labels.
@@ -419,18 +477,39 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
     })
     .filter((b) => b.top > b.bot);
 
+  // The line is painted with a VERTICAL gradient whose stops sit exactly on
+  // the regime thresholds, so the stroke itself changes colour as the score
+  // crosses a band — the chart reads its own regime without a legend.
+  const bandStops = [...visBands]
+    .sort((a, b) => b.top - a.top)
+    .flatMap((b) => {
+      const o0 = ((y(b.top) - padT) / innerH) * 100;
+      const o1 = ((y(b.bot) - padT) / innerH) * 100;
+      return [
+        { offset: o0, color: b.color },
+        { offset: o1, color: b.color },
+      ];
+    });
+
+  // X ticks: ~one per 140px, on evenly spaced sessions.
+  const tickCount = Math.max(2, Math.min(8, Math.floor(innerW / 140)));
+  const ticks = Array.from({ length: tickCount }, (_, k) => Math.round((k / (tickCount - 1)) * (points.length - 1)));
+
   // Tooltip placement (clamped within the plot).
-  const tipLeft = Math.max(64, Math.min(width - 64, hx));
+  const tipW = 188;
+  const tipLeft = Math.max(padL + tipW / 2, Math.min(padL + innerW - tipW / 2, hx));
 
   return (
     <div className="homepro-xp-chart-wrap" ref={wrapRef}>
       <svg
+        ref={svgRef}
         className="homepro-xp-svg"
         width={width}
         height={height}
         role="img"
-        onMouseLeave={() => setHoverIdx(null)}
-        onMouseMove={(e) => {
+        aria-label={`XP breadth history, ${points.length} sessions`}
+        onPointerLeave={() => setHoverIdx(null)}
+        onPointerMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const px = e.clientX - rect.left;
           const i = Math.round(((px - padL) / innerW) * (points.length - 1));
@@ -438,19 +517,38 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
         }}
       >
         <defs>
-          <linearGradient id={`area-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={lineColor} stopOpacity={0.34} />
-            <stop offset="60%" stopColor={lineColor} stopOpacity={0.08} />
-            <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
+          <linearGradient id={`stroke-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={padT} x2="0" y2={baseY}>
+            {bandStops.map((s, i) => (
+              <stop key={i} offset={`${Math.max(0, Math.min(100, s.offset)).toFixed(2)}%`} stopColor={s.color} />
+            ))}
+          </linearGradient>
+          <linearGradient id={`area-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={padT} x2="0" y2={baseY}>
+            {bandStops.map((s, i) => (
+              <stop
+                key={i}
+                offset={`${Math.max(0, Math.min(100, s.offset)).toFixed(2)}%`}
+                stopColor={s.color}
+                stopOpacity={0.2 * (1 - Math.max(0, Math.min(100, s.offset)) / 100) + 0.02}
+              />
+            ))}
           </linearGradient>
           <filter id={`glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="3.2" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+            <feGaussianBlur stdDeviation="3.2" />
           </filter>
+          <clipPath id={`reveal-${uid}`}>
+            <rect x={padL} y={0} width={hovering ? hx - padL : innerW} height={height} />
+          </clipPath>
         </defs>
+
+        {/* y grid + ticks at the regime thresholds */}
+        {visBands.map((b) => (
+          <g key={`g-${b.label}`}>
+            <line x1={padL} x2={padL + innerW} y1={y(b.top)} y2={y(b.top)} className="homepro-xp-grid" />
+            <text x={padL - 8} y={y(b.top) + 3} textAnchor="end" className="homepro-xp-axis">
+              {b.top.toFixed(b.top % 1 ? 1 : 0)}
+            </text>
+          </g>
+        ))}
 
         {/* regime band shading + right-edge labels. Label Y positions get a
             collision pass — thin bands (e.g. Progressive Exposure over Choppy)
@@ -470,54 +568,92 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
             }
           }
           return geom.map(({ band: b, yTop, h, labelY }) => {
-            const fillOpacity = XP_BAND_OPACITY[b.label] ?? 0.1;
+            const fillOpacity = (XP_BAND_OPACITY[b.label] ?? 0.1) * 0.55;
+            const active = hovered.regime === b.label;
             return (
               <g key={b.label}>
-                <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={fillOpacity} />
-                <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.4} />
+                <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={active ? fillOpacity * 1.9 : fillOpacity} />
                 {compact ? null : (
-                  <text x={padL + innerW + 8} y={labelY} fontSize={10} fontWeight={700} fill={b.color} opacity={0.95}>
-                    {b.label}
-                  </text>
+                  <g className={active ? "homepro-xp-band-label is-active" : "homepro-xp-band-label"}>
+                    <circle cx={padL + innerW + 14} cy={labelY - 3.5} r={3} fill={b.color} />
+                    <text x={padL + innerW + 23} y={labelY} fill={active ? "var(--text)" : "var(--text-muted)"}>
+                      {b.label}
+                    </text>
+                  </g>
                 )}
               </g>
             );
           });
         })()}
 
-        {/* area + line */}
+        {/* x ticks */}
+        {ticks.map((ti, k) => (
+          <text
+            key={`t-${ti}-${k}`}
+            x={x(ti)}
+            y={height - 8}
+            textAnchor={k === 0 ? "start" : k === ticks.length - 1 ? "end" : "middle"}
+            className="homepro-xp-axis"
+          >
+            {fmtTick(points[ti].date)}
+          </text>
+        ))}
+
+        {/* area + line. While hovering, the part of the line to the right of
+            the cursor dims so the eye stays on "what it was on that day". */}
         <path d={areaPath} fill={`url(#area-${uid})`} />
-        <path
-          d={linePath}
-          fill="none"
-          stroke={lineColor}
-          strokeWidth={2.4}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
+        <path d={linePath} fill="none" stroke={`url(#stroke-${uid})`} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" opacity={hovering ? 0.28 : 1} />
+        {hovering ? (
+          <path
+            d={linePath}
+            fill="none"
+            stroke={`url(#stroke-${uid})`}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            clipPath={`url(#reveal-${uid})`}
+          />
+        ) : null}
 
-        {/* crosshair on hover */}
-        {hoverIdx != null && (
-          <line x1={hx} x2={hx} y1={padT} y2={baseY} stroke="var(--hp-text, #0f172a)" strokeWidth={1} strokeDasharray="3 3" opacity={0.25} />
-        )}
+        {/* crosshair */}
+        {hovering ? (
+          <g className="homepro-xp-crosshair">
+            <line x1={hx} x2={hx} y1={padT} y2={baseY} />
+            <line x1={padL} x2={padL + innerW} y1={hyv} y2={hyv} strokeDasharray="2 4" />
+            <rect x={2} y={hyv - 9} width={padL - 6} height={18} rx={5} className="homepro-xp-axis-pill" />
+            <text x={padL / 2 - 2} y={hyv + 3.5} textAnchor="middle" className="homepro-xp-axis-pill-text">
+              {hovered.xp_score.toFixed(1)}
+            </text>
+          </g>
+        ) : null}
 
-        {/* current/hovered marker with glow */}
-        <circle cx={hx} cy={hyv} r={9} fill={hovered.regime_color} opacity={0.18} filter={`url(#glow-${uid})`} />
-        <circle cx={hx} cy={hyv} r={4.5} fill={hovered.regime_color} stroke="#fff" strokeWidth={2} />
-
-        {/* x-axis end dates */}
-        <text x={padL} y={height - 7} fontSize={10} fill="var(--hp-muted, #94a0b8)">{fmtDate(points[0].date)}</text>
-        <text x={padL + innerW} y={height - 7} fontSize={10} textAnchor="end" fill="var(--hp-muted, #94a0b8)">{fmtDate(points[points.length - 1].date)}</text>
+        {/* current / hovered marker */}
+        {!hovering ? <circle cx={hx} cy={hyv} r={4} fill={hovered.regime_color} className="homepro-xp-pulse" /> : null}
+        <circle cx={hx} cy={hyv} r={9} fill={hovered.regime_color} opacity={0.35} filter={`url(#glow-${uid})`} />
+        <circle cx={hx} cy={hyv} r={4.2} fill="var(--card-flat)" stroke={hovered.regime_color} strokeWidth={2.2} />
       </svg>
 
       {/* floating tooltip */}
       <div
-        className={`homepro-xp-tip${hoverIdx != null ? " show" : ""}`}
-        style={{ left: tipLeft }}
+        className={`homepro-xp-tip${hovering ? " show" : ""}`}
+        style={{ left: tipLeft, top: Math.max(0, Math.min(height - 96, hyv - 104)) }}
       >
         <span className="homepro-xp-tip-date">{fmtDate(hovered.date)}</span>
-        <span className="homepro-xp-tip-val" style={{ "--regime-color": hovered.regime_color } as CSSProperties}>{hovered.xp_score.toFixed(2)}</span>
-        <span className="homepro-xp-tip-regime" style={{ "--regime-color": hovered.regime_color } as CSSProperties}>{hovered.regime}</span>
+        <span className="homepro-xp-tip-row">
+          <span className="homepro-xp-tip-val" style={{ "--regime-color": hovered.regime_color } as CSSProperties}>
+            {hovered.xp_score.toFixed(2)}
+          </span>
+          {hoverDelta != null ? (
+            <span className={`homepro-xp-tip-delta ${hoverDelta > 0 ? "up" : hoverDelta < 0 ? "down" : ""}`}>
+              {hoverDelta > 0 ? "+" : ""}
+              {hoverDelta.toFixed(2)}
+            </span>
+          ) : null}
+        </span>
+        <span className="homepro-xp-tip-regime" style={{ "--regime-color": hovered.regime_color } as CSSProperties}>
+          <i style={{ background: hovered.regime_color }} />
+          {hovered.regime}
+        </span>
       </div>
 
       {/* zoom slider */}
@@ -540,6 +676,7 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
             onChange={(e) => setZoomN(Number(e.target.value))}
             aria-label="Zoom: number of sessions shown"
             title="Drag to zoom"
+            style={{ "--fill": `${((winN - minN) / Math.max(1, maxN - minN)) * 100}%` } as CSSProperties}
           />
           <button
             type="button"
@@ -551,6 +688,7 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
           </button>
           <span className="homepro-xp-zoom-info">
             {winN} sessions · from {fmtDate(points[0].date)}
+            <span className="homepro-xp-zoom-hint"> · ⌘/Ctrl + scroll to zoom</span>
           </span>
         </div>
       )}
@@ -558,56 +696,170 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
   );
 }
 
-function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }) {
-  const width = 640;
+function CandlestickChart({ bars, height = 240 }: { bars: ChartBar[]; height?: number }) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(640);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width;
+      if (w) setWidth(Math.max(240, Math.round(w)));
+    });
+    ro.observe(el);
+    setWidth(Math.max(240, Math.round(el.clientWidth || 640)));
+    return () => ro.disconnect();
+  }, []);
+
   if (!bars || bars.length < 2) {
     return (
-      <div className="homepro-nifty-chart" style={{ display: "grid", placeItems: "center", color: "var(--hp-muted)", fontSize: "var(--fs-small)" }}>
+      <div className="homepro-nifty-chart homepro-nifty-empty" ref={wrapRef}>
         Loading chart…
       </div>
     );
   }
+
+  const padL = 4;
+  const padR = 58; // right price axis, the terminal convention
+  const padT = 10;
+  const volH = 34;
+  const padB = 22;
+  const innerW = Math.max(10, width - padL - padR);
+  const priceH = Math.max(10, height - padT - padB - volH - 6);
   const highs = bars.map((b) => b.high);
   const lows = bars.map((b) => b.low);
-  const min = Math.min(...lows);
-  const max = Math.max(...highs);
+  const rawMin = Math.min(...lows);
+  const rawMax = Math.max(...highs);
+  const pad = (rawMax - rawMin || 1) * 0.06;
+  const min = rawMin - pad;
+  const max = rawMax + pad;
   const range = max - min || 1;
-  const paddingY = 12;
-  const innerH = height - paddingY * 2;
-  const slot = width / bars.length;
-  const candleW = Math.max(2, Math.min(10, slot * 0.65));
+  const maxVol = Math.max(1, ...bars.map((b) => b.volume || 0));
+  const slot = innerW / bars.length;
+  const candleW = Math.max(1.2, Math.min(9, slot * 0.62));
 
-  function y(value: number) {
-    return paddingY + innerH - ((value - min) / range) * innerH;
-  }
+  const y = (value: number) => padT + priceH - ((value - min) / range) * priceH;
+  const cxAt = (i: number) => padL + slot * (i + 0.5);
+  const volTop = padT + priceH + 6;
+
+  // Four evenly spaced, rounded price levels for the grid.
+  const step = (() => {
+    const raw = range / 4;
+    const mag = 10 ** Math.floor(Math.log10(raw));
+    const norm = raw / mag;
+    return (norm >= 5 ? 5 : norm >= 2 ? 2 : 1) * mag;
+  })();
+  const levels: number[] = [];
+  for (let v = Math.ceil(min / step) * step; v <= max; v += step) levels.push(v);
+
+  const toDate = (t: number) => new Date(t < 1e12 ? t * 1000 : t);
+  const fmtDay = (t: number) => toDate(t).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const fmtTick = (t: number) => toDate(t).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+  const fmtPx = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+
+  const last = bars[bars.length - 1];
+  const lastUp = last.close >= last.open;
+  const hi = hoverIdx == null ? null : Math.max(0, Math.min(bars.length - 1, hoverIdx));
+  const hb = hi == null ? null : bars[hi];
+  const prevClose = hi != null && hi > 0 ? bars[hi - 1].close : null;
+  const hbChange = hb && prevClose ? ((hb.close - prevClose) / prevClose) * 100 : null;
+
+  const tickCount = Math.max(2, Math.min(6, Math.floor(innerW / 110)));
+  const ticks = Array.from({ length: tickCount }, (_, k) => Math.round((k / (tickCount - 1)) * (bars.length - 1)));
 
   return (
-    <svg className="homepro-nifty-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      {bars.map((bar, i) => {
-        const cx = slot * (i + 0.5);
-        const up = bar.close >= bar.open;
-        const color = up ? "var(--positive)" : "var(--negative)";
-        const yHigh = y(bar.high);
-        const yLow = y(bar.low);
-        const yOpen = y(bar.open);
-        const yClose = y(bar.close);
-        const bodyTop = Math.min(yOpen, yClose);
-        const bodyH = Math.max(1, Math.abs(yOpen - yClose));
-        return (
-          <g key={i}>
-            <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth="1" />
-            <rect
-              x={cx - candleW / 2}
-              y={bodyTop}
-              width={candleW}
-              height={bodyH}
-              fill={color}
-              stroke={color}
-            />
+    <div className="homepro-nifty-chart" ref={wrapRef}>
+      <svg
+        width={width}
+        height={height}
+        role="img"
+        aria-label="Nifty 50 daily candles"
+        onPointerLeave={() => setHoverIdx(null)}
+        onPointerMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const i = Math.floor((e.clientX - rect.left - padL) / slot);
+          setHoverIdx(Math.max(0, Math.min(bars.length - 1, i)));
+        }}
+      >
+        {levels.map((v) => (
+          <g key={v}>
+            <line x1={padL} x2={padL + innerW} y1={y(v)} y2={y(v)} className="homepro-nifty-grid" />
+            <text x={padL + innerW + 8} y={y(v) + 3.5} className="homepro-nifty-axis">
+              {v.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </text>
           </g>
+        ))}
+
+        {bars.map((bar, i) => {
+          const cx = cxAt(i);
+          const up = bar.close >= bar.open;
+          const color = up ? "var(--candle-up)" : "var(--candle-down)";
+          const bodyTop = Math.min(y(bar.open), y(bar.close));
+          const bodyH = Math.max(1, Math.abs(y(bar.open) - y(bar.close)));
+          const vh = ((bar.volume || 0) / maxVol) * volH;
+          const dim = hi != null && hi !== i;
+          return (
+            <g key={i} opacity={dim ? 0.55 : 1}>
+              <rect x={cx - candleW / 2} y={volTop + volH - vh} width={candleW} height={vh} fill={color} opacity={0.22} />
+              <line x1={cx} x2={cx} y1={y(bar.high)} y2={y(bar.low)} stroke={color} strokeWidth={1} />
+              <rect x={cx - candleW / 2} y={bodyTop} width={candleW} height={bodyH} fill={color} rx={candleW > 4 ? 0.8 : 0} />
+            </g>
+          );
+        })}
+
+        {/* last price line + axis pill */}
+        <line x1={padL} x2={padL + innerW} y1={y(last.close)} y2={y(last.close)} className={`homepro-nifty-last ${lastUp ? "up" : "down"}`} />
+        <rect x={padL + innerW + 2} y={y(last.close) - 9} width={padR - 4} height={18} rx={4} className={`homepro-nifty-last-pill ${lastUp ? "up" : "down"}`} />
+        <text x={padL + innerW + padR / 2} y={y(last.close) + 3.5} textAnchor="middle" className="homepro-nifty-last-text">
+          {last.close.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+        </text>
+
+        {ticks.map((ti, k) => (
+          <text
+            key={`t-${ti}-${k}`}
+            x={cxAt(ti)}
+            y={height - 6}
+            textAnchor={k === 0 ? "start" : k === ticks.length - 1 ? "end" : "middle"}
+            className="homepro-nifty-axis"
+          >
+            {fmtTick(bars[ti].time)}
+          </text>
+        ))}
+
+        {hb && hi != null ? (
+          <g className="homepro-nifty-crosshair">
+            <line x1={cxAt(hi)} x2={cxAt(hi)} y1={padT} y2={volTop + volH} />
+            <line x1={padL} x2={padL + innerW} y1={y(hb.close)} y2={y(hb.close)} strokeDasharray="2 4" />
+            <rect x={padL + innerW + 2} y={y(hb.close) - 9} width={padR - 4} height={18} rx={4} className="homepro-nifty-hover-pill" />
+            <text x={padL + innerW + padR / 2} y={y(hb.close) + 3.5} textAnchor="middle" className="homepro-nifty-hover-text">
+              {hb.close.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </text>
+          </g>
+        ) : null}
+      </svg>
+
+      {/* OHLC legend — the TradingView convention: always visible, top-left,
+          it follows the cursor and falls back to the latest session. */}
+      {(() => {
+        const b = hb ?? last;
+        const i = hi ?? bars.length - 1;
+        const pc = i > 0 ? bars[i - 1].close : null;
+        const chg = hb ? hbChange : pc ? ((last.close - pc) / pc) * 100 : null;
+        const up = chg == null ? b.close >= b.open : chg >= 0;
+        return (
+          <div className="homepro-nifty-ohlc">
+            <span className="homepro-nifty-ohlc-date">{fmtDay(b.time)}</span>
+            <span>O <b>{fmtPx(b.open)}</b></span>
+            <span>H <b>{fmtPx(b.high)}</b></span>
+            <span>L <b>{fmtPx(b.low)}</b></span>
+            <span>C <b className={up ? "up" : "down"}>{fmtPx(b.close)}</b></span>
+            {chg != null ? <span className={up ? "up" : "down"}>{chg >= 0 ? "+" : ""}{chg.toFixed(2)}%</span> : null}
+          </div>
         );
-      })}
-    </svg>
+      })()}
+    </div>
   );
 }
 

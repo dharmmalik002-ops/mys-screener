@@ -1,3 +1,4 @@
+import { premiumCrosshair } from "../lib/chartDefaults";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   ColorType,
@@ -25,9 +26,9 @@ function emaSeries(closes: number[], span: number): (number | null)[] {
 }
 
 const OVERLAYS = [
-  { key: "ema10", span: 10, color: "#22d3ee", width: 1 },
-  { key: "ema21", span: 21, color: "#f59e0b", width: 1 },
-  { key: "ema50", span: 50, color: "#8b5cf6", width: 2 },
+  { key: "ema10", span: 10, color: "#7fb4d9", width: 1 },
+  { key: "ema21", span: 21, color: "#d4af6a", width: 1 },
+  { key: "ema50", span: 50, color: "#b39ddb", width: 2 },
 ] as const;
 
 export type StudyChartStyle = "candles" | "bars" | "hlc";
@@ -172,7 +173,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
     if (!node) return;
 
     const styles = getComputedStyle(document.documentElement);
-    const textColor = styles.getPropertyValue("--text-muted").trim() || "#64748b";
+    const textColor = styles.getPropertyValue("--text-muted").trim() || "#8b877d";
 
     const chart = createChart(node, {
       height,
@@ -180,19 +181,19 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         background: { type: ColorType.Solid, color: "transparent" },
         textColor,
         fontSize: 11,
-        fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+        fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
       // No grid: it competes with the trendlines and measurements drawn on top.
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.28 } },
       timeScale: { borderVisible: false, rightOffset: 6 },
-      crosshair: { mode: CrosshairMode.Normal },
+      crosshair: { mode: CrosshairMode.Normal, ...premiumCrosshair() },
       autoSize: true,
     });
     chartRef.current = chart;
 
-    const up = "#22c55e";
-    const down = "#ef4444";
+    const up = "#34c28a";
+    const down = "#ef6461";
     priceRef.current =
       style === "candles"
         ? chart.addCandlestickSeries({
@@ -305,12 +306,12 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         value: Number(b.volume ?? 0),
         color:
           entryIndex != null && i >= entryIndex
-            ? "rgba(59,130,246,0.55)"
+            ? "rgba(212,175,106,0.55)"
             : i > visible.triggerIndex
-              ? "rgba(148,163,184,0.40)"
+              ? "rgba(163,160,151,0.40)"
               : b.close >= b.open
-                ? "rgba(34,197,94,0.35)"
-                : "rgba(239,68,68,0.35)",
+                ? "rgba(52,194,138,0.35)"
+                : "rgba(239,100,97,0.35)",
       })),
     );
 
@@ -331,7 +332,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       markers.push({
         time: trigger.time as UTCTimestamp,
         position: "belowBar" as const,
-        color: "#64748b",
+        color: "#8b877d",
         shape: "arrowUp" as const,
         text: signalLabel,
       });
@@ -341,7 +342,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       markers.push({
         time: entryBar.time as UTCTimestamp,
         position: "belowBar" as const,
-        color: "#3b82f6",
+        color: "#d4af6a",
         shape: "arrowUp" as const,
         text: "entry",
       });
@@ -364,7 +365,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
     if (entryPrice != null && Number.isFinite(entryPrice)) {
       entryLineRef.current = price.createPriceLine({
         price: entryPrice,
-        color: "#3b82f6",
+        color: "#d4af6a",
         lineWidth: 1,
         lineStyle: LineStyle.Dashed,
         axisLabelVisible: true,
@@ -378,7 +379,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
     if (stop != null && Number.isFinite(stop)) {
       stopLineRef.current = price.createPriceLine({
         price: stop,
-        color: "#ef4444",
+        color: "#ef6461",
         lineWidth: 2,
         lineStyle: LineStyle.Solid,
         axisLabelVisible: true,
@@ -430,7 +431,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       const p2 = project(d.to);
       if (!p1 || !p2) return;
       const rising = d.to.price >= d.from.price;
-      const color = d.kind === "measure" ? (rising ? "#22c55e" : "#ef4444") : "#ffd36f";
+      const color = d.kind === "measure" ? (rising ? "#34c28a" : "#ef6461") : "#ffd36f";
       const selected = d.id === selectedDrawingId;
       ctx.save();
       ctx.globalAlpha = ghost ? 0.6 : 1;
@@ -441,7 +442,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         ctx.shadowBlur = 8;
       }
       if (d.kind === "measure") {
-        ctx.fillStyle = rising ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)";
+        ctx.fillStyle = rising ? "rgba(52,194,138,0.12)" : "rgba(239,100,97,0.12)";
         ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
         ctx.setLineDash([4, 3]);
       }
@@ -454,11 +455,11 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       if (d.kind === "measure") {
         const move = ((d.to.price - d.from.price) / d.from.price) * 100;
         const label = `${move >= 0 ? "+" : ""}${move.toFixed(2)}%  ${fmt(Math.abs(d.to.price - d.from.price))}  ${barsBetween(d.from.time, d.to.time)} bars`;
-        ctx.font = "11px 'JetBrains Mono', Menlo, monospace";
+        ctx.font = "11px 'Geist Mono', Menlo, monospace";
         const w = ctx.measureText(label).width + 10;
         const bx = Math.min(p1.x, p2.x) + Math.abs(p2.x - p1.x) / 2 - w / 2;
         const by = Math.min(p1.y, p2.y) - 20;
-        ctx.fillStyle = "rgba(15,23,42,0.92)";
+        ctx.fillStyle = "rgba(20,19,16,0.92)";
         ctx.fillRect(bx, by, w, 17);
         ctx.strokeStyle = color;
         ctx.strokeRect(bx, by, w, 17);
@@ -479,9 +480,9 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       const w = Math.abs(snip.x1 - snip.x0);
       const h = Math.abs(snip.y1 - snip.y0);
       ctx.save();
-      ctx.fillStyle = "rgba(59,130,246,0.12)";
+      ctx.fillStyle = "rgba(212,175,106,0.12)";
       ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = "#3b82f6";
+      ctx.strokeStyle = "#d4af6a";
       ctx.setLineDash([5, 4]);
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y, w, h);
@@ -679,7 +680,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       out.height = shot.height;
       const ctx = out.getContext("2d");
       if (!ctx) return null;
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim() || "#0f172a";
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim() || "#15161a";
       ctx.fillRect(0, 0, out.width, out.height);
       ctx.drawImage(shot, 0, 0);
       if (overlay) ctx.drawImage(overlay, 0, 0, out.width, out.height);

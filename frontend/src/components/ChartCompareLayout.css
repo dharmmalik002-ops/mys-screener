@@ -13,7 +13,7 @@
   position: relative;
   min-width: 0;
   min-height: 0;
-  background: #0d1117;
+  background: #0e0f12;
 }
 
 .chart-compare-layout.horizontal {
@@ -39,14 +39,14 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #0d1117;
+  background: #0e0f12;
   outline: 2px solid transparent;
   outline-offset: -2px;
   transition: outline-color var(--dur-base) ease;
 }
 
 .chart-compare-pane.pane-a.is-active {
-  outline-color: rgba(99, 102, 241, 0.7);
+  outline-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 .chart-compare-pane.pane-b.is-active {
@@ -62,7 +62,7 @@
 .chart-compare-divider {
   position: relative;
   flex-shrink: 0;
-  background: rgba(48, 54, 61, 0.95);
+  background: rgba(52, 52, 56, 0.95);
   z-index: 5;
   display: flex;
   align-items: center;
@@ -82,7 +82,7 @@
 
 .chart-compare-divider:hover,
 .chart-compare-layout.is-dragging > .chart-compare-divider {
-  background: rgba(99, 102, 241, 0.65);
+  background: color-mix(in srgb, var(--accent) 65%, transparent);
 }
 
 .chart-compare-divider-grip {

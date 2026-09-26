@@ -89,6 +89,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 - `components/BotLearning.tsx`: the Bot tab's **Learning** and **Evolution** views — trade-shape breakdown, entry-condition bucket studies (with rejected ones shown as rejected), the quarterly evolution timeline, and every point the bot changed its mind about a strategy.
 - `components/BotPanel.tsx`: the Bot tab — four views in the order a decision gets made: **Today** (regime, stance, macro gate, sized candidates), **Playbook** (regime -> cleared setups), **Evidence** (the strategy x regime matrix, what survived validation, what decayed), and **What this can't tell you** (survivorship, macro, caveats). The last view is not an appendix and gets equal billing on purpose.
 - `lib/api.ts`: Centralized API client wrapper with request error handling and base URL configuration.
+- `styles/premium.css`: The house look, loaded after `overrides.css` and before `mobile.css`: warm obsidian (dark) / ivory (light) surfaces, one champagne-gold accent, Geist for UI, Geist Mono for numbers, Instrument Serif (`--font-serif`) for page titles and hero numerals only — never tables. Selected tabs are tinted chips; solid gold is kept for the one primary action per view. Canvas charts cannot read CSS variables, so their colours live in `lib/marketColors.ts` / `lib/chartDefaults.ts` (`premiumCrosshair()`), and the XP regime palette is remapped once at the API boundary (`regimeColor`).
 
 ---
 

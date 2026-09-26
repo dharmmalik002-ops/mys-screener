@@ -14,10 +14,10 @@ type Props = {
 };
 
 const COLORS: Record<"promoter_pct" | "fii_pct" | "dii_pct" | "public_pct", string> = {
-  promoter_pct: "#7c6aff",
-  fii_pct: "#00d2ff",
-  dii_pct: "#f59e0b",
-  public_pct: "#6b7280",
+  promoter_pct: "#d4af6a",
+  fii_pct: "#7fb4d9",
+  dii_pct: "#d4af6a",
+  public_pct: "#8b877d",
 };
 
 const LABELS: Record<string, string> = {
@@ -33,7 +33,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   const { name, value } = payload[0];
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: "var(--fs-small)" }}>
+    <div style={{ background: "var(--surface-strong,#1b1c21)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: "var(--fs-small)" }}>
       <span style={{ color: "#fff", fontWeight: 700 }}>{name}: </span>
       <span style={{ color: payload[0].payload.color || "#fff", fontWeight: 700 }}>{value?.toFixed(1)}%</span>
     </div>
@@ -43,7 +43,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
+    <div style={{ background: "var(--surface-strong,#1b1c21)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
       <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
@@ -102,8 +102,8 @@ export function ShareholdingChart({ data }: Props) {
           {(["bar", "area"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} style={{
               fontSize: "var(--fs-tiny)", padding: "3px 10px", borderRadius: 6, cursor: "pointer",
-              background: view === v ? "var(--accent,#7c6aff)" : "rgba(255,255,255,0.07)",
-              border: `1px solid ${view === v ? "var(--accent,#7c6aff)" : "rgba(255,255,255,0.12)"}`,
+              background: view === v ? "var(--accent,#d4af6a)" : "rgba(255,255,255,0.07)",
+              border: `1px solid ${view === v ? "var(--accent,#d4af6a)" : "rgba(255,255,255,0.12)"}`,
               color: view === v ? "#fff" : "rgba(255,255,255,0.6)",
             }}>
               {v === "bar" ? "Stacked Bar" : "Area Trend"}

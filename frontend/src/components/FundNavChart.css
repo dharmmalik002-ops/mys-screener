@@ -11,7 +11,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 14px;
-  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--fs-tiny);
   color: var(--text-muted);
 }

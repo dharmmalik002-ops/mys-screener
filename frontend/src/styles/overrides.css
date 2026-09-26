@@ -40,8 +40,7 @@
 .chart-grid-card-foot strong,.pe-stat strong,.home-group-metrics strong,
 .sector-heatmap-card-return,.market-health-score-value,
 .adv-dec-stat strong,.ticker-ribbon-item strong,
-.st-price,.st-cell-center,
-.chart-panel .panel-header h2 {
+.st-price,.st-cell-center {
   font-family: var(--font-mono) !important;
   font-variant-numeric: tabular-nums;
 }
@@ -324,7 +323,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86));
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid rgba(26, 24, 20, 0.06);
   box-shadow: var(--elev-2);
 }
 
@@ -496,7 +495,7 @@
   border-radius: var(--radius-sm);
   font-size: var(--fs-tiny);
   font-weight: 600;
-  color: #64748b;
+  color: #77736a;
   cursor: pointer;
   transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
@@ -514,8 +513,8 @@
 
 /* Ticker ribbon refinement */
 .ticker-ribbon {
-  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: linear-gradient(90deg, #faf9f6 0%, #f3f1ec 50%, #faf9f6 100%);
+  border-bottom: 1px solid rgba(26, 24, 20, 0.06);
   font-size: var(--fs-small);
 }
 
@@ -531,14 +530,14 @@
 
 .ticker-ribbon-item span {
   font-weight: 700;
-  color: #64748b;
+  color: #77736a;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-size: var(--fs-micro);
 }
 
 :root[data-theme="dark"] .ticker-ribbon-item span {
-  color: #94a3b8;
+  color: #a3a097;
 }
 
 .ticker-ribbon-item strong {

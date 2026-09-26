@@ -48,7 +48,7 @@
   line-height: 1.65;
   color: var(--text-soft);
   background: var(--pfd-down-soft, rgba(251, 113, 133, 0.08));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.16));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.16));
   border-left: 2px solid var(--pfd-down, var(--negative));
   border-radius: var(--radius-sm);
 }
@@ -57,7 +57,7 @@
 
 .ssp-arc-turning, .ssp-swatch.ssp-arc-turning { stroke: #fbbf24; background: #fbbf24; }
 .ssp-arc-advancing, .ssp-swatch.ssp-arc-advancing { stroke: var(--pfd-up, var(--positive)); background: var(--pfd-up, var(--positive)); }
-.ssp-arc-sideways, .ssp-swatch.ssp-arc-sideways { stroke: #94a3b8; background: #94a3b8; }
+.ssp-arc-sideways, .ssp-swatch.ssp-arc-sideways { stroke: #a3a097; background: #a3a097; }
 .ssp-arc-declining, .ssp-swatch.ssp-arc-declining { stroke: var(--pfd-down, var(--negative)); background: var(--pfd-down, var(--negative)); }
 
 .ssp-arc { background: none; }
@@ -70,8 +70,8 @@
   flex-direction: column;
   gap: 10px;
   padding: 14px 16px;
-  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel, rgba(163, 160, 151, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   border-radius: var(--radius-lg);
   min-width: 0;
   overflow: hidden;
@@ -138,8 +138,8 @@
   flex-direction: column;
   gap: 10px;
   padding: 14px 16px;
-  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel, rgba(163, 160, 151, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   border-left-width: 2px;
   border-radius: var(--radius-lg);
   min-width: 0;
@@ -147,7 +147,7 @@
 
 .ssp-section.is-turning { border-left-color: var(--amber); }
 .ssp-section.is-advancing { border-left-color: var(--pfd-up, var(--positive)); }
-.ssp-section.is-sideways { border-left-color: #94a3b8; }
+.ssp-section.is-sideways { border-left-color: #a3a097; }
 .ssp-section.is-declining { border-left-color: var(--pfd-down, var(--negative)); }
 
 .ssp-section > header h3 {
@@ -165,7 +165,7 @@
   font-size: var(--fs-micro);
   font-weight: 600;
   color: var(--text-soft);
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.12));
   border-radius: var(--radius-pill);
 }
 
@@ -201,8 +201,8 @@
   font: inherit;
   text-align: left;
   color: inherit;
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.05));
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.05));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   border-radius: var(--radius-md);
   cursor: pointer;
   min-width: 0;
@@ -241,7 +241,7 @@
 
 .ssp-stage-chip.stage-1 { color: var(--amber); background: rgba(251, 191, 36, 0.14); }
 .ssp-stage-chip.stage-2 { color: var(--pfd-up); background: rgba(52, 211, 153, 0.14); }
-.ssp-stage-chip.stage-3 { color: #94a3b8; background: rgba(148, 163, 184, 0.16); }
+.ssp-stage-chip.stage-3 { color: #a3a097; background: rgba(163, 160, 151, 0.16); }
 .ssp-stage-chip.stage-4 { color: var(--pfd-down); background: rgba(251, 113, 133, 0.14); }
 
 .ssp-card-metrics {
@@ -283,7 +283,7 @@
   flex: 1 1 auto;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.14));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.14));
   overflow: hidden;
 }
 
@@ -291,7 +291,7 @@
   display: block;
   height: 100%;
   border-radius: var(--radius-pill);
-  background: #94a3b8;
+  background: #a3a097;
   transition: width 220ms ease;
 }
 
@@ -341,7 +341,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: 4vh 16px;
-  background: rgba(8, 12, 22, 0.72);
+  background: rgba(10, 10, 12, 0.72);
   backdrop-filter: blur(3px);
   overflow-y: auto;
 }
@@ -353,7 +353,7 @@
   width: min(920px, 100%);
   padding: 18px 20px 22px;
   background: var(--surface, #0f172a);
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.2));
+  border: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.2));
   border-radius: var(--radius-xl);
   box-shadow: var(--elev-3);
 }
@@ -377,7 +377,7 @@
   color: var(--text-muted);
 }
 
-.ssp-modal-symbol { font-family: 'JetBrains Mono', monospace; }
+.ssp-modal-symbol { font-family: var(--font-mono); }
 
 .ssp-modal-close {
   padding: 0 6px;
@@ -396,7 +396,7 @@
 .ssp-seg {
   display: inline-flex;
   padding: 2px;
-  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08));
+  background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.08));
   border-radius: var(--radius-sm);
 }
 
@@ -411,7 +411,7 @@
   cursor: pointer;
 }
 
-.ssp-seg button.active { color: var(--text); background: var(--surface, rgba(15, 23, 42, 0.9)); }
+.ssp-seg button.active { color: var(--text); background: var(--surface, rgba(26, 24, 20, 0.9)); }
 .ssp-seg button:hover:not(.active) { color: var(--text-soft); }
 
 .ssp-modal-placeholder {
@@ -430,7 +430,7 @@
 
 .ssp-modal-summary {
   padding-top: 10px;
-  border-top: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-top: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
   color: var(--text-soft);
 }
 
@@ -458,7 +458,7 @@
   text-transform: uppercase;
   text-align: right;
   color: var(--text-muted);
-  border-bottom: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-bottom: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.14));
 }
 
 .ssp-fund-table td {
@@ -469,13 +469,13 @@
 }
 
 .ssp-fund-table th.is-left, .ssp-fund-table td.is-left { text-align: left; }
-.ssp-fund-table tbody tr:hover { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.06)); }
+.ssp-fund-table tbody tr:hover { background: var(--pfd-panel-hover, rgba(163, 160, 151, 0.06)); }
 
 .ssp-method {
   margin: 0;
   max-width: 100ch;
   padding-top: 10px;
-  border-top: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.12));
+  border-top: 1px solid var(--pfd-hairline, rgba(163, 160, 151, 0.12));
   font-size: var(--fs-micro);
   line-height: 1.7;
   color: var(--text-muted);

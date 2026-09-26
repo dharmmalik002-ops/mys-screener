@@ -222,7 +222,7 @@
 }
 
 .mfp-toggle:hover:not(:disabled) { color: var(--text-soft); border-color: var(--line-strong, var(--line)); }
-.mfp-toggle.active { color: var(--accent); border-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
+.mfp-toggle.active { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent-3) 8%, transparent); }
 .mfp-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .mfp-subcats { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -242,7 +242,7 @@
 
 .mfp-chip i { font-style: normal; font-size: var(--fs-nano); opacity: 0.6; }
 .mfp-chip:hover { color: var(--text-soft); border-color: var(--line-strong, var(--line)); }
-.mfp-chip.active { color: var(--accent); border-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
+.mfp-chip.active { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent-3) 8%, transparent); }
 .mfp-chip.clear { color: var(--text-muted); border-style: dashed; }
 
 /* -------------------------------------------------------------- column sets */
@@ -266,7 +266,7 @@
 }
 
 .mfp-pill:hover { color: var(--text-soft); }
-.mfp-pill.active { color: var(--accent-on-tint); border-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
+.mfp-pill.active { color: var(--accent-on-tint); border-color: var(--accent); background: color-mix(in srgb, var(--accent-3) 8%, transparent); }
 
 .mfp-colset-hint {
   flex: 1 1 260px;
@@ -289,7 +289,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: var(--fs-tiny);
-  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
 }
 
 .mfp-table th,
@@ -322,7 +322,7 @@
 .mfp-table tbody tr { cursor: pointer; transition: background var(--dur-fast, 120ms) ease; }
 .mfp-table tbody tr:hover { background: var(--surface-soft, rgba(255, 255, 255, 0.03)); }
 .mfp-table tbody tr:last-child td { border-bottom: 0; }
-.mfp-row-held { background: rgba(56, 189, 248, 0.06); }
+.mfp-row-held { background: color-mix(in srgb, var(--accent-3) 6%, transparent); }
 
 .mfp-name { display: flex; flex-direction: column; gap: 1px; max-width: 300px; }
 .mfp-name b { font-weight: 600; color: var(--text); white-space: normal; line-height: 1.3; }
@@ -333,7 +333,7 @@
   padding: 0 4px;
   font-size: var(--fs-nano);
   border-radius: var(--radius-xs);
-  background: rgba(56, 189, 248, 0.16);
+  background: color-mix(in srgb, var(--accent-3) 16%, transparent);
   color: var(--accent-on-tint);
 }
 
@@ -424,7 +424,7 @@
 
 .mfp-cat-nums span { display: flex; flex-direction: column; gap: 1px; }
 .mfp-cat-nums i { font-style: normal; font-size: var(--fs-nano); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-.mfp-cat-nums b { font-size: var(--fs-small); font-family: "JetBrains Mono", "SF Mono", Menlo, monospace; color: var(--text); }
+.mfp-cat-nums b { font-size: var(--fs-small); font-family: var(--font-mono); color: var(--text); }
 
 .mfp-leaders { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
 
@@ -435,7 +435,7 @@
   gap: 8px;
   font-size: var(--fs-tiny);
   color: var(--text-muted);
-  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
 }
 
 .mfp-leaders li > span:nth-child(4) { text-align: right; }
@@ -491,7 +491,7 @@
 
 .mfp-pf-totals strong {
   font-size: var(--fs-body);
-  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   color: var(--text);
 }
 
@@ -561,7 +561,7 @@
 .mfp-bar-row > em {
   font-style: normal;
   text-align: right;
-  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   color: var(--text);
 }
 
@@ -645,7 +645,7 @@
   cursor: pointer;
 }
 
-.mfp-cat-all:hover { border-color: var(--accent); background: rgba(56, 189, 248, 0.07); }
+.mfp-cat-all:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent-3) 7%, transparent); }
 
 .mfp-editor-note {
   margin: 0;
@@ -653,7 +653,7 @@
   font-size: var(--fs-tiny);
   line-height: 1.5;
   color: var(--accent);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-3) 8%, transparent);
   border-radius: var(--radius-sm);
 }
 

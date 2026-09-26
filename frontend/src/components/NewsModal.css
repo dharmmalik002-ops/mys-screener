@@ -5,7 +5,7 @@
 .news-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 12, 22, 0.78);
+  background: rgba(10, 10, 12, 0.78);
   backdrop-filter: blur(6px);
   z-index: 9999;
   display: flex;
@@ -24,8 +24,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0e1426 0%, #0a0f1f 100%);
-  color: #e7eaf5;
+  background: linear-gradient(180deg, #0e1426 0%, #0b0b0d 100%);
+  color: #ebe8e1;
   overflow: hidden;
 }
 
@@ -76,7 +76,7 @@
 
 .news-btn-refresh {
   background: linear-gradient(135deg, var(--news-accent), #ffd166);
-  color: #0a0f1f;
+  color: #0b0b0d;
   font-weight: 700;
   border: 0;
   border-radius: var(--radius-pill);
@@ -103,7 +103,7 @@
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
-  color: #e7eaf5;
+  color: #ebe8e1;
   font-size: var(--fs-lead);
   cursor: pointer;
   transition: background var(--dur-fast) ease;
@@ -266,7 +266,7 @@
 }
 
 .news-growth-val {
-  color: #e7eaf5;
+  color: #ebe8e1;
   font-variant-numeric: tabular-nums;
 }
 
@@ -309,7 +309,7 @@
 
 .news-item-title {
   display: block;
-  color: #e7eaf5;
+  color: #ebe8e1;
   font-weight: 600;
   font-size: var(--fs-base);
   line-height: 1.4;
@@ -357,7 +357,7 @@
   gap: 6px;
   background: linear-gradient(135deg, var(--negative) 0%, #ffd166 50%, #06d6a0 100%);
   background-size: 200% 200%;
-  color: #0a0f1f;
+  color: #0b0b0d;
   font-weight: 700;
   border: 0;
   border-radius: var(--radius-pill);
