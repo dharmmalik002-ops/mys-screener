@@ -40,6 +40,7 @@ import {
   normalizeTotalScannerTree,
   totalScannerLeafLabel,
   type TotalScannerLeafMode,
+  type TotalScannerBandExclusion,
   type TotalScannerNode,
 } from "./lib/totalScanner";
 import { DEFAULT_POSITIVE_EARNINGS_FILTERS, type PositiveEarningsFilters } from "./components/PositiveEarningsScannerPanel";
@@ -54,6 +55,7 @@ import {
   getDemandZoneScan,
   getFundamentals,
   getGapUpOpeners,
+  getLowPriceBands,
   getIndustryGroups,
   getIndexQuotes,
   getMomentumBurstScan,
@@ -208,6 +210,11 @@ function readGroupWidgetOpen(): boolean {
 }
 const CHART_PALETTE_KEY = "mr-malik-chart-palette:v1";
 const TOTAL_SCANNER_KEY = "mr-malik-total-scanner:v1";
+const TOTAL_SCANNER_BANDS_KEY = "mr-malik-total-scanner-bands:v1";
+
+// Hidden by default, matching Custom Scanner: these names gap straight to the
+// limit and can't be traded as breakouts.
+const DEFAULT_TOTAL_SCANNER_BANDS: TotalScannerBandExclusion = { exclude2: true, exclude5: true };
 const WATCHLISTS_KEY = "mr-malik-watchlists:v1";
 const WATCHLISTS_BACKUP_KEY = "mr-malik-watchlists:backup:v1";
 const LEGACY_WATCHLISTS_KEYS = ["mr-malik-watchlists", "stock-scanner-watchlists:v1", "stock-scanner-watchlists"];
@@ -1987,6 +1994,18 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
   });
   const [totalScannerError, setTotalScannerError] = useState<string | null>(null);
+  const [totalScannerBands, setTotalScannerBands] = useState<TotalScannerBandExclusion>(() => {
+    if (typeof window === "undefined") return DEFAULT_TOTAL_SCANNER_BANDS;
+    try {
+      const raw = JSON.parse(window.localStorage.getItem(TOTAL_SCANNER_BANDS_KEY) ?? "null");
+      return {
+        exclude2: typeof raw?.exclude2 === "boolean" ? raw.exclude2 : DEFAULT_TOTAL_SCANNER_BANDS.exclude2,
+        exclude5: typeof raw?.exclude5 === "boolean" ? raw.exclude5 : DEFAULT_TOTAL_SCANNER_BANDS.exclude5,
+      };
+    } catch {
+      return DEFAULT_TOTAL_SCANNER_BANDS;
+    }
+  });
   const [gapUpThreshold, setGapUpThreshold] = useState(initialScannerSettings.gapUpThreshold);
   const [gapUpMinLiquidityCrore, setGapUpMinLiquidityCrore] = useState<number | null>(initialScannerSettings.gapUpMinLiquidityCrore);
   const [minervini1mMinLiquidityCrore, setMinervini1mMinLiquidityCrore] = useState<number | null>(
@@ -3814,6 +3833,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
   }, [totalScannerTree]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TOTAL_SCANNER_BANDS_KEY, JSON.stringify(totalScannerBands));
+    } catch {
+      // best-effort persistence only
+    }
+  }, [totalScannerBands]);
+
   const runTotalScannerCombination = async (
     tree: TotalScannerNode = totalScannerTree,
   ): Promise<ScanResultsResponse> => {
@@ -3823,15 +3850,28 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     // One fetch per DISTINCT scanner, in parallel; a scanner that fails or is
     // unconfigured (e.g. Custom Scanner with no filters applied) contributes an
     // empty set rather than failing the whole run.
-    const settled = await Promise.all(
-      modes.map(async (mode) => {
-        try {
-          return [mode, await requestScannerResults(mode, false)] as const;
-        } catch {
-          return [mode, null] as const;
-        }
-      }),
-    );
+    const excludedBands = new Set<number>([
+      ...(totalScannerBands.exclude2 ? [2] : []),
+      ...(totalScannerBands.exclude5 ? [5] : []),
+    ]);
+    const [settled, lowBands] = await Promise.all([
+      Promise.all(
+        modes.map(async (mode) => {
+          try {
+            return [mode, await requestScannerResults(mode, false)] as const;
+          } catch {
+            return [mode, null] as const;
+          }
+        }),
+      ),
+      // Band store unavailable → show everything rather than fail the run.
+      excludedBands.size > 0 ? getLowPriceBands(activeMarket).catch(() => null) : Promise.resolve(null),
+    ]);
+    const bandBySymbol = lowBands?.bands ?? {};
+    const isExcludedByBand = (symbol: string) => {
+      const band = bandBySymbol[symbol.toUpperCase()];
+      return band !== undefined && excludedBands.has(band);
+    };
 
     const sets = new Map<TotalScannerLeafMode, Set<string>>();
     const rowBySymbol = new Map<string, ScanMatch>();
@@ -3856,7 +3896,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     const items: ScanMatch[] = [];
     for (const symbol of symbols) {
       const row = rowBySymbol.get(symbol);
-      if (!row) continue;
+      if (!row || isExcludedByBand(symbol)) continue;
       items.push({
         ...row,
         // Frozen row with no current twin: show today's quote, like the chart.
@@ -6529,6 +6569,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                                     loading={scanLoading}
                                     matchCount={scanResults?.scan?.id === "total-scanner" ? scanResults.total_hits : null}
                                     error={totalScannerError}
+                                    bandExclusion={totalScannerBands}
+                                    onBandExclusionChange={setTotalScannerBands}
                                   />
                                 )
                               : activeScanner === "positive-earnings"

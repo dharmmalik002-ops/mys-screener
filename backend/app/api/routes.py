@@ -542,6 +542,24 @@ def build_router(service):
     async def bhavcopy_status(market: str = Query(default="india")):
         return resolve_service(market).get_bhavcopy_status()
 
+    @router.get("/price-bands/low")
+    def low_price_bands(market: str = Query(default="india")):
+        """Symbols on a 2% or 5% daily circuit band → {symbol: band_pct}.
+
+        Total Scanner combines leaf scanners in the browser, and scan rows do
+        not carry the band, so it fetches this once to drop those names.
+        """
+        try:
+            store = resolve_service(market)._load_price_bands() or {}
+        except Exception:
+            store = {}
+        bands = {
+            str(symbol).upper(): float(value)
+            for symbol, value in (store.get("bands") or {}).items()
+            if isinstance(value, (int, float)) and float(value) <= 5
+        }
+        return {"as_of": store.get("as_of"), "bands": bands}
+
     @router.get("/market-environment")
     async def market_environment(market: str = Query(default="india")):
         return await resolve_service(market).get_market_environment()

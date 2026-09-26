@@ -203,3 +203,6 @@ export function normalizeTotalScannerTree(value: unknown): TotalScannerNode | nu
   // The root must be a group so the UI always has something to add into.
   return parsed.kind === "group" ? parsed : createGroupNode("AND", [parsed]);
 }
+
+/** Which daily circuit bands Total Scanner leaves out of its results. */
+export type TotalScannerBandExclusion = { exclude2: boolean; exclude5: boolean };

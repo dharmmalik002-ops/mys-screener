@@ -3676,6 +3676,16 @@ export type MarketEnvironmentResponse = {
   } | null;
 };
 
+/** Symbols on a 2% / 5% daily circuit band → band percent. */
+export type LowPriceBandsResponse = {
+  as_of: string | null;
+  bands: Record<string, number>;
+};
+
+export function getLowPriceBands(market: MarketKey = "india") {
+  return request<LowPriceBandsResponse>(`/api/price-bands/low?market=${market}`);
+}
+
 export function getMarketEnvironment(market: MarketKey = "india") {
   return request<MarketEnvironmentResponse>(`/api/market-environment?market=${market}`);
 }

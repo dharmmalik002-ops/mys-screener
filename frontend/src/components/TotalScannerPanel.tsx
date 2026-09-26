@@ -10,6 +10,7 @@ import {
   removeNode,
   setGroupOp,
   setLeafMode,
+  type TotalScannerBandExclusion,
   type TotalScannerLeafMode,
   type TotalScannerNode,
   type TotalScannerOp,
@@ -24,6 +25,8 @@ type TotalScannerPanelProps = {
   loading: boolean;
   matchCount: number | null;
   error: string | null;
+  bandExclusion: TotalScannerBandExclusion;
+  onBandExclusionChange: (next: TotalScannerBandExclusion) => void;
 };
 
 const MAX_DEPTH = 3;
@@ -149,6 +152,8 @@ export function TotalScannerPanel({
   loading,
   matchCount,
   error,
+  bandExclusion,
+  onBandExclusionChange,
 }: TotalScannerPanelProps) {
   const leaves = countLeaves(tree);
   const summary = describeTotalScanner(tree);
@@ -182,6 +187,27 @@ export function TotalScannerPanel({
         isRoot
         onChange={onTreeChange}
       />
+
+      <div className="ts-settings" role="group" aria-label="Circuit band filter">
+        <span className="ts-formula-label">Leave out</span>
+        <label className="ts-check" title="Drop stocks on a 2% daily circuit band from the results">
+          <input
+            type="checkbox"
+            checked={bandExclusion.exclude2}
+            onChange={(event) => onBandExclusionChange({ ...bandExclusion, exclude2: event.target.checked })}
+          />
+          <span>2% circuit stocks</span>
+        </label>
+        <label className="ts-check" title="Drop stocks on a 5% daily circuit band from the results">
+          <input
+            type="checkbox"
+            checked={bandExclusion.exclude5}
+            onChange={(event) => onBandExclusionChange({ ...bandExclusion, exclude5: event.target.checked })}
+          />
+          <span>5% circuit stocks</span>
+        </label>
+        <span className="ts-settings-note">Applies on the next run</span>
+      </div>
 
       {error ? <p className="ts-error">{error}</p> : null}
       {matchCount !== null && !error ? (
