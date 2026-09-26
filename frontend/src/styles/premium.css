@@ -803,59 +803,65 @@ html:root[data-design="studio"] footer.site-footer {
   }
 }
 
-/* ---------- Header: the page menu is the loudest thing on the page -------
+/* ---------- Header: the page menu ------------------------------------------
    The wordmark is gone and the search is compact, so the width goes to the
-   tabs. The rail is an ink bar with bright text and an orange active tab in
-   light mode, and a lit, orange-rimmed bar in dark mode — nothing else in the
-   Studio design uses a filled dark surface or a filled accent, so it reads as
-   the navigation at a glance. */
+   tabs. The rail is a white card on the #f8f8f8 page with a hairline, full-
+   ink 15px labels, and the house interaction colour for the active tab —
+   solid ink with white text, the same inverse the selected chips and the
+   primary button use — so it is the clearest thing in the bar without
+   bringing in a colour the rest of the design does not use. */
 
 html:root[data-design="studio"][data-theme] .top-nav .nav-rail {
   padding: 4px;
-  gap: 3px;
+  gap: 2px;
   border-radius: 12px;
-  background: #0b0b0b;
-  border: 1px solid #0b0b0b;
-  box-shadow: 0 6px 18px rgba(10, 13, 20, 0.18);
+  background: var(--card-flat);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(10, 13, 20, 0.04);
 }
 
 html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
   height: 34px;
   padding: 0 14px;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--text);
   font-size: 15px;
   font-weight: 500;
   letter-spacing: -0.1px;
 }
 
 html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  background: var(--muted-bg);
 }
 
-html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button.primary,
-:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail .nav-button.primary {
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button.primary {
   color: #ffffff !important;
-  background: var(--viz-orange) !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--viz-orange) 45%, transparent) !important;
-  font-weight: 600 !important;
+  background: #0b0b0b !important;
+  box-shadow: 0 1px 3px rgba(10, 13, 20, 0.16) !important;
+  font-weight: 500 !important;
 }
 
 html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button:focus-visible {
-  outline: 2px solid var(--viz-orange-soft);
+  outline: 2px solid var(--text-muted);
   outline-offset: 1px;
 }
 
-/* Dark mode: the page is already near-black, so the rail lifts instead. */
-:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail {
-  background: #26262a;
-  border-color: color-mix(in srgb, var(--viz-orange) 55%, transparent);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.45);
+/* Dark mode: the same inverse, flipped — the active tab is the light one. */
+:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail .nav-button.primary {
+  color: #0b0b0b !important;
+  background: #f2f2f2 !important;
+  box-shadow: none !important;
 }
 
-:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail .nav-button {
-  color: #f2f2f2;
+/* Search sits straight after the tabs; the date pill takes the slack, so
+   the status controls stay pinned right. */
+html:root[data-design="studio"] .top-nav .nav-search {
+  margin-left: 0;
+}
+
+html:root[data-design="studio"] .top-nav .nav-controls > .status-pill {
+  margin-left: auto;
 }
 
 /* Compact search. Desktop only — below 769px mobile.css owns this row. */
