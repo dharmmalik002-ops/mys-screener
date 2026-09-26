@@ -458,19 +458,20 @@ const CHART_PALETTES: Record<
   }
 > = {
   current: {
-    // House dark canvas: warm obsidian, a whisper of grid, gold crosshair.
-    label: "Obsidian",
-    background: "#0f1013",
-    textColor: "#8b877d",
-    gridColor: "rgba(255, 255, 255, 0.035)",
-    crosshairColor: "rgba(212, 175, 106, 0.45)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    // Default canvas: plain white paper, no grid — the bars and the drawn
+    // levels are the only lines on the chart.
+    label: "White",
+    background: "#ffffff",
+    textColor: "#6b665b",
+    gridColor: "rgba(0, 0, 0, 0)",
+    crosshairColor: "rgba(111, 82, 20, 0.45)",
+    borderColor: "rgba(40, 33, 20, 0.12)",
     upColor: CANDLE_UP,
     downColor: CANDLE_DOWN,
-    volumeUpColor: "rgba(34, 171, 148, 0.34)",
-    volumeDownColor: "rgba(247, 82, 95, 0.32)",
-    rsLineColor: "#c3a6ec",
-    rsMarkerColor: "#c3a6ec",
+    volumeUpColor: "rgba(34, 171, 148, 0.30)",
+    volumeDownColor: "rgba(247, 82, 95, 0.28)",
+    rsLineColor: "#7c5cc4",
+    rsMarkerColor: "#7c5cc4",
   },
   editorial: {
     // Ivory paper for print-like reading in daylight.
@@ -3048,10 +3049,10 @@ export function ChartPanel({
         fontSize: 11,
       },
       grid: {
-        // A whisper of horizontal grid (price levels) and no vertical lines:
-        // enough structure to read a level, never enough to compete with bars.
+        // No grid in any palette: on a plain canvas the bars and the user's
+        // own drawn levels are the only lines.
         vertLines: { visible: false },
-        horzLines: { visible: true, color: palette.gridColor, style: LineStyle.Solid },
+        horzLines: { visible: false },
       },
       crosshair: buildCrosshairOptions(palette.crosshairColor),
       leftPriceScale: {
@@ -3361,7 +3362,7 @@ export function ChartPanel({
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { visible: true, color: palette.gridColor, style: LineStyle.Solid },
+        horzLines: { visible: false },
       },
       crosshair: buildCrosshairOptions(palette.crosshairColor),
       leftPriceScale: { visible: false, borderColor: palette.borderColor },

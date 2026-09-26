@@ -657,3 +657,58 @@ html:root .qb-action.qb-action-primary:hover:not(:disabled),
 html:root .qb-op-toggle:hover {
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-raised));
 }
+
+/* ---------- Big charts: white paper, no lines ----------------------------
+   The chart canvases (ChartPanel, Chart Gym, Markets index, sector and fund
+   NAV charts) draw on plain white in both themes. Everything floating ON
+   the canvas — tool rail, zoom/nav buttons, hint pills — reads the light
+   token set here, so it sits on the paper instead of punching dark holes
+   in it. Scoped to the stage, so the dark UI around the chart is untouched. */
+html:root .chart-stage,
+html:root .study-chart-wrap {
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-strong: rgba(255, 255, 255, 0.96);
+  --surface-soft: rgba(245, 243, 238, 0.9);
+  --surface-raised: #ffffff;
+  --card-flat: #ffffff;
+  --line: rgba(40, 33, 20, 0.10);
+  --line-strong: rgba(40, 33, 20, 0.18);
+  --text: #1a1814;
+  --text-soft: #57534a;
+  --text-muted: #6b665b;
+  --accent: #86641f;
+  --accent-strong: #6f5214;
+  --accent-on-tint: #6f5214;
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+html:root .chart-stage .chart-canvas,
+html:root .study-chart-wrap,
+html:root .icc-chart,
+html:root .fnc-wrap .tv-lightweight-charts {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+html:root .chart-stage .chart-tool-rail {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.06), 0 8px 20px -12px rgba(40, 30, 10, 0.25);
+}
+
+html:root .chart-stage .chart-stage-action-button,
+html:root .chart-stage .chart-stage-nav-button {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 1px 2px rgba(40, 30, 10, 0.08);
+}
+
+/* The stage itself can be far taller than the canvas (it stretches with the
+   page grid); only the canvas is paper, the stage stays see-through. */
+html:root .chart-stage {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}

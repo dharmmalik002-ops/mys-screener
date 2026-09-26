@@ -2,14 +2,14 @@ import type { ChartColorSettings } from "../components/ChartPanel";
 import { CANDLE_DOWN, CANDLE_UP } from "./marketColors";
 
 export const DEFAULT_CHART_COLORS: ChartColorSettings = {
-  // House palette: warm, low-saturation moving averages that sit behind the
-  // candles instead of competing with them. Each stays distinct from the
-  // others and from both candle colours at a glance.
-  ema10: "#e8a07a",
-  ema20: "#d4af6a",
-  ema50: "#7fb4d9",
-  ema200: "#a39e93",
-  vwap: "#b39ddb",
+  // Moving averages tuned for the white chart canvas: mid-tone, so each
+  // reads on white paper yet stays distinct from the others and from both
+  // candle colours at a glance.
+  ema10: "#e07b4f",
+  ema20: "#c9971f",
+  ema50: "#3f86c2",
+  ema200: "#8b867b",
+  vwap: "#8b6fd0",
   // Teal/coral candles (TradingView's current pair): calm, high up-vs-down
   // contrast, easy on the eyes for long sessions.
   candleUp: CANDLE_UP,
@@ -17,26 +17,27 @@ export const DEFAULT_CHART_COLORS: ChartColorSettings = {
   candleExpansion: "#e6b04e",
   volumeUp: CANDLE_UP,
   volumeDown: CANDLE_DOWN,
-  rsLine: "#c3a6ec",
-  rsMarker: "#c3a6ec",
+  rsLine: "#7c5cc4",
+  rsMarker: "#7c5cc4",
   rsMarkerSize: 4,
 };
+/** The big charts draw on plain white paper with no grid, in both themes. */
+export const CHART_PAPER = "#ffffff";
+/** Axis text on the white canvas. */
+export const CHART_PAPER_TEXT = "#6b665b";
+
 /**
- * Shared crosshair for every lightweight-charts surface outside ChartPanel:
- * a fine dashed line in the house accent with warm-charcoal axis pills. The
- * canvas cannot read CSS variables, so the accent is resolved at call time
- * from the live theme.
+ * Shared crosshair for the lightweight-charts surfaces outside ChartPanel:
+ * a fine dashed bronze line with warm-charcoal axis pills, sized for the
+ * white chart canvas.
  */
 export function premiumCrosshair() {
-  const styles = typeof document !== "undefined" ? getComputedStyle(document.documentElement) : null;
-  const accent = styles?.getPropertyValue("--accent").trim() || "#d4af6a";
-  const light = typeof document !== "undefined" && document.documentElement.dataset.theme === "light";
   const line = {
-    color: `${accent}80`,
+    color: "rgba(111, 82, 20, 0.5)",
     width: 1 as const,
     style: 2 as const, // LineStyle.Dashed
     labelVisible: true,
-    labelBackgroundColor: light ? "#57534a" : "#2a2722",
+    labelBackgroundColor: "#2a2722",
   };
   return { vertLine: line, horzLine: line };
 }

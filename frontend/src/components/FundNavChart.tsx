@@ -1,4 +1,4 @@
-import { premiumCrosshair } from "../lib/chartDefaults";
+import { CHART_PAPER, CHART_PAPER_TEXT, premiumCrosshair } from "../lib/chartDefaults";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorType, LineStyle, createChart, type IChartApi, type ISeriesApi } from "lightweight-charts";
 import type { MfBenchmarkLine, MfSeriesLine } from "../lib/api";
@@ -28,7 +28,7 @@ import { NEGATIVE, POSITIVE } from "../lib/marketColors";
  * wide was the swing inside the period, not just where it ended.
  */
 
-const COMPARE_COLORS = ["#b39ddb", "#d4af6a", "#4fb3a9", "#d98ba0"];
+const COMPARE_COLORS = ["#7c5cc4", "#b8861f", "#1f8f84", "#c0507a"];
 
 export type FundNavChartMode = "growth" | "nav" | "candles";
 
@@ -197,18 +197,16 @@ export function FundNavChart({
     if (!node || (!lines.length && !candles.length)) return;
 
     const styles = getComputedStyle(document.documentElement);
-    const textColor = styles.getPropertyValue("--text-muted").trim() || "#8b877d";
-    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(255, 255, 255, 0.05)";
 
     const chart = createChart(node, {
       height,
       layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor,
+        background: { type: ColorType.Solid, color: CHART_PAPER },
+        textColor: CHART_PAPER_TEXT,
         fontSize: 11,
         fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
-      grid: { vertLines: { visible: false }, horzLines: { color: lineColor } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: drawdown?.length ? 0.28 : 0.08 } },
       timeScale: { borderVisible: false, rightOffset: 2, fixLeftEdge: true, fixRightEdge: true },
       crosshair: premiumCrosshair(),

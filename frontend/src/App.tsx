@@ -748,19 +748,21 @@ function normalizeIndicatorKeys(value: unknown): IndicatorKey[] {
 //   pre-2026-07: neon cyan/red candles
 //   pre-2026-09: TradingView #089981/#f23645 candles, neon #39ff14 RS/VWAP,
 //                cyan EMA50 — replaced by the house palette in chartDefaults.
+//   2026-09-26:  the first house palette (pale gold/steel/lavender), too
+//                light once the default chart canvas became white.
 const LEGACY_CHART_COLOR_DEFAULTS: Partial<Record<keyof ChartColorSettings, string[]>> = {
-  ema10: ["#ff7a59"],
-  ema20: ["#f7b955"],
-  ema50: ["#00d2ff"],
-  ema200: ["#8b949e"],
-  vwap: ["#39ff14"],
+  ema10: ["#ff7a59", "#e8a07a"],
+  ema20: ["#f7b955", "#d4af6a"],
+  ema50: ["#00d2ff", "#7fb4d9"],
+  ema200: ["#8b949e", "#a39e93"],
+  vwap: ["#39ff14", "#b39ddb"],
   candleUp: ["#00d2ff", "#089981"],
   candleDown: ["#ff3131", "#f23645"],
   candleExpansion: ["#ffb01f"],
   volumeUp: ["#00d2ff", "#089981"],
   volumeDown: ["#ff3131", "#f23645"],
-  rsLine: ["#39ff14"],
-  rsMarker: ["#39ff14"],
+  rsLine: ["#39ff14", "#c3a6ec"],
+  rsMarker: ["#39ff14", "#c3a6ec"],
 };
 
 function migrateChartColor(key: keyof ChartColorSettings, value: unknown): string | null {

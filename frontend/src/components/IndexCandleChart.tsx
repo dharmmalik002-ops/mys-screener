@@ -1,4 +1,4 @@
-import { premiumCrosshair } from "../lib/chartDefaults";
+import { CHART_PAPER, CHART_PAPER_TEXT, premiumCrosshair } from "../lib/chartDefaults";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorType, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import type { ChartBar } from "../lib/api";
@@ -23,9 +23,9 @@ function smaAt(closes: number[], idx: number, span: number): number | null {
 }
 
 const OVERLAYS = [
-  { key: "ema10", label: "EMA10", color: "#7fb4d9" },
-  { key: "ema21", label: "EMA21", color: "#d4af6a" },
-  { key: "ema50", label: "EMA50", color: "#b39ddb" },
+  { key: "ema10", label: "EMA10", color: "#3f86c2" },
+  { key: "ema21", label: "EMA21", color: "#b8861f" },
+  { key: "ema50", label: "EMA50", color: "#7c5cc4" },
   { key: "sma200", label: "SMA200", color: "#8b877d" },
 ] as const;
 
@@ -69,22 +69,16 @@ export function IndexCandleChart({ bars, height = 320 }: { bars: ChartBar[]; hei
     const node = containerRef.current;
     if (!node || computed.clean.length < 2) return;
 
-    const styles = getComputedStyle(document.documentElement);
-    const textColor = styles.getPropertyValue("--text-muted").trim() || "#8b877d";
-    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(255, 255, 255, 0.05)";
 
     const chart = createChart(node, {
       height,
       layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor,
+        background: { type: ColorType.Solid, color: CHART_PAPER },
+        textColor: CHART_PAPER_TEXT,
         fontSize: 11,
         fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
-      grid: {
-        vertLines: { visible: false },
-        horzLines: { color: lineColor },
-      },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, rightOffset: 4 },
       crosshair: premiumCrosshair(),

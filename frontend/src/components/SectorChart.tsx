@@ -1,4 +1,4 @@
-import { premiumCrosshair } from "../lib/chartDefaults";
+import { CHART_PAPER, CHART_PAPER_TEXT, premiumCrosshair } from "../lib/chartDefaults";
 import { useEffect, useRef } from "react";
 import { ColorType, LineStyle, createChart } from "lightweight-charts";
 import type { MfSectorSeries } from "../lib/api";
@@ -37,20 +37,18 @@ export function SectorChart({
     const styles = getComputedStyle(document.documentElement);
     const read = (token: string, fallback: string) =>
       styles.getPropertyValue(token).trim() || fallback;
-    const textColor = read("--text-muted", "#8b877d");
-    const gridColor = read("--line", "rgba(255, 255, 255, 0.05)");
     const up = read("--pfd-up", POSITIVE);
     const down = read("--pfd-down", NEGATIVE);
 
     const chart = createChart(node, {
       height,
       layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor,
+        background: { type: ColorType.Solid, color: CHART_PAPER },
+        textColor: CHART_PAPER_TEXT,
         fontSize: 11,
         fontFamily: "'Geist Mono', 'SF Mono', Menlo, monospace",
       },
-      grid: { vertLines: { visible: false }, horzLines: { color: gridColor } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 } },
       timeScale: { borderVisible: false, rightOffset: 2, fixLeftEdge: true, fixRightEdge: true },
       crosshair: premiumCrosshair(),
@@ -93,7 +91,7 @@ export function SectorChart({
       }
     } else {
       const line = chart.addAreaSeries({
-        lineColor: read("--pfd-line", "#7fb4d9"),
+        lineColor: read("--pfd-line", "#3f86c2"),
         topColor: read("--pfd-line-soft", "rgba(127,180,217,0.25)"),
         bottomColor: read("--pfd-line-faint", "rgba(127,180,217,0.01)"),
         lineWidth: 2,
