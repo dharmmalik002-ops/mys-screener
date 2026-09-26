@@ -5832,7 +5832,6 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
   const autoRefreshSchedule = getAutoRefreshSchedule(new Date(clockTick), activeMarket);
   const navSearchSuggestions = buildSymbolSuggestions(universeCatalog, deferredNavSearchQuery, 80);
-  const brandEyebrow = "NSE / BSE Stock Scanner";
   const floorMetricLabel = "Floor";
   const floorMetricValue = `${dashboard?.market_cap_min_crore ?? 800} Cr+`;
 
@@ -5921,13 +5920,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       <header className="top-nav">
         <div className="brand-stack">
           <div className="brand-cluster">
-            <div className="brand-mark" aria-hidden="true">M</div>
-            <div>
-              <p className="eyebrow">{brandEyebrow}</p>
-              <h1>
-                Mr. Malik <span className="brand-accent">Scanner</span>
-              </h1>
-            </div>
+            {/* The name is not written out: the width goes to the page tabs. */}
+            <div className="brand-mark" role="img" aria-label="Mr. Malik Scanner" title="Mr. Malik Scanner">M</div>
           </div>
         </div>
 
@@ -5977,7 +5971,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                       setTimeout(() => handleSearchSubmit(value), 0);
                     }
                   }}
-                  placeholder="Search symbol or company"
+                  placeholder="Search stock"
                   aria-label="Search symbol or company. Enter opens chart, Shift+Enter jumps to group."
                 />
                 <span className="nav-search-hint">Enter opens chart. Shift+Enter jumps to the stock&apos;s group.</span>

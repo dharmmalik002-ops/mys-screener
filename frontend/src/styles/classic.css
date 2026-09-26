@@ -1037,3 +1037,92 @@ html:root[data-design="classic"] .ol-dist-value {
 html:root[data-design="classic"] .ol-dist-value {
   font-size: 26px;
 }
+
+/* ---------- Header: the page menu is the loudest thing on the page -------
+   The wordmark is gone and the search is compact, so the width goes to the
+   tabs: an obsidian bar with ivory text and a solid champagne-gold active
+   tab — the only filled gold surface in the design. */
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail {
+  padding: 4px;
+  gap: 3px;
+  border-radius: 12px;
+  background: #121110;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button {
+  padding: 7px 14px;
+  color: rgba(246, 240, 228, 0.86);
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button:hover {
+  color: #fffaf0;
+  background: rgba(246, 240, 228, 0.1);
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button.primary,
+:root[data-design="classic"][data-theme="light"] .top-nav .nav-rail .nav-button.primary {
+  color: #141210 !important;
+  background: var(--accent) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  font-weight: 650 !important;
+}
+
+html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button.primary::after {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  html:root[data-design="classic"] .top-nav .nav-controls form.nav-search {
+    flex: 0 1 190px;
+    min-width: 140px;
+    max-width: 200px;
+  }
+
+  html:root[data-design="classic"][data-theme] .top-nav .nav-search input,
+  html:root[data-design="classic"][data-theme] .top-nav .nav-search-field input {
+    min-width: 0;
+    font-size: 13px;
+  }
+}
+
+/* Laptop widths: tighten the tabs before the row has to scroll, then drop
+   the status pill's schedule label (the date is the part that matters). */
+@media (min-width: 769px) and (max-width: 1400px) {
+  html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1260px) {
+  html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 7px 8px;
+    font-size: 13.5px;
+  }
+
+  html:root[data-design="classic"] .top-nav .status-pill > span:not(.status-dot):not(.status-pill-sep),
+  html:root[data-design="classic"] .top-nav .status-pill-sep {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1260px) {
+  html:root[data-design="classic"][data-theme] .top-nav .nav-rail {
+    gap: 1px;
+    padding: 3px;
+  }
+
+  html:root[data-design="classic"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 7px 7px;
+  }
+
+  html:root[data-design="classic"] .top-nav .nav-controls form.nav-search {
+    min-width: 120px;
+  }
+}

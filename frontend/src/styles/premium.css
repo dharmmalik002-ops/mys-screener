@@ -802,3 +802,125 @@ html:root[data-design="studio"] footer.site-footer {
     font-size: 14px;
   }
 }
+
+/* ---------- Header: the page menu is the loudest thing on the page -------
+   The wordmark is gone and the search is compact, so the width goes to the
+   tabs. The rail is an ink bar with bright text and an orange active tab in
+   light mode, and a lit, orange-rimmed bar in dark mode — nothing else in the
+   Studio design uses a filled dark surface or a filled accent, so it reads as
+   the navigation at a glance. */
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail {
+  padding: 4px;
+  gap: 3px;
+  border-radius: 12px;
+  background: #0b0b0b;
+  border: 1px solid #0b0b0b;
+  box-shadow: 0 6px 18px rgba(10, 13, 20, 0.18);
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button.primary,
+:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail .nav-button.primary {
+  color: #ffffff !important;
+  background: var(--viz-orange) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--viz-orange) 45%, transparent) !important;
+  font-weight: 600 !important;
+}
+
+html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button:focus-visible {
+  outline: 2px solid var(--viz-orange-soft);
+  outline-offset: 1px;
+}
+
+/* Dark mode: the page is already near-black, so the rail lifts instead. */
+:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail {
+  background: #26262a;
+  border-color: color-mix(in srgb, var(--viz-orange) 55%, transparent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-design="studio"]:not([data-theme="light"]) .top-nav .nav-rail .nav-button {
+  color: #f2f2f2;
+}
+
+/* Compact search. Desktop only — below 769px mobile.css owns this row. */
+@media (min-width: 769px) {
+  html:root[data-design="studio"] .top-nav .nav-controls form.nav-search {
+    flex: 0 1 190px;
+    min-width: 140px;
+    max-width: 200px;
+  }
+
+  html:root[data-design="studio"][data-theme] .top-nav .nav-search input,
+  html:root[data-design="studio"][data-theme] .top-nav .nav-search-field input {
+    min-width: 0;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  html:root[data-design="studio"][data-theme] .top-nav .status-pill,
+  html:root[data-design="studio"][data-theme] .top-nav .icon-btn {
+    height: 34px;
+  }
+
+  html:root[data-design="studio"][data-theme] .top-nav .icon-btn {
+    width: 34px;
+  }
+
+  html:root[data-design="studio"] .top-nav .brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+}
+
+/* Laptop widths: tighten the tabs before the row has to scroll, then drop
+   the status pill's schedule label (the date is the part that matters). */
+@media (min-width: 769px) and (max-width: 1400px) {
+  html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 0 10px;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1260px) {
+  html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 0 8px;
+    font-size: 13.5px;
+  }
+
+  html:root[data-design="studio"] .top-nav .status-pill > span:not(.status-dot):not(.status-pill-sep),
+  html:root[data-design="studio"] .top-nav .status-pill-sep {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1260px) {
+  html:root[data-design="studio"][data-theme] .top-nav .nav-rail {
+    gap: 1px;
+    padding: 3px;
+  }
+
+  html:root[data-design="studio"][data-theme] .top-nav .nav-rail .nav-button {
+    padding: 0 7px;
+  }
+
+  html:root[data-design="studio"] .top-nav .nav-controls form.nav-search {
+    min-width: 120px;
+  }
+}
