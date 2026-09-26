@@ -1352,7 +1352,7 @@ export function HomePanel({
             <h3>Market Breadth</h3>
             {breadthToday?.universe ? (
               <span className="homepro-card-sub" title="Counted from NSE's official end-of-day bhavcopy: EQ, BE and BZ series shares. ETFs, SME, bonds and REIT/InvIT units excluded.">
-                {breadthToday.universe} · NSE bhavcopy
+                {breadthToday.universe} · official NSE close
               </span>
             ) : null}
           </div>

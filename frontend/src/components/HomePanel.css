@@ -285,7 +285,14 @@
 .homepro-card-sub {
   font-size: var(--fs-tiny, 11px);
   color: var(--hp-muted, var(--text-muted));
-  white-space: nowrap;
+}
+
+/* A head carrying a source note stacks it under the title: the breadth card
+   is narrow, and side by side the title wrapped onto two lines. */
+.homepro-card-head:has(.homepro-card-sub) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
 }
 
 .homepro-card h3 {
