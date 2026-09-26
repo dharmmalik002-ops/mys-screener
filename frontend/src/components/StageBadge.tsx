@@ -8,6 +8,29 @@ type Props = { symbol: string | null; market?: MarketKey };
  *  it is the advancing phase, not because the stock is a buy. */
 const TONE: Record<number, string> = { 1: "base", 2: "advance", 3: "top", 4: "decline" };
 
+// The badge is mounted in both the side panel and the chart modal, and a
+// stock's stage moves weekly — one request per symbol per session of use.
+const STAGE_CACHE = new Map<string, Promise<StockStage>>();
+const STAGE_CACHE_LIMIT = 200;
+
+function loadStage(symbol: string, market: MarketKey): Promise<StockStage> {
+  const key = `${market}:${symbol}`;
+  const cached = STAGE_CACHE.get(key);
+  if (cached) return cached;
+  const request = getStockStage(symbol, market);
+  STAGE_CACHE.set(key, request);
+  // A failed fetch must be retried next time, not remembered.
+  request.then(
+    (result) => { if (!result.available) STAGE_CACHE.delete(key); },
+    () => STAGE_CACHE.delete(key),
+  );
+  if (STAGE_CACHE.size > STAGE_CACHE_LIMIT) {
+    const oldest = STAGE_CACHE.keys().next().value;
+    if (oldest !== undefined) STAGE_CACHE.delete(oldest);
+  }
+  return request;
+}
+
 /**
  * Where this stock sits in its own multi-year cycle.
  *
@@ -29,7 +52,7 @@ export function StageBadge({ symbol, market = "india" }: Props) {
     const id = ++requestId.current;
     setData(null);
     setOpen(false);
-    getStockStage(symbol, market)
+    loadStage(symbol, market)
       .then((result) => {
         // A slow fetch for a symbol the user has already navigated away from
         // must not label the new chart with the old stock's stage.

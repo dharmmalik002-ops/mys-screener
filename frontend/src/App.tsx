@@ -2211,9 +2211,13 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
     // The session the rest of the app is displaying. Intraday timeframes are
     // exempt — their bars are not daily and the comparison is meaningless.
+    const dashboardSession = latestSessionDateRef.current;
+    const servedSession = newestServedBarDateRef.current;
     const latestSession =
       chartTimeframe === "1D" || chartTimeframe === "1W"
-        ? latestSessionDateRef.current
+        ? dashboardSession && servedSession
+          ? (dashboardSession < servedSession ? dashboardSession : servedSession)
+          : servedSession ?? dashboardSession
         : null;
     const inMemory = chartResponseCacheRef.current[cacheKey];
     if (isChartResponseCacheCompatible(inMemory, undefined, latestSession)) {
@@ -2228,6 +2232,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const storeCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe, payload: ChartResponse) => {
     const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
     chartResponseCacheRef.current[cacheKey] = payload;
+    if (chartTimeframe === "1D" || chartTimeframe === "1W") {
+      const newest = lastBarDate(payload);
+      if (newest && (!newestServedBarDateRef.current || newest > newestServedBarDateRef.current)) {
+        newestServedBarDateRef.current = newest;
+      }
+    }
     if (!shouldPersistChartResponse(chartTimeframe)) {
       return;
     }
@@ -2263,6 +2273,27 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     return cachedChart;
   };
 
+  // One request per chart at a time: an in-flight prewarm, hover prefetch or
+  // earlier open of the same chart is joined rather than duplicated. Opening a
+  // chart re-runs the load effect (selection, then the modal opening), which
+  // used to fire the same fetch twice and halve the backend's chart slots.
+  const fetchChartShared = (symbol: string, chartTimeframe: ChartTimeframe, market: MarketKey) => {
+    const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
+    const inFlight = prewarmingChartPromisesRef.current.get(cacheKey);
+    if (inFlight) {
+      return inFlight;
+    }
+    const request = getChart(symbol, chartTimeframe, market);
+    prewarmingChartPromisesRef.current.set(cacheKey, request);
+    const clear = () => {
+      if (prewarmingChartPromisesRef.current.get(cacheKey) === request) {
+        prewarmingChartPromisesRef.current.delete(cacheKey);
+      }
+    };
+    request.then(clear, clear);
+    return request;
+  };
+
   const loadChartForSelection = async (
     symbol: string,
     chartTimeframe: ChartTimeframe,
@@ -2292,8 +2323,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       // Reuse an in-flight prewarm request for this exact chart instead of
       // issuing a duplicate fetch — the warm-up is usually most of the way
       // done by the time the user clicks.
-      const inFlightPrewarm = prewarmingChartPromisesRef.current.get(buildChartCacheKey(market, symbol, chartTimeframe));
-      const payload = await (inFlightPrewarm ?? getChart(symbol, chartTimeframe, market));
+      const payload = await fetchChartShared(symbol, chartTimeframe, market);
       const requestStillMatchesSelection =
         activeMarketRef.current === market &&
         selectedSymbolRef.current === symbol &&
@@ -2366,8 +2396,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     chartBRequestIdRef.current = requestId;
 
     try {
-      const inFlightPrewarm = prewarmingChartPromisesRef.current.get(buildChartCacheKey(market, symbol, chartTimeframe));
-      const payload = await (inFlightPrewarm ?? getChart(symbol, chartTimeframe, market));
+      const payload = await fetchChartShared(symbol, chartTimeframe, market);
       if (chartBRequestIdRef.current !== requestId) {
         return fallbackChart;
       }
@@ -2500,6 +2529,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // whose newest bar is older than it. A ref rather than state because
   // readCachedChart is called from callbacks that must not re-bind on it.
   const latestSessionDateRef = useRef<string | null>(null);
+  // Newest daily bar carried by a live chart response since the dashboard's
+  // session last changed. The dashboard's date can run ahead of the newest
+  // session (a weekend, a holiday, a weekday before the close), and comparing
+  // against it alone rejected every cached chart as stale — each prewarmed
+  // chart was thrown away and every chart open waited on the network.
+  const newestServedBarDateRef = useRef<string | null>(null);
   const tickerRequestIdRef = useRef(0);
 
   const refreshTickerRibbon = () => {
@@ -3428,7 +3463,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // rather than generated_at, which moves whenever the payload is rebuilt.
   useEffect(() => {
     const session = dashboard?.breadth_today?.date ?? null;
-    if (session) latestSessionDateRef.current = session;
+    if (session && session !== latestSessionDateRef.current) {
+      latestSessionDateRef.current = session;
+      // Only bars served after this session was announced may vouch for it;
+      // otherwise yesterday's charts would keep a new session from expiring them.
+      newestServedBarDateRef.current = null;
+    }
   }, [dashboard]);
 
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);

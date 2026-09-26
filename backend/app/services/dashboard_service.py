@@ -995,10 +995,16 @@ class DashboardService:
     def _breadth_today_from_snapshots(snapshots: list[StockSnapshot]) -> BreadthDayCounts | None:
         if not snapshots:
             return None
-        # `today_iso` is purely descriptive; the snapshot rows already share
-        # a session via `_scan_eligible_snapshots`, which filters to whichever
-        # day's bhavcopy patch was last applied.
-        today_iso = datetime.now(timezone.utc).astimezone(IST).date().isoformat()
+        # The session the rows describe, not today's calendar date. The
+        # frontend expires cached charts whose newest bar predates this, so a
+        # calendar date on a weekend, a holiday or before the close threw
+        # away every prewarmed chart and made each chart open a fresh fetch.
+        sessions = [s.history_session_date for s in snapshots if s.history_session_date is not None]
+        today_iso = (
+            max(sessions).isoformat()
+            if sessions
+            else datetime.now(timezone.utc).astimezone(IST).date().isoformat()
+        )
         advances = sum(1 for s in snapshots if s.change_pct > 0)
         declines = sum(1 for s in snapshots if s.change_pct < 0)
         unchanged = len(snapshots) - advances - declines
