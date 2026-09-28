@@ -581,34 +581,6 @@
       "edge_score_r": 0.017
     },
     {
-      "symbol": "AYMSYNTEX",
-      "strategy": "nr7_release",
-      "strategy_label": "NR7 Release",
-      "signal_day": "2026-09-21",
-      "close": 288.35,
-      "entry_hint": 288.35,
-      "stop": 252.76,
-      "risk_pct": 12.34,
-      "atr_pct": 6.17,
-      "turnover_crore": 2.7,
-      "expected_r": 0.13,
-      "verdict": "confirmed_weak",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 8,
-        "position_value": 2306.8,
-        "risk_budget": 300.0,
-        "risk_per_share": 35.59,
-        "actual_risk": 284.75,
-        "pct_of_equity": 0.2,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.13,
-      "volatility_adjustment_r": -0.113,
-      "volatility_bucket": "over 6%",
-      "edge_score_r": 0.017
-    },
-    {
       "symbol": "SBC",
       "strategy": "pocket_pivot",
       "strategy_label": "Pocket Pivot",
@@ -768,34 +740,6 @@
         "risk_budget": 500.0,
         "risk_per_share": 30.97,
         "actual_risk": 495.57,
-        "pct_of_equity": 0.6,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.007,
-      "volatility_adjustment_r": 0.001,
-      "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.008
-    },
-    {
-      "symbol": "IGPL",
-      "strategy": "pocket_pivot",
-      "strategy_label": "Pocket Pivot",
-      "signal_day": "2026-09-21",
-      "close": 576.75,
-      "entry_hint": 576.75,
-      "stop": 529.97,
-      "risk_pct": 8.11,
-      "atr_pct": 4.06,
-      "turnover_crore": 4.4,
-      "expected_r": 0.007,
-      "verdict": "confirmed",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 10,
-        "position_value": 5767.5,
-        "risk_budget": 500.0,
-        "risk_per_share": 46.78,
-        "actual_risk": 467.84,
         "pct_of_equity": 0.6,
         "capped_by_capital": false
       },
@@ -1057,13 +1001,13 @@
       "edge_score_r": -0.106
     }
   ],
-  "candidates_found": 35,
+  "candidates_found": 33,
   "ranking": {
     "active": true,
     "note": "Ranking adds a volatility adjustment to each candidate's cell expectancy. The adjustment is that ATR bucket's average R minus the book average, measured over the full trade population and confirmed out-of-sample."
   },
   "calibration": null,
-  "message": "35 candidate(s) from 3 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
-  "generated_at": "2026-09-28T15:35:35.575827+00:00",
+  "message": "33 candidate(s) from 3 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
+  "generated_at": "2026-09-28T20:41:13.464861+00:00",
   "source": "offline"
 }

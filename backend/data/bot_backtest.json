@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-28T15:34:58.632160+00:00",
+  "generated_at": "2026-09-28T20:40:36.888996+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -18,7 +18,7 @@
     "first_session": "2007-09-17",
     "last_session": "2026-09-28",
     "symbols_with_trades": 1403,
-    "trades_total": 146318,
+    "trades_total": 146322,
     "trades_resolved": 144445,
     "validation_split": "2022-12-09"
   },
