@@ -636,6 +636,33 @@ function XpBreadthChart({ xp, height = 260 }: { xp: XpBreadthScore; height?: num
           });
         })()}
 
+        {/* Market-condition strip: the steadied regime the backend labels each
+            session with (it changes after two sessions in a new band, or at
+            once on a 3-point move), so it does not flicker the way the line's
+            colour does when the score grazes a band line. */}
+        {(() => {
+          const half = points.length > 1 ? innerW / (points.length - 1) / 2 : innerW / 2;
+          const runs: { start: number; end: number; color: string; label: string }[] = [];
+          points.forEach((p, i) => {
+            const last = runs[runs.length - 1];
+            if (last && last.label === p.regime) last.end = i;
+            else runs.push({ start: i, end: i, color: p.regime_color, label: p.regime });
+          });
+          return (
+            <g className="homepro-xp-condition">
+              {runs.map((r) => {
+                const x0 = Math.max(padL, x(r.start) - half);
+                const x1 = Math.min(padL + innerW, x(r.end) + half);
+                return (
+                  <rect key={`c-${r.start}`} x={x0} y={baseY + 3} width={Math.max(0.5, x1 - x0)} height={5} rx={1} fill={r.color}>
+                    <title>{`${r.label}: ${fmtDate(points[r.start].date)} – ${fmtDate(points[r.end].date)}`}</title>
+                  </rect>
+                );
+              })}
+            </g>
+          );
+        })()}
+
         {/* x ticks */}
         {ticks.map((ti, k) => (
           <text
@@ -1241,6 +1268,26 @@ export function HomePanel({
             <div className="homepro-xp-title">
               <h3>XP Market Breadth Score</h3>
               <span className="homepro-xp-sub">NSE listed · EOD · calibrated to EM</span>
+              {(() => {
+                // How long the current condition has held — the steadied label,
+                // not the band the latest score happens to sit in.
+                const h = xpBreadth.history;
+                if (!h.length) return null;
+                let i = h.length - 1;
+                while (i > 0 && h[i - 1].regime === h[h.length - 1].regime) i -= 1;
+                const since = new Date(h[i].date);
+                const sinceLabel = isNaN(since.getTime())
+                  ? h[i].date
+                  : since.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                return (
+                  <span
+                    className="homepro-xp-sub"
+                    title="The strip under the chart is the market condition. It changes once the score has stayed in a new band for 2 sessions, or at once on a move of 3+ points past the band line, so it does not flicker when the score grazes a line."
+                  >
+                    Condition: {xpBreadth.regime} since {sinceLabel} · {h.length - i} session{h.length - i === 1 ? "" : "s"}
+                  </span>
+                );
+              })()}
             </div>
             <div className="homepro-xp-badge-wrap">
               {(() => {
