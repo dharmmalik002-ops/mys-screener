@@ -1486,3 +1486,92 @@ html .mobile-tabbar {
     border-radius: var(--radius-xl) 0 0 var(--radius-xl);
   }
 }
+
+/* ==========================================================================
+   13. Big chart one-row toolbar on phones
+   --------------------------------------------------------------------------
+   The compact header (app.css, `.chart-compact`) puts the secondary controls
+   in dropdowns. On a phone the earlier rules above turn the header into a
+   right-aligned column, which stacked every control on its own line and put
+   the chart a third of the way down. Keep them flowing in rows instead. The
+   row must WRAP, not scroll: an overflow container would clip the dropdown
+   panels that open below it.
+   ========================================================================== */
+@media (max-width: 768px) {
+  html .chart-modal .chart-panel.chart-compact > .panel-header,
+  html .chart-modal:has(> .chart-modal-widget-toggle) .chart-panel.chart-compact > .panel-header {
+    align-items: stretch;
+    padding: 6px 8px 4px;
+    gap: 4px;
+  }
+
+  html .chart-modal .chart-panel.chart-compact > .panel-header > div:first-child {
+    display: block;
+    max-width: none;
+    padding-right: 168px;
+  }
+
+  html .chart-modal .chart-panel.chart-compact .panel-kicker {
+    display: none;
+  }
+
+  /* Close / Show Group float over the title line; keep that line as tall as
+     they are so the first row of controls starts below them. */
+  html .chart-modal .chart-panel.chart-compact > .panel-header > div:first-child {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+  }
+
+  html .chart-modal-close {
+    padding: 6px 12px;
+  }
+
+  html .chart-modal .chart-modal-widget-toggle {
+    padding: 6px 10px;
+  }
+
+  html .chart-modal .chart-panel.chart-compact > .panel-header .panel-actions {
+    width: 100%;
+  }
+
+  html .chart-panel.chart-compact .chart-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    gap: 4px;
+  }
+
+  html .chart-panel.chart-compact .chart-search-form {
+    flex: 1 1 120px;
+    width: auto;
+  }
+
+  html .chart-panel.chart-compact .chart-search-form input {
+    width: 100%;
+  }
+
+  /* Anchor the dropdowns to the screen edge rather than their trigger, so a
+     trigger near the left does not push its panel off-screen. */
+  html .chart-panel.chart-compact .chart-menu {
+    position: static;
+  }
+
+  html .chart-panel.chart-compact > .panel-header {
+    position: relative;
+  }
+
+  html .chart-panel.chart-compact .chart-menu-panel {
+    left: 8px;
+    right: 8px;
+    top: 100%;
+    width: auto;
+    max-width: none;
+  }
+
+  html .chart-menu-panel .chart-zen-menu {
+    display: none;
+  }
+}

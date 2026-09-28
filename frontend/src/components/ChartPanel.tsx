@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { ColorType, createChart, CrosshairMode, LineStyle, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Settings2, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minimize2, Settings2, X } from "lucide-react";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
@@ -436,6 +436,63 @@ const CHART_COLOR_FIELDS: Array<{ key: ChartColorFieldKey; label: string }> = [
   { key: "rsLine", label: "RS Line" },
   { key: "rsMarker", label: "RS Circle" },
 ];
+const CHART_STATS_STORAGE_KEY = "stockScanner.chartStatsStrip.v1";
+
+/* A toolbar button whose controls open in a dropdown. Closes on an outside
+   click or Esc; toggles inside it leave it open so several can be flipped in
+   one visit. */
+function ToolbarMenu({
+  label,
+  title,
+  badge,
+  className,
+  children,
+}: {
+  label: ReactNode;
+  title?: string;
+  badge?: number;
+  className?: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handlePointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      // Esc closes the menu only — not zen, full screen or the chart modal.
+      event.stopPropagation();
+      setOpen(false);
+    };
+    window.addEventListener("pointerdown", handlePointer, true);
+    window.addEventListener("keydown", handleKey, true);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointer, true);
+      window.removeEventListener("keydown", handleKey, true);
+    };
+  }, [open]);
+  return (
+    <div ref={rootRef} className={`chart-menu${open ? " is-open" : ""}${className ? ` ${className}` : ""}`}>
+      <button
+        type="button"
+        className="tool-pill chart-menu-trigger"
+        onClick={() => setOpen((value) => !value)}
+        title={title}
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        {label}
+        {badge ? <span className="chart-menu-badge">{badge}</span> : null}
+        <ChevronDown size={12} strokeWidth={2.2} className="chart-menu-caret" />
+      </button>
+      {open ? <div className="chart-menu-panel">{children}</div> : null}
+    </div>
+  );
+}
+
 const PANEL_TABS: Array<{ key: ChartPanelTab; label: string }> = [
   { key: "technical", label: "Technical" },
   { key: "fundamentals", label: "Fundamentals" },
@@ -2132,6 +2189,25 @@ export function ChartPanel({
   // Rarely-touched display options (palette, log/linear) live behind a gear so
   // the toolbar stays legible — set-once controls don't earn permanent chrome.
   const [displaySettingsOpen, setDisplaySettingsOpen] = useState(false);
+  // The big chart keeps its chrome to one row: indicators, display settings
+  // and the secondary tools open as dropdowns, and the stat chips are opt-in,
+  // so the canvas gets the screen.
+  const compactToolbar = expanded;
+  const [showStatsStrip, setShowStatsStrip] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(CHART_STATS_STORAGE_KEY) === "on";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHART_STATS_STORAGE_KEY, showStatsStrip ? "on" : "off");
+    } catch {
+      // best-effort persistence only
+    }
+  }, [showStatsStrip]);
   const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
 
   useEffect(() => {
@@ -4875,6 +4951,345 @@ export function ChartPanel({
     onSearchSymbol?.(trimmed);
   };
 
+  const chartStyleSwitcher = (
+    <div className="chart-style-switcher">
+      {CHART_STYLES.map((style) => (
+        <button
+          key={style.key}
+          type="button"
+          className={style.key === chartStyle ? "timeframe-pill active" : "timeframe-pill"}
+          onClick={() => onChartStyleChange(style.key)}
+          title={style.title}
+        >
+          {style.label}
+        </button>
+      ))}
+    </div>
+  );
+  const displaySettingsBody = (
+    <>
+      <div className="chart-display-settings">
+        {compactToolbar ? (
+          <>
+            <span className="chart-display-settings-label">Chart</span>
+            {chartStyleSwitcher}
+          </>
+        ) : null}
+        <span className="chart-display-settings-label">Scale</span>
+        <div className="chart-style-switcher">
+          {(["log", "linear"] as const).map((modeKey) => (
+            <button
+              key={modeKey}
+              type="button"
+              className={scaleMode === modeKey ? "timeframe-pill active" : "timeframe-pill"}
+              onClick={() => setScaleMode(modeKey)}
+              title={
+                modeKey === "log"
+                  ? "Log scale: equal candle heights = equal % moves anywhere on the chart"
+                  : "Linear scale: equal candle heights = equal ₹ moves"
+              }
+            >
+              {modeKey === "log" ? "Log" : "Lin"}
+            </button>
+          ))}
+        </div>
+        <span className="chart-display-settings-label">Expansion candles</span>
+        <div className="chart-style-switcher chart-expansion-ctl">
+          <button
+            type="button"
+            className={highlightExpansion ? "timeframe-pill active" : "timeframe-pill"}
+            onClick={() => setHighlightExpansion((v) => !v)}
+            title="Highlight big up-days on heavy volume (>=6% and 2x avg volume) in a distinct colour"
+          >
+            {highlightExpansion ? "On" : "Off"}
+          </button>
+          <input
+            type="color"
+            className="chart-expansion-color"
+            value={chartColors.candleExpansion || "#ffb01f"}
+            onChange={(event) => onChartColorsChange?.({ ...chartColors, candleExpansion: event.target.value })}
+            title="Expansion candle colour"
+            aria-label="Expansion candle colour"
+          />
+        </div>
+        <span className="chart-display-settings-label">Weighted width</span>
+        <div className="chart-style-switcher">
+          <button
+            type="button"
+            className={weightedWidth ? "timeframe-pill active" : "timeframe-pill"}
+            onClick={() => setWeightedWidth((v) => !v)}
+            title="Candle width scales with volume and range: heavy, wide-range bars render thick, quiet bars render thin"
+          >
+            {weightedWidth ? "On" : "Off"}
+          </button>
+        </div>
+        <span className="chart-display-settings-label">Hollow up candles</span>
+        <div className="chart-style-switcher">
+          <button
+            type="button"
+            className={hollowCandles ? "timeframe-pill active" : "timeframe-pill"}
+            onClick={() => setHollowCandles((v) => !v)}
+            title="Classic pro look: up candles render hollow (outline only), down candles stay solid"
+          >
+            {hollowCandles ? "On" : "Off"}
+          </button>
+        </div>
+        <span className="chart-display-settings-label">Volume</span>
+        <div className="chart-style-switcher">
+          {VOLUME_MODES.map((mode) => (
+            <button
+              key={mode.key}
+              type="button"
+              className={volumeMode === mode.key ? "timeframe-pill active" : "timeframe-pill"}
+              onClick={() => setVolumeMode(mode.key)}
+              title={mode.title}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+        <span className="chart-display-settings-label">Tightness marks</span>
+        <div className="chart-style-switcher">
+          <button
+            type="button"
+            className={tightnessMarks ? "timeframe-pill active" : "timeframe-pill"}
+            onClick={() => setTightnessMarks((v) => !v)}
+            title="Tiny pips under contraction days — square = NR7 (narrowest range of 7), circle = inside day"
+          >
+            {tightnessMarks ? "On" : "Off"}
+          </button>
+        </div>
+        <span className="chart-display-settings-label">Theme</span>
+        <div className="chart-style-switcher">
+          {Object.entries(CHART_PALETTES).map(([key, value]) => (
+            <button
+              key={key}
+              type="button"
+              className={chartPalette === key ? "timeframe-pill active" : "timeframe-pill"}
+              onClick={() => onChartPaletteChange(key as ChartPaletteKey)}
+            >
+              {value.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+  const indicatorPills = (
+    <>
+      <div className="indicator-switcher">
+        {INDICATORS.map((indicator) => (
+          <button
+            key={indicator.key}
+            type="button"
+            className={indicatorKeys.includes(indicator.key) ? "indicator-pill active" : "indicator-pill"}
+            onClick={() => onToggleIndicator(indicator.key)}
+          >
+            {indicator.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={showRvol ? "indicator-pill active" : "indicator-pill"}
+          onClick={() => setShowRvol((v) => !v)}
+          title="Relative Volume vs 50-day average. Helps spot unusual activity."
+        >
+          RVOL
+        </button>
+        <button
+          type="button"
+          className={autoLevelsEnabled ? "indicator-pill active" : "indicator-pill"}
+          onClick={() => setAutoLevelsEnabled((v) => !v)}
+          title="Auto support/resistance, weekly/monthly demand-supply zones, and trendlines — strong levels only"
+        >
+          Auto Levels
+        </button>
+      </div>
+    </>
+  );
+  const chartSourceActions = (
+    <>
+      {symbol ? (
+        <button type="button" className="tool-pill" onClick={() => onAddToWatchlist?.(symbol)}>
+          Add to Watchlist
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className={chartLoading ? "tool-pill loading" : "tool-pill"}
+        onClick={() => onRefreshChart?.()}
+        disabled={!symbol || chartLoading || !onRefreshChart}
+        title="Refresh the chart from the backend while keeping cached data visible"
+      >
+        {chartLoading ? "Refreshing..." : "Refresh Chart"}
+      </button>
+      {chartCacheState === "cached" ? <span className="chart-save-pill">Cached view</span> : null}
+      {showBenchmarkOverlay && benchmarkError ? <span className="chart-save-pill">{benchmarkError}</span> : null}
+    </>
+  );
+  const chartToolsLeading = (
+    <>
+      {annotations.length > 0 && <span className="chart-save-pill">{annotations.length} drawing{annotations.length === 1 ? "" : "s"} saved</span>}
+      <details className="chart-color-settings">
+        <summary>Indicator Colors</summary>
+        <div className="chart-color-grid">
+          {CHART_COLOR_FIELDS.map((field) => (
+            <label key={field.key} className="chart-color-field">
+              <span>{field.label}</span>
+              <input
+                type="color"
+                value={chartColors[field.key]}
+                onChange={(event) =>
+                  onChartColorsChange({
+                    ...chartColors,
+                    [field.key]: event.target.value,
+                  })
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <label className="chart-slider-field">
+          <span>RS Circle Size</span>
+          <div>
+            <input
+              type="range"
+              min="0.5"
+              max="8"
+              step="0.5"
+              value={chartColors.rsMarkerSize}
+              onChange={(event) =>
+                onChartColorsChange({
+                  ...chartColors,
+                  rsMarkerSize: Number(event.target.value),
+                })
+              }
+            />
+            <strong>{chartColors.rsMarkerSize}px</strong>
+          </div>
+        </label>
+      </details>
+      <button
+        type="button"
+        className={historyLoading ? "tool-pill loading" : "tool-pill"}
+        onClick={handleLoadFullHistory}
+        disabled={historyLoading || !symbol}
+        title={extendedHistory ? "Return to the standard chart range" : "Load full price history for this stock"}
+      >
+        {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
+      </button>
+      <div className="chart-widget-menu">
+        <button
+          type="button"
+          className={favoritesWidget.enabled ? "tool-pill active" : "tool-pill"}
+          onClick={() => setFavoritesWidget((current) => ({ ...current, enabled: !current.enabled }))}
+        >
+          Favourites
+        </button>
+      </div>
+      <div className="chart-widget-menu">
+        <button
+          type="button"
+          className={pocketPivotWidget.enabled ? "tool-pill active" : "tool-pill"}
+          onClick={() => setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }))}
+        >
+          Pocket Pivot
+        </button>
+      </div>
+    </>
+  );
+  const fullscreenControl = (
+    <>
+      <div className="chart-widget-menu chart-fs-menu">
+        <button
+          type="button"
+          className={chartFullscreen ? "tool-pill active chart-fs-pill" : "tool-pill chart-fs-pill"}
+          onClick={() => setChartFullscreen(!chartFullscreen)}
+          title="Full screen — chart only, with previous / next in the corner (Esc to exit)"
+        >
+          {chartFullscreen ? <Minimize2 size={13} strokeWidth={2.2} /> : <Maximize2 size={13} strokeWidth={2.2} />}
+          <span className="chart-fs-label">Full screen</span>
+        </button>
+      </div>
+    </>
+  );
+  const chartToolsTrailing = (
+    <>
+      <div className="chart-widget-menu chart-zen-menu">
+        <button
+          type="button"
+          className={zenMode ? "tool-pill active" : "tool-pill"}
+          onClick={() => setZenMode((current) => !current)}
+          title="Zen mode — just the chart and the search bar (Esc to exit)"
+        >
+          ⛶ Zen
+        </button>
+      </div>
+      <div className="chart-widget-menu">
+        <button
+          type="button"
+          className={aiEnabled ? "tool-pill active chart-ai-pill" : "tool-pill chart-ai-pill"}
+          onClick={() => setAiEnabled((current) => !current)}
+          title="AI swing-trade read: pullback/breakout setup, entry, stop, pros & cons, tape read"
+        >
+          ✦ AI
+        </button>
+      </div>
+      <div className="chart-widget-menu">
+        <button
+          type="button"
+          className={notesWidget.enabled ? "tool-pill active" : "tool-pill"}
+          onClick={() => setNotesWidget((current) => ({ ...current, enabled: !current.enabled }))}
+        >
+          Notes
+        </button>
+      </div>
+      <div className="chart-widget-menu">
+        <button
+          type="button"
+          className={earningsWidget.enabled ? "tool-pill active" : "tool-pill"}
+          onClick={() => setEarningsWidget((current) => ({ ...current, enabled: !current.enabled }))}
+        >
+          Earnings
+        </button>
+      </div>
+      <div className="chart-widget-menu">
+        <button
+          type="button"
+          className={showNextEarnings ? "tool-pill active" : "tool-pill"}
+          onClick={toggleNextEarnings}
+          title="Show the announced upcoming result date: an E on that future date plus a days-to-EPS countdown"
+        >
+          Next E
+        </button>
+      </div>
+    </>
+  );
+  const rangeControl = (
+    <>
+      <div className="chart-widget-menu chart-range-menu">
+        <select
+          className="tool-pill chart-range-select"
+          value={chartRange}
+          onChange={(event) => setChartRange(event.target.value as ChartRangeKey)}
+          title="Chart visible range"
+          aria-label="Chart visible range"
+        >
+          {CHART_RANGE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+  const dragHint = (
+    <>
+      {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
+    </>
+  );
+
   return (
     <Panel
       title={chartTitle}
@@ -4946,173 +5361,63 @@ export function ChartPanel({
                   </button>
                 ))}
               </div>
-              <div className="chart-style-switcher">
-                {CHART_STYLES.map((style) => (
-                  <button
-                    key={style.key}
-                    type="button"
-                    className={style.key === chartStyle ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => onChartStyleChange(style.key)}
-                    title={style.title}
+              {compactToolbar ? null : chartStyleSwitcher}
+              {compactToolbar ? (
+                <>
+                  <ToolbarMenu
+                    label="Indicators"
+                    badge={indicatorKeys.length + (showRvol ? 1 : 0) + (autoLevelsEnabled ? 1 : 0)}
+                    title="Moving averages, VWAP, RVOL and auto levels"
                   >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                className={displaySettingsOpen ? "chart-display-gear active" : "chart-display-gear"}
-                onClick={() => setDisplaySettingsOpen((v) => !v)}
-                title="Display settings: price scale & theme"
-                aria-expanded={displaySettingsOpen}
-              >
-                <Settings2 size={14} strokeWidth={2.1} />
-              </button>
-              {displaySettingsOpen ? (
-                <div className="chart-display-settings">
-                  <span className="chart-display-settings-label">Scale</span>
-                  <div className="chart-style-switcher">
-                    {(["log", "linear"] as const).map((modeKey) => (
-                      <button
-                        key={modeKey}
-                        type="button"
-                        className={scaleMode === modeKey ? "timeframe-pill active" : "timeframe-pill"}
-                        onClick={() => setScaleMode(modeKey)}
-                        title={
-                          modeKey === "log"
-                            ? "Log scale: equal candle heights = equal % moves anywhere on the chart"
-                            : "Linear scale: equal candle heights = equal ₹ moves"
-                        }
-                      >
-                        {modeKey === "log" ? "Log" : "Lin"}
-                      </button>
-                    ))}
-                  </div>
-                  <span className="chart-display-settings-label">Expansion candles</span>
-                  <div className="chart-style-switcher chart-expansion-ctl">
-                    <button
-                      type="button"
-                      className={highlightExpansion ? "timeframe-pill active" : "timeframe-pill"}
-                      onClick={() => setHighlightExpansion((v) => !v)}
-                      title="Highlight big up-days on heavy volume (>=6% and 2x avg volume) in a distinct colour"
-                    >
-                      {highlightExpansion ? "On" : "Off"}
-                    </button>
-                    <input
-                      type="color"
-                      className="chart-expansion-color"
-                      value={chartColors.candleExpansion || "#ffb01f"}
-                      onChange={(event) => onChartColorsChange?.({ ...chartColors, candleExpansion: event.target.value })}
-                      title="Expansion candle colour"
-                      aria-label="Expansion candle colour"
-                    />
-                  </div>
-                  <span className="chart-display-settings-label">Weighted width</span>
-                  <div className="chart-style-switcher">
-                    <button
-                      type="button"
-                      className={weightedWidth ? "timeframe-pill active" : "timeframe-pill"}
-                      onClick={() => setWeightedWidth((v) => !v)}
-                      title="Candle width scales with volume and range: heavy, wide-range bars render thick, quiet bars render thin"
-                    >
-                      {weightedWidth ? "On" : "Off"}
-                    </button>
-                  </div>
-                  <span className="chart-display-settings-label">Hollow up candles</span>
-                  <div className="chart-style-switcher">
-                    <button
-                      type="button"
-                      className={hollowCandles ? "timeframe-pill active" : "timeframe-pill"}
-                      onClick={() => setHollowCandles((v) => !v)}
-                      title="Classic pro look: up candles render hollow (outline only), down candles stay solid"
-                    >
-                      {hollowCandles ? "On" : "Off"}
-                    </button>
-                  </div>
-                  <span className="chart-display-settings-label">Volume</span>
-                  <div className="chart-style-switcher">
-                    {VOLUME_MODES.map((mode) => (
-                      <button
-                        key={mode.key}
-                        type="button"
-                        className={volumeMode === mode.key ? "timeframe-pill active" : "timeframe-pill"}
-                        onClick={() => setVolumeMode(mode.key)}
-                        title={mode.title}
-                      >
-                        {mode.label}
-                      </button>
-                    ))}
-                  </div>
-                  <span className="chart-display-settings-label">Tightness marks</span>
-                  <div className="chart-style-switcher">
-                    <button
-                      type="button"
-                      className={tightnessMarks ? "timeframe-pill active" : "timeframe-pill"}
-                      onClick={() => setTightnessMarks((v) => !v)}
-                      title="Tiny pips under contraction days — square = NR7 (narrowest range of 7), circle = inside day"
-                    >
-                      {tightnessMarks ? "On" : "Off"}
-                    </button>
-                  </div>
-                  <span className="chart-display-settings-label">Theme</span>
-                  <div className="chart-style-switcher">
-                    {Object.entries(CHART_PALETTES).map(([key, value]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={chartPalette === key ? "timeframe-pill active" : "timeframe-pill"}
-                        onClick={() => onChartPaletteChange(key as ChartPaletteKey)}
-                      >
-                        {value.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <div className="indicator-switcher">
-                {INDICATORS.map((indicator) => (
-                  <button
-                    key={indicator.key}
-                    type="button"
-                    className={indicatorKeys.includes(indicator.key) ? "indicator-pill active" : "indicator-pill"}
-                    onClick={() => onToggleIndicator(indicator.key)}
+                    {indicatorPills}
+                  </ToolbarMenu>
+                  {rangeControl}
+                  <ToolbarMenu
+                    label={<Settings2 size={14} strokeWidth={2.1} />}
+                    title="Display settings: price scale, volume, candles & theme"
+                    className="chart-menu-icon"
                   >
-                    {indicator.label}
+                    {displaySettingsBody}
+                  </ToolbarMenu>
+                  <ToolbarMenu label="More" title="Stats, widgets, history, watchlist and refresh">
+                    <button
+                      type="button"
+                      className={showStatsStrip ? "tool-pill active" : "tool-pill"}
+                      onClick={() => setShowStatsStrip((v) => !v)}
+                      title="Price, RS rating, ADR distances, group rank and circuit limits above the chart"
+                    >
+                      {showStatsStrip ? "Hide stats" : "Show stats"}
+                    </button>
+                    {chartSourceActions}
+                    {chartToolsLeading}
+                    {chartToolsTrailing}
+                  </ToolbarMenu>
+                  {fullscreenControl}
+                  {zenMode ? (
+                    <div className="chart-widget-menu">
+                      <button type="button" className="tool-pill active" onClick={() => setZenMode(false)} title="Exit zen mode (Esc)">
+                        Exit zen
+                      </button>
+                    </div>
+                  ) : null}
+                  {dragHint}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={displaySettingsOpen ? "chart-display-gear active" : "chart-display-gear"}
+                    onClick={() => setDisplaySettingsOpen((v) => !v)}
+                    title="Display settings: price scale & theme"
+                    aria-expanded={displaySettingsOpen}
+                  >
+                    <Settings2 size={14} strokeWidth={2.1} />
                   </button>
-                ))}
-                <button
-                  type="button"
-                  className={showRvol ? "indicator-pill active" : "indicator-pill"}
-                  onClick={() => setShowRvol((v) => !v)}
-                  title="Relative Volume vs 50-day average. Helps spot unusual activity."
-                >
-                  RVOL
-                </button>
-                <button
-                  type="button"
-                  className={autoLevelsEnabled ? "indicator-pill active" : "indicator-pill"}
-                  onClick={() => setAutoLevelsEnabled((v) => !v)}
-                  title="Auto support/resistance, weekly/monthly demand-supply zones, and trendlines — strong levels only"
-                >
-                  Auto Levels
-                </button>
-              </div>
-              {symbol ? (
-                <button type="button" className="tool-pill" onClick={() => onAddToWatchlist?.(symbol)}>
-                  Add to Watchlist
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className={chartLoading ? "tool-pill loading" : "tool-pill"}
-                onClick={() => onRefreshChart?.()}
-                disabled={!symbol || chartLoading || !onRefreshChart}
-                title="Refresh the chart from the backend while keeping cached data visible"
-              >
-                {chartLoading ? "Refreshing..." : "Refresh Chart"}
-              </button>
-              {chartCacheState === "cached" ? <span className="chart-save-pill">Cached view</span> : null}
-              {showBenchmarkOverlay && benchmarkError ? <span className="chart-save-pill">{benchmarkError}</span> : null}
+                  {displaySettingsOpen ? displaySettingsBody : null}
+                  {indicatorPills}
+                  {chartSourceActions}
+                </>
+              )}
             </>
           ) : (
             <div className="fundamentals-toolbar">
@@ -5126,155 +5431,18 @@ export function ChartPanel({
           )}
         </div>
       }
-      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${zenMode ? " chart-zen" : ""}${chartFullscreen ? " chart-fullscreen" : ""}`}
+      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${compactToolbar ? " chart-compact" : ""}${zenMode ? " chart-zen" : ""}${chartFullscreen ? " chart-fullscreen" : ""}`}
     >
-      {panelTab === "technical" ? (
+      {panelTab === "technical" && !compactToolbar ? (
         <div className="chart-drawing-toolbar">
-          {annotations.length > 0 && <span className="chart-save-pill">{annotations.length} drawing{annotations.length === 1 ? "" : "s"} saved</span>}
-          <details className="chart-color-settings">
-            <summary>Indicator Colors</summary>
-            <div className="chart-color-grid">
-              {CHART_COLOR_FIELDS.map((field) => (
-                <label key={field.key} className="chart-color-field">
-                  <span>{field.label}</span>
-                  <input
-                    type="color"
-                    value={chartColors[field.key]}
-                    onChange={(event) =>
-                      onChartColorsChange({
-                        ...chartColors,
-                        [field.key]: event.target.value,
-                      })
-                    }
-                  />
-                </label>
-              ))}
-            </div>
-            <label className="chart-slider-field">
-              <span>RS Circle Size</span>
-              <div>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="8"
-                  step="0.5"
-                  value={chartColors.rsMarkerSize}
-                  onChange={(event) =>
-                    onChartColorsChange({
-                      ...chartColors,
-                      rsMarkerSize: Number(event.target.value),
-                    })
-                  }
-                />
-                <strong>{chartColors.rsMarkerSize}px</strong>
-              </div>
-            </label>
-          </details>
-          <button
-            type="button"
-            className={historyLoading ? "tool-pill loading" : "tool-pill"}
-            onClick={handleLoadFullHistory}
-            disabled={historyLoading || !symbol}
-            title={extendedHistory ? "Return to the standard chart range" : "Load full price history for this stock"}
-          >
-            {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
-          </button>
-          <div className="chart-widget-menu">
-            <button
-              type="button"
-              className={favoritesWidget.enabled ? "tool-pill active" : "tool-pill"}
-              onClick={() => setFavoritesWidget((current) => ({ ...current, enabled: !current.enabled }))}
-            >
-              Favourites
-            </button>
-          </div>
-          <div className="chart-widget-menu">
-            <button
-              type="button"
-              className={pocketPivotWidget.enabled ? "tool-pill active" : "tool-pill"}
-              onClick={() => setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }))}
-            >
-              Pocket Pivot
-            </button>
-          </div>
-          <div className="chart-widget-menu chart-fs-menu">
-            <button
-              type="button"
-              className={chartFullscreen ? "tool-pill active chart-fs-pill" : "tool-pill chart-fs-pill"}
-              onClick={() => setChartFullscreen(!chartFullscreen)}
-              title="Full screen — chart only, with previous / next in the corner (Esc to exit)"
-            >
-              {chartFullscreen ? <Minimize2 size={13} strokeWidth={2.2} /> : <Maximize2 size={13} strokeWidth={2.2} />}
-              Full screen
-            </button>
-          </div>
-          <div className="chart-widget-menu chart-zen-menu">
-            <button
-              type="button"
-              className={zenMode ? "tool-pill active" : "tool-pill"}
-              onClick={() => setZenMode((current) => !current)}
-              title="Zen mode — just the chart and the search bar (Esc to exit)"
-            >
-              ⛶ Zen
-            </button>
-          </div>
-          <div className="chart-widget-menu">
-            <button
-              type="button"
-              className={aiEnabled ? "tool-pill active chart-ai-pill" : "tool-pill chart-ai-pill"}
-              onClick={() => setAiEnabled((current) => !current)}
-              title="AI swing-trade read: pullback/breakout setup, entry, stop, pros & cons, tape read"
-            >
-              ✦ AI
-            </button>
-          </div>
-          <div className="chart-widget-menu">
-            <button
-              type="button"
-              className={notesWidget.enabled ? "tool-pill active" : "tool-pill"}
-              onClick={() => setNotesWidget((current) => ({ ...current, enabled: !current.enabled }))}
-            >
-              Notes
-            </button>
-          </div>
-          <div className="chart-widget-menu">
-            <button
-              type="button"
-              className={earningsWidget.enabled ? "tool-pill active" : "tool-pill"}
-              onClick={() => setEarningsWidget((current) => ({ ...current, enabled: !current.enabled }))}
-            >
-              Earnings
-            </button>
-          </div>
-          <div className="chart-widget-menu">
-            <button
-              type="button"
-              className={showNextEarnings ? "tool-pill active" : "tool-pill"}
-              onClick={toggleNextEarnings}
-              title="Show the announced upcoming result date: an E on that future date plus a days-to-EPS countdown"
-            >
-              Next E
-            </button>
-          </div>
-          <div className="chart-widget-menu chart-range-menu">
-            <select
-              className="tool-pill chart-range-select"
-              value={chartRange}
-              onChange={(event) => setChartRange(event.target.value as ChartRangeKey)}
-              title="Chart visible range"
-              aria-label="Chart visible range"
-            >
-              {CHART_RANGE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
+          {chartToolsLeading}
+          {fullscreenControl}
+          {chartToolsTrailing}
+          {rangeControl}
+          {dragHint}
         </div>
       ) : null}
-      {summary ? (
+      {summary && (!compactToolbar || showStatsStrip) ? (
         <div className="chart-summary-strip compact">
           <div className={`chart-summary-chip ${priceTrendClass}`}>
             <span>Price</span>

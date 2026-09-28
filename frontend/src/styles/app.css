@@ -7494,7 +7494,7 @@ button {
 
 .chart-modal-widget-toggle {
   position: absolute;
-  top: 14px;
+  top: 8px;
   right: 90px;
   z-index: 1090;
   background: rgba(14, 15, 18, 0.85);
@@ -7707,6 +7707,225 @@ button {
   height: 100%;
 }
 
+/* Big chart: ONE toolbar row. The header, a second toolbar row and the stat
+   chips used to take ~32% of a 900px screen before the first candle; now the
+   everyday controls sit in a single ~40px row and everything else opens from
+   Indicators / the gear / More. Stat chips are opt-in (More -> Show stats). */
+.chart-panel.chart-compact > .panel-header {
+  position: relative;
+  z-index: 20;
+  align-items: center;
+}
+
+.chart-modal .chart-panel.chart-compact > .panel-header {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  align-items: center;
+}
+
+.chart-panel.chart-compact > .panel-header > div:first-child {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 280px;
+}
+
+.chart-panel.chart-compact > .panel-header h2,
+.chart-modal .chart-panel.chart-compact .panel-header h2 {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-panel.chart-compact > .panel-header .panel-kicker,
+.chart-modal .chart-panel.chart-compact .panel-kicker {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-panel.chart-compact > .panel-header .panel-actions,
+.chart-modal .chart-panel.chart-compact .panel-actions {
+  flex: 1 1 auto;
+  max-width: none;
+  min-width: 0;
+}
+
+.chart-panel.chart-compact .chart-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-bottom: 0;
+}
+
+.chart-panel.chart-compact .chart-actions .scanner-tab,
+.chart-panel.chart-compact .chart-actions .timeframe-pill,
+.chart-panel.chart-compact .chart-actions .indicator-pill,
+.chart-panel.chart-compact .chart-actions .tool-pill {
+  min-height: 28px;
+  padding: 4px 9px;
+  font-size: var(--fs-small);
+  white-space: nowrap;
+}
+
+/* Both designs size the chart title as a page heading; in the one-row
+   header it is a label. */
+html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.chart-panel.chart-compact .chart-actions .chart-tab-switcher {
+  padding: 2px;
+  gap: 2px;
+}
+
+.chart-panel.chart-compact .chart-actions .chart-tab-switcher .scanner-tab {
+  min-height: 26px;
+  padding: 3px 9px;
+}
+
+/* `.chart-panel .panel-body` sets its padding with !important. */
+.chart-modal .chart-panel.chart-compact > .panel-body {
+  padding: 2px 10px 6px !important;
+}
+
+.chart-panel.chart-compact .chart-actions .chart-range-select {
+  padding-right: 24px;
+}
+
+.chart-panel.chart-compact .chart-search-form {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.chart-panel.chart-compact .chart-search-form input {
+  width: 150px;
+  min-width: 0;
+  padding: 5px 10px;
+  font-size: var(--fs-small);
+}
+
+/* Show Group + Close are ~170px of overlay; the old 200px reservation was
+   sized for the taller buttons. */
+.chart-modal:has(> .chart-modal-widget-toggle) .chart-panel.chart-compact > .panel-header {
+  padding-right: 176px;
+}
+
+/* Enter submits, and picking a suggestion submits on its own. */
+.chart-panel.chart-compact .chart-search-form button[type="submit"] {
+  display: none;
+}
+
+.chart-panel.chart-compact .chart-actions .chart-fs-label {
+  display: none;
+}
+
+.chart-panel.chart-compact .chart-actions .chart-fs-pill {
+  display: inline-flex;
+  align-items: center;
+}
+
+.chart-panel.chart-compact .chart-display-gear {
+  width: 28px;
+  height: 28px;
+}
+
+.chart-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.chart-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-menu.is-open > .chart-menu-trigger {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+}
+
+.chart-menu-caret {
+  opacity: 0.6;
+  transition: transform var(--transition-fast, 120ms);
+}
+
+.chart-menu.is-open .chart-menu-caret {
+  transform: rotate(180deg);
+}
+
+.chart-menu-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  color: inherit;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.chart-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: min(440px, calc(100vw - 24px));
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16);
+}
+
+.chart-compact .chart-menu-panel .indicator-switcher,
+.chart-compact .chart-menu-panel .chart-style-switcher {
+  flex-wrap: wrap;
+}
+
+.chart-compact .chart-menu-panel .chart-display-settings {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: start;
+  gap: 8px 14px;
+  width: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.chart-compact .chart-menu-panel .chart-widget-menu,
+.chart-compact .chart-menu-panel > .tool-pill {
+  flex: 0 0 auto;
+}
+
+.chart-compact .chart-menu-panel .chart-color-settings {
+  flex: 1 0 100%;
+  order: 10;
+}
+
 @media (max-width: 960px) {
   .chart-group-modal {
     padding: 16px;
@@ -7755,11 +7974,11 @@ button {
 
 .chart-modal-close {
   position: absolute;
-  top: 10px;
+  top: 6px;
   right: 10px;
   z-index: 4;
   margin: 0;
-  padding: 10px 14px;
+  padding: 5px 12px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-lg);
   background: var(--surface-strong);
