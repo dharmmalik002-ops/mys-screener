@@ -19,6 +19,7 @@ import {
   type MarketKey,
   runAiJournalReview,
   runAiLearningsReview,
+  ApiHttpError,
   type AiJournalReview,
   type AiLearningsReview,
   type IndustryGroupsResponse,
@@ -515,7 +516,6 @@ export function calculateFIFO(trades: Trade[], startEquity: number, chargesConfi
       if (!buyQueues[sym]?.length) return;
       let toSell = qty;
       const sellOrigIdx = originalIndex(trade);
-      const buyIndices: number[] = [];
       while (toSell > 0 && buyQueues[sym].length > 0) {
         const lot = buyQueues[sym][0];
         const matched = Math.min(lot.remaining, toSell);
@@ -530,7 +530,6 @@ export function calculateFIFO(trades: Trade[], startEquity: number, chargesConfi
         const perc = entryPx > 0 ? ((exitPx - entryPx) / entryPx) * 100 : 0;
         const posSizePct = currentEquity > 0 ? (entryPx * matched / currentEquity) * 100 : 0;
         currentEquity += pnl;
-        buyIndices.push(lot.origIdx);
         closedTrades.push({
           symbol: sym, qty: matched, entryPx, exitPx,
           entryDate: lot.trade.date, exitDate: trade.date,
@@ -540,7 +539,10 @@ export function calculateFIFO(trades: Trade[], startEquity: number, chargesConfi
           stoploss: Number(lot.trade.stoploss) || undefined,
           target: Number(lot.trade.target) || undefined,
           equitySnapshot: currentEquity, posSizePct,
-          sellIndex: sellOrigIdx, buyIndices,
+          // This row's own lot. One array shared by every row of a sell made
+          // each row "own" all of that sell's lots, and Edit then wrote a
+          // blended entry price into lots that belonged to other rows.
+          sellIndex: sellOrigIdx, buyIndices: [lot.origIdx],
           product, grossPnl, charges: breakdown.total, breakdown,
         });
         lot.remaining -= matched; toSell -= matched;
@@ -1731,7 +1733,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [entryQty, setEntryQty] = useState("");
   const [entryPrice, setEntryPrice] = useState("");
   const [fetchingEntryPrice, setFetchingEntryPrice] = useState(false);
-  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [entryDate, setEntryDate] = useState(() => dateKey(new Date()));
   const [entrySetup, setEntrySetup] = useState(DEFAULT_SETUPS[0]);
   const [entryProduct, setEntryProduct] = useState<Product>("delivery");
   const [entrySL, setEntrySL] = useState("");
@@ -1770,7 +1772,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   type ModalState =
     | null
     | { type: "close-pos"; symbol: string; maxQty: number; cmp: number }
-    | { type: "edit-closed"; sellIndex: number; buyIndices: number[] }
+    | { type: "edit-closed"; sellIndex: number; buyIndices: number[]; initialEntryPx: string; initialExitPx: string }
     | { type: "edit-open"; symbol: string }
     | { type: "edit-sl"; symbol: string }
     | { type: "add-setup"; }
@@ -1779,7 +1781,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [modal, setModal] = useState<ModalState>(null);
   const [modalClosePrice, setModalClosePrice] = useState("");
   const [modalCloseQty, setModalCloseQty] = useState("");
-  const [modalCloseDate, setModalCloseDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [modalCloseDate, setModalCloseDate] = useState(() => dateKey(new Date()));
   const [modalEditEntryPx, setModalEditEntryPx] = useState("");
   const [modalEditExitPx, setModalEditExitPx] = useState("");
   const [modalEditTags, setModalEditTags] = useState<Set<string>>(new Set());
@@ -1796,7 +1798,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [screenerQty, setScreenerQty] = useState("");
   const [screenerPrice, setScreenerPrice] = useState("");
   const [screenerSL, setScreenerSL] = useState("");
-  const [screenerDate, setScreenerDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [screenerDate, setScreenerDate] = useState(() => dateKey(new Date()));
   const [screenerSetup, setScreenerSetup] = useState(DEFAULT_SETUPS[0]);
 
   const dragSymbol = useRef<string | null>(null);
@@ -1806,30 +1808,82 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     t: Trade[], se: number, su: string[], op: Record<string, OpenPosCat>, pm: Record<string, PosMeta>
   ) => ({ trades: t, startEquity: se, setups: su, openPosCats: op, posMeta: pm }), []);
 
+  // The server copy is the only one that survives a new device or cleared
+  // browser storage, and a PUT replaces it whole. So nothing is pushed until
+  // that copy has been read: on a fresh browser (or a cold Space that is slow
+  // to answer) `trades` is still [] here, and the first save used to overwrite
+  // the entire history with it. Edits made before the read lands wait in
+  // pendingSyncRef and are merged onto the server copy instead.
+  const remoteLoadedRef = useRef(false);
+  const pendingSyncRef = useRef<ReturnType<typeof buildPayload> | null>(null);
+
+  const pushToBackend = useCallback(async (payload: Record<string, unknown>) => {
+    try {
+      setBackendSyncing(true);
+      await saveJournalData(payload);
+    } catch (error) {
+      // localStorage keeps the change and the next save retries — except when
+      // the server refused it outright (it would have deleted trades), which
+      // the user has to hear about rather than discover later.
+      if (error instanceof ApiHttpError && error.status === 409) {
+        window.alert(`Journal not saved to the server: ${error.detail ?? error.message}`);
+      }
+    }
+    finally { setBackendSyncing(false); }
+  }, []);
+
   const syncToBackend = useCallback(async (
     t: Trade[], se: number, su: string[], op: Record<string, OpenPosCat>, pm: Record<string, PosMeta>
   ) => {
-    try {
-      setBackendSyncing(true);
-      await saveJournalData(buildPayload(t, se, su, op, pm) as Record<string, unknown>);
-    } catch { /* ignore backend errors, localStorage is source of truth */ }
-    finally { setBackendSyncing(false); }
-  }, [buildPayload]);
+    const payload = buildPayload(t, se, su, op, pm);
+    if (!remoteLoadedRef.current) {
+      pendingSyncRef.current = payload;
+      return;
+    }
+    await pushToBackend(payload as Record<string, unknown>);
+  }, [buildPayload, pushToBackend]);
 
-  const saveTrades = useCallback((next: Trade[]) => {
+  // `nextMeta`: a handler that has just called setPosMeta must pass the new
+  // value, or the PUT carries this render's posMeta — the stop it replaced.
+  const saveTrades = useCallback((next: Trade[], nextMeta?: Record<string, PosMeta>) => {
     setTrades(next); lsSet(LS_DATA, next); notifyJournalUpdated();
-    syncToBackend(next, startEquity, setups, openPosCats, posMeta);
+    syncToBackend(next, startEquity, setups, openPosCats, nextMeta ?? posMeta);
   }, [startEquity, setups, openPosCats, posMeta, syncToBackend]);
 
-  // Load from backend on mount, merge with localStorage
+  // Load from backend on mount, merge with localStorage. Retried, because
+  // until it succeeds nothing may be pushed (see remoteLoadedRef).
   useEffect(() => {
-    getJournalData().then(remote => {
-      if (!remote || typeof remote !== "object" || Object.keys(remote).length === 0) return;
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    const RETRY_MS = [2_000, 5_000, 15_000, 30_000, 60_000];
+    const finishLoad = (restoredTrades: Trade[] | null) => {
+      remoteLoadedRef.current = true;
+      const pending = pendingSyncRef.current;
+      pendingSyncRef.current = null;
+      if (!pending) return;
+      if (restoredTrades) {
+        // The pending save was built on an empty book, so every trade in it
+        // is new: append them to the server's history rather than replace it.
+        const merged = [...restoredTrades, ...pending.trades];
+        setTrades(merged); lsSet(LS_DATA, merged); notifyJournalUpdated();
+        void pushToBackend({ ...pending, trades: merged } as Record<string, unknown>);
+        return;
+      }
+      void pushToBackend(pending as Record<string, unknown>);
+    };
+    const load = (attempt: number) => getJournalData().then(remote => {
+      if (cancelled) return;
+      if (!remote || typeof remote !== "object" || Object.keys(remote).length === 0) {
+        finishLoad(null);
+        return;
+      }
       const r = remote as Record<string, unknown>;
       // Only restore if localStorage is empty (first load on new device)
       const localTrades = lsGet<Trade[]>(LS_DATA, []);
+      let restoredTrades: Trade[] | null = null;
       if (localTrades.length === 0 && Array.isArray(r.trades) && (r.trades as Trade[]).length > 0) {
         const rt = r.trades as Trade[];
+        restoredTrades = rt;
         setTrades(rt); lsSet(LS_DATA, rt); notifyJournalUpdated();
       }
       if (!localTrades.length && typeof r.startEquity === "number" && r.startEquity > 0) {
@@ -1847,7 +1901,17 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       if (!localTrades.length && r.posMeta && typeof r.posMeta === "object") {
         setPosMeta(r.posMeta as Record<string, PosMeta>); lsSet(LS_META, r.posMeta);
       }
-    }).catch(() => {});
+      finishLoad(restoredTrades);
+    }).catch(() => {
+      if (cancelled) return;
+      const delay = RETRY_MS[Math.min(attempt, RETRY_MS.length - 1)];
+      retryTimer = window.setTimeout(() => { void load(attempt + 1); }, delay);
+    });
+    void load(0);
+    return () => {
+      cancelled = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1857,7 +1921,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     setScreenerQty("");
     setScreenerPrice(String(addRequest.suggestedPrice || ""));
     setScreenerSL(addRequest.suggestedStopLoss ? String(addRequest.suggestedStopLoss) : "");
-    setScreenerDate(new Date().toISOString().split("T")[0]);
+    setScreenerDate(dateKey(new Date()));
     setScreenerSetup(
       addRequest.setup && setups.includes(addRequest.setup)
         ? addRequest.setup
@@ -2050,7 +2114,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       expectancyPct,
       avgWinPct,
       avgLossPct,
-      payoff: avgLossPct !== 0 ? Math.abs(avgWinPct / avgLossPct) : 0,
+      payoff: avgLossPct !== 0 ? Math.abs(avgWinPct / avgLossPct) : avgWinPct > 0 ? Infinity : 0,
       maxDdPct: maxDd * 100,
       bestStreak,
       worstStreak: Math.abs(worstStreak),
@@ -2413,9 +2477,26 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const avgHoldLoss = lossHolds.length ? lossHolds.reduce((a, b) => a + b, 0) / lossHolds.length : 0;
 
   // ── Price sync (silent = no alert) ────────────────────────────────────────
+  // Both syncs fetch one chart per position with a pause between, so they run
+  // for tens of seconds — exactly when stops get edited. They collect quotes
+  // and merge them into the CURRENT posMeta at the end; writing back a copy
+  // taken at the start reverted every stop / ticker edit made meanwhile.
+  type Quote = { cmp: number; prev_close?: number };
+  function applyQuotes(quotes: Record<string, Quote>) {
+    if (!Object.keys(quotes).length) return;
+    setPosMeta(cur => {
+      const next = { ...cur };
+      for (const [sym, q] of Object.entries(quotes)) {
+        next[sym] = { ...cur[sym], cmp: q.cmp, ...(q.prev_close ? { prev_close: q.prev_close } : {}) };
+      }
+      lsSet(LS_META, next);
+      return next;
+    });
+  }
+
   async function syncPricesSilent() {
     if (!openPositions.length) return;
-    const updated = { ...posMeta };
+    const quotes: Record<string, Quote> = {};
     const mkt: MarketKey = market ?? "india";
     let anyUpdated = false;
     for (const pos of openPositions) {
@@ -2426,15 +2507,13 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         const price = validPrice(result.summary?.last_price) ?? validPrice(result.bars[result.bars.length - 1]?.close);
         const prevClose = chartPreviousClose(result, price);
         if (price) {
-          if (!updated[pos.symbol]) updated[pos.symbol] = {};
-          updated[pos.symbol].cmp = price;
-          if (prevClose) updated[pos.symbol].prev_close = prevClose;
+          quotes[pos.symbol] = { cmp: price, ...(prevClose ? { prev_close: prevClose } : {}) };
           anyUpdated = true;
         }
       } catch { /* ignore */ }
       await new Promise(r => setTimeout(r, 100));
     }
-    setPosMeta(updated); lsSet(LS_META, updated);
+    applyQuotes(quotes);
     // If backend was sleeping (all fetches failed), retry once after 45s for cold-start
     if (!anyUpdated && retryRef.current === null) {
       retryRef.current = setTimeout(() => {
@@ -2449,7 +2528,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   async function syncPrices() {
     if (!openPositions.length) { alert("No open positions."); return; }
     setSyncing(true); setSyncStatus("Syncing prices…");
-    const updated = { ...posMeta };
+    const quotes: Record<string, Quote> = {};
     const failed: string[] = [];
     let updatedCount = 0;
     const mkt: MarketKey = market ?? "india";
@@ -2460,9 +2539,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         const price = validPrice(result.summary?.last_price) ?? validPrice(result.bars[result.bars.length - 1]?.close);
         const prevClose = chartPreviousClose(result, price);
         if (price) {
-          if (!updated[pos.symbol]) updated[pos.symbol] = {};
-          updated[pos.symbol].cmp = price;
-          if (prevClose) updated[pos.symbol].prev_close = prevClose;
+          quotes[pos.symbol] = { cmp: price, ...(prevClose ? { prev_close: prevClose } : {}) };
           updatedCount++;
         } else {
           failed.push(pos.symbol);
@@ -2470,7 +2547,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       } catch { failed.push(pos.symbol); }
       await new Promise(r => setTimeout(r, 100));
     }
-    setPosMeta(updated); lsSet(LS_META, updated);
+    applyQuotes(quotes);
     setSyncing(false);
     setSyncStatus(failed.length > 0 ? `Synced ${updatedCount}/${openPositions.length} · Failed: ${failed.join(", ")}` : `All ${updatedCount} prices synced ✓`);
     setTimeout(() => setSyncStatus(null), 5000);
@@ -2594,7 +2671,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           importedPositions = unwrap<Record<string, OpenPosCat>>(data.openPosCats, {});
           importedMeta = unwrap<Record<string, PosMeta>>(data.posMeta, {});
         }
-        if (Array.isArray(importedTrades) && importedTrades.length > 0) { saveTrades(importedTrades); }
+        // Local only here: the single PUT below carries the whole import. A second,
+        // unsequenced PUT from saveTrades could land last with the old metadata.
+        if (Array.isArray(importedTrades) && importedTrades.length > 0) {
+          setTrades(importedTrades); lsSet(LS_DATA, importedTrades); notifyJournalUpdated();
+        }
         if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setCalcCap(String(importedEquity)); }
         const mergedSetups = withDefaultSetups(importedSetups);
         if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(mergedSetups); lsSet(LS_SETUPS, mergedSetups); }
@@ -2605,13 +2686,17 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           updateChargesConfig({ ...DEFAULT_CHARGES, ...importedCharges });
         }
         // Push to backend after import
-        syncToBackend(
-          importedTrades.length ? importedTrades : trades,
-          importedEquity > 0 ? importedEquity : startEquity,
-          importedSetups.length ? mergedSetups : setups,
-          Object.keys(importedPositions).length ? importedPositions : openPosCats,
-          Object.keys(importedMeta).length ? importedMeta : posMeta,
-        );
+        void pushToBackend({
+          ...buildPayload(
+            importedTrades.length ? importedTrades : trades,
+            importedEquity > 0 ? importedEquity : startEquity,
+            importedSetups.length ? mergedSetups : setups,
+            Object.keys(importedPositions).length ? importedPositions : openPosCats,
+            Object.keys(importedMeta).length ? importedMeta : posMeta,
+          ),
+          // An import replaces the journal on purpose, so it may shrink it.
+          allowShrink: true,
+        } as Record<string, unknown>);
         alert("Journal imported and saved to cloud!");
       } catch { alert("Invalid JSON file."); }
     };
@@ -2664,11 +2749,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       stoploss: sl, target: 0, tags: [], remarks: "", vcp: {}, product: "delivery",
     };
     // Update posMeta with SL if provided
+    let nextMeta: Record<string, PosMeta> | undefined;
     if (sl > 0) {
-      const nextMeta = { ...posMeta, [modal.symbol.toUpperCase()]: { ...posMeta[modal.symbol.toUpperCase()], sl, fetchTicker: modal.symbol.toUpperCase() + ".NS" } };
+      nextMeta = { ...posMeta, [modal.symbol.toUpperCase()]: { ...posMeta[modal.symbol.toUpperCase()], sl, fetchTicker: modal.symbol.toUpperCase() + ".NS" } };
       setPosMeta(nextMeta); lsSet(LS_META, nextMeta);
     }
-    saveTrades([...trades, t]);
+    saveTrades([...trades, t], nextMeta);
     setModal(null);
     onAddRequestHandled?.();
     setTimeout(() => setActiveTab(2), 100);
@@ -2685,7 +2771,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   function openCloseModal(symbol: string, maxQty: number, cmp: number) {
     setModalClosePrice(String(cmp || ""));
     setModalCloseQty(String(Math.round(maxQty)));
-    setModalCloseDate(new Date().toISOString().split("T")[0]);
+    setModalCloseDate(dateKey(new Date()));
     setModal({ type: "close-pos", symbol, maxQty, cmp });
   }
 
@@ -2694,6 +2780,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const { symbol } = modal;
     const price = parseFloat(modalClosePrice), qty = parseFloat(modalCloseQty);
     if (isNaN(price) || isNaN(qty) || !modalCloseDate) { alert("Fill all fields."); return; }
+    // A 0 price books a -100% loss and a negative qty (Math.abs'd by FIFO) a
+    // sell of shares never held; neither is a typo worth saving silently.
+    if (price <= 0) { alert("Exit price must be above 0."); return; }
+    const maxCloseQty = Math.max(modal.maxQty, Math.round(modal.maxQty));
+    if (qty <= 0 || qty > maxCloseQty + 1e-9) { alert(`Quantity must be between 0 and ${Math.round(modal.maxQty)}.`); return; }
     const openLots = fifo.openLotsDict[symbol];
     if (openLots?.[0]) {
       if (getSafeTime(modalCloseDate) < getSafeTime(openLots[0].date)) {
@@ -2737,7 +2828,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           }
         : t,
     );
-    saveTrades(nextTrades); setModal(null);
+    saveTrades(nextTrades, nextMeta); setModal(null);
   }
 
   // ── Quick stop-loss edit (applies to the position's total open quantity) ─
@@ -2757,7 +2848,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const nextTrades = trades.map((t, i) =>
       openIdxs.includes(i) ? { ...t, stoploss: newSL } : t,
     );
-    saveTrades(nextTrades);
+    saveTrades(nextTrades, nextMeta);
     setModal(null);
   }
 
@@ -2784,7 +2875,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   function openLockBreakevenModal(symbol: string, sellQty: number, cmp: number, maxQty: number) {
     setModalClosePrice(String(cmp));
     setModalCloseQty(String(sellQty));
-    setModalCloseDate(new Date().toISOString().split("T")[0]);
+    setModalCloseDate(dateKey(new Date()));
     setModal({ type: "close-pos", symbol, maxQty, cmp });
   }
 
@@ -2793,22 +2884,27 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const sellTrade = trades[sellIndex], origTrade = trades[buyIndices[0]] || {} as Trade;
     let totalQty = 0, totalInvested = 0;
     buyIndices.forEach(i => { if (trades[i]) { totalQty += trades[i].qty; totalInvested += trades[i].qty * trades[i].price; } });
-    setModalEditEntryPx((totalQty > 0 ? totalInvested / totalQty : 0).toFixed(2));
-    setModalEditExitPx(String(sellTrade?.price || ""));
+    const initialEntryPx = (totalQty > 0 ? totalInvested / totalQty : 0).toFixed(2);
+    const initialExitPx = String(sellTrade?.price || "");
+    setModalEditEntryPx(initialEntryPx);
+    setModalEditExitPx(initialExitPx);
     setModalEditTags(new Set(origTrade.tags || []));
     setModalEditRemarks(origTrade.remarks || "");
     setModalEditImg(origTrade.img || "");
     setModalEditCustomTags("");
     setModalEditSetupType(origTrade.setupType || "");
-    setModal({ type: "edit-closed", sellIndex, buyIndices });
+    setModal({ type: "edit-closed", sellIndex, buyIndices, initialEntryPx, initialExitPx });
   }
 
   function saveClosedEdits() {
     if (modal?.type !== "edit-closed") return;
-    const { sellIndex, buyIndices } = modal;
+    const { sellIndex, buyIndices, initialEntryPx, initialExitPx } = modal;
     const customTags = modalEditCustomTags.split(",").map(s => s.trim()).filter(Boolean);
     const finalTags = [...modalEditTags, ...customTags];
-    const newEntryPx = parseFloat(modalEditEntryPx), newExitPx = parseFloat(modalEditExitPx);
+    // Prices are pre-filled (the entry one rounded to 2dp), so only a field the
+    // user actually changed is written — adding a tag must not re-price a lot.
+    const newEntryPx = modalEditEntryPx.trim() !== initialEntryPx ? parseFloat(modalEditEntryPx) : NaN;
+    const newExitPx = modalEditExitPx.trim() !== initialExitPx ? parseFloat(modalEditExitPx) : NaN;
     const nextTrades = trades.map((t, i) => {
       if (buyIndices.includes(i)) return { ...t, tags: finalTags, remarks: modalEditRemarks, img: modalEditImg, setupType: modalEditSetupType, ...(!isNaN(newEntryPx) && newEntryPx > 0 ? { price: newEntryPx } : {}) };
       if (i === sellIndex && !isNaN(newExitPx) && newExitPx > 0) return { ...t, price: newExitPx };
@@ -3580,11 +3676,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                     </strong>
                     <span>{closedTrades.length} closed trades (realized)</span>
                   </div>
-                  {scorecardRows.slice(0, 4).map((row) => (
+                  {scorecardRows.filter((row) => row.avg_forward_return_pct != null).slice(0, 4).map((row) => (
                     <div key={row.scan_id} className="tj-wisdom-stat tj-scanner-vs-row">
                       <strong className={(row.avg_forward_return_pct ?? 0) >= 0 ? "pos" : "neg"}>
                         {row.scan_name}: {(row.avg_forward_return_pct ?? 0) >= 0 ? "+" : ""}
-                        {row.avg_forward_return_pct?.toFixed(1)}% avg · {row.win_rate_pct?.toFixed(0)}% win
+                        {row.avg_forward_return_pct?.toFixed(1)}% avg · {row.win_rate_pct != null ? `${row.win_rate_pct.toFixed(0)}%` : "—"} win
                       </strong>
                       <span>{row.hits} picks over {row.sessions} sessions, unmanaged since scan day</span>
                     </div>
@@ -4100,7 +4196,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <div className="tj-edge-grid">
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "expectancy" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "expectancy" ? null : "expectancy"))}><span>Expectancy / trade</span><strong className={edge.expectancyPct >= 0 ? "pos" : "neg"}>{edge.expectancyPct >= 0 ? "+" : ""}{edge.expectancyPct.toFixed(2)}%</strong></button>
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "profit_factor" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "profit_factor" ? null : "profit_factor"))}><span>Profit factor</span><strong className={edge.profitFactor >= 1.5 ? "pos" : edge.profitFactor >= 1 ? "" : "neg"}>{Number.isFinite(edge.profitFactor) ? edge.profitFactor.toFixed(2) : "∞"}</strong></button>
-                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "payoff" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "payoff" ? null : "payoff"))}><span>Payoff (avg win / avg loss)</span><strong>{edge.payoff.toFixed(2)}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "payoff" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "payoff" ? null : "payoff"))}><span>Payoff (avg win / avg loss)</span><strong>{Number.isFinite(edge.payoff) ? edge.payoff.toFixed(2) : "∞"}</strong></button>
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "avg_win_loss" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "avg_win_loss" ? null : "avg_win_loss"))}><span>Avg win / Avg loss</span><strong><em className="pos">+{edge.avgWinPct.toFixed(1)}%</em> / <em className="neg">{edge.avgLossPct.toFixed(1)}%</em></strong></button>
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "max_dd" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "max_dd" ? null : "max_dd"))}><span>Max drawdown (realized)</span><strong className="neg">−{edge.maxDdPct.toFixed(1)}%</strong></button>
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "streak" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "streak" ? null : "streak"))}><span>Best / worst streak</span><strong>{edge.bestStreak}W / {edge.worstStreak}L</strong></button>

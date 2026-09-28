@@ -256,23 +256,28 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
         if (ta !== tb) return ta - tb;
         return plan(b).rs_rating - plan(a).rs_rating;
       }
-      const pick = (m: ScanMatch): number => {
+      // Missing values sink in either direction: as 0 a stock with no EMA
+      // reading sorted beside the ones genuinely sitting on the EMA.
+      const pick = (m: ScanMatch): number | null => {
         const p = plan(m);
         switch (sortKey) {
           case "rs": return p.rs_rating;
           case "close": return m.last_price;
           case "burst": return p.burst_pct;
           case "burst_days": return p.burst_days;
-          case "cons_days": return p.consolidation_days ?? -1;
-          case "range": return p.consolidation_range_pct ?? -1;
-          case "dist10": return p.dist_from_10ema_pct ?? 0;
-          case "dist21": return p.dist_from_21ema_pct ?? 0;
-          case "dryup": return p.volume_dryup_ratio ?? 999;
-          case "risk": return p.risk_pct ?? 999;
+          case "cons_days": return p.consolidation_days ?? null;
+          case "range": return p.consolidation_range_pct ?? null;
+          case "dist10": return p.dist_from_10ema_pct ?? null;
+          case "dist21": return p.dist_from_21ema_pct ?? null;
+          case "dryup": return p.volume_dryup_ratio ?? null;
+          case "risk": return p.risk_pct ?? null;
           default: return 0;
         }
       };
-      return (pick(a) - pick(b)) * dir;
+      const va = pick(a);
+      const vb = pick(b);
+      if (va == null || vb == null) return va == null ? (vb == null ? 0 : 1) : -1;
+      return (va - vb) * dir;
     });
     return copy;
   }, [rows, sortKey, sortDir]);

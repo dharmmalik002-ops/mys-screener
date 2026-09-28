@@ -28,7 +28,9 @@ export default function BotRulesBook({ equity }: { equity: number }) {
   if (!data) return <p className="bot-message">Loading the rules book…</p>;
 
   const wf = data.walkforward ?? null;
-  const rows = (data.diagnosis ?? []).filter((r) => r.index_return !== null);
+  const rows = (data.diagnosis ?? []).flatMap((r) =>
+    r.index_return !== null && r.bot_return != null ? [{ ...r, bot_return: r.bot_return }] : [],
+  );
   const money = (pct: number) => equity * (1 + pct / 100);
   const fmt = (v: number) =>
     v >= 1e7 ? `₹${(v / 1e7).toFixed(2)} cr` : `₹${(v / 1e5).toFixed(2)} L`;

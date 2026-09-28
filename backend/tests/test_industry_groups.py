@@ -480,6 +480,34 @@ class IndustryGroupsTests(unittest.TestCase):
             [(g.group_id, g.rank, g.score) for g in second.groups],
         )
 
+    def test_rank_history_is_keyed_by_the_data_session_not_the_build_day(self) -> None:
+        # A weekend (or pre-bhavcopy Monday) rebuild of Thursday's data must
+        # record Thursday, not the day it ran — the store is first-write-wins,
+        # so a wrong key would lock the real session's ranks out for good.
+        snapshots = self._spiker_vs_steady_snapshots()
+        session = snapshots[0].history_session_date
+        self.assertIsNotNone(session)
+        sunday = self.snapshot_updated_at + timedelta(days=3)
+        response = build_industry_groups_response(
+            snapshots, [], [], [],
+            generated_at=sunday,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        self.assertEqual(response.as_of_date, session.isoformat())
+        written = sorted(p.name for p in Path(self._history_dir_ctx.name).glob("ranks_*.json"))
+        self.assertEqual(written, [f"ranks_{session.strftime('%Y%m%d')}.json"])
+
+    def test_a_repeated_stale_payload_is_not_counted_as_a_new_session(self) -> None:
+        history = {
+            "2026-03-27": [{"groupId": "a", "rank": 1, "rawScore": 40.0}],
+            "2026-03-28": [{"groupId": "a", "rank": 1, "rawScore": 40.0}],  # weekend repeat
+            "2026-03-29": [{"groupId": "a", "rank": 1, "rawScore": 40.0}],  # weekend repeat
+            "2026-03-30": [{"groupId": "a", "rank": 1, "rawScore": 70.0}],
+        }
+        series = industry_groups._prior_raw_scores(history, datetime(2026, 4, 2).date())
+        self.assertEqual(series["a"], [40.0, 70.0])
+
     def test_rank_change_lookback_is_date_based(self) -> None:
         snapshots = self._spiker_vs_steady_snapshots()
         cold = build_industry_groups_response(

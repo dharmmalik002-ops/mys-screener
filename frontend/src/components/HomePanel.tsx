@@ -994,27 +994,18 @@ function MoverRow({
   );
 }
 
-export function HomePanel({
-  activeMarket,
-  dashboard,
-  groups,
-  snapshotDateLabel,
-  snapshotTimeLabel,
-  onPickSymbol,
-  onOpenGroups,
-}: HomePanelProps) {
-  const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
-  const [niftyBars, setNiftyBars] = useState<ChartBar[]>([]);
-  const [niftyTF, setNiftyTF] = useState<NiftyTimeframe>("1Y");
-  // Real per-group rank history for the trend column. Previously a sine wave.
-  const [rankHistory, setRankHistory] = useState<Record<string, GroupRankHistoryPoint[]>>({});
-  // Ticks every second so the close countdown actually counts down.
+/** The session card owns its own clock. The tick used to live in HomePanel,
+    which re-rendered the whole Home page — charts, tables, every card — once a
+    second for a countdown that only this card shows. */
+function SessionMeterCard({ marketOpen, universeCount }: { marketOpen: boolean; universeCount: number }) {
+  // Ticks every second while the session is open so the countdown counts
+  // down; once a minute otherwise, when nothing on the card moves faster.
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    const id = window.setInterval(() => setNowTick(Date.now()), marketOpen ? 1000 : 60_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [marketOpen]);
 
   /** Real time-to-close for the NSE session (15:30 IST), as HH:MM:SS. */
   const sessionCountdown = useMemo(() => {
@@ -1041,6 +1032,47 @@ export function HomePanel({
     return day.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
   }, [nowTick]);
 
+  /** Share of today's 09:15–15:30 IST session elapsed: 0 before the open,
+      1 once it has closed (weekends read as the last session, complete). */
+  const sessionProgress = useMemo(() => {
+    const ist = new Date(nowTick + (new Date(nowTick).getTimezoneOffset() + 330) * 60_000);
+    const minutes = ist.getHours() * 60 + ist.getMinutes();
+    const weekday = ist.getDay() !== 0 && ist.getDay() !== 6;
+    if (!weekday) return 1;
+    return Math.max(0, Math.min(1, (minutes - (9 * 60 + 15)) / (6 * 60 + 15)));
+  }, [nowTick]);
+
+  return (
+    <MeterCard
+      title="Market session"
+      value={
+        <span className="ol-session-value">
+          {marketOpen ? "Open" : "Closed"}
+          <span className={marketOpen ? "homepro-status-dot" : "homepro-status-dot closed"} />
+        </span>
+      }
+      footLeft={marketOpen ? `Closes in ${sessionCountdown}` : `Next ${nextSessionLabel}`}
+      footRight={`${universeCount.toLocaleString("en-IN")} stocks`}
+      pct={sessionProgress * 100}
+      color="var(--viz-orange)"
+    />
+  );
+}
+
+export function HomePanel({
+  activeMarket,
+  dashboard,
+  groups,
+  snapshotDateLabel,
+  snapshotTimeLabel,
+  onPickSymbol,
+  onOpenGroups,
+}: HomePanelProps) {
+  const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
+  const [niftyBars, setNiftyBars] = useState<ChartBar[]>([]);
+  const [niftyTF, setNiftyTF] = useState<NiftyTimeframe>("1Y");
+  // Real per-group rank history for the trend column. Previously a sine wave.
+  const [rankHistory, setRankHistory] = useState<Record<string, GroupRankHistoryPoint[]>>({});
   useEffect(() => {
     let active = true;
     getGroupRankHistory(activeMarket)
@@ -1075,15 +1107,6 @@ export function HomePanel({
   }, [activeMarket]);
 
   const universeCount = dashboard?.universe_count ?? 0;
-  /** Share of today's 09:15–15:30 IST session elapsed: 0 before the open,
-      1 once it has closed (weekends read as the last session, complete). */
-  const sessionProgress = useMemo(() => {
-    const ist = new Date(nowTick + (new Date(nowTick).getTimezoneOffset() + 330) * 60_000);
-    const minutes = ist.getHours() * 60 + ist.getMinutes();
-    const weekday = ist.getDay() !== 0 && ist.getDay() !== 6;
-    if (!weekday) return 1;
-    return Math.max(0, Math.min(1, (minutes - (9 * 60 + 15)) / (6 * 60 + 15)));
-  }, [nowTick]);
   const marketStatusRaw = (dashboard?.market_status ?? "").toLowerCase();
   const marketOpen = marketStatusRaw.includes("open") || marketStatusRaw === "live";
 
@@ -1107,8 +1130,12 @@ export function HomePanel({
   // XP market breadth score (computed EOD over all bhavcopy equities).
   const xpBreadth = dashboard?.xp_breadth ?? null;
 
+  // Leadership table: real groups only. The "(Parent bucket)" rows are
+  // leftovers merged from sub-groups too small to rank on their own — three or
+  // four unrelated names — and two of them sat at #2 and #6 as "leaders".
+  // The row keeps its true rank so it matches the Groups page.
   const topGroups = useMemo<IndustryGroupRankItem[]>(
-    () => (groups?.groups ?? []).slice(0, 10),
+    () => (groups?.groups ?? []).filter((group) => !group.unstable_flag).slice(0, 10),
     [groups],
   );
 
@@ -1137,18 +1164,29 @@ export function HomePanel({
      headed "Day Performance". Seeded by row index, so the same row always drew
      the same curve no matter which group occupied it. Real series only now. */
 
+  // The headline must agree with the candle under it. The macro quote and the
+  // chart come from different Yahoo feeds and routinely differ by 20+ points
+  // at the close (22,841.95 -1.29% over a last candle of 22,821.1 -1.38%), so
+  // the chart's own last two closes win whenever they exist.
   const niftyPoint = macroItems.find((c) => c.symbol === "^NSEI");
-  const niftyPrice = niftyPoint?.price ?? null;
-  const niftyChange = niftyPoint?.change_pct ?? null;
+  const niftyLastBar = niftyBars.length ? niftyBars[niftyBars.length - 1] : null;
+  const niftyPrevBar = niftyBars.length > 1 ? niftyBars[niftyBars.length - 2] : null;
+  const niftyPrice = niftyLastBar && Number.isFinite(niftyLastBar.close)
+    ? niftyLastBar.close
+    : niftyPoint?.price ?? null;
+  const niftyChange = niftyLastBar && niftyPrevBar && niftyPrevBar.close > 0
+    ? ((niftyLastBar.close - niftyPrevBar.close) / niftyPrevBar.close) * 100
+    : niftyPoint?.change_pct ?? null;
 
   const briefing = (() => {
     const xp = dashboard?.xp_breadth ?? null;
     const breadth = dashboard?.breadth_today ?? null;
-    const improving = (groups?.groups ?? [])
+    const rankedGroups = (groups?.groups ?? []).filter((g) => !g.unstable_flag);
+    const improving = rankedGroups
       .filter((g) => (g.rank_change_1w ?? 0) > 0)
       .sort((a, b) => (b.rank_change_1w ?? 0) - (a.rank_change_1w ?? 0))
       .slice(0, 3);
-    const topGroups = (groups?.groups ?? []).slice(0, 3);
+    const topGroups = rankedGroups.slice(0, 3);
     if (!xp && !breadth && topGroups.length === 0) return null;
     return { xp, breadth, improving, topGroups };
   })();
@@ -1244,19 +1282,7 @@ export function HomePanel({
             pct={xpBreadth ? ((xpBreadth.xp_score - 5) / 25) * 100 : 0}
             color="var(--viz-purple)"
           />
-          <MeterCard
-            title="Market session"
-            value={
-              <span className="ol-session-value">
-                {marketOpen ? "Open" : "Closed"}
-                <span className={marketOpen ? "homepro-status-dot" : "homepro-status-dot closed"} />
-              </span>
-            }
-            footLeft={marketOpen ? `Closes in ${sessionCountdown}` : `Next ${nextSessionLabel}`}
-            footRight={`${universeCount.toLocaleString("en-IN")} stocks`}
-            pct={sessionProgress * 100}
-            color="var(--viz-orange)"
-          />
+          <SessionMeterCard marketOpen={marketOpen} universeCount={universeCount} />
         </div>
 
       </div>
@@ -1359,7 +1385,7 @@ export function HomePanel({
                     aria-label={`Open group ${group.group_name ?? group.group_id}`}
                     {...activatable(() => onOpenGroups({ groupId: group.group_id }))}
                   >
-                    <td className="homepro-rank">{i + 1}.</td>
+                    <td className="homepro-rank">{group.rank ?? i + 1}.</td>
                     <td className="homepro-group-name">{group.group_name}</td>
                     <td className="homepro-num">{group.stock_count}</td>
                     <td className={`homepro-num homepro-chg ${up ? "pos" : "neg"}`}>

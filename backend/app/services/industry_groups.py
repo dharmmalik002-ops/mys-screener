@@ -332,7 +332,20 @@ def _prior_raw_scores(history: dict[str, list[dict]], asof: date) -> dict[str, l
     oldest first, capped at the newest SCORE_EMA_MAX_SESSIONS sessions.
     Falls back to `score` for pre-rawScore history entries."""
     days = sorted(d for d in history if (parsed := _parse_history_date(d)) is not None and parsed < asof)
-    days = days[-SCORE_EMA_MAX_SESSIONS:]
+    # Entries written before history was keyed by data session repeat the
+    # previous session's scores under a non-trading date. An identical payload
+    # is not a new session; counting it would weight a stale day twice.
+    deduped: list[str] = []
+    previous_signature: tuple | None = None
+    for day in days:
+        signature = tuple(
+            sorted((str(row.get("groupId")), row.get("rawScore", row.get("score"))) for row in history.get(day, []))
+        )
+        if signature and signature == previous_signature:
+            continue
+        deduped.append(day)
+        previous_signature = signature
+    days = deduped[-SCORE_EMA_MAX_SESSIONS:]
     series: dict[str, list[float]] = defaultdict(list)
     for day in days:
         for row in history.get(day, []):
@@ -354,15 +367,32 @@ def _ema_last(values: list[float], span: int) -> float:
     return ema
 
 
-def _save_rank_history(rank_payload: list[dict], generated_at: datetime) -> None:
+def _data_session_date(snapshots: list[StockSnapshot], fallback: datetime) -> date:
+    """The EOD session the group numbers are FOR — the date most of the
+    universe's history ends on — not the day the payload happened to be built.
+
+    Keying rank history by build date recorded Friday's ranks again as
+    "Saturday", "Sunday" and (for a rebuild before Monday's bhavcopy)
+    "Monday"; the store is first-write-wins, so Monday's real close could then
+    never replace it, and the score EMA counted Friday three or four times."""
+    counts: dict[date, int] = defaultdict(int)
+    for snap in snapshots:
+        if snap.history_session_date:
+            counts[snap.history_session_date] += 1
+    if counts:
+        return max(counts.items(), key=lambda item: (item[1], item[0]))[0]
+    return fallback.astimezone(timezone.utc).date()
+
+
+def _save_rank_history(rank_payload: list[dict], session: date) -> None:
     store = _get_rank_store()
     if store is not None:
         try:
-            store.record_once("group-ranks", generated_at.astimezone(timezone.utc).date().isoformat(), rank_payload)
+            store.record_once("group-ranks", session.isoformat(), rank_payload)
         except Exception as exc:
             logger.info("rank store write failed: %s", exc)
     RANK_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = generated_at.astimezone(timezone.utc).strftime("%Y%m%d")
+    stamp = session.strftime("%Y%m%d")
     out = RANK_HISTORY_DIR / f"ranks_{stamp}.json"
     try:
         out.write_text(json.dumps(rank_payload, separators=(",", ":")), encoding="utf-8")
@@ -703,7 +733,7 @@ def build_industry_groups_response(
         }
 
     history = _load_group_history()
-    asof = generated_at.astimezone(timezone.utc).date()
+    asof = _data_session_date(snapshots, generated_at)
     history_1w = _history_ranks_asof(history, asof, *RANK_HISTORY_LOOKBACKS["1w"])
     history_1m = _history_ranks_asof(history, asof, *RANK_HISTORY_LOOKBACKS["1m"])
     history_3m = _history_ranks_asof(history, asof, *RANK_HISTORY_LOOKBACKS["3m"])
@@ -799,9 +829,9 @@ def build_industry_groups_response(
             }
         )
 
-    _save_rank_history(rank_payload_for_history, generated_at)
+    _save_rank_history(rank_payload_for_history, asof)
 
-    as_of_date = generated_at.astimezone(timezone.utc).date().isoformat()
+    as_of_date = asof.isoformat()
     return IndustryGroupsResponse(
         generated_at=generated_at,
         as_of_date=as_of_date,

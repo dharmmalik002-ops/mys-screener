@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services import study_deck as sd
+from app.services.dashboard_service import JournalShrinkRefused
 
 from app.models.market import (
     BhavcopyStatusResponse,
@@ -600,7 +601,10 @@ def build_router(service):
 
     @router.put("/journal")
     async def save_journal(payload: dict):
-        return resolve_service("india").save_journal_data(payload)
+        try:
+            return resolve_service("india").save_journal_data(payload)
+        except JournalShrinkRefused as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @router.get("/chart/{symbol}", response_model=ChartResponse)
     async def chart(

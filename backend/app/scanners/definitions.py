@@ -75,6 +75,20 @@ def _gap_from_level(current: float, level: float) -> float:
     return ((current / level) - 1) * 100
 
 
+# A stock that printed a new high today and closed within this much of it is AT
+# the high. Measured against today's own high, the old 0.2% band sent a name
+# that made a fresh all-time high and closed 0.3% off it (BLISSGVS, 2026-09-28:
+# high 739.90 over a prior 728.00, close 737.65) to "Near ATH" while "All-Time
+# High" came back empty — and "ATH Breakouts" listed it the same day.
+NEW_HIGH_CLOSE_TOLERANCE_PCT = 1.0
+
+
+def _set_new_high_today(snapshot: StockSnapshot, prior_level: float, level: float) -> bool:
+    if prior_level <= 0 or snapshot.day_high <= prior_level:
+        return False
+    return _gap_from_level(snapshot.last_price, level) >= -NEW_HIGH_CLOSE_TOLERANCE_PCT
+
+
 def _near_or_above(current: float, level: float, tolerance_pct: float) -> bool:
     return _gap_from_level(current, level) >= -tolerance_pct
 
@@ -217,7 +231,8 @@ def _six_month_low(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
 def _high_52w(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     gap = _gap_from_level(snapshot.last_price, snapshot.high_52w)
-    if gap >= -0.2 and snapshot.change_pct >= 1 and snapshot.relative_volume >= 1.15:
+    at_high = gap >= -0.2 or _set_new_high_today(snapshot, snapshot.previous_high_52w_level, snapshot.high_52w)
+    if at_high and snapshot.change_pct >= 1 and snapshot.relative_volume >= 1.15:
         return round(79 + snapshot.change_pct + snapshot.relative_volume, 2), ["52-week high", f"{gap:.2f}% from 52W high"]
     return None
 
@@ -231,6 +246,8 @@ def _low_52w(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
 def _near_52w_high(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     gap = _gap_from_level(snapshot.last_price, snapshot.high_52w)
+    if _high_52w(snapshot) is not None:
+        return None  # listed as AT the high; one name, one list
     if -1.5 <= gap < -0.2 and snapshot.stock_return_60d >= 6:
         return round(70 + snapshot.stock_return_60d * 0.15 + max(snapshot.change_pct, 0), 2), ["Near 52-week high", f"{gap:.2f}% below 52W high"]
     return None
@@ -245,7 +262,8 @@ def _near_52w_low(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
 def _all_time_high(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     gap = _gap_from_level(snapshot.last_price, snapshot.ath)
-    if gap >= -0.2 and snapshot.change_pct >= 1 and snapshot.relative_volume >= 1.2:
+    at_high = gap >= -0.2 or _set_new_high_today(snapshot, snapshot.ath_breakout_level, snapshot.ath)
+    if at_high and snapshot.change_pct >= 1 and snapshot.relative_volume >= 1.2:
         return round(82 + snapshot.change_pct + snapshot.relative_volume, 2), ["All-time high", f"{gap:.2f}% from ATH"]
     return None
 
@@ -259,6 +277,8 @@ def _all_time_low(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
 def _near_ath(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     gap = _gap_from_level(snapshot.last_price, snapshot.ath)
+    if _all_time_high(snapshot) is not None:
+        return None  # listed as AT the high; one name, one list
     if -1.35 <= gap < -0.15 and snapshot.stock_return_20d >= 4 and _bullish_setup(snapshot):
         return round(73 + snapshot.stock_return_20d * 0.25 + snapshot.relative_volume, 2), ["Near ATH", f"{gap:.2f}% below ATH"]
     return None
@@ -2005,8 +2025,31 @@ def _passes_min_liquidity(snapshot: StockSnapshot, min_liquidity_crore: float | 
     return snapshot.avg_rupee_volume_30d_crore >= min_liquidity_crore
 
 
+# NSE's DATE OF LISTING is when a company started trading ON NSE. When NSE
+# admits BSE-only companies in bulk (direct listings) dozens share one date —
+# 38 on 2026-04-20 and 110 on 2026-08-17 — and every one of them, decades old,
+# read as an "IPO" (148 of 319). The busiest genuine IPO day in the same year
+# had 6, so a date carrying this many listings is a batch, not an offering.
+IPO_BATCH_LISTING_MIN = 10
+
+
+def ipo_batch_listing_dates(snapshots: list[StockSnapshot], today: date | None = None) -> set[date]:
+    today = today or date.today()
+    counts: dict[date, int] = {}
+    for snapshot in snapshots:
+        listed = snapshot.listing_date
+        if listed is None or not 0 <= (today - listed).days <= 365:
+            continue
+        counts[listed] = counts.get(listed, 0) + 1
+    return {listed for listed, count in counts.items() if count >= IPO_BATCH_LISTING_MIN}
+
+
 def run_scan(scan: ScanDefinition, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
     matches: list[ScanMatch] = []
+    if scan.id == "ipo":
+        batch_dates = ipo_batch_listing_dates(snapshots)
+        if batch_dates:
+            snapshots = [s for s in snapshots if s.listing_date not in batch_dates]
     for snapshot in snapshots:
         outcome = scan.evaluator(snapshot)
         if not outcome:

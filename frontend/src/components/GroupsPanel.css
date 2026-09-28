@@ -726,14 +726,43 @@ body.dark .gp-emerging {
 /* top 3 stocks — laid out HORIZONTALLY. Stacking them vertically made every
    group row ~200px tall (4 groups per screen on a 91-group rankings list). */
 .gp-cell-stocks {
-  min-width: 260px;
+  min-width: 360px;
 }
 
+/* One line, not three. At 260px the three chips wrapped one per line anyway
+   and every row was still 126px tall (five groups per screen). The initials
+   avatar carried nothing the symbol beside it did not, so the chip drops it
+   when there is no real logo. Three long symbols (AEGISVOPAK, ADANIPORTS)
+   still take two lines rather than clipping the last chip. */
 .gp-top3 {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
+}
+
+.gp-top3 .gp-stock-chip {
+  grid-template-columns: auto auto;
+  gap: 5px;
+  padding: 2px 6px;
+}
+
+.gp-top3 .gp-stock-chip:has(.gp-stock-logo) {
+  grid-template-columns: 18px auto auto;
+}
+
+.gp-top3 .gp-stock-chip:has(.gp-stock-logo[style*="none"]) {
+  grid-template-columns: auto auto;
+}
+
+.gp-top3 .gp-stock-avatar {
+  display: none;
+}
+
+/* Today's move is in the chip's tooltip; the RS circle carries the ranking
+   signal, and the % was what pushed three leaders onto a second line. */
+.gp-top3 .gp-stock-chg {
+  display: none;
 }
 
 .gp-stock-chip {

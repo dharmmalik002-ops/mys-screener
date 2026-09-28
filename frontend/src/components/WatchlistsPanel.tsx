@@ -469,15 +469,25 @@ export function WatchlistsPanel({
           // they have no values to compare, so interleaving them is just noise.
           if (left.isKnown !== right.isKnown) return left.isKnown ? -1 : 1;
 
-          let delta: number;
-          switch (sortKey) {
-            case "symbol": delta = left.symbol.localeCompare(right.symbol); break;
-            case "price": delta = (left.last_price ?? 0) - (right.last_price ?? 0); break;
-            case "change": delta = (left.change_pct ?? 0) - (right.change_pct ?? 0); break;
-            case "groupRank": delta = (left.groupRank ?? Infinity) - (right.groupRank ?? Infinity); break;
-            case "rankInGroup": delta = (left.rankInGroup ?? Infinity) - (right.rankInGroup ?? Infinity); break;
-            default: delta = (left.rs_rating ?? 0) - (right.rs_rating ?? 0);
+          if (sortKey === "symbol") {
+            const delta = left.symbol.localeCompare(right.symbol);
+            return sortDir === "asc" ? delta : -delta;
           }
+          // A missing value sinks in either direction; as 0 or Infinity it
+          // floated to the top of one of them.
+          const pick = (row: typeof left): number | null | undefined => {
+            switch (sortKey) {
+              case "price": return row.last_price;
+              case "change": return row.change_pct;
+              case "groupRank": return row.groupRank;
+              case "rankInGroup": return row.rankInGroup;
+              default: return row.rs_rating;
+            }
+          };
+          const lv = pick(left);
+          const rv = pick(right);
+          if (lv == null || rv == null) return lv == null ? (rv == null ? 0 : 1) : -1;
+          const delta = lv - rv;
           return sortDir === "asc" ? delta : -delta;
         }),
     [activeWatchlist?.symbols, groupRankIndex, lookup, sortKey, sortDir],

@@ -10,7 +10,8 @@ gitignored and purely local: nothing the live app serves depends on it, so a
 failed or partial run degrades the bot's backtest and breaks nothing else.
 
 Re-running is safe and incremental — a symbol already holding bars through the
-last session is skipped unless `--refresh` is passed.
+last completed session is skipped, one that is behind gets only its missing
+tail appended, and `--refresh` re-fetches everything in full.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ import logging
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -34,11 +35,17 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("deep-history")
 
 MAX_WORKERS = 6          # above this Yahoo starts returning empty frames
+IST = timezone(timedelta(hours=5, minutes=30))
+# A stored close that moves by more than this when re-fetched means Yahoo has
+# re-adjusted the whole series (split, bonus, dividend): appending a new tail to
+# the old adjusted base would put a false gap at the join, so re-fetch it all.
+ADJUSTMENT_TOLERANCE = 0.005
+PROVISIONAL_BARS = 2
 RETRIES = 3
 RETRY_SLEEP = 2.0
 
 
-def fetch_one(symbol: str, ticker: str) -> list[dict]:
+def fetch_one(symbol: str, ticker: str, period: str = "max") -> list[dict]:
     """Daily bars, split- and dividend-adjusted, oldest first.
 
     `auto_adjust=True` matters more than it looks: without it a 1:10 split reads
@@ -50,7 +57,7 @@ def fetch_one(symbol: str, ticker: str) -> list[dict]:
     last_error: Exception | None = None
     for attempt in range(RETRIES):
         try:
-            frame = yf.Ticker(ticker).history(period="max", interval="1d", auto_adjust=True)
+            frame = yf.Ticker(ticker).history(period=period, interval="1d", auto_adjust=True)
             if frame is None or frame.empty:
                 last_error = RuntimeError("empty frame")
                 time.sleep(RETRY_SLEEP * (attempt + 1))
@@ -97,9 +104,63 @@ def targets(data_dir: Path, args) -> list[tuple[str, str]]:
     return pairs + equity
 
 
+def latest_session(now: datetime | None = None) -> date:
+    """The most recent NSE session that has closed (weekdays; holidays are not
+    known here, so on one the whole store simply gets a cheap tail top-up)."""
+    now = (now or datetime.now(timezone.utc)).astimezone(IST)
+    day = now.date()
+    if now.hour < 16:  # EOD bars are not final before ~16:00 IST
+        day -= timedelta(days=1)
+    while day.weekday() >= 5:
+        day -= timedelta(days=1)
+    return day
+
+
 def already_current(data_dir: Path, symbol: str, cutoff: date) -> bool:
     bars = hist.read_bars(data_dir, symbol)
     return bool(bars and bars.last_date and bars.last_date >= cutoff)
+
+
+def _bars_to_rows(bars: hist.Bars) -> list[dict]:
+    return [
+        {"date": d, "open": o, "high": h, "low": l, "close": c, "volume": v}
+        for d, o, h, l, c, v in zip(bars.dates, bars.open, bars.high, bars.low, bars.close, bars.volume)
+    ]
+
+
+def merge_tail(stored: hist.Bars, tail: list[dict]) -> list[dict] | None:
+    """Stored history plus the freshly fetched tail, or None when the overlap
+    disagrees (the series was re-adjusted) and only a full re-fetch is safe."""
+    stored_close = {d: float(c) for d, c in zip(stored.dates, stored.close)}
+    # The newest stored bars may have been captured mid-session (RELIANCE's
+    # 2026-09-24 bar read 1232.60; the close was 1219.20). They are not evidence
+    # of a re-adjustment — the fresh tail simply overwrites them.
+    provisional = set(stored.dates[-PROVISIONAL_BARS:])
+    overlap = [row for row in tail if row.get("date") in stored_close and row["date"] not in provisional]
+    if not overlap:
+        return None  # nothing to anchor the join on
+    for row in overlap:
+        try:
+            fresh = float(row["close"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        old = stored_close[row["date"]]
+        if old <= 0 or abs(fresh / old - 1.0) > ADJUSTMENT_TOLERANCE:
+            return None
+    return _bars_to_rows(stored) + tail
+
+
+def update_one(data_dir: Path, symbol: str, ticker: str, full: bool) -> list[dict]:
+    """Rows to write for one symbol: the missing tail appended when that is
+    safe, the full history otherwise."""
+    stored = None if full else hist.read_bars(data_dir, symbol)
+    if stored is not None and len(stored):
+        tail = fetch_one(symbol, ticker, period="3mo")
+        if tail:
+            merged = merge_tail(stored, tail)
+            if merged is not None:
+                return merged
+    return fetch_one(symbol, ticker)
 
 
 def main() -> int:
@@ -114,9 +175,12 @@ def main() -> int:
     hist.store_dir(data_dir).mkdir(parents=True, exist_ok=True)
 
     pairs = targets(data_dir, args)
-    # Anything stored through the last few sessions is current enough; Yahoo is
-    # the slow part of this script and re-pulling 30 years to add one bar is waste.
-    cutoff = date.today().fromordinal(date.today().toordinal() - 5)
+    # Current means holding the last CLOSED session. The old rule — anything
+    # within five calendar days — skipped every symbol until the store was
+    # almost a week stale, so the nightly job re-ran the bot on the same bars
+    # and the Bot tab read "these signals are 7 days old". A symbol behind now
+    # gets only its missing tail appended (see update_one), so this is cheap.
+    cutoff = latest_session()
     if not args.refresh:
         pending = [(s, t) for s, t in pairs if not already_current(data_dir, s, cutoff)]
         logger.info("%d symbols already current — skipping", len(pairs) - len(pending))
@@ -132,7 +196,7 @@ def main() -> int:
     total_bars = 0
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(fetch_one, s, t): (s, t) for s, t in pairs}
+        futures = {pool.submit(update_one, data_dir, s, t, args.refresh): (s, t) for s, t in pairs}
         for n, future in enumerate(as_completed(futures), start=1):
             symbol, ticker = futures[future]
             try:

@@ -314,6 +314,13 @@ def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
     )
 
 
+JOURNAL_MAX_SILENT_TRADE_LOSS = 5
+
+
+class JournalShrinkRefused(ValueError):
+    """A journal save would drop many trades at once without saying so."""
+
+
 class DashboardService:
     def __init__(self, provider: MarketDataProvider, settings: Settings) -> None:
         self.provider = provider
@@ -1359,7 +1366,23 @@ class DashboardService:
 
     async def get_scan_counts(self) -> list[ScanDescriptor]:
         snapshots = await self._snapshots()
-        scanners, _ = await asyncio.to_thread(self._scan_catalog, self._scan_eligible_snapshots(snapshots))
+        eligible = self._scan_eligible_snapshots(snapshots)
+        scanners, _ = await asyncio.to_thread(self._scan_catalog, eligible)
+        # Bread & Butter runs outside the static catalog, so it had no row here
+        # and its sidebar badge read 0 while the scan itself held 110 names.
+        try:
+            bread_butter = await asyncio.to_thread(run_bread_butter_scan, eligible)
+            scanners.append(
+                ScanDescriptor(
+                    id="bread-butter",
+                    name="Bread & Butter",
+                    category="Setups",
+                    description="Stage 2 stocks above the 50/200 SMA after a fresh 15-20% impulse and an orderly rest around the 10/21 EMA.",
+                    hit_count=len(bread_butter),
+                )
+            )
+        except Exception as exc:  # a badge must never take the counts down
+            logger.info("bread-butter count skipped: %s", exc)
         return scanners
 
     def _gap_up_items(
@@ -6080,6 +6103,21 @@ class DashboardService:
         return {}
 
     def save_journal_data(self, payload: dict) -> dict:
+        # A PUT replaces the whole journal, so a client that has not read the
+        # server copy yet (new device, cleared storage, a cold Space) can wipe
+        # the history with its empty list. Deleting in the UI is one trade at a
+        # time; losing more than a handful in one save is refused unless the
+        # client says it means it (an explicit JSON import).
+        allow_shrink = bool(payload.pop("allowShrink", False))
+        new_trades = payload.get("trades")
+        if not allow_shrink and isinstance(new_trades, list):
+            current = self.get_journal_data()
+            current_trades = current.get("trades") if isinstance(current, dict) else None
+            if isinstance(current_trades, list) and len(new_trades) < len(current_trades) - JOURNAL_MAX_SILENT_TRADE_LOSS:
+                raise JournalShrinkRefused(
+                    f"Refusing to replace {len(current_trades)} journal trades with {len(new_trades)}. "
+                    "Reload the journal so this device has the server copy first."
+                )
         path = self._journal_data_path()
         self._write_json_payload(path, payload)
         if self._journal_store.is_enabled():

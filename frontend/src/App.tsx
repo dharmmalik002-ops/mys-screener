@@ -3471,7 +3471,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
   }, [dashboard]);
 
-  const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
+  // The session the numbers are FOR, not when the payload was built: on a
+  // weekday before the close (or a holiday) generated_at is today while every
+  // figure on the page is the last EOD session, so "EOD as of 28 Sept" sat
+  // over Friday's breadth.
+  const snapshotDateLabel = formatSnapshotDate(
+    activeMarket,
+    dashboard?.breadth_today?.date ?? dashboard?.generated_at,
+  );
   // Sidebar badges: the scan that is on screen reports its own hit count; every
   // other scanner falls back to the dashboard's precomputed count, so the list
   // does not read "0" for scanners that simply have not been opened yet.
@@ -6799,7 +6806,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   key={activeChartKey ?? "empty-chart"}
                   {...pageChartPanelProps}
                   {...fullscreenPane("page")}
-                  expanded={activePage === "groups"}
+                  // Both side panes get the one-row toolbar: on Watchlists the
+                  // old two-row toolbar plus the stat chips filled ~90% of the
+                  // pane and the chart began at the bottom of the screen.
+                  expanded
                 />
               ) : null}
             </section>

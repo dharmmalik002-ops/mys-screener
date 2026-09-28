@@ -825,6 +825,9 @@ export type IndustryGroupRankItem = {
   parent_sector: string;
   description: string;
   stock_count: number;
+  /** A "(Parent bucket)": sub-groups under GROUP_MIN_STOCKS merged by sector.
+      Ranked, but a handful of unrelated names is not a leadership signal. */
+  unstable_flag?: boolean;
   score: number;
   raw_score: number | null;
   momentum_score: number | null;
@@ -1551,6 +1554,7 @@ function normalizeIndustryGroupRankItem(value: unknown): IndustryGroupRankItem {
     parent_sector: readString(raw.parent_sector, "Unclassified"),
     description: readString(raw.description),
     stock_count: readNumber(raw.stock_count),
+    unstable_flag: Boolean(raw.unstable_flag),
     score: readNumber(raw.score),
     raw_score: readNullableNumber(raw.raw_score),
     momentum_score: readNullableNumber(raw.momentum_score),
@@ -2103,6 +2107,32 @@ function orderedApiBases() {
   return [preferredApiBase, ...FALLBACK_API_BASES.filter((base) => base !== preferredApiBase)];
 }
 
+/** The backend answered and refused (4xx with a JSON body). Not retried on
+    another base — it would say the same — and it carries FastAPI's `detail`
+    so the caller can show why, instead of "Request failed: 409". */
+export class ApiHttpError extends Error {
+  readonly status: number;
+  readonly detail: string | null;
+  constructor(status: number, detail: string | null) {
+    super(detail ? detail : `Request failed: ${status}`);
+    this.name = "ApiHttpError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+async function readErrorDetail(response: Response): Promise<string | null | undefined> {
+  // undefined = not a JSON answer from the backend (a proxy page, say).
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) return undefined;
+  try {
+    const body = await response.json() as { detail?: unknown };
+    return typeof body?.detail === "string" ? body.detail : null;
+  } catch {
+    return undefined;
+  }
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -2113,6 +2143,10 @@ async function request<T>(
   const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
   const bases = orderedApiBases();
 
+  // Normalised OUTSIDE the network try: a normaliser that throws on an odd
+  // payload is a client bug, and inside the try it read as "Backend is waking
+  // up" and was retried against every base.
+  let received: { payload: unknown } | null = null;
   for (let i = 0; i < bases.length; i += 1) {
     const base = bases[i];
     let timeoutRetries = 0;
@@ -2141,6 +2175,8 @@ async function request<T>(
             }
             break;
           }
+          const detail = await readErrorDetail(response);
+          if (detail !== undefined) throw new ApiHttpError(response.status, detail);
           throw new Error(`Request failed: ${response.status}`);
         }
 
@@ -2151,8 +2187,10 @@ async function request<T>(
 
         const payload = await response.json();
         preferredApiBase = base;
-        return normalize ? normalize(payload) : payload as T;
+        received = { payload };
+        break;
       } catch (error) {
+        if (error instanceof ApiHttpError) throw error;
         if (error instanceof DOMException && error.name === "AbortError") {
           lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
           // The first timeout is almost always an HF Space cold-start that
@@ -2177,11 +2215,15 @@ async function request<T>(
         }
       }
     }
+    if (received) break;
     if (i < bases.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
     }
   }
 
+  if (received) {
+    return normalize ? normalize(received.payload) : received.payload as T;
+  }
   throw lastError ?? new Error("Failed to reach market data API");
 }
 
@@ -5343,7 +5385,8 @@ export type BotRobust = {
   size_mix: Record<string, number>;
   diagnosis: Array<{
     year: number;
-    bot_return: number;
+    /** null for years the book did not trade (2007-2008 in the live payload). */
+    bot_return: number | null;
     index_return: number | null;
     alpha: number | null;
     accepted: number;

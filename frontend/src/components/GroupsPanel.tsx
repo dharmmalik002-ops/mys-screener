@@ -793,7 +793,7 @@ export function GroupsPanel({
                                     e.preventDefault();
                                     onRequestAddToWatchlist(s.symbol);
                                   }}
-                                  title={`${s.company} · right-click to add to watchlist`}
+                                  title={`${s.company} · ${formatReturn(s.change_pct)} today · right-click to add to watchlist`}
                                 >
                                   {logo ? (
                                     <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />

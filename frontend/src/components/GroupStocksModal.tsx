@@ -74,17 +74,19 @@ export function GroupStocksModal({
         )
       : context.members;
     const dir = sort.desc ? -1 : 1;
-    const value = (m: GroupStocksMember): string | number => {
+    const value = (m: GroupStocksMember): string | number | null => {
       switch (sort.key) {
         case "rank": return m.group_member_rank;
         case "symbol": return m.symbol;
-        case "rs_rating": return m.rs_rating ?? -1;
-        default: return (m[sort.key] as number | null) ?? Number.NEGATIVE_INFINITY;
+        case "rs_rating": return m.rs_rating ?? null;
+        default: return (m[sort.key] as number | null) ?? null;
       }
     };
     return [...filtered].sort((a, b) => {
       const va = value(a);
       const vb = value(b);
+      // Missing values sink whatever the direction (and null - null was NaN).
+      if (va == null || vb == null) return va == null ? (vb == null ? 0 : 1) : -1;
       if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb)) * dir;
       return (va - vb) * dir;
     });
