@@ -101,6 +101,7 @@ import {
   normalizeWatchlistNote,
   type WatchlistNote,
 } from "./lib/api";
+import { getStoredChart, putStoredChart } from "./lib/chartStore";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { readChartDeepLink } from "./lib/chartLink";
 import { tradeMarkersForSymbol, useJournalTrades } from "./lib/journal";
@@ -2160,6 +2161,25 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     setActivePage(page);
   };
 
+  // The chart surface is the heaviest code in the app (ChartPanel + the
+  // charting library, ~560 KB) and was fetched only on a nav-link hover — so
+  // on a phone, or when arriving on a deep link, the first chart open waited
+  // for it. Pull it in once the page is idle.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const load = () => {
+      void import("./components/ChartPanel");
+      void import("./components/ChartCompareLayout");
+    };
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    if (idle) {
+      idle(load, { timeout: 4000 });
+      return;
+    }
+    const timer = window.setTimeout(load, 2000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const prefetchPageModules = (page: AppPage) => {
     if (page === "home") {
       void import("./components/HomePanel");
@@ -2207,18 +2227,21 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
   };
 
-  const readCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe) => {
-    const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
-    // The session the rest of the app is displaying. Intraday timeframes are
-    // exempt — their bars are not daily and the comparison is meaningless.
+  // The session the rest of the app is displaying. Intraday timeframes are
+  // exempt — their bars are not daily and the comparison is meaningless.
+  const sessionForCacheCheck = (chartTimeframe: ChartTimeframe) => {
     const dashboardSession = latestSessionDateRef.current;
     const servedSession = newestServedBarDateRef.current;
-    const latestSession =
-      chartTimeframe === "1D" || chartTimeframe === "1W"
-        ? dashboardSession && servedSession
-          ? (dashboardSession < servedSession ? dashboardSession : servedSession)
-          : servedSession ?? dashboardSession
-        : null;
+    return chartTimeframe === "1D" || chartTimeframe === "1W"
+      ? dashboardSession && servedSession
+        ? (dashboardSession < servedSession ? dashboardSession : servedSession)
+        : servedSession ?? dashboardSession
+      : null;
+  };
+
+  const readCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe) => {
+    const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
+    const latestSession = sessionForCacheCheck(chartTimeframe);
     const inMemory = chartResponseCacheRef.current[cacheKey];
     if (isChartResponseCacheCompatible(inMemory, undefined, latestSession)) {
       return inMemory;
@@ -2229,9 +2252,49 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       : null;
   };
 
+  // A chart that is behind the current session or past its age limit is still
+  // the right thing to paint while the fresh copy loads: the user sees the
+  // chart at once and the newest candle arrives a moment later, instead of a
+  // spinner for the whole round trip.
+  const readStaleCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe) => {
+    const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
+    const inMemory = chartResponseCacheRef.current[cacheKey];
+    if (isChartResponseCacheCompatible(inMemory)) {
+      return inMemory;
+    }
+    const persisted = persistedChartCacheRef.current[market][cacheKey]?.payload;
+    return isChartResponseCacheCompatible(persisted) ? persisted ?? null : null;
+  };
+
+  // The IndexedDB tier: hundreds of charts across reloads. `fresh` uses the
+  // same rule as the synchronous caches; a fresh hit is promoted into memory so
+  // every later lookup (prewarm, navigation) finds it without the store.
+  const readStoredChart = async (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe) => {
+    if (!shouldPersistChartResponse(chartTimeframe)) {
+      return null;
+    }
+    const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
+    const stored = await getStoredChart(cacheKey);
+    if (!stored) {
+      return null;
+    }
+    const payload = normalizeChartResponse(stored.payload);
+    if (!isChartResponseCacheCompatible(payload) || payload.symbol !== symbol || payload.timeframe !== chartTimeframe) {
+      return null;
+    }
+    const fresh = isChartResponseCacheCompatible(payload, stored.saved_at, sessionForCacheCheck(chartTimeframe));
+    if (fresh && !chartResponseCacheRef.current[cacheKey]) {
+      chartResponseCacheRef.current[cacheKey] = payload;
+    }
+    return { payload, fresh };
+  };
+
   const storeCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe, payload: ChartResponse) => {
     const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
     chartResponseCacheRef.current[cacheKey] = payload;
+    if (shouldPersistChartResponse(chartTimeframe)) {
+      putStoredChart(cacheKey, payload);
+    }
     if (chartTimeframe === "1D" || chartTimeframe === "1W") {
       const newest = lastBarDate(payload);
       if (newest && (!newestServedBarDateRef.current || newest > newestServedBarDateRef.current)) {
@@ -2300,9 +2363,25 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     market: MarketKey,
     options: { forceNetwork?: boolean; preferCached?: boolean } = {},
   ) => {
-    const cachedChart = readCachedChart(market, symbol, chartTimeframe);
-    const fallbackChart = cachedChart ?? buildIndexFallbackChart(sectorTabData, symbol, chartTimeframe, market);
     const shouldUseCached = options.preferCached !== false;
+    const requestId = chartRequestIdRef.current + 1;
+    chartRequestIdRef.current = requestId;
+
+    let cachedChart = readCachedChart(market, symbol, chartTimeframe);
+    let staleChart = cachedChart ? null : readStaleCachedChart(market, symbol, chartTimeframe);
+    if (!cachedChart && !staleChart && shouldUseCached) {
+      const stored = await readStoredChart(market, symbol, chartTimeframe);
+      if (chartRequestIdRef.current !== requestId) {
+        // Superseded while the store answered — the newer call owns the pane.
+        return stored?.payload ?? null;
+      }
+      if (stored?.fresh) {
+        cachedChart = stored.payload;
+      } else if (stored) {
+        staleChart = stored.payload;
+      }
+    }
+    const fallbackChart = cachedChart ?? staleChart ?? buildIndexFallbackChart(sectorTabData, symbol, chartTimeframe, market);
 
     if (shouldUseCached && fallbackChart) {
       setChart(fallbackChart);
@@ -2315,9 +2394,6 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     } else {
       setChartLoading(true);
     }
-
-    const requestId = chartRequestIdRef.current + 1;
-    chartRequestIdRef.current = requestId;
 
     try {
       // Reuse an in-flight prewarm request for this exact chart instead of
@@ -2377,23 +2453,35 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     chartTimeframe: ChartTimeframe,
     market: MarketKey,
   ) => {
-    const cachedChart = readCachedChart(market, symbol, chartTimeframe);
-    const fallbackChart = cachedChart ?? buildIndexFallbackChart(sectorTabData, symbol, chartTimeframe, market);
+    const requestId = chartBRequestIdRef.current + 1;
+    chartBRequestIdRef.current = requestId;
+
+    let cachedChart = readCachedChart(market, symbol, chartTimeframe);
+    let staleChart = cachedChart ? null : readStaleCachedChart(market, symbol, chartTimeframe);
+    if (!cachedChart && !staleChart) {
+      const stored = await readStoredChart(market, symbol, chartTimeframe);
+      if (chartBRequestIdRef.current !== requestId) {
+        return stored?.payload ?? null;
+      }
+      if (stored?.fresh) {
+        cachedChart = stored.payload;
+      } else if (stored) {
+        staleChart = stored.payload;
+      }
+    }
+    const fallbackChart = cachedChart ?? staleChart ?? buildIndexFallbackChart(sectorTabData, symbol, chartTimeframe, market);
 
     if (fallbackChart) {
       setChartB(fallbackChart);
       setChartBError(null);
-      setChartBCacheState(cachedChart ? "cached" : null);
-      setChartBLoading(!cachedChart);
+      setChartBCacheState(cachedChart || staleChart ? "cached" : null);
+      setChartBLoading(!cachedChart && !staleChart);
       if (cachedChart) {
         return cachedChart;
       }
     } else {
       setChartBLoading(true);
     }
-
-    const requestId = chartBRequestIdRef.current + 1;
-    chartBRequestIdRef.current = requestId;
 
     try {
       const payload = await fetchChartShared(symbol, chartTimeframe, market);
@@ -4319,7 +4407,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       return;
     }
 
-    if (activePage !== "screener" && activePage !== "watchlists") {
+    // Groups qualifies once a group's stocks are listed; before that the seed
+    // falls back to the whole universe and warming it would be noise.
+    const groupsListed = activePage === "groups" && groupsVisibleSymbols.length > 0;
+    if (activePage !== "screener" && activePage !== "watchlists" && !groupsListed) {
       return;
     }
 
@@ -4362,6 +4453,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartPromisesRef.current.has(cacheKey)) {
             return;
           }
+          // A fresh copy in the persistent store is promoted into memory by
+          // the read itself — no request needed.
+          if ((await readStoredChart(activeMarket, symbol, timeframe))?.fresh) {
+            return;
+          }
+          if (stopQueue || prewarmingChartPromisesRef.current.has(cacheKey)) {
+            return;
+          }
           const request = getChart(symbol, timeframe, activeMarket);
           prewarmingChartPromisesRef.current.set(cacheKey, request);
           try {
@@ -4393,7 +4492,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       stopQueue = true;
       window.clearTimeout(timeoutId);
     };
-  }, [activeMarket, activePage, selectedSymbol, timeframe, navigationSeedKey]);
+  }, [activeMarket, activePage, selectedSymbol, timeframe, navigationSeedKey, groupsVisibleSymbols.length]);
 
   useEffect(() => {
     if (activePage !== "watchlists" || !activeWatchlist) {

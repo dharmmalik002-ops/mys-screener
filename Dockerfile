@@ -35,6 +35,11 @@ WORKDIR /code/backend
 # loop, so a single worker serialises parallel page-load requests and
 # Vercel's edge proxy 500s the slowest ones. Two workers let the dashboard
 # + scan-counts + groups + ribbon calls run in parallel.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "2"]
+# --timeout-keep-alive 120: uvicorn's default closes an idle connection after
+# 5 s, while the Hugging Face proxy keeps its upstream connections pooled far
+# longer. A request the proxy sends down a socket uvicorn has just closed comes
+# back as a 502 HTML page — measured at ~1 request in 6 — and the frontend then
+# waits out a retry backoff, which is what a "slow chart" mostly was.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "2", "--timeout-keep-alive", "120"]
 
 # Redeploy marker: ships data/price_bands.json committed by the bhavcopy workflow.

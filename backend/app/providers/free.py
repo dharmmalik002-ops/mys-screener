@@ -7514,14 +7514,36 @@ class FreeMarketDataProvider:
             subset = series
         return float(subset.min())
 
+    def _instrument_key_lookup(self) -> dict[str, str]:
+        # free_snapshots.json is ~40 MB. Parsing it per call made every chart
+        # build pay ~0.2-0.5 s twice (fetch + cache write) just to look up one
+        # ticker, so the map is rebuilt only when the file changes.
+        path = self.snapshot_cache_path
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            return {}
+        cached = getattr(self, "_instrument_key_cache", None)
+        if cached and cached[0] == mtime:
+            return cached[1]
+        try:
+            rows = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return cached[1] if cached else {}
+        lookup = {
+            str(item["symbol"]): str(item["instrument_key"])
+            for item in rows
+            if isinstance(item, dict) and item.get("symbol") and item.get("instrument_key")
+        }
+        self._instrument_key_cache = (mtime, lookup)
+        return lookup
+
     def _resolve_ticker(self, symbol: str) -> str:
         if symbol.startswith("^") or symbol.endswith(".NS") or symbol.endswith(".BO"):
             return symbol
-        if self.snapshot_cache_path.exists():
-            rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
-            row = next((item for item in rows if item["symbol"] == symbol), None)
-            if row and row.get("instrument_key"):
-                return str(row["instrument_key"])
+        instrument_key = self._instrument_key_lookup().get(symbol)
+        if instrument_key:
+            return instrument_key
         return f"{symbol}.NS"
 
     def _extract_history(self, frame: pd.DataFrame, ticker: str) -> pd.DataFrame:

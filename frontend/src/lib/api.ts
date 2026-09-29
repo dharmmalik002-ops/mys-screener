@@ -1054,6 +1054,11 @@ const REQUEST_TIMEOUT_MS = (() => {
 const RETRY_BACKOFF_MS = 400;
 const SAME_BASE_RETRY_ATTEMPTS = 2;
 const SAME_BASE_RETRY_BACKOFF_MS = 1500;
+// A 502 from the Hugging Face proxy is a dropped upstream connection, not a
+// backend that is waking up — it comes back in well under a second and the
+// next attempt almost always succeeds. Waiting the cold-start backoff on it
+// added 1.5 s to roughly one chart open in six.
+const PROXY_BLIP_RETRY_BACKOFF_MS = 120;
 // A timeout on the first hit is almost always an HF Space cold-start that
 // finishes waking during the attempt. Retry once on the same base before
 // surfacing stale cached data — but cap it so a genuinely dead backend
@@ -2170,7 +2175,10 @@ async function request<T>(
               SAME_BASE_RETRY_STATUS_CODES.has(response.status)
               && attempt < SAME_BASE_RETRY_ATTEMPTS
             ) {
-              await new Promise((resolve) => setTimeout(resolve, SAME_BASE_RETRY_BACKOFF_MS));
+              const backoffMs = response.status === 502 && attempt === 0
+                ? PROXY_BLIP_RETRY_BACKOFF_MS
+                : SAME_BASE_RETRY_BACKOFF_MS;
+              await new Promise((resolve) => setTimeout(resolve, backoffMs));
               continue;
             }
             break;

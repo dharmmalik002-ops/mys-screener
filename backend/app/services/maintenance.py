@@ -86,3 +86,93 @@ async def run_market_close_maintenance(market_name: str, service: DashboardServi
         "prewarmed_chart_count": len(chart_symbols),
         "popular_symbols": chart_symbols[:15],
     }
+
+
+# The whole universe, not just the most liquid 150: scanner results are mostly
+# small caps, and a symbol with no chart_cache file costs a 5-year Yahoo
+# download (~1-1.5 s on the Space) the first time anyone opens it. chart_cache/
+# is gitignored and the Space's disk is wiped on every deploy, so after each
+# restart every chart used to be cold until someone happened to open it.
+# One symbol at a time with a pause, so user chart requests (which share the
+# provider's fetch semaphore) never queue behind the warm-up for long.
+UNIVERSE_WARM_START_DELAY_SECONDS = 90.0
+UNIVERSE_WARM_PAUSE_SECONDS = 0.2
+UNIVERSE_WARM_MAX_CONSECUTIVE_FAILURES = 8
+UNIVERSE_WARM_FAILURE_BACKOFF_SECONDS = 120.0
+
+
+def _chart_cache_is_warm(provider, symbol: str) -> bool:
+    path_for = getattr(provider, "_chart_cache_path", None)
+    is_fresh = getattr(provider, "_is_chart_cache_fresh", None)
+    if not callable(path_for) or not callable(is_fresh):
+        return False
+    try:
+        return path_for(symbol, "1D").exists() and bool(is_fresh(symbol, "1D"))
+    except Exception:
+        return False
+
+
+async def warm_universe_chart_cache(
+    market_name: str,
+    service: DashboardService,
+    *,
+    pause_seconds: float = UNIVERSE_WARM_PAUSE_SECONDS,
+) -> dict[str, int]:
+    """Make sure every symbol in the universe has a fresh daily chart on disk.
+
+    Scan hits go first (they are what gets clicked), then the rest by
+    liquidity. Symbols whose cache is already fresh are skipped, so a repeat run
+    over a warm disk costs only a stat per symbol.
+    """
+    provider = service.provider
+    snapshots = await service._snapshots()
+    ordered = sorted(
+        snapshots,
+        key=lambda s: float(getattr(s, "avg_rupee_volume_30d_crore", 0) or 0.0),
+        reverse=True,
+    )
+    scan_hits: list[str] = []
+    try:
+        from app.scanners.definitions import scan_catalog_with_counts
+
+        _, scan_results = await asyncio.to_thread(scan_catalog_with_counts, snapshots)
+        scan_hits = [match.symbol for matches in scan_results.values() for match in matches]
+    except Exception:
+        LOGGER.exception("%s universe chart warm: scan ranking failed", market_name.upper())
+    symbols = _unique_symbols([*default_index_symbols(market_name), *scan_hits, *[s.symbol for s in ordered]])
+
+    bar_limit = service._chart_bar_limit("1D")
+    warmed = skipped = failed = 0
+    consecutive_failures = 0
+    for symbol in symbols:
+        if _chart_cache_is_warm(provider, symbol):
+            skipped += 1
+            continue
+        try:
+            bars = await provider.get_chart(symbol, "1D", bars=bar_limit)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            bars = []
+        if bars:
+            warmed += 1
+            consecutive_failures = 0
+        else:
+            failed += 1
+            consecutive_failures += 1
+            # A run of failures is Yahoo refusing us, not a run of bad symbols:
+            # stop hammering it for a while rather than burning the whole list.
+            if consecutive_failures >= UNIVERSE_WARM_MAX_CONSECUTIVE_FAILURES:
+                LOGGER.warning(
+                    "%s universe chart warm: %d consecutive failures, backing off %.0fs",
+                    market_name.upper(), consecutive_failures, UNIVERSE_WARM_FAILURE_BACKOFF_SECONDS,
+                )
+                await asyncio.sleep(UNIVERSE_WARM_FAILURE_BACKOFF_SECONDS)
+                consecutive_failures = 0
+        await asyncio.sleep(pause_seconds)
+
+    LOGGER.info(
+        "%s universe chart warm complete: warmed=%d already_fresh=%d failed=%d of %d",
+        market_name.upper(), warmed, skipped, failed, len(symbols),
+    )
+    return {"warmed": warmed, "skipped": skipped, "failed": failed, "total": len(symbols)}

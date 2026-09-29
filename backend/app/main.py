@@ -23,7 +23,11 @@ from app.core.config import get_settings
 from app.providers.factory import build_provider
 from app.scanners.definitions import scan_catalog_with_counts
 from app.services.dashboard_service import DashboardService
-from app.services.maintenance import run_market_close_maintenance
+from app.services.maintenance import (
+    UNIVERSE_WARM_START_DELAY_SECONDS,
+    run_market_close_maintenance,
+    warm_universe_chart_cache,
+)
 from app.services.mutual_funds.service import MutualFundService
 
 
@@ -828,6 +832,31 @@ def trigger_github_bhavcopy_if_stale() -> None:
         logger.warning("Bhavcopy trigger watchdog failed: %s", exc)
 
 
+_universe_chart_warm_running = False
+
+
+async def universe_chart_warm_job(market_name: str, service_obj, delay_seconds: float = 0.0) -> None:
+    """Keep every universe symbol's daily chart on disk (see maintenance.py).
+
+    Runs only in the scheduler-owning worker; chart_cache/ is shared on disk, so
+    one worker filling it serves both. Overlapping runs are skipped.
+    """
+    global _universe_chart_warm_running
+    if _universe_chart_warm_running:
+        return
+    _universe_chart_warm_running = True
+    try:
+        if delay_seconds > 0:
+            await asyncio.sleep(delay_seconds)
+        await warm_universe_chart_cache(market_name, service_obj)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.warning("%s universe chart warm failed: %s", market_name.upper(), exc)
+    finally:
+        _universe_chart_warm_running = False
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.startup_warm_tasks = set()
@@ -877,7 +906,24 @@ async def lifespan(app: FastAPI):
             id="india_bhavcopy_github_trigger",
             replace_existing=True,
         )
+        # After the evening bhavcopy lands, and once each morning, re-fill any
+        # chart the day's data made stale. A warm disk makes these cheap.
+        scheduler.add_job(
+            universe_chart_warm_job,
+            CronTrigger(hour="8,20,22", minute=5, timezone=IST),
+            args=["india", service],
+            id="india_universe_chart_warm",
+            replace_existing=True,
+        )
         scheduler.start()
+        # A deploy or restart starts with an empty chart_cache/: fill it in the
+        # background shortly after boot instead of on each user's first click.
+        warm_task = asyncio.create_task(
+            universe_chart_warm_job("india", service, UNIVERSE_WARM_START_DELAY_SECONDS),
+            name="universe-chart-warm-india",
+        )
+        app.state.startup_warm_tasks.add(warm_task)
+        warm_task.add_done_callback(app.state.startup_warm_tasks.discard)
         logger.info(
             "Scheduler started (pid=%s) — India refresh 4:00 PM IST, bhavcopy patch apply 4:45 PM IST",
             os.getpid(),
