@@ -7707,6 +7707,48 @@ button {
   height: 100%;
 }
 
+/* Big chart + its group's peers, side by side (the peer list used to float
+   over the chart). The peers column starts below the toolbar row so the
+   Close / Show Group buttons keep their corner. */
+.chart-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.chart-modal-body > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* With the peers docked, Close / Show Group sit above the peers column, so
+   the chart's toolbar no longer needs to reserve their corner. */
+@media (min-width: 769px) {
+  .chart-modal .chart-modal-body.has-peers .chart-panel.chart-compact > .panel-header {
+    padding-right: 12px;
+  }
+
+  /* 320px narrower: the name and search give up the difference so the
+     toolbar still fits one row. */
+  .chart-modal-body.has-peers .chart-panel.chart-compact > .panel-header > div:first-child {
+    max-width: 190px;
+  }
+
+  .chart-modal-body.has-peers .chart-panel.chart-compact .chart-search-form input {
+    width: 110px;
+  }
+}
+
+.chart-modal-peers {
+  flex: 0 0 320px;
+  min-height: 0;
+  margin-top: 46px;
+  display: flex;
+  border-left: 1px solid var(--line);
+}
+
 /* Big chart: ONE toolbar row. The header, a second toolbar row and the stat
    chips used to take ~32% of a 900px screen before the first candle; now the
    everyday controls sit in a single ~40px row and everything else opens from

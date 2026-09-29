@@ -5431,7 +5431,7 @@ export function ChartPanel({
           )}
         </div>
       }
-      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${compactToolbar ? " chart-compact" : ""}${zenMode ? " chart-zen" : ""}${chartFullscreen ? " chart-fullscreen" : ""}`}
+      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${compactToolbar ? " chart-compact" : ""}${compactToolbar && showStatsStrip ? " chart-stats-on" : ""}${zenMode ? " chart-zen" : ""}${chartFullscreen ? " chart-fullscreen" : ""}`}
     >
       {panelTab === "technical" && !compactToolbar ? (
         <div className="chart-drawing-toolbar">

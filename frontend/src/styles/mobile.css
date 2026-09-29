@@ -1295,7 +1295,9 @@ html .mobile-tabbar {
 
   /* Only inside the full-screen chart modal: there the chart IS the page, and
      price/change/RS are already in the header. The inline panel keeps them. */
-  html .chart-modal .chart-panel.expanded .chart-summary-strip {
+  /* ...unless the user asked for it (More -> Show stats): on a phone that
+     toggle otherwise did nothing at all. */
+  html .chart-modal .chart-panel.expanded:not(.chart-stats-on) .chart-summary-strip {
     display: none;
   }
 }
@@ -1455,7 +1457,7 @@ html .mobile-tabbar {
    ========================================================================== */
 
 @media (max-width: 768px) {
-  html .group-stocks-widget {
+  html .group-stocks-widget:not(.is-docked) {
     top: auto !important;
     right: 0 !important;
     bottom: 0 !important;
@@ -1475,7 +1477,7 @@ html .mobile-tabbar {
 }
 
 @media (max-height: 520px) and (orientation: landscape) and (max-width: 950px) {
-  html .group-stocks-widget {
+  html .group-stocks-widget:not(.is-docked) {
     top: 0;
     right: 0;
     bottom: 0;
@@ -1573,5 +1575,32 @@ html .mobile-tabbar {
 
   html .chart-menu-panel .chart-zen-menu {
     display: none;
+  }
+}
+
+
+/* Docked peers on a phone: below the chart rather than beside it. */
+@media (max-width: 768px) {
+  html .chart-modal-body {
+    flex-direction: column;
+  }
+
+  html .chart-modal-peers {
+    flex: 0 0 40dvh;
+    margin-top: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Every row of the docked peers header is a peer row it hides. */
+  html .group-stocks-widget.is-docked .gsw-pane-hint,
+  html .group-stocks-widget.is-docked .gsw-eyebrow {
+    display: none;
+  }
+
+  html .group-stocks-widget.is-docked .gsw-header {
+    padding: 6px 10px 4px;
   }
 }

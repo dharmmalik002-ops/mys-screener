@@ -6883,6 +6883,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                 {groupWidgetOpen ? "Hide Group" : "Show Group"}
               </button>
             ) : null}
+            {/* The chart and its group's peers side by side: the peer list used to
+                float over the chart (and under its drawing rail), so comparing a
+                stock with its peers meant covering the chart you were reading. */}
+            <div className={groupWidgetOpen && groupWidgetContext ? "chart-modal-body has-peers" : "chart-modal-body"}>
             <Suspense fallback={<DeferredPanelPlaceholder compact />}>
               <ChartCompareLayout
                     compareMode={compareMode}
@@ -7007,8 +7011,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   />
                 </Suspense>
             {groupWidgetOpen && groupWidgetContext ? (
+              <aside className="chart-modal-peers" aria-label="Group peers">
               <Suspense fallback={null}>
                 <GroupStocksWidget
+                  docked
                   market={activeMarket}
                   context={groupWidgetContext}
                   selectedSymbolA={selectedSymbol}
@@ -7024,7 +7030,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   onLayoutChange={setCompareLayout}
                 />
               </Suspense>
+              </aside>
             ) : null}
+            </div>
           </div>
         </div>
       ) : null}

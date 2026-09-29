@@ -47,7 +47,12 @@ type GroupStocksWidgetProps = {
   onSelectMember: (symbol: string) => void;
   onToggleCompare: () => void;
   onLayoutChange: (layout: CompareLayout) => void;
+  /** Laid out beside the chart (not floating over it): no drag or resize,
+      and return columns to compare the stock with its peers. */
+  docked?: boolean;
 };
+
+type PeerSortKey = "rank" | "change_pct" | "return_1m" | "return_3m" | "rs_rating";
 
 const MIN_WIDTH = 240;
 const MIN_HEIGHT = 320;
@@ -85,9 +90,14 @@ export function GroupStocksWidget({
   onSelectMember,
   onToggleCompare,
   onLayoutChange,
+  docked = false,
 }: GroupStocksWidgetProps) {
   const memberSymbols = useMemo(() => context.members.map((m) => m.symbol), [context.members]);
-  const quarterMap = useLatestQuarters(memberSymbols, market, { concurrency: 4 });
+  // The docked panel shows returns instead of the latest-quarter column, so it
+  // skips the one-request-per-peer earnings fetch entirely.
+  const quarterMap = useLatestQuarters(memberSymbols, market, { concurrency: 4, enabled: !docked });
+  const [sortKey, setSortKey] = useState<PeerSortKey>("rank");
+  const [sortDesc, setSortDesc] = useState(true);
   const groupMaxRank = useMemo(() => {
     let maxRank = 0;
     Object.values(quarterMap).forEach((q) => {
@@ -173,14 +183,37 @@ export function GroupStocksWidget({
 
   const filteredMembers = useMemo(() => {
     const trimmed = query.trim().toUpperCase();
-    if (!trimmed) return context.members;
-    return context.members.filter((member) => {
-      return (
-        member.symbol.toUpperCase().includes(trimmed) ||
-        (member.company_name ?? "").toUpperCase().includes(trimmed)
-      );
+    const matched = !trimmed
+      ? context.members
+      : context.members.filter((member) => {
+          return (
+            member.symbol.toUpperCase().includes(trimmed) ||
+            (member.company_name ?? "").toUpperCase().includes(trimmed)
+          );
+        });
+    if (!docked || sortKey === "rank") return matched;
+    const dir = sortDesc ? -1 : 1;
+    // Missing values sink in either direction.
+    return [...matched].sort((a, b) => {
+      const va = a[sortKey];
+      const vb = b[sortKey];
+      const na = va === null || va === undefined || Number.isNaN(va);
+      const nb = vb === null || vb === undefined || Number.isNaN(vb);
+      if (na || nb) return na ? (nb ? 0 : 1) : -1;
+      return ((va as number) - (vb as number)) * dir;
     });
-  }, [context.members, query]);
+  }, [context.members, query, docked, sortKey, sortDesc]);
+
+  const toggleSort = (key: PeerSortKey) => {
+    if (key === sortKey) {
+      if (key === "rank") return;
+      setSortDesc((value) => !value);
+    } else {
+      setSortKey(key);
+      setSortDesc(key !== "rank");
+    }
+  };
+  const sortMark = (key: PeerSortKey) => (sortKey === key && key !== "rank" ? (sortDesc ? " ↓" : " ↑") : "");
 
   const activeSymbol = activePane === "A" ? selectedSymbolA : selectedSymbolB;
 
@@ -198,13 +231,16 @@ export function GroupStocksWidget({
     setQuery(event.target.value);
   };
 
-  const widgetStyle = {
-    left: `${rect.x}px`,
-    top: `${rect.y}px`,
-    width: `${rect.width}px`,
-    height: `${rect.height}px`,
-  };
-  const widgetClass = `group-stocks-widget ${isInteracting ? "is-interacting" : ""}`;
+  const widgetStyle = docked
+    ? undefined
+    : {
+        left: `${rect.x}px`,
+        top: `${rect.y}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+      };
+  const widgetClass = `group-stocks-widget${docked ? " is-docked" : ""}${isInteracting ? " is-interacting" : ""}`;
+  const selfMember = context.members.find((member) => member.symbol === activeSymbol) ?? null;
 
   return (
     <div
@@ -215,12 +251,12 @@ export function GroupStocksWidget({
     >
       <div
         className="gsw-header"
-        onPointerDown={(event) => startDrag(event, "move")}
-        onPointerMove={handlePointerMove}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
+        onPointerDown={docked ? undefined : (event) => startDrag(event, "move")}
+        onPointerMove={docked ? undefined : handlePointerMove}
+        onPointerUp={docked ? undefined : finishDrag}
+        onPointerCancel={docked ? undefined : finishDrag}
       >
-        <div className="gsw-drag-handle" aria-hidden="true">⋮⋮</div>
+        {docked ? null : <div className="gsw-drag-handle" aria-hidden="true">⋮⋮</div>}
         <div className="gsw-title-block">
           <span className="gsw-eyebrow">{context.parentSector}</span>
           <h4 className="gsw-title">{context.groupName}</h4>
@@ -228,6 +264,14 @@ export function GroupStocksWidget({
             <span>{context.groupRankLabel}</span>
             <span aria-hidden="true">•</span>
             <span>{context.stockCount} stocks</span>
+            {docked && selfMember ? (
+              <>
+                <span aria-hidden="true">•</span>
+                <span>
+                  {activeSymbol} #{selfMember.group_member_rank} of {context.stockCount}
+                </span>
+              </>
+            ) : null}
           </div>
         </div>
         <button
@@ -294,13 +338,24 @@ export function GroupStocksWidget({
         <div className="gsw-pane-hint">↑ ↓ to navigate</div>
       )}
 
-      <div className="gsw-table-head">
-        <span>#</span>
-        <span>Symbol</span>
-        <span title="Latest reported quarter">Last Q</span>
-        <span>1D</span>
-        <span>RS</span>
-      </div>
+      {docked ? (
+        <div className="gsw-table-head">
+          <button type="button" onClick={() => toggleSort("rank")} title="Rank in group">#</button>
+          <span>Symbol</span>
+          <button type="button" onClick={() => toggleSort("change_pct")} title="Today">1D{sortMark("change_pct")}</button>
+          <button type="button" onClick={() => toggleSort("return_1m")} title="1 month">1M{sortMark("return_1m")}</button>
+          <button type="button" onClick={() => toggleSort("return_3m")} title="3 months">3M{sortMark("return_3m")}</button>
+          <button type="button" onClick={() => toggleSort("rs_rating")} title="RS rating">RS{sortMark("rs_rating")}</button>
+        </div>
+      ) : (
+        <div className="gsw-table-head">
+          <span>#</span>
+          <span>Symbol</span>
+          <span title="Latest reported quarter">Last Q</span>
+          <span>1D</span>
+          <span>RS</span>
+        </div>
+      )}
 
       <div className="gsw-list" ref={listRef}>
         {filteredMembers.length === 0 ? (
@@ -342,7 +397,7 @@ export function GroupStocksWidget({
                     <small>{member.company_name}</small>
                   ) : null}
                 </span>
-                {(() => {
+                {docked ? null : (() => {
                   const q = quarterMap[member.symbol] as QuarterInfo | null | undefined;
                   if (q === undefined) {
                     return <span className="gsw-quarter loading" title="Loading…">…</span>;
@@ -362,6 +417,12 @@ export function GroupStocksWidget({
                 <span className={`gsw-change ${changeClass(member.change_pct)}`}>
                   {fmtChange(member.change_pct)}
                 </span>
+                {docked ? (
+                  <>
+                    <span className={`gsw-change ${changeClass(member.return_1m)}`}>{fmtChange(member.return_1m)}</span>
+                    <span className={`gsw-change ${changeClass(member.return_3m)}`}>{fmtChange(member.return_3m)}</span>
+                  </>
+                ) : null}
                 <span className={`gsw-rs ${rsClass(member.rs_rating)}`}>
                   {member.rs_rating ?? "--"}
                 </span>
@@ -371,17 +432,19 @@ export function GroupStocksWidget({
         )}
       </div>
 
-      <div
-        className="gsw-resize-handle"
-        onPointerDown={(event) => startDrag(event, "resize")}
-        onPointerMove={handlePointerMove}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
-        role="slider"
-        aria-label="Resize widget"
-      >
-        <span aria-hidden="true">⤡</span>
-      </div>
+      {docked ? null : (
+        <div
+          className="gsw-resize-handle"
+          onPointerDown={(event) => startDrag(event, "resize")}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+          role="slider"
+          aria-label="Resize widget"
+        >
+          <span aria-hidden="true">⤡</span>
+        </div>
+      )}
     </div>
   );
 }

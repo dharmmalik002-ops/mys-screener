@@ -369,3 +369,63 @@
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
+
+
+/* Docked beside the big chart: part of the page, not a floating overlay —
+   the app's own surface and text tokens so it reads in both designs. */
+.group-stocks-widget.is-docked {
+  position: relative;
+  z-index: auto;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-strong);
+  box-shadow: none;
+  backdrop-filter: none;
+  user-select: auto;
+}
+
+.group-stocks-widget.is-docked .gsw-header {
+  cursor: default;
+  padding: 10px 12px 8px;
+  background: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.group-stocks-widget.is-docked .gsw-search {
+  background: var(--surface-soft);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.group-stocks-widget.is-docked .gsw-table-head,
+.group-stocks-widget.is-docked .gsw-row {
+  grid-template-columns: 22px minmax(0, 1fr) 54px 54px 54px 34px;
+  gap: 6px;
+  padding: 6px 10px;
+}
+
+.group-stocks-widget.is-docked .gsw-table-head {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.group-stocks-widget.is-docked .gsw-table-head button {
+  all: unset;
+  cursor: pointer;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.group-stocks-widget.is-docked .gsw-table-head button:last-child {
+  text-align: center;
+}
+
+.group-stocks-widget.is-docked .gsw-table-head button:hover {
+  color: var(--text);
+}
+
+.group-stocks-widget.is-docked .gsw-row.is-active {
+  outline-color: var(--line-strong);
+}
