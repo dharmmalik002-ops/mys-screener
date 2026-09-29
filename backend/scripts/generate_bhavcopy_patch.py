@@ -29,6 +29,7 @@ import csv
 import io
 import json
 import logging
+import re
 import sys
 import time
 import zipfile
@@ -346,8 +347,12 @@ def _fetch_recent_nse_listings(trade_date: date) -> dict[str, dict]:
     cutoff = trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS)
     listings: dict[str, dict] = {}
     reader = csv.DictReader(io.StringIO(text))
+    _NSE_MASTER_ISINS.clear()
     for raw_row in reader:
         row = {str(key).strip(): value for key, value in raw_row.items()}
+        master_isin = str(row.get("ISIN NUMBER") or "").strip().upper()
+        if master_isin:
+            _NSE_MASTER_ISINS.add(master_isin)
         series = str(row.get("SERIES") or "").strip().upper()
         if series and series not in NEW_LISTING_SERIES:
             continue
@@ -378,6 +383,13 @@ def _fetch_recent_nse_listings(trade_date: date) -> dict[str, dict]:
     return listings
 
 
+# Every ISIN in the NSE master, whatever its listing date — set by
+# _fetch_recent_nse_listings so a BSE IPO can be recognised as BSE-only.
+_NSE_MASTER_ISINS: set[str] = set()
+# BSE's SME board groups; everything else on the IPO list is mainboard.
+BSE_SME_GROUPS = {"M", "MT", "MS"}
+
+
 def _is_rights_line(symbol: str, isin: str | None) -> bool:
     """Rights entitlements (CENTEXT-RE) and partly-paid lines (IN9 ISINs)
     carry their own listing date but are not a company coming to market."""
@@ -394,11 +406,16 @@ def _isins_in_csv(text: str) -> set[str]:
     return isins
 
 
-def _exchange_isins_on(trade_date: date) -> set[str] | None:
+def _exchange_isins_on(trade_date: date) -> tuple[set[str], bool] | None:
     """Every ISIN that traded on `trade_date`, from the exchanges' own EOD
-    files. BSE's file is required (it is reachable from any IP and covers
-    the BSE SME board too); NSE's is added when reachable so companies coming
-    up from NSE Emerge are recognised. None when BSE published nothing."""
+    files, and whether NSE's file was among them.
+
+    BSE's file is required (reachable from any IP, and it covers the BSE SME
+    board). NSE's is needed before "never traded" can be believed for a name
+    with no BSE line: an NSE Emerge company moving to the mainboard is only
+    in NSE's file (LEMERITE was, as SM, the day before its mainboard listing,
+    and was once filed as an IPO because that fetch had failed).
+    """
     bse_url = BSE_BHAV_URL.format(date_yyyymmdd=trade_date.strftime("%Y%m%d"))
     try:
         resp = requests.get(bse_url, headers=BSE_HEADERS, timeout=20)
@@ -410,6 +427,7 @@ def _exchange_isins_on(trade_date: date) -> set[str] | None:
     isins = _isins_in_csv(resp.text)
     if not isins:
         return None
+    nse_read = False
     nse_url = BHAV_URL.format(date_yyyymmdd=trade_date.strftime("%Y%m%d"))
     try:
         nse = requests.get(nse_url, headers=HEADERS, timeout=15)
@@ -417,17 +435,20 @@ def _exchange_isins_on(trade_date: date) -> set[str] | None:
             with zipfile.ZipFile(io.BytesIO(nse.content)) as z:
                 name = next((n for n in z.namelist() if n.lower().endswith(".csv")), None)
                 if name:
-                    isins |= _isins_in_csv(z.read(name).decode("utf-8", errors="replace"))
+                    nse_isins = _isins_in_csv(z.read(name).decode("utf-8", errors="replace"))
+                    if nse_isins:
+                        isins |= nse_isins
+                        nse_read = True
     except Exception:
-        pass  # NSE is best-effort; BSE alone still decides most listings
-    return isins
+        pass
+    return isins, nse_read
 
 
 def _session_isins_before(
     listing_date: date,
-    cache: dict[date, set[str] | None],
+    cache: dict[date, tuple[set[str], bool] | None],
     budget: list[int],
-) -> tuple[date, set[str]] | None:
+) -> tuple[date, set[str], bool] | None:
     """The ISINs of the last published session before `listing_date`."""
     day = listing_date
     for _ in range(PRIOR_SESSION_SEARCH_WEEKDAYS):
@@ -439,14 +460,15 @@ def _session_isins_before(
                 return None
             budget[0] -= 1
             cache[day] = _exchange_isins_on(day)
-        isins = cache[day]
-        if isins:
-            return day, isins
+        found = cache[day]
+        if found:
+            return day, found[0], found[1]
     return None
 
 
-def _bse_codes_by_isin(trade_date: date) -> dict[str, str]:
-    """ISIN -> BSE scrip code from the newest published BSE EOD file."""
+def _bse_scrips(trade_date: date) -> dict[str, dict]:
+    """ISIN -> {code, symbol, group} for every equity line in the newest
+    published BSE EOD file."""
     day = trade_date
     for _ in range(PRIOR_SESSION_SEARCH_WEEKDAYS):
         while day.weekday() >= 5:
@@ -455,17 +477,74 @@ def _bse_codes_by_isin(trade_date: date) -> dict[str, str]:
         try:
             resp = requests.get(url, headers=BSE_HEADERS, timeout=20)
             if resp.status_code == 200 and len(resp.content) > 1000:
-                codes = {
-                    str(row.get("ISIN") or "").strip().upper(): str(row.get("FinInstrmId") or "").strip()
-                    for row in csv.DictReader(io.StringIO(resp.text))
-                }
-                codes.pop("", None)
-                if codes:
-                    return codes
+                scrips: dict[str, dict] = {}
+                for row in csv.DictReader(io.StringIO(resp.text)):
+                    isin = str(row.get("ISIN") or "").strip().upper()
+                    code = str(row.get("FinInstrmId") or "").strip()
+                    if isin and code and str(row.get("FinInstrmTp") or "").strip() == "STK":
+                        scrips[isin] = {
+                            "code": code,
+                            "symbol": str(row.get("TckrSymb") or "").strip().upper(),
+                            "group": str(row.get("SctySrs") or "").strip().upper(),
+                        }
+                if scrips:
+                    return scrips
         except Exception:
             pass
         day -= timedelta(days=1)
     return {}
+
+
+def _bse_codes_by_isin(trade_date: date) -> dict[str, str]:
+    """ISIN -> BSE scrip code from the newest published BSE EOD file."""
+    return {isin: scrip["code"] for isin, scrip in _bse_scrips(trade_date).items()}
+
+
+def _bse_mainboard_ipos(trade_date: date) -> dict[str, dict] | None:
+    """BSE's own list of mainboard IPOs, keyed by scrip code.
+
+    The IPO tracker behind bseindia.com/markets/PublicIssues (the
+    `MoreCompanyN` call with flag=1 is mainboard, flag=2 SME) names every
+    public offer that listed on BSE with its issue price and listing date.
+    It is what separates an IPO from a new company that merely came to the
+    exchange — a demerger (the four Vedanta pieces, TMCV, SKFINDUS), a
+    relisting, an SME migration — which a "never traded before" test cannot,
+    and it is the only place an IPO listed on BSE ALONE is named: National
+    Stock Exchange of India cannot list on its own exchange. None when BSE
+    could not be read at all, so callers fall back rather than read an
+    outage as "no IPOs".
+    """
+    years = sorted({trade_date.year, (trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS)).year})
+    found: dict[str, dict] = {}
+    read_any = False
+    with requests.Session() as session:
+        session.headers.update(BSE_API_HEADERS)
+        for year in years:
+            try:
+                resp = session.get(
+                    BSE_API + "MoreCompanyN/w",
+                    params={"Fromdt": str(year), "company": "", "flag": "1", "type": "2"},
+                    timeout=30,
+                )
+                table = resp.json().get("Table")
+            except Exception as exc:
+                logger.info("BSE mainboard IPO list for %s unavailable (%s)", year, exc)
+                continue
+            if not isinstance(table, list):
+                continue
+            read_any = True
+            for row in table:
+                match = re.search(r"/(\d{6})/?$", str(row.get("IMAGE") or ""))
+                listed = str(row.get("ListedOn") or "")[:10]
+                if not match or not listed:
+                    continue
+                found[match.group(1)] = {
+                    "name": str(row.get("CompanyName") or "").strip(),
+                    "symbol": str(row.get("Company_Short_Name") or "").strip().upper() or None,
+                    "listing_date": listed,
+                    "issue_price": row.get("IssuePrice"),
+                }
+    return found if read_any else None
 
 
 def _parse_indian_number(text: object) -> float | None:
@@ -508,14 +587,12 @@ def _attach_listing_reference(result: dict[str, dict], trade_date: date) -> int:
     ]
     if not wanting:
         return 0
-    codes = _bse_codes_by_isin(trade_date)
-    if not codes:
-        return 0
+    codes = {} if all(result[sym].get("bse_code") for sym in wanting) else _bse_codes_by_isin(trade_date)
     filled = 0
     with requests.Session() as session:
         session.headers.update(BSE_API_HEADERS)
         for sym in sorted(wanting, key=lambda s: result[s]["listing_date"], reverse=True)[:REFERENCE_FETCH_BUDGET]:
-            code = codes.get(str(result[sym]["isin"]).upper())
+            code = result[sym].get("bse_code") or codes.get(str(result[sym]["isin"]).upper())
             if not code:
                 continue  # NSE-only listing: the backend keeps its own metadata path
             reference = _bse_reference(code, session)
@@ -573,13 +650,67 @@ def _fill_new_listing_prices(symbols: dict[str, dict], new_listings: dict[str, d
     return filled
 
 
-def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> dict[str, dict]:
-    """Decide, once per listing, whether it was an IPO, and persist it.
+# Evidence is matched on the ISIN's first nine characters — country, issuer
+# code and security type — because a company's equity ISIN can change while
+# the company does not: LEMERITE traded on NSE Emerge as INE0G1L01017 and
+# listed on the mainboard as INE0G1L01025, and a full-ISIN match called that
+# an IPO. Evidence recorded under an older rule is re-checked.
+PRIOR_EVIDENCE_RULE = "issuer_prefix"
 
-    `ipo` is True when the ISIN had never traded on either exchange before its
-    NSE listing date, False when it had (a direct listing, an SME migration),
-    and absent when no pre-listing file could be read — the backend then falls
-    back to its batch-date rule rather than guessing.
+
+def _issuer_prefix(isin: str) -> str:
+    return str(isin or "").upper()[:9]
+
+
+def _prior_evidence(known: dict | None, isin: str | None) -> tuple[bool | None, bool]:
+    """(prior_trading, nse_checked) already on record for this ISIN."""
+    if not isinstance(known, dict) or known.get("isin") != isin:
+        return None, False
+    if known.get("prior_rule") != PRIOR_EVIDENCE_RULE:
+        # Older entries: a full-ISIN "traded before" still holds under the
+        # prefix rule; a "never traded" has to be checked again.
+        if known.get("prior_trading") is True or (known.get("basis") is None and known.get("ipo") is False):
+            return True, False
+        return None, False
+    if isinstance(known.get("prior_trading"), bool):
+        return known["prior_trading"], bool(known.get("nse_checked"))
+    return None, False
+
+
+def _renamed_symbols(result: dict[str, dict]) -> dict[str, str]:
+    """Old symbol -> current symbol, for companies NSE has renamed.
+
+    The shipped universe keeps the symbol a company had when it was built,
+    so Amir Chand Jagdish Kumar sat there as AMIRCHAND while NSE lists it as
+    AEROPLANE, and the IPO list carried it twice. Matched by ISIN.
+    """
+    try:
+        universe = json.loads((DATA_DIR / "free_universe.json").read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    by_isin = {str(e.get("isin")): sym for sym, e in result.items() if e.get("isin")}
+    aliases: dict[str, str] = {}
+    for row in universe if isinstance(universe, list) else []:
+        current = by_isin.get(str(row.get("isin") or "").upper())
+        symbol = str(row.get("symbol") or "").upper()
+        if current and symbol and symbol != current and symbol not in result:
+            aliases[symbol] = current
+    return dict(sorted(aliases.items()))
+
+
+def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> dict[str, dict]:
+    """Decide which recent listings were mainboard IPOs, and persist it.
+
+    For anything that trades on BSE, BSE's own mainboard IPO list decides
+    (`basis: bse_ipo_list`) — re-read every run, so a verdict follows BSE.
+    For an NSE-only name the evidence is its trading history: an IPO's ISIN
+    never traded on either exchange before its listing date
+    (`basis: isin_history`). "Never traded" is only accepted once NSE's file
+    was read too; without it the listing stays unresolved and is retried,
+    and the backend applies its batch-date rule meanwhile.
+
+    BSE-only IPOs (on BSE's list, not in NSE's master) are added with
+    `exchange: BSE` under their BSE ticker.
     """
     try:
         stored = json.loads(IPO_LISTINGS_PATH.read_text(encoding="utf-8"))
@@ -591,43 +722,97 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
         # The NSE master did not load: keep yesterday's verdicts untouched.
         return previous
 
-    cutoff = trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS + 30)
-    cache: dict[date, set[str] | None] = {}
+    cutoff = trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS)
+    scrips = _bse_scrips(trade_date)
+    by_code = {scrip["code"]: (isin, scrip) for isin, scrip in scrips.items()}
+    bse_ipos = _bse_mainboard_ipos(trade_date) if scrips else None
+    cache: dict[date, tuple[set[str], bool] | None] = {}
     budget = [PRIOR_SESSION_FETCH_BUDGET]
-    result: dict[str, dict] = {
-        sym: entry
-        for sym, entry in previous.items()
-        if isinstance(entry, dict) and str(entry.get("listing_date") or "") >= cutoff.isoformat()
-    }
+    result: dict[str, dict] = {}
     checked = 0
+
     for sym, meta in sorted(listings.items(), key=lambda item: item[1]["listing_date"], reverse=True):
-        known = result.get(sym)
-        if (
-            isinstance(known, dict)
-            and isinstance(known.get("ipo"), bool)
-            and known.get("isin") == meta.get("isin")
-            and known.get("listing_date") == meta.get("listing_date")
-        ):
-            continue
-        entry = {
+        known = previous.get(sym)
+        isin = str(meta.get("isin") or "").upper() or None
+        entry: dict[str, object] = {
             "listing_date": meta["listing_date"],
             "name": meta.get("name"),
-            "isin": meta.get("isin"),
+            "isin": isin,
             "series": meta.get("series"),
+            "exchange": "NSE",
         }
-        if isinstance(known, dict) and known.get("isin") == meta.get("isin"):
+        if isinstance(known, dict) and known.get("isin") == isin:
             for key in ("bse_code", "sector", "sub_sector", "shares_crore"):
                 if key in known:
                     entry[key] = known[key]
-        isin = str(meta.get("isin") or "").upper()
-        if isin:
-            prior = _session_isins_before(date.fromisoformat(meta["listing_date"]), cache, budget)
-            if prior is not None:
-                session, isins = prior
-                entry["ipo"] = isin not in isins
+        scrip = scrips.get(isin or "")
+        if scrip:
+            entry["bse_code"] = scrip["code"]
+
+        if bse_ipos is not None and entry.get("bse_code"):
+            entry["ipo"] = entry["bse_code"] in bse_ipos
+            entry["basis"] = "bse_ipo_list"
+            if entry["ipo"]:
+                entry["issue_price"] = bse_ipos[entry["bse_code"]].get("issue_price")
+            result[sym] = entry
+            continue
+
+        prior, nse_checked = _prior_evidence(known, isin)
+        if isin and not (prior is True or (prior is False and nse_checked)):
+            found = _session_isins_before(date.fromisoformat(meta["listing_date"]), cache, budget)
+            if found is not None:
+                session, isins, nse_read = found
+                prefix = _issuer_prefix(isin)
+                prior, nse_checked = any(other.startswith(prefix) for other in isins), nse_read
                 entry["checked_session"] = session.isoformat()
                 checked += 1
+        elif isinstance(known, dict) and known.get("checked_session"):
+            entry["checked_session"] = known["checked_session"]
+        if prior is not None:
+            entry["prior_trading"] = prior
+            entry["nse_checked"] = nse_checked
+            entry["prior_rule"] = PRIOR_EVIDENCE_RULE
+        entry["basis"] = "isin_history"
+        if prior is True:
+            entry["ipo"] = False
+        elif prior is False and nse_checked:
+            entry["ipo"] = True
         result[sym] = entry
+
+    added_bse_only = 0
+    if bse_ipos:
+        nse_isins = _NSE_MASTER_ISINS or {str(e.get("isin")) for e in result.values()}
+        claimed = {e.get("bse_code") for e in result.values()}
+        for code, info in bse_ipos.items():
+            if code in claimed or not (cutoff.isoformat() <= info["listing_date"] <= trade_date.isoformat()):
+                continue
+            isin, scrip = by_code.get(code, (None, None))
+            if scrip is None or isin in nse_isins or scrip["group"] in BSE_SME_GROUPS:
+                continue  # listed on NSE too (under an NSE symbol), or not on today's BSE file
+            symbol = scrip["symbol"] or info.get("symbol")
+            if not symbol:
+                continue
+            if symbol in result:
+                logger.warning("BSE-only IPO %s (%s) collides with NSE symbol %s; skipped", info["name"], code, symbol)
+                continue
+            entry = {
+                "listing_date": info["listing_date"],
+                "name": info["name"],
+                "isin": isin,
+                "series": scrip["group"],
+                "exchange": "BSE",
+                "bse_code": code,
+                "ipo": True,
+                "basis": "bse_ipo_list",
+                "issue_price": info.get("issue_price"),
+            }
+            old = previous.get(symbol)
+            if isinstance(old, dict) and old.get("isin") == isin:
+                for key in ("sector", "sub_sector", "shares_crore"):
+                    if key in old:
+                        entry[key] = old[key]
+            result[symbol] = entry
+            added_bse_only += 1
 
     try:
         enriched = _attach_listing_reference(result, trade_date)
@@ -638,14 +823,20 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
 
     payload = {
         "as_of": trade_date.isoformat(),
-        "rule": "ipo = ISIN absent from the last BSE/NSE EOD file before the NSE listing date",
+        "aliases": _renamed_symbols(result),
+        "rule": (
+            "ipo = on BSE's mainboard IPO list when the company trades on BSE; "
+            "otherwise ISIN absent from the last BSE and NSE EOD files before its listing date"
+        ),
+        "bse_ipo_list_read": bse_ipos is not None,
         "listings": dict(sorted(result.items())),
     }
     IPO_LISTINGS_PATH.write_text(json.dumps(payload, indent=1, sort_keys=False), encoding="utf-8")
     verdicts = [e.get("ipo") for e in result.values()]
     logger.info(
-        "IPO classification: %s listings, %s newly checked, %s IPOs, %s direct/migrated, %s unresolved",
-        len(result), checked, verdicts.count(True), verdicts.count(False), verdicts.count(None),
+        "IPO classification: %s listings (%s BSE-only), %s newly checked, %s IPOs, %s not, %s unresolved, BSE list %s",
+        len(result), added_bse_only, checked, verdicts.count(True), verdicts.count(False), verdicts.count(None),
+        "read" if bse_ipos is not None else "UNAVAILABLE",
     )
     return result
 
@@ -2221,11 +2412,23 @@ def main() -> int:
             for key in ("sector", "sub_sector", "shares_crore"):
                 if key in known:
                     meta[key] = known[key]
+        # IPOs listed on BSE alone never appear in NSE's master; they join
+        # the new listings under their BSE ticker so they get a seed row.
+        for sym, entry in classified.items():
+            if entry.get("exchange") == "BSE" and entry.get("ipo") is True and sym not in new_listings:
+                new_listings[sym] = {
+                    key: entry[key]
+                    for key in ("listing_date", "name", "isin", "series", "exchange", "sector", "sub_sector", "shares_crore")
+                    if key in entry
+                }
     except Exception as exc:  # classification must never block the price patch
         logger.warning("IPO classification failed (%s); keeping the stored verdicts", exc)
-    # ``.NS`` form for yfinance; only those not already in universe will be
-    # appended inside _fetch_yfinance_universe_bars / _fetch_from_yfinance.
-    extra_yf_tickers = [f"{sym}.NS" for sym in new_listings.keys()]
+    # Yahoo form for each new listing (.BO for a BSE-only IPO); only those not
+    # already in universe are appended inside _fetch_yfinance_universe_bars.
+    extra_yf_tickers = [
+        f"{sym}.BO" if meta.get("exchange") == "BSE" else f"{sym}.NS"
+        for sym, meta in new_listings.items()
+    ]
 
     # Daily NSE price-band revisions (for the chart band-change markers). Runs
     # BEFORE the price phases because each phase returns early; failures are

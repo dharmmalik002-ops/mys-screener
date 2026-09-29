@@ -2088,14 +2088,19 @@ def _ipo_candidates(snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
     exists: it keeps a genuine IPO that happened to list on a bulk-admission
     day (MOLBIO and DHOOTTRANS on 2026-08-17) and drops an old BSE company
     that NSE admitted on a quiet day (MODIS, ALGOQUANT, JAYKAY). Its listing
-    date also replaces a snapshot's missing one. Symbols it has not judged
-    keep the batch-date rule.
+    date also replaces a snapshot's missing one. A symbol NSE has since
+    renamed (AMIRCHAND, now AEROPLANE) is skipped so a company is listed once.
+    Symbols it has not judged keep the batch-date rule.
     """
     known = ipo_listings.verdicts()
+    renamed = ipo_listings.renamed_symbols()
     batch_dates = ipo_batch_listing_dates(snapshots)
     kept: list[StockSnapshot] = []
     for snapshot in snapshots:
-        verdict = known.get(str(snapshot.symbol or "").upper())
+        symbol = str(snapshot.symbol or "").upper()
+        if symbol in renamed:
+            continue  # the same company, listed today under its new symbol
+        verdict = known.get(symbol)
         if verdict is None:
             if snapshot.listing_date not in batch_dates:
                 kept.append(snapshot)

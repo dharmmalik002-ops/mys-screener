@@ -79,6 +79,13 @@ class ExchangeVerdictTests(unittest.TestCase):
         hits = self._run([_snapshot("GROWW", None)], {"GROWW": ListingVerdict(True, listed)})
         self.assertEqual(hits, {"GROWW"})
 
+    def test_a_renamed_symbol_is_listed_once(self):
+        listed = self.today - timedelta(days=100)
+        snaps = [_snapshot("AMIRCHAND", listed), _snapshot("AEROPLANE", listed)]
+        with mock.patch.object(ipo_listings, "renamed_symbols", return_value={"AMIRCHAND": "AEROPLANE"}):
+            hits = self._run(snaps, {"AEROPLANE": ListingVerdict(True, listed)})
+        self.assertEqual(hits, {"AEROPLANE"})
+
     def test_the_committed_file_carries_verdicts(self):
         # The Space cannot fetch exchange files at request time; the verdicts
         # have to ship. An empty file would silently revert to the batch rule.
@@ -106,33 +113,106 @@ class GeneratorListingTests(unittest.TestCase):
         self.assertEqual(set(found), {"EQCO", "BECO"})
         self.assertEqual(found["BECO"]["series"], "BE")
 
-    def test_classification_is_by_isin_against_the_prior_session(self):
-        listings = {
-            "NEWIPO": {"listing_date": "2026-09-16", "isin": "INE111A01011", "name": "N", "series": "EQ"},
-            "OLDCO": {"listing_date": "2026-09-16", "isin": "INE222A01011", "name": "O", "series": "EQ"},
-        }
+    def _classify(self, listings, *, scrips=None, bse_ipos=None, prior=None, master=None, previous=None, when=date(2026, 9, 29)):
+        """Run the classifier with every exchange call stubbed."""
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ipo_listings.json"
+            if previous is not None:
+                path.write_text(json.dumps({"listings": previous}), encoding="utf-8")
             with mock.patch.object(generator, "IPO_LISTINGS_PATH", path), \
-                 mock.patch.object(generator, "_exchange_isins_on", return_value={"INE222A01011"}) as fetch:
-                result = generator._classify_recent_listings(listings, date(2026, 9, 29))
-                # 2026-09-16 is a Wednesday: the file read is Tuesday's.
-                fetch.assert_called_once_with(date(2026, 9, 15))
-                self.assertTrue(result["NEWIPO"]["ipo"])
-                self.assertFalse(result["OLDCO"]["ipo"])
-                # A second run re-uses the stored verdicts and fetches nothing.
-                fetch.reset_mock()
-                generator._classify_recent_listings(listings, date(2026, 9, 30))
-                fetch.assert_not_called()
+                 mock.patch.object(generator, "DATA_DIR", Path(tmp)), \
+                 mock.patch.object(generator, "_bse_scrips", return_value=scrips or {}), \
+                 mock.patch.object(generator, "_bse_mainboard_ipos", return_value=bse_ipos), \
+                 mock.patch.object(generator, "_exchange_isins_on", return_value=prior) as fetch, \
+                 mock.patch.object(generator, "_attach_listing_reference", return_value=0), \
+                 mock.patch.object(generator, "_NSE_MASTER_ISINS", set(master or ())):
+                result = generator._classify_recent_listings(listings, when)
+                saved = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        return result, fetch, saved
+
+    def test_bse_ipo_list_decides_anything_that_trades_on_bse(self):
+        # A demerger (TMCV) is a new ISIN that never traded — the history
+        # test calls it an IPO; BSE's list of public issues does not.
+        listings = {
+            "REALIPO": {"listing_date": "2026-09-16", "isin": "INE111A01011", "name": "R", "series": "EQ"},
+            "DEMERGED": {"listing_date": "2026-09-16", "isin": "INE222A01011", "name": "D", "series": "EQ"},
+        }
+        scrips = {
+            "INE111A01011": {"code": "544900", "symbol": "REALIPO", "group": "B"},
+            "INE222A01011": {"code": "544901", "symbol": "DEMERGED", "group": "B"},
+        }
+        bse_ipos = {"544900": {"name": "R", "symbol": "REALIPO", "listing_date": "2026-09-16", "issue_price": 100}}
+        result, fetch, _ = self._classify(listings, scrips=scrips, bse_ipos=bse_ipos, prior=(set(), True))
+        self.assertTrue(result["REALIPO"]["ipo"])
+        self.assertFalse(result["DEMERGED"]["ipo"])
+        self.assertEqual(result["DEMERGED"]["basis"], "bse_ipo_list")
+        fetch.assert_not_called()  # no history needed when BSE has ruled
+
+    def test_an_ipo_listed_on_bse_alone_is_added(self):
+        # National Stock Exchange of India cannot list on NSE.
+        scrips = {
+            "INE721I01024": {"code": "544937", "symbol": "NSE", "group": "A"},
+            "INE999Z01011": {"code": "544950", "symbol": "SMEONE", "group": "M"},
+        }
+        bse_ipos = {
+            "544937": {"name": "National Stock Exchange of India Limited", "symbol": "NSE", "listing_date": "2026-09-24", "issue_price": 1500},
+            "544950": {"name": "Sme", "symbol": "SMEONE", "listing_date": "2026-09-24", "issue_price": 10},
+        }
+        listings = {"OTHER": {"listing_date": "2026-09-16", "isin": "INE111A01011", "name": "O", "series": "EQ"}}
+        result, _, _ = self._classify(listings, scrips=scrips, bse_ipos=bse_ipos, prior=(set(), True))
+        self.assertEqual(result["NSE"]["exchange"], "BSE")
+        self.assertTrue(result["NSE"]["ipo"])
+        self.assertEqual(result["NSE"]["listing_date"], "2026-09-24")
+        self.assertNotIn("SMEONE", result)  # SME board groups are not mainboard
+
+    def test_a_bse_ipo_that_is_also_on_nse_is_not_added_twice(self):
+        scrips = {"INE111A01011": {"code": "544900", "symbol": "DUALBSE", "group": "B"}}
+        bse_ipos = {"544900": {"name": "Dual", "symbol": "DUALBSE", "listing_date": "2026-09-16", "issue_price": 1}}
+        result, _, _ = self._classify({}, scrips=scrips, bse_ipos=bse_ipos, master={"INE111A01011"})
+        self.assertEqual(result, {})  # empty NSE master => stored verdicts kept, nothing invented
+        listings = {"DUAL": {"listing_date": "2026-09-16", "isin": "INE111A01011", "name": "Dual", "series": "EQ"}}
+        result, _, _ = self._classify(listings, scrips=scrips, bse_ipos=bse_ipos, master={"INE111A01011"})
+        self.assertEqual(set(result), {"DUAL"})
+
+    def test_nse_only_history_is_matched_on_the_issuer_prefix(self):
+        # LEMERITE traded on NSE Emerge as ...01017 and listed as ...01025.
+        listings = {"LEMERITE": {"listing_date": "2025-12-12", "isin": "INE0G1L01025", "name": "L", "series": "EQ"}}
+        result, fetch, _ = self._classify(listings, bse_ipos={}, prior=({"INE0G1L01017"}, True))
+        fetch.assert_called_once_with(date(2025, 12, 11))
+        self.assertFalse(result["LEMERITE"]["ipo"])
+
+    def test_never_traded_needs_nse_read_before_it_counts(self):
+        listings = {"NSEONLY": {"listing_date": "2026-09-16", "isin": "INE333A01011", "name": "X", "series": "EQ"}}
+        result, _, _ = self._classify(listings, bse_ipos={}, prior=({"INE999A01011"}, False))
+        self.assertNotIn("ipo", result["NSEONLY"])  # BSE alone cannot see NSE Emerge
+        result, _, _ = self._classify(listings, bse_ipos={}, prior=({"INE999A01011"}, True))
+        self.assertTrue(result["NSEONLY"]["ipo"])
+
+    def test_checked_evidence_is_reused(self):
+        listings = {"NSEONLY": {"listing_date": "2026-09-16", "isin": "INE333A01011", "name": "X", "series": "EQ"}}
+        first, _, _ = self._classify(listings, bse_ipos={}, prior=(set(), True))
+        _, fetch, _ = self._classify(listings, bse_ipos={}, prior=(set(), True), previous=first)
+        fetch.assert_not_called()
+
+    def test_an_unreadable_bse_list_falls_back_to_history(self):
+        listings = {"X": {"listing_date": "2026-09-16", "isin": "INE333A01011", "name": "X", "series": "EQ"}}
+        scrips = {"INE333A01011": {"code": "544900", "symbol": "X", "group": "B"}}
+        result, _, _ = self._classify(listings, scrips=scrips, bse_ipos=None, prior=(set(), True))
+        self.assertEqual(result["X"]["basis"], "isin_history")
+        self.assertTrue(result["X"]["ipo"])
 
     def test_an_unreadable_prior_session_leaves_the_listing_unjudged(self):
         listings = {"X": {"listing_date": "2026-09-16", "isin": "INE333A01011", "name": "X", "series": "EQ"}}
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "ipo_listings.json"
-            with mock.patch.object(generator, "IPO_LISTINGS_PATH", path), \
-                 mock.patch.object(generator, "_exchange_isins_on", return_value=None):
-                result = generator._classify_recent_listings(listings, date(2026, 9, 29))
+        result, _, _ = self._classify(listings, bse_ipos={}, prior=None)
         self.assertNotIn("ipo", result["X"])
+
+    def test_renamed_symbols_are_recorded(self):
+        listings = {"AEROPLANE": {"listing_date": "2026-04-02", "isin": "INE05TO01019", "name": "Amir Chand", "series": "EQ"}}
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "free_universe.json").write_text(json.dumps([{"symbol": "AMIRCHAND", "isin": "INE05TO01019"}]))
+            with mock.patch.object(generator, "DATA_DIR", Path(tmp)):
+                aliases = generator._renamed_symbols({"AEROPLANE": {"isin": "INE05TO01019"}})
+        self.assertEqual(aliases, {"AMIRCHAND": "AEROPLANE"})
 
 
 class SeedRowIndicatorTests(unittest.TestCase):
@@ -201,6 +281,13 @@ class SeedRowIndicatorTests(unittest.TestCase):
         provider._fill_seed_row_reference(row, {"listing_date": "2026-04-20"})
         self.assertEqual(row["listing_date"], "2026-04-20")
         self.assertEqual(row["market_cap_crore"], 333.0)
+
+    def test_a_bse_only_ipo_is_seeded_on_its_bse_ticker(self):
+        row = FreeMarketDataProvider()._build_ipo_seed_row(
+            "NSE", {"listing_date": "2026-09-24", "exchange": "BSE"},
+            {"o": 1786, "h": 1787, "l": 1761, "c": 1762.7, "v": 4_687_406, "p": 1792.65}, date(2026, 9, 28),
+        )
+        self.assertEqual((row["exchange"], row["ticker"], row["instrument_key"]), ("BSE", "NSE.BO", "NSE.BO"))
 
     def test_a_nan_price_never_becomes_a_seed_row(self):
         # One NaN row fails the schema check for the whole snapshot file.

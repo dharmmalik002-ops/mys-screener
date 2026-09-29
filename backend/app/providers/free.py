@@ -3730,14 +3730,20 @@ class FreeMarketDataProvider:
         listing_date_iso = listing_date_text or patch_date.isoformat()
 
         name = str(listing_meta.get("name") or symbol).strip() or symbol
+        exchange = "BSE" if str(listing_meta.get("exchange") or "").upper() == "BSE" else "NSE"
         reference = self._ipo_listing_reference(listing_meta, close)
 
         row: dict[str, Any] = {
             "snapshot_cache_version": SNAPSHOT_CACHE_VERSION,
             "symbol": symbol,
-            "ticker": f"{symbol}.NS",
+            # An IPO listed on BSE alone (National Stock Exchange of India
+            # cannot list on itself) trades under its BSE ticker.
+            "ticker": f"{symbol}.BO" if exchange == "BSE" else f"{symbol}.NS",
+            # _resolve_ticker reads instrument_key; without it a chart for a
+            # BSE-only listing asked Yahoo for NSE.NS and drew nothing.
+            "instrument_key": f"{symbol}.BO" if exchange == "BSE" else f"{symbol}.NS",
             "name": name,
-            "exchange": "NSE",
+            "exchange": exchange,
             "listing_date": listing_date_iso,
             "sector": reference["sector"],
             "sub_sector": reference["sub_sector"],
