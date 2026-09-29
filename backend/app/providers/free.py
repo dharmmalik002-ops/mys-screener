@@ -1935,8 +1935,13 @@ class FreeMarketDataProvider:
         except Exception:
             warnings.append("Recent headline/news fallback is unavailable right now.")
 
+        screener_quarters = screener_payload.get("quarterly_results") or []
+        if not screener_quarters:
+            # Screener refuses the HF Space for every symbol; BSE's own
+            # (standalone) filings stand in, from the committed summary.
+            screener_quarters = self._bse_quarterly_results(symbol)
         quarterly_results = self._merge_quarterly_results(
-            screener_payload.get("quarterly_results") or [],
+            screener_quarters,
             yahoo_payload.get("quarterly_results") or [],
         )
         profit_loss = self._merge_profit_loss_items(
@@ -3035,6 +3040,19 @@ class FreeMarketDataProvider:
                 )
             )
         return results[-6:]
+
+    @staticmethod
+    def _bse_quarterly_results(symbol: str) -> list[QuarterlyResultItem]:
+        from app.services import bse_quarterly
+
+        fields = set(QuarterlyResultItem.model_fields)
+        items: list[QuarterlyResultItem] = []
+        for row in bse_quarterly.results_for(symbol):
+            try:
+                items.append(QuarterlyResultItem(**{k: v for k, v in row.items() if k in fields}))
+            except Exception:  # noqa: BLE001 - one malformed row must not drop the rest
+                continue
+        return items
 
     def _merge_quarterly_results(
         self,

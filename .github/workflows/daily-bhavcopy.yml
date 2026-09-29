@@ -86,6 +86,18 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Refresh BSE quarterly results
+        # Feeds the chart's Earnings widget, the peer list and the Fundamentals
+        # tab: Screener refuses the HF Space for every symbol, so these read
+        # BSE's own filings from the committed summary. Incremental — it only
+        # fetches quarters the file does not already hold — and it refuses to
+        # shrink the file, so a blocked run leaves yesterday's copy in place.
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          timeout 900 python backend/scripts/build_quarterly_summary.py --workers 8 \
+            || echo "quarterly summary refresh failed (non-fatal)"
+
       - name: Commit and push if updated
         if: steps.patch.outputs.changed == 'true' || steps.volhist.outputs.changed == 'true'
         run: |
@@ -117,6 +129,10 @@ jobs:
           fi
           if [ -f backend/data/volume_history.json ]; then
             git add backend/data/volume_history.json || true
+          fi
+          # Last 12 quarters of standalone results per company, from BSE.
+          if [ -f backend/data/quarterly_summary.json ]; then
+            git add backend/data/quarterly_summary.json || true
           fi
           # NSE price-band revisions (chart band-change markers).
           if [ -f backend/data/price_band_changes.json ]; then

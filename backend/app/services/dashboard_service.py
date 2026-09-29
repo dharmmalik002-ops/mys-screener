@@ -93,7 +93,7 @@ from app.scanners.definitions import (
     scanner_sector_label,
     sparkline_closes,
 )
-from app.services import close_history
+from app.services import bse_quarterly, close_history
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.market_environment import (
     build_focus_list,
@@ -6691,6 +6691,31 @@ class DashboardService:
         fundamentals: CompanyFundamentals | None = None
         if callable(provider_cached):
             fundamentals = await provider_cached(symbol, snapshot=snapshot, max_age_hours=None)
+
+        # 2. BSE's own filings, committed nightly. Screener refuses the HF
+        # Space for every symbol, so trying it first made every request wait
+        # out a 25 s timeout and then return an empty table; BSE answers from
+        # disk. Standalone figures (Screener's default is consolidated).
+        if fundamentals is None or not fundamentals.quarterly_results:
+            bse_rows = bse_quarterly.results_for(symbol)
+            if bse_rows:
+                valuation_payload = (
+                    fundamentals.valuation.model_dump(mode="python") if fundamentals and fundamentals.valuation else {}
+                )
+                if snapshot is not None and not valuation_payload.get("market_cap_crore"):
+                    valuation_payload["market_cap_crore"] = snapshot.market_cap_crore
+                return {
+                    "symbol": symbol,
+                    "name": (snapshot.name if snapshot else None) or (fundamentals.name if fundamentals else symbol),
+                    "sector": (snapshot.sector if snapshot else None) or (fundamentals.sector if fundamentals else None),
+                    "sub_sector": (snapshot.sub_sector if snapshot else None) or (fundamentals.sub_sector if fundamentals else None),
+                    "fetched_at": bse_quarterly.artifact_date() or datetime.now(timezone.utc).isoformat(),
+                    "source": "bse",
+                    "valuation": valuation_payload,
+                    "metrics": self._earnings_snapshot_metrics(snapshot),
+                    "quarterly_results": self._earnings_rows(bse_rows),
+                    "data_warnings": ["Standalone results from BSE filings."],
+                }
 
         source = "cache"
         warnings: list[str] = []
