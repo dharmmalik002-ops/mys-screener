@@ -6,7 +6,7 @@
   "LKPFIN": "GYFTR"
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
- "bse_ipo_list_read": true,
+ "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
   "544527": {
@@ -5400,12 +5400,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544942",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 148.0,
    "sector": "Consumer Durables",
    "sub_sector": "Ceramics",
-   "shares_crore": 22.601178
+   "shares_crore": 22.601178,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 148.0
   },
   "VASUPRADA": {
    "listing_date": "2026-08-17",
