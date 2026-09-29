@@ -10,9 +10,9 @@
     "pct_from_52w_high": -13.62,
     "ma200_slope": -0.0386,
     "breadth_above_200dma": 50.73,
-    "breadth_net_new_highs": -1.39,
-    "vix_percentile": 53.8,
-    "constituents": 1439,
+    "breadth_net_new_highs": -1.32,
+    "vix_percentile": 54.2,
+    "constituents": 1441,
     "regime_label": "Correction"
   },
   "playbook": {
@@ -581,6 +581,34 @@
       "edge_score_r": 0.017
     },
     {
+      "symbol": "SYRMA",
+      "strategy": "pocket_pivot",
+      "strategy_label": "Pocket Pivot",
+      "signal_day": "2026-09-28",
+      "close": 1746.4,
+      "entry_hint": 1746.4,
+      "stop": 1611.76,
+      "risk_pct": 7.71,
+      "atr_pct": 3.85,
+      "turnover_crore": 177.9,
+      "expected_r": 0.007,
+      "verdict": "confirmed",
+      "live_size_multiplier": 1.0,
+      "sizing": {
+        "shares": 3,
+        "position_value": 5239.2,
+        "risk_budget": 500.0,
+        "risk_per_share": 134.64,
+        "actual_risk": 403.93,
+        "pct_of_equity": 0.5,
+        "capped_by_capital": false
+      },
+      "cell_expectancy_r": 0.007,
+      "volatility_adjustment_r": 0.001,
+      "volatility_bucket": "3-4.5%",
+      "edge_score_r": 0.008
+    },
+    {
       "symbol": "SBC",
       "strategy": "pocket_pivot",
       "strategy_label": "Pocket Pivot",
@@ -713,34 +741,6 @@
         "risk_per_share": 166.66,
         "actual_risk": 499.98,
         "pct_of_equity": 0.7,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.007,
-      "volatility_adjustment_r": 0.001,
-      "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.008
-    },
-    {
-      "symbol": "ARTEMISMED",
-      "strategy": "pocket_pivot",
-      "strategy_label": "Pocket Pivot",
-      "signal_day": "2026-09-28",
-      "close": 365.9,
-      "entry_hint": 365.9,
-      "stop": 334.93,
-      "risk_pct": 8.46,
-      "atr_pct": 4.23,
-      "turnover_crore": 12.3,
-      "expected_r": 0.007,
-      "verdict": "confirmed",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 16,
-        "position_value": 5854.4,
-        "risk_budget": 500.0,
-        "risk_per_share": 30.97,
-        "actual_risk": 495.57,
-        "pct_of_equity": 0.6,
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.007,
@@ -1008,6 +1008,6 @@
   },
   "calibration": null,
   "message": "33 candidate(s) from 3 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
-  "generated_at": "2026-09-28T20:41:13.464861+00:00",
+  "generated_at": "2026-09-29T19:35:46.164294+00:00",
   "source": "offline"
 }

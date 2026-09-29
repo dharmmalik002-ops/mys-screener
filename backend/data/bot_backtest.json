@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-28T20:40:36.888996+00:00",
+  "generated_at": "2026-09-29T19:35:09.391889+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -894,9 +894,9 @@
     "pct_from_52w_high": -13.62,
     "ma200_slope": -0.0386,
     "breadth_above_200dma": 50.73,
-    "breadth_net_new_highs": -1.39,
-    "vix_percentile": 53.8,
-    "constituents": 1439,
+    "breadth_net_new_highs": -1.32,
+    "vix_percentile": 54.2,
+    "constituents": 1441,
     "regime_label": "Correction"
   },
   "strategy_totals": [
@@ -22039,7 +22039,7 @@
           }
         ]
       },
-      "fund_median_cagr": 11.63,
+      "fund_median_cagr": 11.08,
       "fund_median_drawdown": -27.5,
       "beats_buy_and_hold": true,
       "beats_fund_median": true,
@@ -22059,7 +22059,7 @@
           "cagr_pct": 11.55,
           "max_drawdown_pct": -14.4,
           "beats_buy_and_hold": true,
-          "beats_fund_median": false
+          "beats_fund_median": true
         },
         {
           "cash_rate_pct": 4.0,
@@ -22139,20 +22139,20 @@
           "bot_sharpe": 0.55,
           "index_cagr_pct": 9.82,
           "funds_counted": 693,
-          "fund_median_cagr": 11.63,
-          "fund_p75_cagr": 15.15,
-          "fund_p90_cagr": 18.34,
-          "fund_best_cagr": 37.73,
-          "percentile": 0.9,
+          "fund_median_cagr": 11.08,
+          "fund_p75_cagr": 14.52,
+          "fund_p90_cagr": 17.5,
+          "fund_best_cagr": 36.57,
+          "percentile": 1.0,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -27.5,
           "drawdown_better_than_median": true,
           "bot_return_per_drawdown": 0.183,
-          "fund_return_per_drawdown": 0.423,
+          "fund_return_per_drawdown": 0.403,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.41,
-          "sharpe_percentile": 69.6,
+          "fund_median_sharpe": 0.36,
+          "sharpe_percentile": 74.2,
           "drawdown_percentile": 72.0,
           "funds_dominating": 194,
           "funds_dominating_pct": 28.0,
@@ -22166,7 +22166,7 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "3.56%",
-              "reference": "11.63%",
+              "reference": "11.08%",
               "verdict": false
             },
             {
@@ -22178,13 +22178,13 @@
             {
               "dimension": "Return per unit of drawdown",
               "bot": "0.18",
-              "reference": "0.42",
+              "reference": "0.40",
               "verdict": false
             },
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.55",
-              "reference": "0.41",
+              "reference": "0.36",
               "verdict": true
             },
             {
@@ -22204,7 +22204,7 @@
             "median_resample_cagr": 17.61,
             "share_positive": 100.0,
             "share_beating_index": 98.7,
-            "share_beating_fund_median": 95.3,
+            "share_beating_fund_median": 96.6,
             "note": "1,818 trades drawn from 44,685 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 11.8% and 24.1% a year, with a median of 17.6% \u2014 against a realised 3.6%. The width is what 1,818 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
           }
         },
@@ -22216,23 +22216,23 @@
           "bot_sharpe": 0.37,
           "index_cagr_pct": 9.82,
           "funds_counted": 693,
-          "fund_median_cagr": 11.63,
-          "fund_p75_cagr": 15.15,
-          "fund_p90_cagr": 18.34,
-          "fund_best_cagr": 37.73,
+          "fund_median_cagr": 11.08,
+          "fund_p75_cagr": 14.52,
+          "fund_p90_cagr": 17.5,
+          "fund_best_cagr": 36.57,
           "percentile": 0.7,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -27.5,
           "drawdown_better_than_median": true,
           "bot_return_per_drawdown": 0.054,
-          "fund_return_per_drawdown": 0.423,
+          "fund_return_per_drawdown": 0.403,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.41,
-          "sharpe_percentile": 44.4,
-          "drawdown_percentile": 67.8,
-          "funds_dominating": 223,
-          "funds_dominating_pct": 32.2,
+          "fund_median_sharpe": 0.36,
+          "sharpe_percentile": 50.9,
+          "drawdown_percentile": 68.0,
+          "funds_dominating": 222,
+          "funds_dominating_pct": 32.0,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
@@ -22243,7 +22243,7 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "1.11%",
-              "reference": "11.63%",
+              "reference": "11.08%",
               "verdict": false
             },
             {
@@ -22255,18 +22255,18 @@
             {
               "dimension": "Return per unit of drawdown",
               "bot": "0.05",
-              "reference": "0.42",
+              "reference": "0.40",
               "verdict": false
             },
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.37",
-              "reference": "0.41",
+              "reference": "0.36",
               "verdict": null
             },
             {
               "dimension": "Funds beating it on return AND drawdown",
-              "bot": "32.2%",
+              "bot": "32.0%",
               "reference": "50% would be average",
               "verdict": true
             }
@@ -22281,20 +22281,20 @@
           "bot_sharpe": 0.1,
           "index_cagr_pct": 9.82,
           "funds_counted": 693,
-          "fund_median_cagr": 11.63,
-          "fund_p75_cagr": 15.15,
-          "fund_p90_cagr": 18.34,
-          "fund_best_cagr": 37.73,
+          "fund_median_cagr": 11.08,
+          "fund_p75_cagr": 14.52,
+          "fund_p90_cagr": 17.5,
+          "fund_best_cagr": 36.57,
           "percentile": 0.7,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -27.5,
           "drawdown_better_than_median": false,
           "bot_return_per_drawdown": -0.064,
-          "fund_return_per_drawdown": 0.423,
+          "fund_return_per_drawdown": 0.403,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.41,
-          "sharpe_percentile": 13.1,
+          "fund_median_sharpe": 0.36,
+          "sharpe_percentile": 16.2,
           "drawdown_percentile": 41.8,
           "funds_dominating": 401,
           "funds_dominating_pct": 57.9,
@@ -22308,7 +22308,7 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "-2.04%",
-              "reference": "11.63%",
+              "reference": "11.08%",
               "verdict": false
             },
             {
@@ -22320,13 +22320,13 @@
             {
               "dimension": "Return per unit of drawdown",
               "bot": "-0.06",
-              "reference": "0.42",
+              "reference": "0.40",
               "verdict": false
             },
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.10",
-              "reference": "0.41",
+              "reference": "0.36",
               "verdict": false
             },
             {
@@ -22345,23 +22345,23 @@
           "bot_max_drawdown_pct": -44.33,
           "bot_sharpe": 0.15,
           "index_cagr_pct": 9.83,
-          "funds_counted": 328,
-          "fund_median_cagr": 12.62,
-          "fund_p75_cagr": 14.85,
-          "fund_p90_cagr": 16.76,
-          "fund_best_cagr": 20.88,
+          "funds_counted": 329,
+          "fund_median_cagr": 12.47,
+          "fund_p75_cagr": 14.7,
+          "fund_p90_cagr": 16.61,
+          "fund_best_cagr": 20.61,
           "percentile": 0.0,
           "beats_median": false,
           "beats_index": false,
-          "fund_median_drawdown": -36.0,
+          "fund_median_drawdown": -35.97,
           "drawdown_better_than_median": false,
           "bot_return_per_drawdown": 0.023,
-          "fund_return_per_drawdown": 0.351,
+          "fund_return_per_drawdown": 0.347,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.37,
-          "sharpe_percentile": 17.7,
+          "fund_median_sharpe": 0.32,
+          "sharpe_percentile": 21.6,
           "drawdown_percentile": 11.9,
-          "funds_dominating": 289,
+          "funds_dominating": 290,
           "funds_dominating_pct": 88.1,
           "scorecard": [
             {
@@ -22373,7 +22373,7 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "1.03%",
-              "reference": "12.62%",
+              "reference": "12.47%",
               "verdict": false
             },
             {
@@ -22391,7 +22391,7 @@
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.15",
-              "reference": "0.37",
+              "reference": "0.32",
               "verdict": false
             },
             {
@@ -22401,7 +22401,7 @@
               "verdict": false
             }
           ],
-          "verdict": "The account's 1.0% CAGR is below 100% of 328 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.8%), which needed no work at all, but with a deeper worst drawdown (-44% against a fund median of -36%)."
+          "verdict": "The account's 1.0% CAGR is below 100% of 329 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.8%), which needed no work at all, but with a deeper worst drawdown (-44% against a fund median of -36%)."
         }
       ],
       "headline": {
@@ -22412,20 +22412,20 @@
         "bot_sharpe": 0.55,
         "index_cagr_pct": 9.82,
         "funds_counted": 693,
-        "fund_median_cagr": 11.63,
-        "fund_p75_cagr": 15.15,
-        "fund_p90_cagr": 18.34,
-        "fund_best_cagr": 37.73,
-        "percentile": 0.9,
+        "fund_median_cagr": 11.08,
+        "fund_p75_cagr": 14.52,
+        "fund_p90_cagr": 17.5,
+        "fund_best_cagr": 36.57,
+        "percentile": 1.0,
         "beats_median": false,
         "beats_index": false,
         "fund_median_drawdown": -27.5,
         "drawdown_better_than_median": true,
         "bot_return_per_drawdown": 0.183,
-        "fund_return_per_drawdown": 0.423,
+        "fund_return_per_drawdown": 0.403,
         "risk_adjusted_better": false,
-        "fund_median_sharpe": 0.41,
-        "sharpe_percentile": 69.6,
+        "fund_median_sharpe": 0.36,
+        "sharpe_percentile": 74.2,
         "drawdown_percentile": 72.0,
         "funds_dominating": 194,
         "funds_dominating_pct": 28.0,
@@ -22439,7 +22439,7 @@
           {
             "dimension": "Return vs the median professional fund",
             "bot": "3.56%",
-            "reference": "11.63%",
+            "reference": "11.08%",
             "verdict": false
           },
           {
@@ -22451,13 +22451,13 @@
           {
             "dimension": "Return per unit of drawdown",
             "bot": "0.18",
-            "reference": "0.42",
+            "reference": "0.40",
             "verdict": false
           },
           {
             "dimension": "Sharpe ratio (how professionals are measured)",
             "bot": "0.55",
-            "reference": "0.41",
+            "reference": "0.36",
             "verdict": true
           },
           {
@@ -22477,7 +22477,7 @@
           "median_resample_cagr": 17.61,
           "share_positive": 100.0,
           "share_beating_index": 98.7,
-          "share_beating_fund_median": 95.3,
+          "share_beating_fund_median": 96.6,
           "note": "1,818 trades drawn from 44,685 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 11.8% and 24.1% a year, with a median of 17.6% \u2014 against a realised 3.6%. The width is what 1,818 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
         }
       },
@@ -22495,7 +22495,7 @@
           "Return vs the median professional fund",
           "Return per unit of drawdown"
         ],
-        "summary": "Measured over 3 years it never saw, against 693 real funds: better on 3 of 6 measures, worse on 3. Only 194 of them (28.0%) beat it on return and drawdown at the same time \u2014 the comparison with no axis left to pick. On Sharpe, which is how professional performance is actually judged, it sits at the 70th percentile. It earns less than the median fund in raw return, and does so taking roughly half the drawdown."
+        "summary": "Measured over 3 years it never saw, against 693 real funds: better on 3 of 6 measures, worse on 3. Only 194 of them (28.0%) beat it on return and drawdown at the same time \u2014 the comparison with no axis left to pick. On Sharpe, which is how professional performance is actually judged, it sits at the 74th percentile. It earns less than the median fund in raw return, and does so taking roughly half the drawdown."
       },
       "caveats": [
         "Fund returns are realised money; the bot's are simulated. A simulation never hesitates, never oversleeps, and never sizes down after three losses in a row.",
