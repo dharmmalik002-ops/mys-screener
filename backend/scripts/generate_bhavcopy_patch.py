@@ -500,6 +500,22 @@ def _bse_codes_by_isin(trade_date: date) -> dict[str, str]:
     return {isin: scrip["code"] for isin, scrip in _bse_scrips(trade_date).items()}
 
 
+def _bse_api_json(session: requests.Session, endpoint: str, params: dict, attempts: int = 4) -> object | None:
+    """GET a BSE API call, retried with backoff (the same schedule
+    build_quarterly_summary uses). The API is behind Akamai and refuses
+    runner IPs in bursts; on 2026-09-29 every call from the nightly job
+    failed while the EOD files on www.bseindia.com downloaded fine."""
+    for attempt in range(attempts):
+        try:
+            response = session.get(BSE_API + endpoint, params=params, timeout=30)
+            if response.status_code == 200 and response.text.strip().startswith(("{", "[")):
+                return response.json()
+        except Exception:
+            pass
+        time.sleep(1.5 * (attempt + 1))
+    return None
+
+
 def _bse_mainboard_ipos(trade_date: date) -> dict[str, dict] | None:
     """BSE's own list of mainboard IPOs, keyed by scrip code.
 
@@ -520,17 +536,12 @@ def _bse_mainboard_ipos(trade_date: date) -> dict[str, dict] | None:
     with requests.Session() as session:
         session.headers.update(BSE_API_HEADERS)
         for year in years:
-            try:
-                resp = session.get(
-                    BSE_API + "MoreCompanyN/w",
-                    params={"Fromdt": str(year), "company": "", "flag": "1", "type": "2"},
-                    timeout=30,
-                )
-                table = resp.json().get("Table")
-            except Exception as exc:
-                logger.info("BSE mainboard IPO list for %s unavailable (%s)", year, exc)
-                continue
+            table = _bse_api_json(
+                session, "MoreCompanyN/w", {"Fromdt": str(year), "company": "", "flag": "1", "type": "2"}
+            )
+            table = table.get("Table") if isinstance(table, dict) else None
             if not isinstance(table, list):
+                logger.warning("BSE mainboard IPO list for %s unavailable", year)
                 continue
             read_any = True
             for row in table:
@@ -556,12 +567,13 @@ def _parse_indian_number(text: object) -> float | None:
 
 def _bse_reference(code: str, session: requests.Session) -> dict | None:
     """Sector, basic industry and share count (crore) for one BSE scrip."""
-    try:
-        header = session.get(BSE_API + "ComHeadernew/w", params={"quotetype": "EQ", "scripcode": code, "seriesid": ""}, timeout=20).json()
-        trading = session.get(BSE_API + "StockTrading/w", params={"flag": "", "quotetype": "EQ", "scripcode": code}, timeout=20).json()
-        quote = session.get(BSE_API + "getScripHeaderData/w", params={"Debtflag": "", "scripcode": code, "seriesid": ""}, timeout=20).json()
-    except Exception:
+    header = _bse_api_json(session, "ComHeadernew/w", {"quotetype": "EQ", "scripcode": code, "seriesid": ""}, attempts=2)
+    if not isinstance(header, dict):
         return None
+    trading = _bse_api_json(session, "StockTrading/w", {"flag": "", "quotetype": "EQ", "scripcode": code}, attempts=2)
+    quote = _bse_api_json(session, "getScripHeaderData/w", {"Debtflag": "", "scripcode": code, "seriesid": ""}, attempts=2)
+    trading = trading if isinstance(trading, dict) else {}
+    quote = quote if isinstance(quote, dict) else {}
     reference: dict[str, object] = {"bse_code": code}
     sector = str((header or {}).get("IndustryNew") or "").strip()
     basic = str((header or {}).get("ISubGroup") or "").strip()
@@ -714,10 +726,10 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
     """
     try:
         stored = json.loads(IPO_LISTINGS_PATH.read_text(encoding="utf-8"))
-        previous = stored.get("listings") if isinstance(stored, dict) else None
-        previous = previous if isinstance(previous, dict) else {}
+        stored = stored if isinstance(stored, dict) else {}
     except Exception:
-        previous = {}
+        stored = {}
+    previous = stored.get("listings") if isinstance(stored.get("listings"), dict) else {}
     if not listings:
         # The NSE master did not load: keep yesterday's verdicts untouched.
         return previous
@@ -725,7 +737,22 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
     cutoff = trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS)
     scrips = _bse_scrips(trade_date)
     by_code = {scrip["code"]: (isin, scrip) for isin, scrip in scrips.items()}
-    bse_ipos = _bse_mainboard_ipos(trade_date) if scrips else None
+    # BSE's list is kept in the file and merged on every read, so a night the
+    # API refuses the runner leaves every verdict where it was instead of
+    # reverting the whole year to the history test (which is what put the
+    # demergers back and took National Stock Exchange out on 2026-09-29).
+    fresh = _bse_mainboard_ipos(trade_date) if scrips else None
+    stored_list = stored.get("bse_ipos") if isinstance(stored.get("bse_ipos"), dict) else {}
+    list_as_of = str(stored.get("bse_ipos_as_of") or "") or None
+    if fresh is not None:
+        list_as_of = trade_date.isoformat()
+    bse_ipos: dict[str, dict] | None = {
+        code: info
+        for code, info in {**stored_list, **(fresh or {})}.items()
+        if str(info.get("listing_date") or "") >= cutoff.isoformat()
+    }
+    if not bse_ipos and fresh is None:
+        bse_ipos = None
     cache: dict[date, tuple[set[str], bool] | None] = {}
     budget = [PRIOR_SESSION_FETCH_BUDGET]
     result: dict[str, dict] = {}
@@ -749,7 +776,12 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
         if scrip:
             entry["bse_code"] = scrip["code"]
 
-        if bse_ipos is not None and entry.get("bse_code"):
+        # A code absent from the list only means "not an IPO" if the list
+        # was read on or after the listing date; a newer listing waits.
+        list_covers = bse_ipos is not None and (
+            entry.get("bse_code") in bse_ipos or (list_as_of is not None and list_as_of >= meta["listing_date"])
+        )
+        if list_covers and entry.get("bse_code"):
             entry["ipo"] = entry["bse_code"] in bse_ipos
             entry["basis"] = "bse_ipo_list"
             if entry["ipo"]:
@@ -787,8 +819,15 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
             if code in claimed or not (cutoff.isoformat() <= info["listing_date"] <= trade_date.isoformat()):
                 continue
             isin, scrip = by_code.get(code, (None, None))
-            if scrip is None or isin in nse_isins or scrip["group"] in BSE_SME_GROUPS:
-                continue  # listed on NSE too (under an NSE symbol), or not on today's BSE file
+            if scrip is None:
+                # Not on today's BSE file (a missed session): keep what we knew.
+                kept = next((e for e in previous.values() if e.get("exchange") == "BSE" and e.get("bse_code") == code), None)
+                old_symbol = next((k for k, e in previous.items() if e is kept), None)
+                if kept and old_symbol and old_symbol not in result:
+                    result[old_symbol] = kept
+                continue
+            if isin in nse_isins or scrip["group"] in BSE_SME_GROUPS:
+                continue  # listed on NSE too (under an NSE symbol), or SME
             symbol = scrip["symbol"] or info.get("symbol")
             if not symbol:
                 continue
@@ -828,7 +867,9 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
             "ipo = on BSE's mainboard IPO list when the company trades on BSE; "
             "otherwise ISIN absent from the last BSE and NSE EOD files before its listing date"
         ),
-        "bse_ipo_list_read": bse_ipos is not None,
+        "bse_ipo_list_read": fresh is not None,
+        "bse_ipos_as_of": list_as_of,
+        "bse_ipos": dict(sorted((bse_ipos or {}).items())),
         "listings": dict(sorted(result.items())),
     }
     IPO_LISTINGS_PATH.write_text(json.dumps(payload, indent=1, sort_keys=False), encoding="utf-8")
@@ -836,7 +877,7 @@ def _classify_recent_listings(listings: dict[str, dict], trade_date: date) -> di
     logger.info(
         "IPO classification: %s listings (%s BSE-only), %s newly checked, %s IPOs, %s not, %s unresolved, BSE list %s",
         len(result), added_bse_only, checked, verdicts.count(True), verdicts.count(False), verdicts.count(None),
-        "read" if bse_ipos is not None else "UNAVAILABLE",
+        "read" if fresh is not None else f"UNAVAILABLE (using stored copy as of {list_as_of})",
     )
     return result
 

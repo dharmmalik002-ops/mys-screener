@@ -6,7 +6,772 @@
   "LKPFIN": "GYFTR"
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
- "bse_ipo_list_read": false,
+ "bse_ipo_list_read": true,
+ "bse_ipos_as_of": "2026-09-29",
+ "bse_ipos": {
+  "544527": {
+   "name": "Atlanta Electricals Limited",
+   "symbol": "ATLANTAELE",
+   "listing_date": "2025-09-29",
+   "issue_price": 754.0
+  },
+  "544528": {
+   "name": "Ganesh Consumer Products Limited",
+   "symbol": "GANESHCP",
+   "listing_date": "2025-09-29",
+   "issue_price": 322.0
+  },
+  "544530": {
+   "name": "ANAND RATHI SHARE AND STOCK BROKERS LIMITED",
+   "symbol": "ARSSBL",
+   "listing_date": "2025-09-30",
+   "issue_price": 414.0
+  },
+  "544532": {
+   "name": "Solarworld Energy Solutions Limited",
+   "symbol": "SOLARWORLD",
+   "listing_date": "2025-09-30",
+   "issue_price": 351.0
+  },
+  "544533": {
+   "name": "Seshaasai Technologies Limited",
+   "symbol": "STYL",
+   "listing_date": "2025-09-30",
+   "issue_price": 423.0
+  },
+  "544534": {
+   "name": "Jaro Institute of Technology Management and Research Limited",
+   "symbol": "JARO",
+   "listing_date": "2025-09-30",
+   "issue_price": 890.0
+  },
+  "544537": {
+   "name": "Jain Resource Recycling Limited",
+   "symbol": "JAINREC",
+   "listing_date": "2025-10-01",
+   "issue_price": 232.0
+  },
+  "544540": {
+   "name": "Epack Prefab Technologies Limited",
+   "symbol": "EPACKPEB",
+   "listing_date": "2025-10-01",
+   "issue_price": 204.0
+  },
+  "544543": {
+   "name": "BMW VENTURES LIMITED",
+   "symbol": "BMWVENTLTD",
+   "listing_date": "2025-10-01",
+   "issue_price": 99.0
+  },
+  "544545": {
+   "name": "TRUALT BIOENERGY LIMITED",
+   "symbol": "TRUALT",
+   "listing_date": "2025-10-03",
+   "issue_price": 496.0
+  },
+  "544547": {
+   "name": "Jinkushal Industries Limited",
+   "symbol": "JKIPL",
+   "listing_date": "2025-10-03",
+   "issue_price": 121.0
+  },
+  "544550": {
+   "name": "Pace Digitek Limited",
+   "symbol": "PACEDIGITK",
+   "listing_date": "2025-10-06",
+   "issue_price": 219.0
+  },
+  "544557": {
+   "name": "Glottis Limited",
+   "symbol": "GLOTTIS",
+   "listing_date": "2025-10-07",
+   "issue_price": 129.0
+  },
+  "544558": {
+   "name": "Fabtech Technologies Limited",
+   "symbol": "FABTECH",
+   "listing_date": "2025-10-07",
+   "issue_price": 191.0
+  },
+  "544562": {
+   "name": "Advance Agrolife Limited",
+   "symbol": "ADVANCE",
+   "listing_date": "2025-10-08",
+   "issue_price": 100.0
+  },
+  "544564": {
+   "name": "Om Freight Forwarders Limited",
+   "symbol": "OMFREIGHT",
+   "listing_date": "2025-10-08",
+   "issue_price": 135.0
+  },
+  "544570": {
+   "name": "WeWork India Management Limited",
+   "symbol": "WEWORK",
+   "listing_date": "2025-10-10",
+   "issue_price": 648.0
+  },
+  "544574": {
+   "name": "Tata Capital Limited",
+   "symbol": "TATACAP",
+   "listing_date": "2025-10-13",
+   "issue_price": 326.0
+  },
+  "544576": {
+   "name": "LG Electronics India Limited",
+   "symbol": "LGEINDIA",
+   "listing_date": "2025-10-14",
+   "issue_price": 1140.0
+  },
+  "544578": {
+   "name": "RUBICON RESEARCH LIMITED",
+   "symbol": "RUBICON",
+   "listing_date": "2025-10-16",
+   "issue_price": 485.0
+  },
+  "544580": {
+   "name": "Canara Robeco Asset Management Company Limited",
+   "symbol": "CRAMC",
+   "listing_date": "2025-10-16",
+   "issue_price": 266.0
+  },
+  "544583": {
+   "name": "Canara HSBC Life Insurance Company Limited",
+   "symbol": "CANHLIFE",
+   "listing_date": "2025-10-17",
+   "issue_price": 106.0
+  },
+  "544587": {
+   "name": "Midwest Limited",
+   "symbol": "MIDWESTLTD",
+   "listing_date": "2025-10-24",
+   "issue_price": 1065.0
+  },
+  "544595": {
+   "name": "Orkla India Limited",
+   "symbol": "ORKLAINDIA",
+   "listing_date": "2025-11-06",
+   "issue_price": 730.0
+  },
+  "544599": {
+   "name": "Studds Accessories Limited",
+   "symbol": "STUDDS",
+   "listing_date": "2025-11-07",
+   "issue_price": 585.0
+  },
+  "544600": {
+   "name": "Lenskart Solutions Limited",
+   "symbol": "LENSKART",
+   "listing_date": "2025-11-10",
+   "issue_price": 402.0
+  },
+  "544603": {
+   "name": "Billionbrains Garage Ventures Limited",
+   "symbol": "GROWW",
+   "listing_date": "2025-11-12",
+   "issue_price": 100.0
+  },
+  "544606": {
+   "name": "Pine Labs Limited",
+   "symbol": "PINELABS",
+   "listing_date": "2025-11-14",
+   "issue_price": 221.0
+  },
+  "544608": {
+   "name": "Emmvee Photovoltaic Power Limited",
+   "symbol": "EMMVEE",
+   "listing_date": "2025-11-18",
+   "issue_price": 217.0
+  },
+  "544609": {
+   "name": "Physicswallah Limited",
+   "symbol": "PWL",
+   "listing_date": "2025-11-18",
+   "issue_price": 109.0
+  },
+  "544612": {
+   "name": "Tenneco Clean Air India Limited",
+   "symbol": "TENNIND",
+   "listing_date": "2025-11-19",
+   "issue_price": 397.0
+  },
+  "544613": {
+   "name": "Fujiyama Power Systems Limited",
+   "symbol": "UTLSOLAR",
+   "listing_date": "2025-11-20",
+   "issue_price": 228.0
+  },
+  "544614": {
+   "name": "Capillary Technologies India Limited",
+   "symbol": "CAPILLARY",
+   "listing_date": "2025-11-21",
+   "issue_price": 577.0
+  },
+  "544617": {
+   "name": "Excelsoft Technologies Limited",
+   "symbol": "EXCELSOFT",
+   "listing_date": "2025-11-26",
+   "issue_price": 120.0
+  },
+  "544619": {
+   "name": "Sudeep Pharma Limited",
+   "symbol": "SUDEEPPHRM",
+   "listing_date": "2025-11-28",
+   "issue_price": 593.0
+  },
+  "544632": {
+   "name": "Meesho Limited",
+   "symbol": "MEESHO",
+   "listing_date": "2025-12-10",
+   "issue_price": 111.0
+  },
+  "544633": {
+   "name": "VIDYA WIRES LIMITED",
+   "symbol": "VIDYAWIRES",
+   "listing_date": "2025-12-10",
+   "issue_price": 52.0
+  },
+  "544634": {
+   "name": "Aequs Limited",
+   "symbol": "AEQUS",
+   "listing_date": "2025-12-10",
+   "issue_price": 124.0
+  },
+  "544642": {
+   "name": "Wakefit Innovations Limited",
+   "symbol": "WAKEFIT",
+   "listing_date": "2025-12-15",
+   "issue_price": 195.0
+  },
+  "544644": {
+   "name": "Corona Remedies Limited",
+   "symbol": "CORONA",
+   "listing_date": "2025-12-15",
+   "issue_price": 1062.0
+  },
+  "544645": {
+   "name": "PARK MEDI WORLD LIMITED",
+   "symbol": "PARKHOSPS",
+   "listing_date": "2025-12-17",
+   "issue_price": 162.0
+  },
+  "544647": {
+   "name": "Nephrocare Health Services Limited",
+   "symbol": "NEPHROPLUS",
+   "listing_date": "2025-12-17",
+   "issue_price": 460.0
+  },
+  "544658": {
+   "name": "ICICI Prudential Asset Management Company Limited",
+   "symbol": "ICICIAMC",
+   "listing_date": "2025-12-19",
+   "issue_price": 2165.0
+  },
+  "544664": {
+   "name": "KSH INTERNATIONAL LIMITED",
+   "symbol": "KSHINTL",
+   "listing_date": "2025-12-23",
+   "issue_price": 384.0
+  },
+  "544666": {
+   "name": "GUJARAT KIDNEY AND SUPER SPECIALITY LIMITED",
+   "symbol": "GKSL",
+   "listing_date": "2025-12-30",
+   "issue_price": 114.0
+  },
+  "544678": {
+   "name": "BHARAT COKING COAL LIMITED",
+   "symbol": "BHARATCOAL",
+   "listing_date": "2026-01-19",
+   "issue_price": 23.0
+  },
+  "544679": {
+   "name": "Amagi Media Labs Limited",
+   "symbol": "AMAGI",
+   "listing_date": "2026-01-21",
+   "issue_price": 361.0
+  },
+  "544685": {
+   "name": "SHADOWFAX TECHNOLOGIES LIMITED",
+   "symbol": "SHADOWFAX",
+   "listing_date": "2026-01-28",
+   "issue_price": 124.0
+  },
+  "544699": {
+   "name": "Aye Finance Limited",
+   "symbol": "AYE",
+   "listing_date": "2026-02-16",
+   "issue_price": 129.0
+  },
+  "544700": {
+   "name": "Fractal Analytics Limited",
+   "symbol": "FRACTAL",
+   "listing_date": "2026-02-16",
+   "issue_price": 900.0
+  },
+  "544709": {
+   "name": "Gaudium IVF and Women Health Limited",
+   "symbol": "GAUDIUMIVF",
+   "listing_date": "2026-02-27",
+   "issue_price": 79.0
+  },
+  "544716": {
+   "name": "SHREE RAM TWISTEX LIMITED",
+   "symbol": "SRTL",
+   "listing_date": "2026-03-02",
+   "issue_price": 104.0
+  },
+  "544717": {
+   "name": "Clean Max Enviro Energy Solutions Limited",
+   "symbol": "CLEANMAX",
+   "listing_date": "2026-03-02",
+   "issue_price": 1053.0
+  },
+  "544718": {
+   "name": "PNGS Reva Diamond Jewellery Limited",
+   "symbol": "PNGSREVA",
+   "listing_date": "2026-03-04",
+   "issue_price": 386.0
+  },
+  "544720": {
+   "name": "Omnitech Engineering Limited",
+   "symbol": "OMNI",
+   "listing_date": "2026-03-05",
+   "issue_price": 227.0
+  },
+  "544723": {
+   "name": "SEDEMAC MECHATRONICS LIMITED",
+   "symbol": "SEDEMAC",
+   "listing_date": "2026-03-11",
+   "issue_price": 1352.0
+  },
+  "544731": {
+   "name": "RAJPUTANA STAINLESS LIMITED",
+   "symbol": "RSL",
+   "listing_date": "2026-03-19",
+   "issue_price": 122.0
+  },
+  "544732": {
+   "name": "Innovision Limited",
+   "symbol": "INNOVISION",
+   "listing_date": "2026-03-23",
+   "issue_price": 519.0
+  },
+  "544733": {
+   "name": "GSP CROP SCIENCE LIMITED",
+   "symbol": "GSPCROP",
+   "listing_date": "2026-03-24",
+   "issue_price": 320.0
+  },
+  "544739": {
+   "name": "Central Mine Planning & Design Institute Limited",
+   "symbol": "CMPDI",
+   "listing_date": "2026-03-30",
+   "issue_price": 172.0
+  },
+  "544742": {
+   "name": "Sai Parenteral's Limited",
+   "symbol": "SAIPARENT",
+   "listing_date": "2026-04-02",
+   "issue_price": 392.0
+  },
+  "544743": {
+   "name": "Amir Chand Jagdish Kumar (Exports) Limited",
+   "symbol": "AEROPLANE",
+   "listing_date": "2026-04-02",
+   "issue_price": 212.0
+  },
+  "544744": {
+   "name": "Powerica Ltd.",
+   "symbol": "POWERICA",
+   "listing_date": "2026-04-02",
+   "issue_price": 395.0
+  },
+  "544750": {
+   "name": "OM POWER TRANSMISSION LIMITED",
+   "symbol": "OMPOWER",
+   "listing_date": "2026-04-17",
+   "issue_price": 175.0
+  },
+  "544754": {
+   "name": "OnEMI Technology Solutions Limited",
+   "symbol": "KISSHT",
+   "listing_date": "2026-05-08",
+   "issue_price": 171.0
+  },
+  "544777": {
+   "name": "CMR Green Technologies Limited",
+   "symbol": "CMRGREEN",
+   "listing_date": "2026-06-10",
+   "issue_price": 192.0
+  },
+  "544785": {
+   "name": "Hexagon Nutrition Limited",
+   "symbol": "HEXAGON",
+   "listing_date": "2026-06-12",
+   "issue_price": 45.0
+  },
+  "544799": {
+   "name": "Turtlemint Fintech Solutions Limited",
+   "symbol": "TURTLEMINT",
+   "listing_date": "2026-06-29",
+   "issue_price": 152.0
+  },
+  "544802": {
+   "name": "Waterways Leisure Tourism Limited",
+   "symbol": "CORDELIA",
+   "listing_date": "2026-07-01",
+   "issue_price": 808.0
+  },
+  "544803": {
+   "name": "Advit Jewels Limited",
+   "symbol": "RAMBHAJO",
+   "listing_date": "2026-07-01",
+   "issue_price": 138.0
+  },
+  "544806": {
+   "name": "CSM TECHNOLOGIES LIMITED",
+   "symbol": "CSM",
+   "listing_date": "2026-07-02",
+   "issue_price": 113.0
+  },
+  "544808": {
+   "name": "AASTHA SPINTEX LIMITED",
+   "symbol": "AASTHA",
+   "listing_date": "2026-07-06",
+   "issue_price": 136.0
+  },
+  "544814": {
+   "name": "KNACK PACKAGING LIMITED",
+   "symbol": "KNACK",
+   "listing_date": "2026-07-08",
+   "issue_price": 170.0
+  },
+  "544821": {
+   "name": "Kusumgar Limited",
+   "symbol": "KUSUMGAR",
+   "listing_date": "2026-07-15",
+   "issue_price": 419.0
+  },
+  "544822": {
+   "name": "Laser Power & Infra Limited",
+   "symbol": "LASERPOWER",
+   "listing_date": "2026-07-16",
+   "issue_price": 214.0
+  },
+  "544825": {
+   "name": "ALPINE TEXWORLD LIMITED",
+   "symbol": "ALPINETEX",
+   "listing_date": "2026-07-21",
+   "issue_price": 105.0
+  },
+  "544829": {
+   "name": "SBI Funds Management Limited",
+   "symbol": "SBIFUNDS",
+   "listing_date": "2026-07-21",
+   "issue_price": 574.0
+  },
+  "544833": {
+   "name": "CALIBER MINING AND LOGISTICS LIMITED",
+   "symbol": "CMLL",
+   "listing_date": "2026-07-24",
+   "issue_price": 424.0
+  },
+  "544837": {
+   "name": "INDO-MIM Limited",
+   "symbol": "INDOMIM",
+   "listing_date": "2026-07-30",
+   "issue_price": 485.0
+  },
+  "544838": {
+   "name": "XTRANET TECHNOLOGIES LIMITED",
+   "symbol": "XTRANET",
+   "listing_date": "2026-07-30",
+   "issue_price": 127.0
+  },
+  "544839": {
+   "name": "Lohia Corp Limited",
+   "symbol": "LCL",
+   "listing_date": "2026-07-30",
+   "issue_price": 425.0
+  },
+  "544847": {
+   "name": "Manipal Health Enterprises Limited",
+   "symbol": "MANIPALHOS",
+   "listing_date": "2026-08-05",
+   "issue_price": 590.0
+  },
+  "544851": {
+   "name": "MV ELECTROSYSTEMS LIMITED",
+   "symbol": "MVELECTRO",
+   "listing_date": "2026-08-06",
+   "issue_price": 425.0
+  },
+  "544853": {
+   "name": "Juniper Green Energy Limited",
+   "symbol": "JNPR",
+   "listing_date": "2026-08-06",
+   "issue_price": 225.0
+  },
+  "544860": {
+   "name": "Ardee Industries Limited",
+   "symbol": "ARDEE",
+   "listing_date": "2026-08-12",
+   "issue_price": 53.0
+  },
+  "544864": {
+   "name": "Technocraft Ventures Limited",
+   "symbol": "TECHNOCRAF",
+   "listing_date": "2026-08-14",
+   "issue_price": 212.0
+  },
+  "544865": {
+   "name": "LEAP India Limited",
+   "symbol": "LEAPIND",
+   "listing_date": "2026-08-14",
+   "issue_price": 159.0
+  },
+  "544866": {
+   "name": "MOLBIO DIAGNOSTICS LIMITED",
+   "symbol": "MOLBIO",
+   "listing_date": "2026-08-17",
+   "issue_price": 807.0
+  },
+  "544867": {
+   "name": "Dhoot Transmission Limited",
+   "symbol": "DHOOTTRANS",
+   "listing_date": "2026-08-17",
+   "issue_price": 871.0
+  },
+  "544868": {
+   "name": "Milky Mist Dairy Food Limited",
+   "symbol": "MILKYMIST",
+   "listing_date": "2026-08-18",
+   "issue_price": 140.0
+  },
+  "544870": {
+   "name": "BEHARI LAL ENGINEERING LIMITED",
+   "symbol": "BLEL",
+   "listing_date": "2026-08-19",
+   "issue_price": 285.0
+  },
+  "544871": {
+   "name": "Shiprocket Limited",
+   "symbol": "SHIPROCKET",
+   "listing_date": "2026-08-19",
+   "issue_price": 97.0
+  },
+  "544879": {
+   "name": "Lalithaa Jewellery Mart Limited",
+   "symbol": "LALITHAA",
+   "listing_date": "2026-08-24",
+   "issue_price": 201.0
+  },
+  "544880": {
+   "name": "Horizon Industrial Parks Limited",
+   "symbol": "HORIZONIND",
+   "listing_date": "2026-08-24",
+   "issue_price": 60.0
+  },
+  "544881": {
+   "name": "Sunshine Pictures Limited",
+   "symbol": "SUNSHINE",
+   "listing_date": "2026-08-25",
+   "issue_price": 360.0
+  },
+  "544882": {
+   "name": "Shankesh Jewellers Limited",
+   "symbol": "SHANKESH",
+   "listing_date": "2026-08-25",
+   "issue_price": 93.0
+  },
+  "544885": {
+   "name": "Gaja Alternative Asset Management Limited",
+   "symbol": "GAJA",
+   "listing_date": "2026-08-26",
+   "issue_price": 160.0
+  },
+  "544886": {
+   "name": "TEMPSENS INSTRUMENTS (INDIA) LIMITED",
+   "symbol": "TEMPSENS",
+   "listing_date": "2026-08-28",
+   "issue_price": 300.0
+  },
+  "544888": {
+   "name": "Augmont Enterprises Limited",
+   "symbol": "AUGMONT",
+   "listing_date": "2026-08-31",
+   "issue_price": 788.0
+  },
+  "544889": {
+   "name": "SYMBIOTEC PHARMALAB LIMITED",
+   "symbol": "SYMBIOTEC",
+   "listing_date": "2026-09-01",
+   "issue_price": 988.0
+  },
+  "544890": {
+   "name": "SKYWAYS AIR SERVICES LIMITED",
+   "symbol": "SKYWAYS",
+   "listing_date": "2026-09-01",
+   "issue_price": 138.0
+  },
+  "544891": {
+   "name": "Hy-Tech Engineers Limited",
+   "symbol": "HTEL",
+   "listing_date": "2026-09-01",
+   "issue_price": 53.0
+  },
+  "544893": {
+   "name": "Annu Projects Limited",
+   "symbol": "ANNU",
+   "listing_date": "2026-09-02",
+   "issue_price": 99.0
+  },
+  "544894": {
+   "name": "LUMINO INDUSTRIES LIMITED",
+   "symbol": "LUMINO",
+   "listing_date": "2026-09-03",
+   "issue_price": 82.0
+  },
+  "544898": {
+   "name": "ESDS Software Solution Limited",
+   "symbol": "ESDS",
+   "listing_date": "2026-09-04",
+   "issue_price": 429.0
+  },
+  "544899": {
+   "name": "Priority Jewels Limited",
+   "symbol": "PRIORITY",
+   "listing_date": "2026-09-04",
+   "issue_price": 200.0
+  },
+  "544901": {
+   "name": "PURPLE STYLE LABS LIMITED",
+   "symbol": "PERNIASPOP",
+   "listing_date": "2026-09-07",
+   "issue_price": 575.0
+  },
+  "544903": {
+   "name": "Deepa Jewellers Limited",
+   "symbol": "DEEPA",
+   "listing_date": "2026-09-08",
+   "issue_price": 177.0
+  },
+  "544906": {
+   "name": "Rays of Belief Limited",
+   "symbol": "MOMSBELIEF",
+   "listing_date": "2026-09-08",
+   "issue_price": 239.0
+  },
+  "544909": {
+   "name": "PRANAV CONSTRUCTIONS LIMITED",
+   "symbol": "PRANAV",
+   "listing_date": "2026-09-15",
+   "issue_price": 124.0
+  },
+  "544911": {
+   "name": "Kanohar Electricals Limited",
+   "symbol": "KANOHAR",
+   "listing_date": "2026-09-16",
+   "issue_price": 632.0
+  },
+  "544912": {
+   "name": "Prasol Chemicals Limited",
+   "symbol": "PRASOLCHEM",
+   "listing_date": "2026-09-16",
+   "issue_price": 676.0
+  },
+  "544913": {
+   "name": "Glass Wall Systems (India) Limited",
+   "symbol": "GLASSWALL",
+   "listing_date": "2026-09-16",
+   "issue_price": 182.0
+  },
+  "544914": {
+   "name": "Steamhouse India Limited",
+   "symbol": "STEAMHOUSE",
+   "listing_date": "2026-09-17",
+   "issue_price": 81.0
+  },
+  "544915": {
+   "name": "Rentomojo Limited",
+   "symbol": "RENTOMOJO",
+   "listing_date": "2026-09-17",
+   "issue_price": 404.0
+  },
+  "544916": {
+   "name": "Manipal Payment and Identity Solutions Limited",
+   "symbol": "MPIMANIPAL",
+   "listing_date": "2026-09-17",
+   "issue_price": 339.0
+  },
+  "544917": {
+   "name": "KARAMTARA ENGINEERING LIMITED",
+   "symbol": "KARAMTARA",
+   "listing_date": "2026-09-17",
+   "issue_price": 254.0
+  },
+  "544918": {
+   "name": "LCC PROJECTS LIMITED",
+   "symbol": "LCCPROJECT",
+   "listing_date": "2026-09-17",
+   "issue_price": 146.0
+  },
+  "544921": {
+   "name": "ASSET RECONSTRUCTION COMPANY (INDIA) LIMITED",
+   "symbol": "ARCIL",
+   "listing_date": "2026-09-17",
+   "issue_price": 139.0
+  },
+  "544923": {
+   "name": "Veegaland Developers Limited",
+   "symbol": "VEEGALAND",
+   "listing_date": "2026-09-18",
+   "issue_price": 140.0
+  },
+  "544929": {
+   "name": "MANIKA PLASTECH LIMITED",
+   "symbol": "MANIKA",
+   "listing_date": "2026-09-21",
+   "issue_price": 43.0
+  },
+  "544934": {
+   "name": "SS Retail Limited",
+   "symbol": "SSRETAIL",
+   "listing_date": "2026-09-23",
+   "issue_price": 424.0
+  },
+  "544935": {
+   "name": "JINDAL SUPREME (INDIA) LIMITED",
+   "symbol": "JSIPL",
+   "listing_date": "2026-09-23",
+   "issue_price": 93.0
+  },
+  "544936": {
+   "name": "HERO MOTORS LIMITED",
+   "symbol": "HEROMOTORS",
+   "listing_date": "2026-09-23",
+   "issue_price": 84.0
+  },
+  "544937": {
+   "name": "National Stock Exchange of India Limited",
+   "symbol": "NSE",
+   "listing_date": "2026-09-24",
+   "issue_price": 1785.0
+  },
+  "544938": {
+   "name": "SONASELECTION INDIA LIMITED",
+   "symbol": "SONA",
+   "listing_date": "2026-09-24",
+   "issue_price": 99.0
+  },
+  "544942": {
+   "name": "Varmora Granito Limited",
+   "symbol": "VARMORA",
+   "listing_date": "2026-09-29",
+   "issue_price": 148.0
+  }
+ },
  "listings": {
   "3BBLACKBIO": {
    "listing_date": "2026-04-20",
@@ -15,12 +780,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532067",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AARNAV": {
    "listing_date": "2026-02-25",
@@ -29,12 +790,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "539562",
-   "checked_session": "2026-02-24",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AASTHA": {
    "listing_date": "2026-07-06",
@@ -46,12 +803,9 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 8.828464,
-   "checked_session": "2026-07-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 136.0
   },
   "ABANSENT": {
    "listing_date": "2026-04-20",
@@ -60,12 +814,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512165",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ABMKNO": {
    "listing_date": "2026-04-20",
@@ -74,12 +824,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531161",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ACGL": {
    "listing_date": "2026-08-17",
@@ -88,12 +834,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505036",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ACSTECH": {
    "listing_date": "2026-04-20",
@@ -102,12 +844,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "530745",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ADDIND": {
    "listing_date": "2026-08-17",
@@ -116,12 +854,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507852",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ADVAIT": {
    "listing_date": "2026-01-20",
@@ -130,12 +864,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543230",
-   "checked_session": "2026-01-19",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ADVANCE": {
    "listing_date": "2025-10-08",
@@ -147,12 +877,9 @@
    "sector": "Chemicals",
    "sub_sector": "Pesticides & Agrochemicals",
    "shares_crore": 6.428607,
-   "checked_session": "2025-10-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 100.0
   },
   "ADVENTHTL": {
    "listing_date": "2025-11-13",
@@ -164,12 +891,8 @@
    "sector": "Consumer Services",
    "sub_sector": "Hotels & Resorts",
    "shares_crore": 5.394311,
-   "checked_session": "2025-11-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ADVIKCA": {
    "listing_date": "2026-08-17",
@@ -178,12 +901,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539773",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AEPL": {
    "listing_date": "2026-03-12",
@@ -192,12 +911,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "542670",
-   "checked_session": "2026-03-11",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AEQUS": {
    "listing_date": "2025-12-10",
@@ -209,12 +924,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Aerospace & Defense",
    "shares_crore": 67.066576,
-   "checked_session": "2025-12-09",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 124.0
   },
   "AEROPLANE": {
    "listing_date": "2026-04-02",
@@ -226,12 +938,9 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Other Agricultural Products",
    "shares_crore": 10.355143,
-   "checked_session": "2026-04-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 212.0
   },
   "AGL": {
    "listing_date": "2026-07-03",
@@ -243,12 +952,8 @@
    "sector": "Services",
    "sub_sector": "Logistics Solution Provider",
    "shares_crore": 98.278281,
-   "checked_session": "2026-07-02",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AKCAPIT": {
    "listing_date": "2026-04-20",
@@ -257,12 +962,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530499",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ALFREDHE": {
    "listing_date": "2026-08-17",
@@ -271,12 +972,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505216",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ALGOQUANT": {
    "listing_date": "2026-01-06",
@@ -285,12 +982,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505725",
-   "checked_session": "2026-01-05",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ALPINETEX": {
    "listing_date": "2026-07-21",
@@ -302,12 +995,9 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 3.824715,
-   "checked_session": "2026-07-20",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 105.0
   },
   "ALUFLUOR": {
    "listing_date": "2026-08-17",
@@ -316,12 +1006,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "524634",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AMAGI": {
    "listing_date": "2026-01-21",
@@ -333,12 +1019,9 @@
    "sector": "Information Technology",
    "sub_sector": "IT Enabled Services",
    "shares_crore": 22.01532,
-   "checked_session": "2026-01-20",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 361.0
   },
   "AMAL": {
    "listing_date": "2026-08-17",
@@ -347,12 +1030,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506597",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AMARJOTHI": {
    "listing_date": "2026-08-17",
@@ -361,12 +1040,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "521097",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AMBALALSA": {
    "listing_date": "2026-04-20",
@@ -375,12 +1050,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "500009",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ANDREWYU": {
    "listing_date": "2026-08-17",
@@ -389,12 +1060,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526173",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ANNAPURNA": {
    "listing_date": "2026-08-12",
@@ -419,12 +1086,9 @@
    "sector": "Construction",
    "sub_sector": "Civil Construction",
    "shares_crore": 6.549179,
-   "checked_session": "2026-09-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 99.0
   },
   "ANSALBU": {
    "listing_date": "2026-08-17",
@@ -433,12 +1097,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523007",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "APOORVA": {
    "listing_date": "2026-08-17",
@@ -450,12 +1110,8 @@
    "sector": "Financial Services",
    "sub_sector": "Other Financial Services",
    "shares_crore": 1.997541,
-   "checked_session": "2026-08-14",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ARCIL": {
    "listing_date": "2026-09-17",
@@ -467,12 +1123,9 @@
    "sector": "Financial Services",
    "sub_sector": "Other Financial Services",
    "shares_crore": 32.4897,
-   "checked_session": "2026-09-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 139.0
   },
   "ARCL": {
    "listing_date": "2026-08-17",
@@ -481,12 +1134,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543993",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ARDEE": {
    "listing_date": "2026-08-12",
@@ -498,12 +1147,9 @@
    "sector": "Metals & Mining",
    "sub_sector": "Diversified Metals",
    "shares_crore": 31.520182,
-   "checked_session": "2026-08-11",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 53.0
   },
   "ARIHANT": {
    "listing_date": "2026-04-20",
@@ -512,12 +1158,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531381",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ARSSBL": {
    "listing_date": "2025-09-30",
@@ -529,12 +1171,9 @@
    "sector": "Financial Services",
    "sub_sector": "Stockbroking & Allied",
    "shares_crore": 6.306649,
-   "checked_session": "2025-09-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 414.0
   },
   "ARYAMAN": {
    "listing_date": "2026-08-17",
@@ -543,12 +1182,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530245",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ASHIKAG": {
    "listing_date": "2026-04-20",
@@ -557,12 +1192,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "543766",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ASIANTNE": {
    "listing_date": "2026-08-17",
@@ -571,12 +1202,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "519532",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ASSAMENT": {
    "listing_date": "2026-08-17",
@@ -585,12 +1212,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "542911",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ASTAR": {
    "listing_date": "2026-04-20",
@@ -599,12 +1222,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531847",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ATLANTAELE": {
    "listing_date": "2025-09-29",
@@ -616,12 +1235,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Heavy Electrical Equipment",
    "shares_crore": 7.689664,
-   "checked_session": "2025-09-26",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 754.0
   },
   "AUGMONT": {
    "listing_date": "2026-08-31",
@@ -633,12 +1249,9 @@
    "sector": "Metals & Mining",
    "sub_sector": "Precious Metals",
    "shares_crore": 9.137354,
-   "checked_session": "2026-08-28",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 788.0
   },
   "AUSTENG": {
    "listing_date": "2026-08-17",
@@ -647,12 +1260,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522005",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AVANCE": {
    "listing_date": "2026-08-17",
@@ -661,12 +1270,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512149",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AXTEL": {
    "listing_date": "2026-08-17",
@@ -675,12 +1280,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523850",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "AYE": {
    "listing_date": "2026-02-16",
@@ -692,12 +1293,9 @@
    "sector": "Financial Services",
    "sub_sector": "Non Banking Financial Company (NBFC)",
    "shares_crore": 24.678809,
-   "checked_session": "2026-02-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 129.0
   },
   "AZADIND": {
    "listing_date": "2026-08-17",
@@ -706,12 +1304,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504731",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BAJAJST": {
    "listing_date": "2026-04-20",
@@ -720,12 +1314,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507944",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BATLIBOI": {
    "listing_date": "2026-04-20",
@@ -734,12 +1324,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522004",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BCPL": {
    "listing_date": "2026-03-27",
@@ -748,12 +1334,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "542057",
-   "checked_session": "2026-03-25",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BEEKAY": {
    "listing_date": "2026-04-20",
@@ -762,12 +1344,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539018",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BENARAS": {
    "listing_date": "2026-08-17",
@@ -776,12 +1354,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "509438",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BENGALASM": {
    "listing_date": "2026-04-20",
@@ -790,12 +1364,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533095",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BETA": {
    "listing_date": "2025-11-24",
@@ -820,12 +1390,9 @@
    "sector": "Oil, Gas & Consumable Fuels",
    "sub_sector": "Coal",
    "shares_crore": 465.700061,
-   "checked_session": "2026-01-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 23.0
   },
   "BI": {
    "listing_date": "2026-04-20",
@@ -834,12 +1401,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "526853",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BIMETAL": {
    "listing_date": "2026-04-20",
@@ -848,12 +1411,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505681",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BIRLAPREC": {
    "listing_date": "2026-04-20",
@@ -862,12 +1421,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "522105",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BLACKROSE": {
    "listing_date": "2026-04-20",
@@ -876,12 +1431,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514183",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BLEL": {
    "listing_date": "2026-08-19",
@@ -893,12 +1444,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Iron & Steel Products",
    "shares_crore": 4.230255,
-   "checked_session": "2026-08-18",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 285.0
   },
   "BLIL": {
    "listing_date": "2026-04-20",
@@ -907,12 +1455,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532485",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BLUECLOUDS": {
    "listing_date": "2026-08-17",
@@ -921,12 +1465,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539607",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BMWVENTLTD": {
    "listing_date": "2025-10-01",
@@ -938,12 +1478,9 @@
    "sector": "Metals & Mining",
    "sub_sector": "Trading - Metals",
    "shares_crore": 8.671512,
-   "checked_session": "2025-09-30",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 99.0
   },
   "BNAGROCHEM": {
    "listing_date": "2026-04-20",
@@ -952,12 +1489,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526125",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BNALTD": {
    "listing_date": "2026-04-20",
@@ -966,12 +1499,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "508136",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BONLON": {
    "listing_date": "2026-02-20",
@@ -980,12 +1509,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543211",
-   "checked_session": "2026-02-19",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BPLPHARMA": {
    "listing_date": "2026-08-17",
@@ -994,12 +1519,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "541096",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BRAHMINFRA": {
    "listing_date": "2026-08-17",
@@ -1008,12 +1529,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "535693",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BRIGHTBR": {
    "listing_date": "2026-08-17",
@@ -1022,12 +1539,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526731",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BTTL": {
    "listing_date": "2026-04-20",
@@ -1036,12 +1549,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "533108",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BUILDPRO": {
    "listing_date": "2026-01-09",
@@ -1053,12 +1562,8 @@
    "sector": "Consumer Services",
    "sub_sector": "Speciality Retail",
    "shares_crore": 2.424933,
-   "checked_session": "2026-01-08",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CANHLIFE": {
    "listing_date": "2025-10-17",
@@ -1070,12 +1575,9 @@
    "sector": "Financial Services",
    "sub_sector": "Life Insurance",
    "shares_crore": 95.0,
-   "checked_session": "2025-10-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 106.0
   },
   "CAPILLARY": {
    "listing_date": "2025-11-21",
@@ -1087,12 +1589,9 @@
    "sector": "Information Technology",
    "sub_sector": "Software Products",
    "shares_crore": 7.958872,
-   "checked_session": "2025-11-20",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 577.0
   },
   "CEINSYS": {
    "listing_date": "2026-02-19",
@@ -1101,12 +1600,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538734",
-   "checked_session": "2026-02-18",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CFEL": {
    "listing_date": "2026-08-17",
@@ -1115,12 +1610,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "539991",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CGVAK": {
    "listing_date": "2026-08-17",
@@ -1129,12 +1620,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531489",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CHEMCRUX": {
    "listing_date": "2026-08-17",
@@ -1143,12 +1630,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540395",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CLEANMAX": {
    "listing_date": "2026-03-02",
@@ -1160,12 +1643,9 @@
    "sector": "Power",
    "sub_sector": "Power Generation",
    "shares_crore": 11.755218,
-   "checked_session": "2026-02-27",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1053.0
   },
   "CMLL": {
    "listing_date": "2026-07-24",
@@ -1177,12 +1657,9 @@
    "sector": "Oil, Gas & Consumable Fuels",
    "sub_sector": "Coal",
    "shares_crore": 6.537587,
-   "checked_session": "2026-07-23",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 424.0
   },
   "CMPDI": {
    "listing_date": "2026-03-30",
@@ -1194,12 +1671,9 @@
    "sector": "Services",
    "sub_sector": "Consulting Services",
    "shares_crore": 71.4,
-   "checked_session": "2026-03-27",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 172.0
   },
   "CMRGREEN": {
    "listing_date": "2026-06-10",
@@ -1211,12 +1685,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Aluminium, Copper & Zinc Products",
    "shares_crore": 21.905562,
-   "checked_session": "2026-06-09",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 192.0
   },
   "COCKERILL": {
    "listing_date": "2026-04-20",
@@ -1225,12 +1696,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500147",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "COMFINTE": {
    "listing_date": "2026-04-20",
@@ -1239,12 +1706,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531216",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "COMPEAU": {
    "listing_date": "2026-08-17",
@@ -1253,12 +1716,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531041",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CORDELIA": {
    "listing_date": "2026-07-01",
@@ -1270,12 +1729,9 @@
    "sector": "Consumer Services",
    "sub_sector": "Tour, Travel Related Services",
    "shares_crore": 72.394524,
-   "checked_session": "2026-06-30",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 808.0
   },
   "CORONA": {
    "listing_date": "2025-12-15",
@@ -1287,12 +1743,9 @@
    "sector": "Healthcare",
    "sub_sector": "Pharmaceuticals",
    "shares_crore": 6.116008,
-   "checked_session": "2025-12-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1062.0
   },
   "CPL": {
    "listing_date": "2026-07-23",
@@ -1301,12 +1754,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "536974",
-   "checked_session": "2026-07-22",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CRAMC": {
    "listing_date": "2025-10-16",
@@ -1318,12 +1767,9 @@
    "sector": "Financial Services",
    "sub_sector": "Asset Management Company",
    "shares_crore": 19.941732,
-   "checked_session": "2025-10-15",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 266.0
   },
   "CRAVATEX": {
    "listing_date": "2026-08-17",
@@ -1332,12 +1778,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "509472",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CRSL": {
    "listing_date": "2026-08-17",
@@ -1346,12 +1788,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "512379",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "CSM": {
    "listing_date": "2026-07-02",
@@ -1363,12 +1801,9 @@
    "sector": "Information Technology",
    "sub_sector": "Computers - Software & Consulting",
    "shares_crore": 5.160396,
-   "checked_session": "2026-07-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 113.0
   },
   "DAICHI": {
    "listing_date": "2026-04-20",
@@ -1377,12 +1812,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "526821",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DCMSIL": {
    "listing_date": "2026-02-17",
@@ -1394,12 +1825,8 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 8.699164,
-   "checked_session": "2026-02-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DECNGOLD": {
    "listing_date": "2026-04-20",
@@ -1408,12 +1835,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512068",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DEEP": {
    "listing_date": "2026-08-17",
@@ -1422,12 +1845,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "541778",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DEEPA": {
    "listing_date": "2026-09-08",
@@ -1439,12 +1858,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
    "shares_crore": 9.612436,
-   "checked_session": "2026-09-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 177.0
   },
   "DHABRIYA": {
    "listing_date": "2026-08-17",
@@ -1453,12 +1869,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "538715",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DHATRE": {
    "listing_date": "2026-08-17",
@@ -1467,12 +1879,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540080",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DHOOTTRANS": {
    "listing_date": "2026-08-17",
@@ -1484,12 +1892,9 @@
    "sector": "Automobile and Auto Components",
    "sub_sector": "Auto Components & Equipments",
    "shares_crore": 20.454809,
-   "checked_session": "2026-08-14",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 871.0
   },
   "DISAQ": {
    "listing_date": "2026-04-20",
@@ -1498,12 +1903,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500068",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DOLLEX": {
    "listing_date": "2026-09-11",
@@ -1512,12 +1913,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544908",
-   "checked_session": "2026-09-10",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DRAGARWQ": {
    "listing_date": "2026-04-20",
@@ -1526,12 +1923,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526783",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "DSFCL": {
    "listing_date": "2026-02-17",
@@ -1543,12 +1936,8 @@
    "sector": "Chemicals",
    "sub_sector": "Specialty Chemicals",
    "shares_crore": 8.699333,
-   "checked_session": "2026-02-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EASTWEST": {
    "listing_date": "2026-08-17",
@@ -1557,12 +1946,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540006",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EBIX": {
    "listing_date": "2026-08-17",
@@ -1571,12 +1956,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "531035",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ECORECO": {
    "listing_date": "2026-08-17",
@@ -1585,12 +1966,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530643",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EKI": {
    "listing_date": "2026-08-17",
@@ -1599,12 +1976,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543284",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ELANTAS": {
    "listing_date": "2026-04-20",
@@ -1613,12 +1986,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500123",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ELCIDIN": {
    "listing_date": "2026-04-20",
@@ -1627,12 +1996,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "503681",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ELITECON": {
    "listing_date": "2026-04-20",
@@ -1641,12 +2006,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539533",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ELPROINTL": {
    "listing_date": "2026-04-20",
@@ -1655,12 +2016,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504000",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EMMVEE": {
    "listing_date": "2025-11-18",
@@ -1672,12 +2029,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Other Electrical Equipment",
    "shares_crore": 69.234505,
-   "checked_session": "2025-11-17",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 217.0
   },
   "EMPIND": {
    "listing_date": "2026-08-17",
@@ -1686,12 +2040,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "509525",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EMPOWER": {
    "listing_date": "2026-04-20",
@@ -1700,12 +2050,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504351",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ENKEIWHEL": {
    "listing_date": "2026-08-17",
@@ -1714,12 +2060,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533477",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EPACKPEB": {
    "listing_date": "2025-10-01",
@@ -1731,12 +2073,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
    "shares_crore": 10.063115,
-   "checked_session": "2025-09-30",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 204.0
   },
   "ESDS": {
    "listing_date": "2026-09-04",
@@ -1748,12 +2087,9 @@
    "sector": "Information Technology",
    "sub_sector": "IT Enabled Services",
    "shares_crore": 11.721096,
-   "checked_session": "2026-09-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 429.0
   },
   "EXCELSOFT": {
    "listing_date": "2025-11-26",
@@ -1765,12 +2101,9 @@
    "sector": "Information Technology",
    "sub_sector": "IT Enabled Services",
    "shares_crore": 11.508406,
-   "checked_session": "2025-11-25",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 120.0
   },
   "FABTECH": {
    "listing_date": "2025-10-07",
@@ -1782,12 +2115,9 @@
    "sector": "Healthcare",
    "sub_sector": "Medical Equipment & Supplies",
    "shares_crore": 4.445053,
-   "checked_session": "2025-10-06",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 191.0
   },
   "FEDDERSHOL": {
    "listing_date": "2026-04-20",
@@ -1796,12 +2126,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "511628",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "FERMENTA": {
    "listing_date": "2026-08-04",
@@ -1810,12 +2136,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506414",
-   "checked_session": "2026-08-03",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "FINKURVE": {
    "listing_date": "2025-10-01",
@@ -1824,12 +2146,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "508954",
-   "checked_session": "2025-09-30",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "FRACTAL": {
    "listing_date": "2026-02-16",
@@ -1841,12 +2159,9 @@
    "sector": "Information Technology",
    "sub_sector": "Computers - Software & Consulting",
    "shares_crore": 17.325509,
-   "checked_session": "2026-02-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 900.0
   },
   "FREDUN": {
    "listing_date": "2026-08-17",
@@ -1855,12 +2170,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539730",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "FRONTSP": {
    "listing_date": "2026-04-20",
@@ -1869,12 +2180,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522195",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GAJA": {
    "listing_date": "2026-08-26",
@@ -1886,12 +2193,9 @@
    "sector": "Financial Services",
    "sub_sector": "Asset Management Company",
    "shares_crore": 14.100993,
-   "checked_session": "2026-08-25",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 160.0
   },
   "GANESHCP": {
    "listing_date": "2025-09-29",
@@ -1903,12 +2207,9 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Packaged Foods",
    "shares_crore": 4.041284,
-   "checked_session": "2025-09-26",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 322.0
   },
   "GAUDIUMIVF": {
    "listing_date": "2026-02-27",
@@ -1920,12 +2221,9 @@
    "sector": "Healthcare",
    "sub_sector": "Healthcare Service Provider",
    "shares_crore": 7.278675,
-   "checked_session": "2026-02-26",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 79.0
   },
   "GICL": {
    "listing_date": "2026-02-18",
@@ -1947,12 +2245,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533212",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GKSL": {
    "listing_date": "2025-12-30",
@@ -1964,12 +2258,9 @@
    "sector": "Healthcare",
    "sub_sector": "Hospital",
    "shares_crore": 7.884348,
-   "checked_session": "2025-12-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 114.0
   },
   "GLASSWALL": {
    "listing_date": "2026-09-16",
@@ -1981,12 +2272,9 @@
    "sector": "Construction Materials",
    "sub_sector": "Other Construction Materials",
    "shares_crore": 8.793515,
-   "checked_session": "2026-09-15",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 182.0
   },
   "GLOTTIS": {
    "listing_date": "2025-10-07",
@@ -1998,12 +2286,9 @@
    "sector": "Services",
    "sub_sector": "Logistics Solution Provider",
    "shares_crore": 9.240261,
-   "checked_session": "2025-10-06",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 129.0
   },
   "GNRL": {
    "listing_date": "2026-04-20",
@@ -2012,12 +2297,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "513536",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GOODYEAR": {
    "listing_date": "2026-04-20",
@@ -2026,12 +2307,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500168",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GRADIENTE": {
    "listing_date": "2026-05-08",
@@ -2053,12 +2330,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523862",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GRAUWEIL": {
    "listing_date": "2026-04-20",
@@ -2067,12 +2340,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505710",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GRAVISSHO": {
    "listing_date": "2026-04-20",
@@ -2081,12 +2350,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "509546",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GROWW": {
    "listing_date": "2025-11-12",
@@ -2098,12 +2363,9 @@
    "sector": "Financial Services",
    "sub_sector": "Stockbroking & Allied",
    "shares_crore": 627.359689,
-   "checked_session": "2025-11-11",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 100.0
   },
   "GSPCROP": {
    "listing_date": "2026-03-24",
@@ -2115,12 +2377,9 @@
    "sector": "Chemicals",
    "sub_sector": "Pesticides & Agrochemicals",
    "shares_crore": 4.651876,
-   "checked_session": "2026-03-23",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 320.0
   },
   "GYFTR": {
    "listing_date": "2026-07-10",
@@ -2129,12 +2388,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507912",
-   "checked_session": "2026-07-09",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HALDER": {
    "listing_date": "2026-01-19",
@@ -2143,12 +2398,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539854",
-   "checked_session": "2026-01-16",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HALDYNGL": {
    "listing_date": "2026-04-20",
@@ -2157,12 +2408,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "515147",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HAMPTON": {
    "listing_date": "2026-08-17",
@@ -2171,12 +2418,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526407",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HAWKINCOOK": {
    "listing_date": "2026-04-20",
@@ -2185,12 +2428,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "508486",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HAZOOR": {
    "listing_date": "2026-08-17",
@@ -2199,12 +2438,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532467",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HBESD": {
    "listing_date": "2026-04-20",
@@ -2213,12 +2448,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532334",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HBPOR": {
    "listing_date": "2026-08-17",
@@ -2227,12 +2458,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532333",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HEROMOTORS": {
    "listing_date": "2026-09-23",
@@ -2244,12 +2471,9 @@
    "sector": "Automobile and Auto Components",
    "sub_sector": "Auto Components & Equipments",
    "shares_crore": 45.421581,
-   "checked_session": "2026-09-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 84.0
   },
   "HEXAGON": {
    "listing_date": "2026-06-12",
@@ -2261,12 +2485,9 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Other Food Products",
    "shares_crore": 12.291738,
-   "checked_session": "2026-06-11",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 45.0
   },
   "HINDADH": {
    "listing_date": "2026-08-17",
@@ -2275,12 +2496,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514428",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HINDALUMI": {
    "listing_date": "2026-08-17",
@@ -2289,12 +2506,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531979",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HORIZONIND": {
    "listing_date": "2026-08-24",
@@ -2306,12 +2519,9 @@
    "sector": "Realty",
    "sub_sector": "Residential, Commercial Projects",
    "shares_crore": 288.290267,
-   "checked_session": "2026-08-21",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 60.0
   },
   "HRYNSHP": {
    "listing_date": "2026-08-17",
@@ -2320,12 +2530,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526931",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HTEL": {
    "listing_date": "2026-09-01",
@@ -2337,12 +2543,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Other Industrial Products",
    "shares_crore": 9.485277,
-   "checked_session": "2026-08-31",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 53.0
   },
   "ICICIAMC": {
    "listing_date": "2025-12-19",
@@ -2354,12 +2557,9 @@
    "sector": "Financial Services",
    "sub_sector": "Asset Management Company",
    "shares_crore": 49.425852,
-   "checked_session": "2025-12-18",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 2165.0
   },
   "INA": {
    "listing_date": "2026-03-09",
@@ -2368,12 +2568,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543620",
-   "checked_session": "2026-03-06",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "INDOKEM": {
    "listing_date": "2026-08-17",
@@ -2382,12 +2578,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504092",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "INDOMIM": {
    "listing_date": "2026-07-30",
@@ -2399,12 +2591,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
    "shares_crore": 49.359088,
-   "checked_session": "2026-07-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 485.0
   },
   "INDPRUD": {
    "listing_date": "2026-04-20",
@@ -2413,12 +2602,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "501298",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "INNOVISION": {
    "listing_date": "2026-03-23",
@@ -2430,12 +2615,9 @@
    "sector": "Services",
    "sub_sector": "Road Assets\u2013Toll, Annuity, Hybrid-Annuity",
    "shares_crore": 2.381344,
-   "checked_session": "2026-03-20",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 519.0
   },
   "INVPRECQ": {
    "listing_date": "2026-04-20",
@@ -2444,12 +2626,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "504786",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "IPRINGLTD": {
    "listing_date": "2026-08-17",
@@ -2458,12 +2636,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523638",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ISTLTD": {
    "listing_date": "2026-08-17",
@@ -2472,12 +2646,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "508807",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ITL": {
    "listing_date": "2026-08-17",
@@ -2486,12 +2656,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522183",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "IWP": {
    "listing_date": "2026-04-20",
@@ -2500,12 +2666,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540954",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "JAINREC": {
    "listing_date": "2025-10-01",
@@ -2517,12 +2679,9 @@
    "sector": "Metals & Mining",
    "sub_sector": "Diversified Metals",
    "shares_crore": 34.50858,
-   "checked_session": "2025-09-30",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 232.0
   },
   "JARO": {
    "listing_date": "2025-09-30",
@@ -2534,12 +2693,9 @@
    "sector": "Consumer Services",
    "sub_sector": "E-Learning",
    "shares_crore": 2.227033,
-   "checked_session": "2025-09-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 890.0
   },
   "JAYKAY": {
    "listing_date": "2025-12-03",
@@ -2548,12 +2704,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500306",
-   "checked_session": "2025-12-02",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "JENBURPH": {
    "listing_date": "2026-08-17",
@@ -2562,12 +2714,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "524731",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "JKIPL": {
    "listing_date": "2025-10-03",
@@ -2579,12 +2727,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Dealers-Commercial Vehicles, Tractors, Construction Vehicles",
    "shares_crore": 3.838611,
-   "checked_session": "2025-10-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 121.0
   },
   "JNPR": {
    "listing_date": "2026-08-06",
@@ -2596,12 +2741,9 @@
    "sector": "Power",
    "sub_sector": "Power Generation",
    "shares_crore": 56.899833,
-   "checked_session": "2026-08-05",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 225.0
   },
   "JSIPL": {
    "listing_date": "2026-09-23",
@@ -2613,12 +2755,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Iron & Steel Products",
    "shares_crore": 5.102353,
-   "checked_session": "2026-09-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 93.0
   },
   "JYOTIRES": {
    "listing_date": "2026-08-17",
@@ -2627,12 +2766,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514448",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KAMAHOLD": {
    "listing_date": "2026-04-20",
@@ -2641,12 +2776,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532468",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KAMANWALA": {
    "listing_date": "2026-08-17",
@@ -2655,12 +2786,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "511131",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KANCHI": {
    "listing_date": "2026-04-20",
@@ -2669,12 +2796,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538896",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KANCOTEA": {
    "listing_date": "2026-08-17",
@@ -2699,12 +2822,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Heavy Electrical Equipment",
    "shares_crore": 7.918679,
-   "checked_session": "2026-09-15",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 632.0
   },
   "KARAMTARA": {
    "listing_date": "2026-09-17",
@@ -2716,12 +2836,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Heavy Electrical Equipment",
    "shares_crore": 32.182277,
-   "checked_session": "2026-09-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 254.0
   },
   "KDGREEN": {
    "listing_date": "2026-08-17",
@@ -2730,12 +2847,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512595",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KENNAMET": {
    "listing_date": "2026-04-20",
@@ -2744,12 +2857,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505890",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KIRANVYPAR": {
    "listing_date": "2026-04-20",
@@ -2758,12 +2867,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "537750",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KIRLFER": {
    "listing_date": "2026-04-20",
@@ -2772,12 +2877,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500245",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KISSHT": {
    "listing_date": "2026-05-08",
@@ -2789,12 +2890,9 @@
    "sector": "Financial Services",
    "sub_sector": "Other Financial Services",
    "shares_crore": 17.726932,
-   "checked_session": "2026-05-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 171.0
   },
   "KJMCFIN": {
    "listing_date": "2026-08-17",
@@ -2803,12 +2901,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530235",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KLBRENG-B": {
    "listing_date": "2026-04-20",
@@ -2817,12 +2911,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522101",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KMCSHIL": {
    "listing_date": "2026-08-17",
@@ -2831,12 +2921,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "524520",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KNACK": {
    "listing_date": "2026-07-08",
@@ -2848,12 +2934,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Packaging",
    "shares_crore": 12.236532,
-   "checked_session": "2026-07-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 170.0
   },
   "KNAGRI": {
    "listing_date": "2025-12-09",
@@ -2875,12 +2958,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "509732",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KOTYARK": {
    "listing_date": "2026-03-12",
@@ -2889,12 +2968,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544726",
-   "checked_session": "2026-03-11",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KOVAI": {
    "listing_date": "2026-04-20",
@@ -2903,12 +2978,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523323",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KPL": {
    "listing_date": "2026-04-20",
@@ -2917,12 +2988,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539997",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KRISHNADEF": {
    "listing_date": "2025-12-30",
@@ -2944,12 +3011,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "519421",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KSHINTL": {
    "listing_date": "2025-12-23",
@@ -2961,12 +3024,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Aluminium, Copper & Zinc Products",
    "shares_crore": 6.775572,
-   "checked_session": "2025-12-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 384.0
   },
   "KSR": {
    "listing_date": "2025-11-27",
@@ -2978,12 +3038,8 @@
    "sector": "Consumer Durables",
    "sub_sector": "Footwear",
    "shares_crore": 1.837705,
-   "checked_session": "2025-11-26",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KUSUMGAR": {
    "listing_date": "2026-07-15",
@@ -2995,12 +3051,9 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 10.499143,
-   "checked_session": "2026-07-14",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 419.0
   },
   "KWIL": {
    "listing_date": "2026-02-16",
@@ -3012,12 +3065,8 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Dairy Products",
    "shares_crore": 234.959184,
-   "checked_session": "2026-02-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LADDERUP": {
    "listing_date": "2026-08-17",
@@ -3026,12 +3075,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "530577",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LAHOTIOV": {
    "listing_date": "2026-04-20",
@@ -3040,12 +3085,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531842",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LAKSHMIMIL": {
    "listing_date": "2026-08-17",
@@ -3054,12 +3095,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "502958",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LALITHAA": {
    "listing_date": "2026-08-24",
@@ -3071,12 +3108,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
    "shares_crore": 55.970983,
-   "checked_session": "2026-08-21",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 201.0
   },
   "LANCER": {
    "listing_date": "2026-08-17",
@@ -3085,12 +3119,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539841",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LASERPOWER": {
    "listing_date": "2026-07-16",
@@ -3102,12 +3132,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Cables - Electricals",
    "shares_crore": 14.036834,
-   "checked_session": "2026-07-15",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 214.0
   },
   "LCCPROJECT": {
    "listing_date": "2026-09-17",
@@ -3119,12 +3146,9 @@
    "sector": "Construction",
    "sub_sector": "Civil Construction",
    "shares_crore": 28.967098,
-   "checked_session": "2026-09-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 146.0
   },
   "LCL": {
    "listing_date": "2026-07-30",
@@ -3136,12 +3160,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
    "shares_crore": 10.565007,
-   "checked_session": "2026-07-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 425.0
   },
   "LEAPIND": {
    "listing_date": "2026-08-14",
@@ -3153,12 +3174,9 @@
    "sector": "Services",
    "sub_sector": "Diversified Commercial Services",
    "shares_crore": 44.053636,
-   "checked_session": "2026-08-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 159.0
   },
   "LEENEE": {
    "listing_date": "2026-08-17",
@@ -3167,12 +3185,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "517415",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LEMERITE": {
    "listing_date": "2025-12-12",
@@ -3197,12 +3211,9 @@
    "sector": "Consumer Services",
    "sub_sector": "Speciality Retail",
    "shares_crore": 173.930616,
-   "checked_session": "2025-11-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 402.0
   },
   "LGEINDIA": {
    "listing_date": "2025-10-14",
@@ -3214,12 +3225,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Household Appliances",
    "shares_crore": 67.877236,
-   "checked_session": "2025-10-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1140.0
   },
   "LKPSEC": {
    "listing_date": "2026-08-17",
@@ -3228,12 +3236,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540192",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LOTUSCHO": {
    "listing_date": "2026-08-17",
@@ -3242,12 +3246,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523475",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "LUMINO": {
    "listing_date": "2026-09-03",
@@ -3259,12 +3259,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Cables - Electricals",
    "shares_crore": 30.455395,
-   "checked_session": "2026-09-02",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 82.0
   },
   "MADHAVIPL": {
    "listing_date": "2026-04-20",
@@ -3273,12 +3270,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539894",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MAFATIND": {
    "listing_date": "2026-04-20",
@@ -3287,12 +3280,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500264",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MAJESAUT": {
    "listing_date": "2026-04-20",
@@ -3301,12 +3290,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "500267",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MAKERSL": {
    "listing_date": "2026-08-17",
@@ -3315,12 +3300,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506919",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MANIKA": {
    "listing_date": "2026-09-21",
@@ -3332,12 +3313,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Plastic Products - Industrial",
    "shares_crore": 11.651074,
-   "checked_session": "2026-09-18",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 43.0
   },
   "MANIPALHOS": {
    "listing_date": "2026-08-05",
@@ -3349,12 +3327,9 @@
    "sector": "Healthcare",
    "sub_sector": "Hospital",
    "shares_crore": 131.537715,
-   "checked_session": "2026-08-04",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 590.0
   },
   "MARKOLINES": {
    "listing_date": "2025-10-14",
@@ -3363,12 +3338,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543364",
-   "checked_session": "2025-10-13",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MARSONS": {
    "listing_date": "2026-03-13",
@@ -3377,12 +3348,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "517467",
-   "checked_session": "2026-03-12",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MCCHRLS-B": {
    "listing_date": "2026-04-20",
@@ -3391,12 +3358,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507836",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MEDICAPQ": {
    "listing_date": "2026-08-17",
@@ -3405,12 +3368,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "523144",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MEESHO": {
    "listing_date": "2025-12-10",
@@ -3422,12 +3381,9 @@
    "sector": "Consumer Services",
    "sub_sector": "E-Retail/ E-Commerce",
    "shares_crore": 462.62208,
-   "checked_session": "2025-12-09",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 111.0
   },
   "MENNPIS": {
    "listing_date": "2026-04-20",
@@ -3436,12 +3392,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "531727",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MERCANTILE": {
    "listing_date": "2026-04-20",
@@ -3450,12 +3402,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538942",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MERCURYEV": {
    "listing_date": "2026-06-02",
@@ -3464,12 +3412,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531357",
-   "checked_session": "2026-06-01",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "METROGLOBL": {
    "listing_date": "2026-04-20",
@@ -3478,12 +3422,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500159",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MIDWESTLTD": {
    "listing_date": "2025-10-24",
@@ -3495,12 +3435,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Granites & Marbles",
    "shares_crore": 3.616076,
-   "checked_session": "2025-10-23",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1065.0
   },
   "MIIL": {
    "listing_date": "2026-08-17",
@@ -3509,12 +3446,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538668",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MILKYMIST": {
    "listing_date": "2026-08-18",
@@ -3526,12 +3459,9 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Dairy Products",
    "shares_crore": 76.984352,
-   "checked_session": "2026-08-17",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 140.0
   },
   "MINALIND": {
    "listing_date": "2026-08-17",
@@ -3540,12 +3470,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "522235",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MKEXIM": {
    "listing_date": "2026-08-17",
@@ -3554,12 +3480,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538890",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MLKFOOD": {
    "listing_date": "2026-08-17",
@@ -3568,12 +3490,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507621",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MMWL": {
    "listing_date": "2026-04-20",
@@ -3582,12 +3500,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512267",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MODINATUR": {
    "listing_date": "2025-12-11",
@@ -3596,12 +3510,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "519003",
-   "checked_session": "2025-12-10",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MODIS": {
    "listing_date": "2025-11-14",
@@ -3610,12 +3520,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543539",
-   "checked_session": "2025-11-13",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MOHITE": {
    "listing_date": "2026-08-17",
@@ -3624,12 +3530,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532140",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MOLBIO": {
    "listing_date": "2026-08-17",
@@ -3641,12 +3543,9 @@
    "sector": "Healthcare",
    "sub_sector": "Medical Equipment & Supplies",
    "shares_crore": 11.524002,
-   "checked_session": "2026-08-14",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 807.0
   },
   "MOMSBELIEF": {
    "listing_date": "2026-09-08",
@@ -3658,12 +3557,9 @@
    "sector": "Healthcare",
    "sub_sector": "Hospital",
    "shares_crore": 2.090159,
-   "checked_session": "2026-09-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 239.0
   },
   "MONEYBOXX": {
    "listing_date": "2025-10-15",
@@ -3672,12 +3568,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538446",
-   "checked_session": "2025-10-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MPDL": {
    "listing_date": "2026-08-17",
@@ -3686,12 +3578,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "532723",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MPIMANIPAL": {
    "listing_date": "2026-09-17",
@@ -3703,12 +3591,9 @@
    "sector": "Financial Services",
    "sub_sector": "Financial Technology (Fintech)",
    "shares_crore": 23.180453,
-   "checked_session": "2026-09-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 339.0
   },
   "MSL": {
    "listing_date": "2026-08-17",
@@ -3717,12 +3602,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539275",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MUKESHB": {
    "listing_date": "2026-08-17",
@@ -3747,12 +3628,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
    "shares_crore": 2.72827,
-   "checked_session": "2026-08-05",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 425.0
   },
   "MYSORPETRO": {
    "listing_date": "2026-08-17",
@@ -3761,12 +3639,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "506734",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NATIONSTD": {
    "listing_date": "2026-04-20",
@@ -3775,12 +3649,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504882",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NEAGI": {
    "listing_date": "2026-04-20",
@@ -3805,12 +3675,9 @@
    "sector": "Healthcare",
    "sub_sector": "Healthcare Service Provider",
    "shares_crore": 10.055907,
-   "checked_session": "2025-12-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 460.0
   },
   "NICCOPAR": {
    "listing_date": "2026-08-17",
@@ -3819,12 +3686,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526721",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NILE": {
    "listing_date": "2026-04-20",
@@ -3833,12 +3696,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530129",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NIMBSPROJ": {
    "listing_date": "2026-04-06",
@@ -3847,12 +3706,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "511714",
-   "checked_session": "2026-04-02",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NIRLON": {
    "listing_date": "2026-04-20",
@@ -3861,12 +3716,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500307",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NITTAGELA": {
    "listing_date": "2026-04-20",
@@ -3875,12 +3726,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506532",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NOVARTIND": {
    "listing_date": "2026-04-20",
@@ -3889,12 +3736,22 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500672",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "NSE": {
+   "listing_date": "2026-09-24",
+   "name": "National Stock Exchange of India Limited",
+   "isin": "INE721I01024",
+   "series": "A",
+   "exchange": "BSE",
+   "bse_code": "544937",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1785.0,
+   "sector": "Financial Services",
+   "sub_sector": "Exchange and Data Platform",
+   "shares_crore": 247.5
   },
   "NTCIND": {
    "listing_date": "2026-08-17",
@@ -3903,12 +3760,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526723",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ODYCORP": {
    "listing_date": "2026-08-17",
@@ -3917,12 +3770,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531996",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "OMFREIGHT": {
    "listing_date": "2025-10-08",
@@ -3934,12 +3783,9 @@
    "sector": "Services",
    "sub_sector": "Logistics Solution Provider",
    "shares_crore": 3.367516,
-   "checked_session": "2025-10-07",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 135.0
   },
   "OMNI": {
    "listing_date": "2026-03-05",
@@ -3951,12 +3797,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
    "shares_crore": 12.366594,
-   "checked_session": "2026-03-04",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 227.0
   },
   "OMPOWER": {
    "listing_date": "2026-04-17",
@@ -3968,12 +3811,9 @@
    "sector": "Construction",
    "sub_sector": "Civil Construction",
    "shares_crore": 3.424507,
-   "checked_session": "2026-04-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 175.0
   },
   "ONEGLOBAL": {
    "listing_date": "2026-08-17",
@@ -3982,12 +3822,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514330",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ONIXSOLAR": {
    "listing_date": "2026-08-17",
@@ -3996,12 +3832,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "513119",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "OPTIFIN": {
    "listing_date": "2026-08-17",
@@ -4010,12 +3842,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531254",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ORIRAIL": {
    "listing_date": "2026-08-17",
@@ -4024,12 +3852,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531859",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ORKLAINDIA": {
    "listing_date": "2025-11-06",
@@ -4041,12 +3865,9 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Other Food Products",
    "shares_crore": 13.69893,
-   "checked_session": "2025-11-04",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 730.0
   },
   "PACEDIGITK": {
    "listing_date": "2025-10-06",
@@ -4058,12 +3879,9 @@
    "sector": "Telecommunication",
    "sub_sector": "Telecom - Infrastructure",
    "shares_crore": 21.585121,
-   "checked_session": "2025-10-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 219.0
   },
   "PACIFICI": {
    "listing_date": "2026-08-17",
@@ -4072,12 +3890,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523483",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PANCHMAHQ": {
    "listing_date": "2026-08-17",
@@ -4086,12 +3900,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "513511",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PANORAMA": {
    "listing_date": "2026-08-17",
@@ -4100,12 +3910,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539469",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PARIN": {
    "listing_date": "2026-09-25",
@@ -4130,12 +3936,9 @@
    "sector": "Healthcare",
    "sub_sector": "Hospital",
    "shares_crore": 43.193101,
-   "checked_session": "2025-12-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 162.0
   },
   "PARNAXLAB": {
    "listing_date": "2026-08-17",
@@ -4144,12 +3947,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506128",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PAUSHAKLTD": {
    "listing_date": "2025-12-01",
@@ -4158,12 +3957,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532742",
-   "checked_session": "2025-11-28",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PBMPOLY": {
    "listing_date": "2026-08-17",
@@ -4172,12 +3967,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514087",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PERMAGN": {
    "listing_date": "2026-08-17",
@@ -4186,12 +3977,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504132",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PERNIASPOP": {
    "listing_date": "2026-09-07",
@@ -4203,12 +3990,9 @@
    "sector": "Consumer Services",
    "sub_sector": "Speciality Retail",
    "shares_crore": 8.006109,
-   "checked_session": "2026-09-04",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 575.0
   },
   "PHOENXINTL": {
    "listing_date": "2026-08-17",
@@ -4217,12 +4001,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526481",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PINELABS": {
    "listing_date": "2025-11-14",
@@ -4234,12 +4014,9 @@
    "sector": "Financial Services",
    "sub_sector": "Financial Technology (Fintech)",
    "shares_crore": 115.474904,
-   "checked_session": "2025-11-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 221.0
   },
   "PIONRINV": {
    "listing_date": "2026-04-20",
@@ -4248,12 +4025,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "507864",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PIRAMALFIN": {
    "listing_date": "2025-11-07",
@@ -4265,12 +4038,8 @@
    "sector": "Financial Services",
    "sub_sector": "Non Banking Financial Company (NBFC)",
    "shares_crore": 23.663032,
-   "checked_session": "2025-11-06",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PML": {
    "listing_date": "2026-04-20",
@@ -4279,12 +4048,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539113",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PNGSREVA": {
    "listing_date": "2026-03-04",
@@ -4296,12 +4061,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
    "shares_crore": 3.169844,
-   "checked_session": "2026-03-02",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 386.0
   },
   "POEL": {
    "listing_date": "2026-08-17",
@@ -4310,12 +4072,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539195",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "POLYSPIN": {
    "listing_date": "2026-08-17",
@@ -4324,12 +4082,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539354",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "POWERICA": {
    "listing_date": "2026-04-02",
@@ -4341,12 +4095,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Heavy Electrical Equipment",
    "shares_crore": 12.655191,
-   "checked_session": "2026-04-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 395.0
   },
   "PRADPME": {
    "listing_date": "2026-04-20",
@@ -4355,12 +4106,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "513532",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PRANAV": {
    "listing_date": "2026-09-15",
@@ -4372,12 +4119,9 @@
    "sector": "Realty",
    "sub_sector": "Residential, Commercial Projects",
    "shares_crore": 11.262258,
-   "checked_session": "2026-09-11",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 124.0
   },
   "PRASOLCHEM": {
    "listing_date": "2026-09-16",
@@ -4389,12 +4133,9 @@
    "sector": "Chemicals",
    "sub_sector": "Specialty Chemicals",
    "shares_crore": 5.918347,
-   "checked_session": "2026-09-15",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 676.0
   },
   "PRAVEG": {
    "listing_date": "2026-04-20",
@@ -4403,12 +4144,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531637",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PREMCO": {
    "listing_date": "2026-04-20",
@@ -4417,12 +4154,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530331",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PRIORITY": {
    "listing_date": "2026-09-04",
@@ -4434,12 +4167,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
    "shares_crore": 1.8,
-   "checked_session": "2026-09-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 200.0
   },
   "PRISMX": {
    "listing_date": "2026-08-17",
@@ -4448,12 +4178,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "501314",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "PWL": {
    "listing_date": "2025-11-18",
@@ -4465,12 +4191,9 @@
    "sector": "Consumer Services",
    "sub_sector": "E-Learning",
    "shares_crore": 290.50088,
-   "checked_session": "2025-11-17",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 109.0
   },
   "QMSMEDI": {
    "listing_date": "2026-06-18",
@@ -4492,12 +4215,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "539515",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RAJPALAYAM": {
    "listing_date": "2026-04-20",
@@ -4506,12 +4225,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532503",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RAMBHAJO": {
    "listing_date": "2026-07-01",
@@ -4523,12 +4238,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
    "shares_crore": 4.581009,
-   "checked_session": "2026-06-30",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 138.0
   },
   "RENTOMOJO": {
    "listing_date": "2026-09-17",
@@ -4540,12 +4252,9 @@
    "sector": "Services",
    "sub_sector": "Diversified Commercial Services",
    "shares_crore": 10.411483,
-   "checked_session": "2026-09-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 404.0
   },
   "RIR": {
    "listing_date": "2026-07-16",
@@ -4554,12 +4263,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "517035",
-   "checked_session": "2026-07-15",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RMC": {
    "listing_date": "2026-04-01",
@@ -4568,12 +4273,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540358",
-   "checked_session": "2026-03-30",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RRECL": {
    "listing_date": "2026-08-17",
@@ -4582,12 +4283,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544346",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RRIL": {
    "listing_date": "2026-04-20",
@@ -4596,12 +4293,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531307",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RSDFIN": {
    "listing_date": "2026-04-20",
@@ -4610,12 +4303,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "539875",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RSL": {
    "listing_date": "2026-03-19",
@@ -4627,12 +4316,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Iron & Steel Products",
    "shares_crore": 8.356783,
-   "checked_session": "2026-03-18",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 122.0
   },
   "RTSPOWR": {
    "listing_date": "2026-08-17",
@@ -4641,12 +4327,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531215",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "RUBICON": {
    "listing_date": "2025-10-16",
@@ -4658,12 +4340,9 @@
    "sector": "Healthcare",
    "sub_sector": "Pharmaceuticals",
    "shares_crore": 16.553192,
-   "checked_session": "2025-10-15",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 485.0
   },
   "RUDRA": {
    "listing_date": "2025-12-19",
@@ -4672,12 +4351,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539226",
-   "checked_session": "2025-12-18",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAB": {
    "listing_date": "2026-08-17",
@@ -4699,12 +4374,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "511754",
-   "checked_session": "2026-04-09",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAICAPI": {
    "listing_date": "2026-08-17",
@@ -4713,12 +4384,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531931",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAIPARENT": {
    "listing_date": "2026-04-02",
@@ -4730,12 +4397,9 @@
    "sector": "Healthcare",
    "sub_sector": "Pharmaceuticals",
    "shares_crore": 4.417922,
-   "checked_session": "2026-04-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 392.0
   },
   "SAMBANDAM": {
    "listing_date": "2026-08-17",
@@ -4747,12 +4411,8 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 0.426424,
-   "checked_session": "2026-08-14",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAPPL": {
    "listing_date": "2026-04-20",
@@ -4761,12 +4421,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538795",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAYAJIHOTL": {
    "listing_date": "2026-04-20",
@@ -4788,12 +4444,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540728",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SBIFUNDS": {
    "listing_date": "2026-07-21",
@@ -4805,12 +4457,9 @@
    "sector": "Financial Services",
    "sub_sector": "Asset Management Company",
    "shares_crore": 203.682765,
-   "checked_session": "2026-07-20",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 574.0
   },
   "SCANSTL": {
    "listing_date": "2026-04-20",
@@ -4819,12 +4468,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "511672",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SEDEMAC": {
    "listing_date": "2026-03-11",
@@ -4836,12 +4481,9 @@
    "sector": "Automobile and Auto Components",
    "sub_sector": "Auto Components & Equipments",
    "shares_crore": 4.41975,
-   "checked_session": "2026-03-10",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1352.0
   },
   "SEIL": {
    "listing_date": "2026-04-20",
@@ -4850,12 +4492,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539921",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SEKURITIND": {
    "listing_date": "2026-08-17",
@@ -4864,12 +4502,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "515043",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SGLRES": {
    "listing_date": "2026-08-17",
@@ -4878,12 +4512,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526544",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SGRL": {
    "listing_date": "2026-08-17",
@@ -4892,12 +4522,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "540737",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHADOWFAX": {
    "listing_date": "2026-01-28",
@@ -4909,12 +4535,9 @@
    "sector": "Services",
    "sub_sector": "Logistics Solution Provider",
    "shares_crore": 58.688806,
-   "checked_session": "2026-01-27",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 124.0
   },
   "SHANKESH": {
    "listing_date": "2026-08-25",
@@ -4926,12 +4549,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
    "shares_crore": 14.703142,
-   "checked_session": "2026-08-24",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 93.0
   },
   "SHARDUL": {
    "listing_date": "2026-04-20",
@@ -4940,12 +4560,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "512393",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHBAJRG": {
    "listing_date": "2026-04-20",
@@ -4954,12 +4570,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526981",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHERVANI": {
    "listing_date": "2026-08-17",
@@ -4968,12 +4580,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526117",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHILCTECH": {
    "listing_date": "2025-11-24",
@@ -4982,12 +4590,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531201",
-   "checked_session": "2025-11-21",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHILGRAVQ": {
    "listing_date": "2026-08-17",
@@ -4996,12 +4600,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "513709",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHINDL": {
    "listing_date": "2026-04-20",
@@ -5010,12 +4610,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "519397",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHIPROCKET": {
    "listing_date": "2026-08-19",
@@ -5027,12 +4623,9 @@
    "sector": "Consumer Services",
    "sub_sector": "E-Retail/ E-Commerce",
    "shares_crore": 72.757737,
-   "checked_session": "2026-08-18",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 97.0
   },
   "SHIVAAGRO": {
    "listing_date": "2026-08-17",
@@ -5041,12 +4634,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530433",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHIVACEM": {
    "listing_date": "2026-08-17",
@@ -5055,12 +4644,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532323",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHIVAUM": {
    "listing_date": "2025-11-14",
@@ -5082,12 +4667,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531771",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHRIKRISH": {
    "listing_date": "2026-04-20",
@@ -5096,12 +4677,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531080",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHRJAGP": {
    "listing_date": "2026-08-17",
@@ -5110,12 +4687,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512453",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHUKRAPHAR": {
    "listing_date": "2026-08-14",
@@ -5124,12 +4697,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "524632",
-   "checked_session": "2026-08-13",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SICAGEN": {
    "listing_date": "2026-04-20",
@@ -5138,12 +4707,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533014",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SIEL": {
    "listing_date": "2026-08-17",
@@ -5152,12 +4717,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "519234",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SIKA": {
    "listing_date": "2026-04-20",
@@ -5166,12 +4727,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523606",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SIMPLXREA": {
    "listing_date": "2026-08-17",
@@ -5180,12 +4737,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "503229",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SINGERIND": {
    "listing_date": "2026-03-19",
@@ -5194,12 +4747,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505729",
-   "checked_session": "2026-03-18",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SKFINDUS": {
    "listing_date": "2025-12-05",
@@ -5211,12 +4760,8 @@
    "sector": "Capital Goods",
    "sub_sector": "Abrasives & Bearings",
    "shares_crore": 4.943797,
-   "checked_session": "2025-12-04",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SKYWAYS": {
    "listing_date": "2026-09-01",
@@ -5228,12 +4773,9 @@
    "sector": "Services",
    "sub_sector": "Logistics Solution Provider",
    "shares_crore": 14.534337,
-   "checked_session": "2026-08-31",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 138.0
   },
   "SOLARWORLD": {
    "listing_date": "2025-09-30",
@@ -5245,12 +4787,9 @@
    "sector": "Construction",
    "sub_sector": "Civil Construction",
    "shares_crore": 8.667232,
-   "checked_session": "2025-09-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 351.0
   },
   "SOLEX": {
    "listing_date": "2025-10-08",
@@ -5259,12 +4798,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544862",
-   "checked_session": "2025-10-07",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SONA": {
    "listing_date": "2026-09-24",
@@ -5276,12 +4811,9 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 5.682897,
-   "checked_session": "2026-09-23",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 99.0
   },
   "SONAL": {
    "listing_date": "2026-04-20",
@@ -5290,12 +4822,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538943",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
@@ -5304,12 +4832,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "514442",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SRTL": {
    "listing_date": "2026-03-02",
@@ -5321,12 +4845,9 @@
    "sector": "Textiles",
    "sub_sector": "Other Textile Products",
    "shares_crore": 3.997632,
-   "checked_session": "2026-02-27",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 104.0
   },
   "SSRETAIL": {
    "listing_date": "2026-09-23",
@@ -5338,12 +4859,9 @@
    "sector": "Consumer Services",
    "sub_sector": "Speciality Retail",
    "shares_crore": 7.436756,
-   "checked_session": "2026-09-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 424.0
   },
   "STEAMHOUSE": {
    "listing_date": "2026-09-17",
@@ -5355,12 +4873,9 @@
    "sector": "Chemicals",
    "sub_sector": "Industrial Gases",
    "shares_crore": 27.640673,
-   "checked_session": "2026-09-16",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 81.0
   },
   "STLSTRINF": {
    "listing_date": "2026-08-17",
@@ -5369,12 +4884,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "513173",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "STUDDS": {
    "listing_date": "2025-11-07",
@@ -5386,12 +4897,9 @@
    "sector": "Automobile and Auto Components",
    "sub_sector": "Auto Components & Equipments",
    "shares_crore": 3.935333,
-   "checked_session": "2025-11-06",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 585.0
   },
   "STYL": {
    "listing_date": "2025-09-30",
@@ -5403,12 +4911,9 @@
    "sector": "Financial Services",
    "sub_sector": "Financial Technology (Fintech)",
    "shares_crore": 16.180574,
-   "checked_session": "2025-09-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 423.0
   },
   "SUDEEPPHRM": {
    "listing_date": "2025-11-28",
@@ -5420,12 +4925,9 @@
    "sector": "Chemicals",
    "sub_sector": "Specialty Chemicals",
    "shares_crore": 11.294859,
-   "checked_session": "2025-11-27",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 593.0
   },
   "SUMEDHA": {
    "listing_date": "2026-08-17",
@@ -5434,12 +4936,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530419",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SUNLOC": {
    "listing_date": "2026-08-17",
@@ -5461,12 +4959,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539300",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SUNSHIEL": {
    "listing_date": "2026-08-17",
@@ -5475,12 +4969,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530845",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SUNSHINE": {
    "listing_date": "2026-08-25",
@@ -5492,12 +4982,9 @@
    "sector": "Media, Entertainment & Publication",
    "sub_sector": "Film Production, Distribution & Exhibition",
    "shares_crore": 3.114887,
-   "checked_session": "2026-08-24",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 360.0
   },
   "SUPTANERY": {
    "listing_date": "2026-08-17",
@@ -5506,12 +4993,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "523842",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SURYALA": {
    "listing_date": "2026-04-20",
@@ -5520,12 +5003,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514138",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SVGLOBAL": {
    "listing_date": "2026-08-17",
@@ -5534,12 +5013,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "535621",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SWARAJ": {
    "listing_date": "2026-08-13",
@@ -5548,12 +5023,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544861",
-   "checked_session": "2026-08-12",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SWARNSAR": {
    "listing_date": "2026-08-17",
@@ -5562,12 +5033,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526365",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SWISSMLTRY": {
    "listing_date": "2026-08-17",
@@ -5576,12 +5043,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "523558",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SYMBIOTEC": {
    "listing_date": "2026-09-01",
@@ -5593,12 +5056,9 @@
    "sector": "Healthcare",
    "sub_sector": "Pharmaceuticals",
    "shares_crore": 6.425611,
-   "checked_session": "2026-08-31",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 988.0
   },
   "SYSTMTXC": {
    "listing_date": "2025-10-06",
@@ -5607,12 +5067,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "526506",
-   "checked_session": "2025-10-03",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TAALTECH": {
    "listing_date": "2026-04-20",
@@ -5624,12 +5080,8 @@
    "sector": "Services",
    "sub_sector": "Airline",
    "shares_crore": 1.558173,
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TAMBOLIIN": {
    "listing_date": "2026-04-20",
@@ -5638,12 +5090,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "533170",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TANAA": {
    "listing_date": "2026-08-17",
@@ -5652,12 +5100,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522229",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TATACAP": {
    "listing_date": "2025-10-13",
@@ -5669,12 +5113,9 @@
    "sector": "Financial Services",
    "sub_sector": "Non Banking Financial Company (NBFC)",
    "shares_crore": 424.486907,
-   "checked_session": "2025-10-10",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 326.0
   },
   "TCC": {
    "listing_date": "2026-02-25",
@@ -5686,12 +5127,8 @@
    "sector": "Consumer Services",
    "sub_sector": "Internet & Catalogue Retail",
    "shares_crore": 23.763984,
-   "checked_session": "2026-02-24",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TECHNOCRAF": {
    "listing_date": "2026-08-14",
@@ -5703,12 +5140,9 @@
    "sector": "Utilities",
    "sub_sector": "Water Supply & Management",
    "shares_crore": 3.960618,
-   "checked_session": "2026-08-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 212.0
   },
   "TECHNVISN": {
    "listing_date": "2026-04-20",
@@ -5717,12 +5151,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "501421",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TEMPSENS": {
    "listing_date": "2026-08-28",
@@ -5734,12 +5164,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
    "shares_crore": 8.383277,
-   "checked_session": "2026-08-27",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 300.0
   },
   "TENNIND": {
    "listing_date": "2025-11-19",
@@ -5751,12 +5178,9 @@
    "sector": "Automobile and Auto Components",
    "sub_sector": "Auto Components & Equipments",
    "shares_crore": 40.360432,
-   "checked_session": "2025-11-18",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 397.0
   },
   "TERAI": {
    "listing_date": "2026-08-17",
@@ -5765,12 +5189,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530533",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TGVSL": {
    "listing_date": "2026-08-17",
@@ -5779,12 +5199,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507753",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "THACKER": {
    "listing_date": "2026-04-20",
@@ -5806,12 +5222,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526654",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TIMEX": {
    "listing_date": "2026-04-20",
@@ -5820,12 +5232,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500414",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TMCV": {
    "listing_date": "2025-11-12",
@@ -5837,12 +5245,8 @@
    "sector": "Capital Goods",
    "sub_sector": "Commercial Vehicles",
    "shares_crore": 368.278932,
-   "checked_session": "2025-11-11",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TOYAMSL": {
    "listing_date": "2026-08-17",
@@ -5851,12 +5255,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538607",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TRANSCOR": {
    "listing_date": "2026-08-17",
@@ -5865,12 +5265,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532410",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TRANSPEK": {
    "listing_date": "2026-04-20",
@@ -5879,12 +5275,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "506687",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TRITONV": {
    "listing_date": "2026-08-17",
@@ -5893,12 +5285,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505978",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "TRUALT": {
    "listing_date": "2025-10-03",
@@ -5910,12 +5298,9 @@
    "sector": "Fast Moving Consumer Goods",
    "sub_sector": "Other Agricultural Products",
    "shares_crore": 8.575261,
-   "checked_session": "2025-10-01",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 496.0
   },
   "TURTLEMINT": {
    "listing_date": "2026-06-29",
@@ -5927,12 +5312,9 @@
    "sector": "Financial Services",
    "sub_sector": "Financial Technology (Fintech)",
    "shares_crore": 29.447829,
-   "checked_session": "2026-06-25",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 152.0
   },
   "TUTIALKA": {
    "listing_date": "2026-08-17",
@@ -5941,12 +5323,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506808",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "UDAYJEW": {
    "listing_date": "2026-09-25",
@@ -5955,12 +5333,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539518",
-   "checked_session": "2026-09-24",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ULTRAMAR": {
    "listing_date": "2026-04-20",
@@ -5969,12 +5343,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506685",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "UPHOT": {
    "listing_date": "2026-08-17",
@@ -5983,12 +5353,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "509960",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "UTLSOLAR": {
    "listing_date": "2025-11-20",
@@ -6000,12 +5366,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Other Electrical Equipment",
    "shares_crore": 30.690184,
-   "checked_session": "2025-11-19",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 228.0
   },
   "VADILENT": {
    "listing_date": "2026-08-17",
@@ -6014,12 +5377,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "519152",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VAML": {
    "listing_date": "2026-06-15",
@@ -6031,12 +5390,8 @@
    "sector": "Metals & Mining",
    "sub_sector": "Aluminium",
    "shares_crore": 391.038809,
-   "checked_session": "2026-06-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VARMORA": {
    "listing_date": "2026-09-29",
@@ -6045,12 +5400,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544942",
-   "checked_session": "2026-09-28",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 148.0,
+   "sector": "Consumer Durables",
+   "sub_sector": "Ceramics",
+   "shares_crore": 22.601178
   },
   "VASUPRADA": {
    "listing_date": "2026-08-17",
@@ -6059,12 +5414,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538092",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VEDAVAAG": {
    "listing_date": "2026-08-17",
@@ -6073,12 +5424,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533056",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VEDPOWER": {
    "listing_date": "2026-06-15",
@@ -6090,12 +5437,8 @@
    "sector": "Power",
    "sub_sector": "Power Generation",
    "shares_crore": 390.335432,
-   "checked_session": "2026-06-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VEEGALAND": {
    "listing_date": "2026-09-18",
@@ -6107,12 +5450,9 @@
    "sector": "Realty",
    "sub_sector": "Residential, Commercial Projects",
    "shares_crore": 4.875,
-   "checked_session": "2026-09-17",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 140.0
   },
   "VELJAN": {
    "listing_date": "2026-04-20",
@@ -6121,12 +5461,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "505232",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VGCL": {
    "listing_date": "2026-08-17",
@@ -6135,12 +5471,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538732",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VIDYAWIRES": {
    "listing_date": "2025-12-10",
@@ -6152,12 +5484,9 @@
    "sector": "Capital Goods",
    "sub_sector": "Aluminium, Copper & Zinc Products",
    "shares_crore": 21.269181,
-   "checked_session": "2025-12-09",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 52.0
   },
   "VIJSOLX": {
    "listing_date": "2026-08-17",
@@ -6166,12 +5495,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531069",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VIRAT": {
    "listing_date": "2026-08-17",
@@ -6180,12 +5505,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "530521",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VIRTUALG": {
    "listing_date": "2026-08-17",
@@ -6194,12 +5515,8 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "534741",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VISHAL": {
    "listing_date": "2026-08-17",
@@ -6208,12 +5525,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538598",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VISL": {
    "listing_date": "2026-06-15",
@@ -6225,12 +5538,8 @@
    "sector": "Metals & Mining",
    "sub_sector": "Iron & Steel",
    "shares_crore": 391.038808,
-   "checked_session": "2026-06-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VITAL": {
    "listing_date": "2026-03-11",
@@ -6265,12 +5574,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "511509",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VOEPL": {
    "listing_date": "2026-07-01",
@@ -6279,12 +5584,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "543597",
-   "checked_session": "2026-06-30",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VOGL": {
    "listing_date": "2026-06-15",
@@ -6296,12 +5597,8 @@
    "sector": "Oil, Gas & Consumable Fuels",
    "sub_sector": "Oil Exploration & Production",
    "shares_crore": 390.5713,
-   "checked_session": "2026-06-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VOITHPAPR": {
    "listing_date": "2026-08-17",
@@ -6310,12 +5607,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "522122",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "VTMLTD": {
    "listing_date": "2026-09-23",
@@ -6324,12 +5617,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532893",
-   "checked_session": "2026-09-22",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "WAKEFIT": {
    "listing_date": "2025-12-15",
@@ -6341,12 +5630,9 @@
    "sector": "Consumer Durables",
    "sub_sector": "Furniture, Home Furnishing",
    "shares_crore": 33.164496,
-   "checked_session": "2025-12-12",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 195.0
   },
   "WARDINMOBI": {
    "listing_date": "2026-08-17",
@@ -6355,12 +5641,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538970",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "WATERBASE": {
    "listing_date": "2026-08-17",
@@ -6369,12 +5651,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "523660",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "WELSPLSOL": {
    "listing_date": "2026-04-20",
@@ -6383,12 +5661,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500365",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "WEWORK": {
    "listing_date": "2025-10-10",
@@ -6400,12 +5674,9 @@
    "sector": "Services",
    "sub_sector": "Diversified Commercial Services",
    "shares_crore": 13.887017,
-   "checked_session": "2025-10-09",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 648.0
   },
   "WHBRADY": {
    "listing_date": "2026-08-17",
@@ -6414,12 +5685,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "501391",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "WPIL": {
    "listing_date": "2026-04-20",
@@ -6428,12 +5695,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505872",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "XTRANET": {
    "listing_date": "2026-07-30",
@@ -6445,12 +5708,9 @@
    "sector": "Information Technology",
    "sub_sector": "IT Enabled Services",
    "shares_crore": 5.228556,
-   "checked_session": "2026-07-29",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 127.0
   },
   "YOGI": {
    "listing_date": "2026-08-17",
@@ -6459,12 +5719,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "511702",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ZFSTEERING": {
    "listing_date": "2026-04-20",
@@ -6473,12 +5729,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505163",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ZSARACOM": {
    "listing_date": "2026-04-20",
@@ -6487,12 +5739,8 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512020",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "ipo": false,
+   "basis": "bse_ipo_list"
   }
  }
 }

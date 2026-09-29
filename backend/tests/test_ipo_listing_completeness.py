@@ -113,11 +113,13 @@ class GeneratorListingTests(unittest.TestCase):
         self.assertEqual(set(found), {"EQCO", "BECO"})
         self.assertEqual(found["BECO"]["series"], "BE")
 
-    def _classify(self, listings, *, scrips=None, bse_ipos=None, prior=None, master=None, previous=None, when=date(2026, 9, 29)):
+    def _classify(self, listings, *, scrips=None, bse_ipos=None, prior=None, master=None, previous=None, stored=None, when=date(2026, 9, 29)):
         """Run the classifier with every exchange call stubbed."""
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ipo_listings.json"
-            if previous is not None:
+            if stored is not None:
+                path.write_text(json.dumps(stored), encoding="utf-8")
+            elif previous is not None:
                 path.write_text(json.dumps({"listings": previous}), encoding="utf-8")
             with mock.patch.object(generator, "IPO_LISTINGS_PATH", path), \
                  mock.patch.object(generator, "DATA_DIR", Path(tmp)), \
@@ -173,6 +175,35 @@ class GeneratorListingTests(unittest.TestCase):
         listings = {"DUAL": {"listing_date": "2026-09-16", "isin": "INE111A01011", "name": "Dual", "series": "EQ"}}
         result, _, _ = self._classify(listings, scrips=scrips, bse_ipos=bse_ipos, master={"INE111A01011"})
         self.assertEqual(set(result), {"DUAL"})
+
+    def test_a_night_the_bse_api_refuses_keeps_the_stored_list(self):
+        # 2026-09-29: the runner read BSE's EOD files but no API call; every
+        # verdict reverted to the history test, the demergers came back and
+        # National Stock Exchange (BSE-only) dropped out.
+        scrips = {
+            "INE721I01024": {"code": "544937", "symbol": "NSE", "group": "A"},
+            "INE1TAE01010": {"code": "544569", "symbol": "TMCV", "group": "A"},
+        }
+        stored = {
+            "bse_ipos_as_of": "2026-09-28",
+            "bse_ipos": {"544937": {"name": "National Stock Exchange of India Limited", "symbol": "NSE", "listing_date": "2026-09-24", "issue_price": 1500}},
+            "listings": {},
+        }
+        listings = {"TMCV": {"listing_date": "2025-11-12", "isin": "INE1TAE01010", "name": "Tata Motors", "series": "EQ"}}
+        result, fetch, saved = self._classify(listings, scrips=scrips, bse_ipos=None, prior=(set(), True), stored=stored)
+        self.assertFalse(result["TMCV"]["ipo"])       # demerger stays out
+        self.assertTrue(result["NSE"]["ipo"])         # BSE-only IPO stays in
+        fetch.assert_not_called()
+        self.assertEqual(saved["bse_ipos_as_of"], "2026-09-28")  # not advanced by a failed read
+        self.assertIn("544937", saved["bse_ipos"])
+
+    def test_a_listing_newer_than_the_stored_list_waits_for_history(self):
+        scrips = {"INE0M5301040": {"code": "544942", "symbol": "VARMORA", "group": "B"}}
+        stored = {"bse_ipos_as_of": "2026-09-28", "bse_ipos": {}, "listings": {}}
+        listings = {"VARMORA": {"listing_date": "2026-09-29", "isin": "INE0M5301040", "name": "V", "series": "EQ"}}
+        result, _, _ = self._classify(listings, scrips=scrips, bse_ipos=None, prior=(set(), True), stored=stored)
+        self.assertEqual(result["VARMORA"]["basis"], "isin_history")
+        self.assertTrue(result["VARMORA"]["ipo"])
 
     def test_nse_only_history_is_matched_on_the_issuer_prefix(self):
         # LEMERITE traded on NSE Emerge as ...01017 and listed as ...01025.
