@@ -4057,8 +4057,68 @@ class DashboardService:
         rows.sort(key=lambda r: (r.avg_forward_return_pct is None, -(r.avg_forward_return_pct or 0)))
         return _Resp(rows=rows)
 
+    def _backfill_expansion_sessions(
+        self,
+        session_iso: str,
+        snapshots: list[StockSnapshot],
+        min_liquidity_crore: float | None,
+    ) -> None:
+        """Record Expansion hits for past sessions that never got a list because
+        nobody opened the scanner that day. Rebuilt from the dated EOD store
+        (last ~12 sessions); a session already recorded is left untouched."""
+        if not snapshots:
+            return
+        loader = getattr(self.provider, "_load_recent_eod_bars", None)
+        if not callable(loader):
+            return
+        eod_bars = loader() or {}
+        if not eod_bars:
+            return
+        from app.services import expansion_backfill, nse_breadth
+
+        eod_sessions: set[str] = set()
+        for per_symbol in eod_bars.values():
+            eod_sessions.update(per_symbol.keys())
+        # NSE's own session list is the calendar: the EOD store has carried a
+        # phantom file for a holiday (2026-09-14, a copy of the 11th), and
+        # treating it as a session would also misstate the next day's move.
+        # EOD dates only extend the calendar past NSE's newest recorded row.
+        doc = self._read_json_dict(self._legacy_data_dir() / nse_breadth.HISTORY_FILENAME)
+        rows = doc.get("days") if isinstance(doc, dict) else None
+        calendar_days = {str(row.get("date")) for row in (rows or []) if isinstance(row, dict) and row.get("date")}
+        newest_listed = max(calendar_days) if calendar_days else ""
+        calendar = sorted(
+            calendar_days | {d for d in eod_sessions if d > newest_listed} | {session_iso}
+        )
+        calendar_set = set(calendar)
+        candidates = sorted(d for d in eod_sessions if d < session_iso and d in calendar_set)
+        if not candidates:
+            return
+        history = self._scan_history_store.load(
+            "ema-expansion",
+            keep_dates=EXPANSION_HISTORY_SESSIONS,
+            keep_days=EXPANSION_HISTORY_MIN_DAYS,
+        )
+        missing = [d for d in candidates if d not in history]
+        if not missing:
+            return
+        for day in missing:
+            hits = expansion_backfill.hits_for_session(day, snapshots, eod_bars, calendar)
+            hits = self._filter_scan_items_by_liquidity(hits, min_liquidity_crore)
+            self._scan_history_store.record_once(
+                "ema-expansion",
+                day,
+                [item.model_dump(mode="json") for item in hits],
+                keep_dates=EXPANSION_HISTORY_SESSIONS,
+                keep_days=EXPANSION_HISTORY_MIN_DAYS,
+            )
+            logger.info("expansion backfill: %s -> %d hits", day, len(hits))
+
     def _merge_expansion_history(
-        self, items: list[ScanMatch], snapshots: list[StockSnapshot] | None = None
+        self,
+        items: list[ScanMatch],
+        snapshots: list[StockSnapshot] | None = None,
+        min_liquidity_crore: float | None = None,
     ) -> list[ScanMatch]:
         """Roll the Expansion scan into a 30-session tracker.
 
@@ -4084,6 +4144,10 @@ class DashboardService:
                 keep_dates=EXPANSION_HISTORY_SESSIONS,
                 keep_days=EXPANSION_HISTORY_MIN_DAYS,
             )
+            try:
+                self._backfill_expansion_sessions(session_iso, snapshots or [], min_liquidity_crore)
+            except Exception as exc:
+                logger.warning("expansion backfill failed: %s", exc)
             history = self._scan_history_store.load(
                 "ema-expansion",
                 keep_dates=EXPANSION_HISTORY_SESSIONS,
@@ -4343,7 +4407,9 @@ class DashboardService:
         if scan_id == "ema-expansion":
             # Rolling 30-session tracker: today's hits on top, older sessions
             # below, pruned automatically after the 30th session.
-            items = await asyncio.to_thread(self._merge_expansion_history, items, snapshots)
+            items = await asyncio.to_thread(
+                self._merge_expansion_history, items, snapshots, min_liquidity_crore
+            )
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
         signature_parts = [scan_id]
         if min_liquidity_crore is not None:
