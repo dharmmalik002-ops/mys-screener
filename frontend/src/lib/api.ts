@@ -1059,6 +1059,11 @@ const SAME_BASE_RETRY_BACKOFF_MS = 1500;
 // next attempt almost always succeeds. Waiting the cold-start backoff on it
 // added 1.5 s to roughly one chart open in six.
 const PROXY_BLIP_RETRY_BACKOFF_MS = 120;
+// Blips come in runs (measured at up to half of requests for minutes after a
+// Space restart, while the proxy still routes to the replica being replaced),
+// so they get their own short retry budget that does not spend the cold-start
+// attempts.
+const MAX_PROXY_BLIP_RETRIES = 3;
 // A timeout on the first hit is almost always an HF Space cold-start that
 // finishes waking during the attempt. Retry once on the same base before
 // surfacing stale cached data — but cap it so a genuinely dead backend
@@ -2155,6 +2160,7 @@ async function request<T>(
   for (let i = 0; i < bases.length; i += 1) {
     const base = bases[i];
     let timeoutRetries = 0;
+    let proxyBlipRetries = 0;
     // Retry on the same base for transient browser-level fetch failures
     // (TypeError "Failed to fetch") — usually a Vercel/HF cold-start blip
     // that clears within a couple of seconds. Hopping bases too eagerly
@@ -2169,16 +2175,19 @@ async function request<T>(
         if (!response.ok) {
           if (RETRYABLE_STATUS_CODES.has(response.status)) {
             lastError = new Error(`Request failed: ${response.status}`);
+            if (response.status === 502 && proxyBlipRetries < MAX_PROXY_BLIP_RETRIES) {
+              proxyBlipRetries += 1;
+              await new Promise((resolve) => setTimeout(resolve, PROXY_BLIP_RETRY_BACKOFF_MS * proxyBlipRetries));
+              attempt -= 1;
+              continue;
+            }
             // Retry on the same base for transient 5xx — same rationale as
             // TypeError handling: HF Spaces self-heal in a second or two.
             if (
               SAME_BASE_RETRY_STATUS_CODES.has(response.status)
               && attempt < SAME_BASE_RETRY_ATTEMPTS
             ) {
-              const backoffMs = response.status === 502 && attempt === 0
-                ? PROXY_BLIP_RETRY_BACKOFF_MS
-                : SAME_BASE_RETRY_BACKOFF_MS;
-              await new Promise((resolve) => setTimeout(resolve, backoffMs));
+              await new Promise((resolve) => setTimeout(resolve, SAME_BASE_RETRY_BACKOFF_MS));
               continue;
             }
             break;
