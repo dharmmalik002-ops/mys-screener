@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import io
 import json
+import math
 import logging
 import os
 import re
@@ -3645,6 +3646,35 @@ class FreeMarketDataProvider:
             return None
         return payload if isinstance(payload, dict) else None
 
+    @staticmethod
+    def _ipo_listing_reference(listing_meta: dict[str, Any], close: float) -> dict[str, Any]:
+        """Sector, basic industry and market cap for a seed row, from the
+        patch's listing metadata; Unclassified / 0.0 where it carries none."""
+        sector = str(listing_meta.get("sector") or "").strip() or "Unclassified"
+        sub_sector = str(listing_meta.get("sub_sector") or "").strip() or "Unclassified"
+        try:
+            shares_crore = float(listing_meta.get("shares_crore") or 0)
+        except (TypeError, ValueError):
+            shares_crore = 0.0
+        market_cap = round(shares_crore * close, 2) if shares_crore > 0 and close > 0 else 0.0
+        return {"sector": sector, "sub_sector": sub_sector, "market_cap_crore": market_cap}
+
+    def _fill_seed_row_reference(self, row: dict[str, Any], listing_meta: dict[str, Any]) -> None:
+        try:
+            close = float(row.get("last_price") or 0)
+        except (TypeError, ValueError):
+            close = 0.0
+        reference = self._ipo_listing_reference(listing_meta, close)
+        for key in ("sector", "sub_sector"):
+            if str(row.get(key) or "").strip() in ("", "Unclassified") and reference[key] != "Unclassified":
+                row[key] = reference[key]
+        try:
+            existing = float(row.get("market_cap_crore") or 0)
+        except (TypeError, ValueError):
+            existing = 0.0
+        if existing <= 0 and reference["market_cap_crore"] > 0:
+            row["market_cap_crore"] = reference["market_cap_crore"]
+
     def _build_ipo_seed_row(
         self,
         symbol: str,
@@ -3675,7 +3705,9 @@ class FreeMarketDataProvider:
             open_ = float(price_record.get("o") or close)
         except (TypeError, ValueError):
             return None
-        if close <= 0:
+        # NaN compares False against everything, so `close <= 0` lets it in —
+        # and one NaN row fails _snapshot_schema_ok for the whole file.
+        if not all(math.isfinite(value) for value in (close, high, low, open_)) or close <= 0:
             return None
         try:
             volume = int(float(price_record.get("v") or 0))
@@ -3693,6 +3725,7 @@ class FreeMarketDataProvider:
         listing_date_iso = listing_date_text or patch_date.isoformat()
 
         name = str(listing_meta.get("name") or symbol).strip() or symbol
+        reference = self._ipo_listing_reference(listing_meta, close)
 
         row: dict[str, Any] = {
             "snapshot_cache_version": SNAPSHOT_CACHE_VERSION,
@@ -3701,16 +3734,14 @@ class FreeMarketDataProvider:
             "name": name,
             "exchange": "NSE",
             "listing_date": listing_date_iso,
-            "sector": "Unclassified",
-            "sub_sector": "Unclassified",
+            "sector": reference["sector"],
+            "sub_sector": reference["sub_sector"],
             "isin": listing_meta.get("isin"),
-            # Unknown at seed time: the bhavcopy carries no share count. It is
-            # filled by the metadata pass in _build_universe_rows, which this
-            # row qualifies for because its sector is Unclassified, and which
-            # derives issuedSize x price. Left as 0.0 = unknown rather than
-            # guessed; the IPO liquidity filter treats unknown as
-            # non-disqualifying so a 0 here never hides a listing.
-            "market_cap_crore": 0.0,
+            # The patch generator reads BSE's classification and share count
+            # for each IPO (see _attach_listing_reference). Without them the
+            # value stays 0.0 = unknown rather than guessed, and the metadata
+            # pass in _build_universe_rows fills it on the next rebuild.
+            "market_cap_crore": reference["market_cap_crore"],
             "last_price": round(close, 2),
             "previous_close": round(prev_close, 2),
             "change_pct": change_pct,
@@ -3846,7 +3877,11 @@ class FreeMarketDataProvider:
         # which broke the Bread & Butter pullback leg, made snapshot RS
         # ratings drift from the chart's RS line, and left "X% from 10EMA"
         # style readings wildly wrong (ATGL: 39% vs ~3% real).
-        APPLY_SCHEMA_VERSION = 12
+        # v13 (2026-09-29): IPO seed rows are built BEFORE the per-row pass,
+        # so they consume the indicator block like every other row (a seed
+        # row used to keep its one listing-day bar), and gain BSE's sector
+        # and share count from the listing metadata.
+        APPLY_SCHEMA_VERSION = 13
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3948,6 +3983,57 @@ class FreeMarketDataProvider:
                 "date": patch_date.isoformat(),
             }
 
+        # ── New-IPO ingestion ────────────────────────────────────────────
+        # The patch generator stamps a top-level "new_listings" section with
+        # listing-date metadata for every recently listed .NS symbol whose
+        # OHLCV is present in this patch. For each such symbol not yet in
+        # the snapshot rows, MATERIALIZE a minimal IPO seed row right now
+        # so the IPO scanner can surface it on its listing day — without
+        # waiting for the universe cache to roll over and a full snapshot
+        # rebuild to fetch it.
+        #
+        # Seeded BEFORE the per-row pass below, not after it: that pass is
+        # what consumes the patch's indicator block ("i"), and a row appended
+        # afterwards kept its one-bar seed forever — the Space rebuilds these
+        # rows from the latest patch on every start, so a listing a month old
+        # still showed one close, no ADR, no trend and no turnover.
+        existing_symbols = {
+            str(row.get("symbol") or "").strip().upper()
+            for row in rows
+            if isinstance(row, dict) and str(row.get("symbol") or "").strip()
+        }
+        new_listings_payload = payload.get("new_listings") or {}
+        ipo_seeded = 0
+        if isinstance(new_listings_payload, dict) and new_listings_payload:
+            rows_by_symbol = {
+                str(row.get("symbol") or "").strip().upper(): row
+                for row in rows
+                if isinstance(row, dict)
+            }
+            for raw_symbol, raw_meta in new_listings_payload.items():
+                symbol = str(raw_symbol).strip().upper()
+                if not isinstance(raw_meta, dict):
+                    continue
+                if symbol in rows_by_symbol:
+                    # A row from an earlier patch keeps its prices, but gains
+                    # the classification (and, if it has none, the market
+                    # cap) it was built without. Only blanks are filled.
+                    self._fill_seed_row_reference(rows_by_symbol[symbol], raw_meta)
+                    continue
+                if not symbol or symbol in existing_symbols:
+                    continue
+                price_record = normalized_patch.get(symbol)
+                if not isinstance(price_record, dict):
+                    continue
+                ipo_row = self._build_ipo_seed_row(symbol, raw_meta, price_record, patch_date)
+                if ipo_row is None:
+                    continue
+                rows.append(ipo_row)
+                existing_symbols.add(symbol)
+                ipo_seeded += 1
+        if ipo_seeded:
+            logger.info("apply_committed_bhavcopy_patch: seeded %s new-listing IPO rows", ipo_seeded)
+
         updated = 0
         for row in rows:
             if not isinstance(row, dict):
@@ -3981,6 +4067,8 @@ class FreeMarketDataProvider:
             # on near-zero volume, OHLC inversions, or close outside [low,high]
             # are ALL stale-tick / illiquid-print artifacts that previously
             # produced wrong candlesticks on the dashboard.
+            if not all(math.isfinite(value) for value in (new_close, new_high, new_low, new_open)):
+                continue
             if new_close <= 0:
                 continue
             if new_high > 0 and new_low > 0 and new_high < new_low:
@@ -4235,40 +4323,6 @@ class FreeMarketDataProvider:
                 "date": patch_date.isoformat(),
             }
 
-        # ── New-IPO ingestion ────────────────────────────────────────────
-        # The patch generator stamps a top-level "new_listings" section with
-        # listing-date metadata for every recently listed .NS symbol whose
-        # OHLCV is present in this patch. For each such symbol not yet in
-        # the snapshot rows, MATERIALIZE a minimal IPO seed row right now
-        # so the IPO scanner can surface it on its listing day — without
-        # waiting for the universe cache to roll over and a full snapshot
-        # rebuild to fetch it.
-        existing_symbols = {
-            str(row.get("symbol") or "").strip().upper()
-            for row in rows
-            if isinstance(row, dict) and str(row.get("symbol") or "").strip()
-        }
-        new_listings_payload = payload.get("new_listings") or {}
-        ipo_seeded = 0
-        if isinstance(new_listings_payload, dict) and new_listings_payload:
-            for raw_symbol, raw_meta in new_listings_payload.items():
-                symbol = str(raw_symbol).strip().upper()
-                if not symbol or symbol in existing_symbols:
-                    continue
-                if not isinstance(raw_meta, dict):
-                    continue
-                price_record = normalized_patch.get(symbol)
-                if not isinstance(price_record, dict):
-                    continue
-                ipo_row = self._build_ipo_seed_row(symbol, raw_meta, price_record, patch_date)
-                if ipo_row is None:
-                    continue
-                rows.append(ipo_row)
-                existing_symbols.add(symbol)
-                ipo_seeded += 1
-        if ipo_seeded:
-            logger.info("apply_committed_bhavcopy_patch: seeded %s new-listing IPO rows", ipo_seeded)
-
         rows = self._apply_rs_rating(rows)
         self._write_snapshot_rows(rows)
 
@@ -4320,6 +4374,19 @@ class FreeMarketDataProvider:
         "av20": "avg_volume_20d", "av30": "avg_volume_30d", "av50": "avg_volume_50d",
     }
 
+    # A listing only days old has only days of bars, and its ADR / turnover
+    # are still real numbers over them. Everything else needs five, so a
+    # truncated download can never overwrite an established stock's history.
+    INDICATOR_MIN_BARS = 5
+    NEW_LISTING_INDICATOR_MIN_BARS = 2
+    NEW_LISTING_INDICATOR_DAYS = 30
+
+    def _min_indicator_bars(self, row: dict[str, Any], patch_date: date) -> int:
+        listed = self._parse_row_date(row.get("listing_date"))
+        if listed is not None and 0 <= (patch_date - listed).days <= self.NEW_LISTING_INDICATOR_DAYS:
+            return self.NEW_LISTING_INDICATOR_MIN_BARS
+        return self.INDICATOR_MIN_BARS
+
     def _apply_patch_indicator_block(
         self,
         row: dict[str, Any],
@@ -4344,7 +4411,7 @@ class FreeMarketDataProvider:
         if ind_date is None or ind_date > patch_date or (patch_date - ind_date).days > 7:
             return result
         closes = ind.get("rc")
-        if not isinstance(closes, list) or len(closes) < 5:
+        if not isinstance(closes, list) or len(closes) < self._min_indicator_bars(row, patch_date):
             return result
         last_ind_close = self._to_float(closes[-1])
         if last_ind_close in (None, 0):

@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from app.services import close_history
+from app.services import close_history, ipo_listings
 from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
@@ -2081,6 +2081,33 @@ def ipo_batch_listing_dates(snapshots: list[StockSnapshot], today: date | None =
     return {listed for listed, count in counts.items() if count >= IPO_BATCH_LISTING_MIN}
 
 
+def _ipo_candidates(snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
+    """The listings the IPO scan may judge.
+
+    The exchanges' verdict (`ipo_listings`, decided by ISIN) wins wherever it
+    exists: it keeps a genuine IPO that happened to list on a bulk-admission
+    day (MOLBIO and DHOOTTRANS on 2026-08-17) and drops an old BSE company
+    that NSE admitted on a quiet day (MODIS, ALGOQUANT, JAYKAY). Its listing
+    date also replaces a snapshot's missing one. Symbols it has not judged
+    keep the batch-date rule.
+    """
+    known = ipo_listings.verdicts()
+    batch_dates = ipo_batch_listing_dates(snapshots)
+    kept: list[StockSnapshot] = []
+    for snapshot in snapshots:
+        verdict = known.get(str(snapshot.symbol or "").upper())
+        if verdict is None:
+            if snapshot.listing_date not in batch_dates:
+                kept.append(snapshot)
+            continue
+        if not verdict.ipo:
+            continue
+        if verdict.listing_date is not None and snapshot.listing_date != verdict.listing_date:
+            snapshot = snapshot.model_copy(update={"listing_date": verdict.listing_date})
+        kept.append(snapshot)
+    return kept
+
+
 # Scanners that compare today with a long look-back window. `None` = the whole
 # listed life (all-time levels). A stock's "52-week high" is only a 52-week high
 # when the app holds 52 weeks of its prices: 192 of the companies NSE admitted
@@ -2141,9 +2168,7 @@ def eligible_for_scan(scan_id: str, snapshots: list[StockSnapshot]) -> list[Stoc
     runs a scanner's rule — the catalog and the Custom Scanner's pattern — goes
     through here so they cannot disagree."""
     if scan_id == "ipo":
-        batch_dates = ipo_batch_listing_dates(snapshots)
-        if batch_dates:
-            return [s for s in snapshots if s.listing_date not in batch_dates]
+        return _ipo_candidates(snapshots)
     elif scan_id in LEVEL_SCAN_MIN_SESSIONS and _long_averages_populated(snapshots):
         batch_dates = ipo_batch_listing_dates(snapshots)
         today = date.today()

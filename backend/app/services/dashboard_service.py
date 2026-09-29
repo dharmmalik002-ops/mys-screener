@@ -1889,35 +1889,18 @@ class DashboardService:
     def _filter_ipo_items_by_liquidity(
         items: list[ScanMatch], min_liquidity_crore: float | None
     ) -> list[ScanMatch]:
-        """Liquidity filter for the IPO scan, where 0 means UNKNOWN, not illiquid.
+        """Liquidity filter for the IPO scan: the setting means what it says.
 
-        `avg_rupee_volume_30d_crore` is a 30-session average, and a stock listed
-        last week has not had 30 sessions -- the number does not exist yet.
-        Beyond that, the snapshot pipeline currently populates neither turnover
-        nor market cap for recent listings at all: measured on the live API,
-        242 of 322 IPO hits carry 0, and every listing after 2026-04-02 does.
-
-        The shared `_filter_scan_items_by_liquidity` treats 0 as illiquid, so
-        applying any threshold deleted exactly the listings this scan exists to
-        surface: unfiltered the scan returns 322 rows with the newest a day
-        old; at >= 1 crore it returned 77 rows whose newest was five months
-        stale. A filter that silently removes the subject of the screener is
-        worse than no filter, so an unknown value is kept rather than dropped.
-
-        Genuinely illiquid listings -- ones that DO report turnover, below the
-        threshold -- are still removed.
+        This once kept any row reporting 0 turnover, because the pipeline left
+        recent listings at 0 (242 of 322) and a threshold deleted exactly the
+        stocks the panel exists for. The cause is fixed where it lived — seed
+        rows now receive the patch's indicator block, which carries the
+        average over however many sessions a listing has had (1 of 171 rows
+        read 0 afterwards) — so the exemption only made "5 Cr" show names
+        nobody could show trade 5 Cr. A row with no turnover on record fails a
+        floor, as it does in the universe gate.
         """
-        if min_liquidity_crore is None:
-            return items
-        kept: list[ScanMatch] = []
-        for item in items:
-            turnover = item.avg_rupee_volume_30d_crore
-            if turnover is None or float(turnover) <= 0.0:
-                kept.append(item)          # unknown, not disqualifying
-                continue
-            if float(turnover) >= min_liquidity_crore:
-                kept.append(item)
-        return kept
+        return DashboardService._filter_scan_items_by_liquidity(items, min_liquidity_crore)
 
     @staticmethod
     def _contraction_snapshot_needs_enrichment(snapshot: StockSnapshot) -> bool:

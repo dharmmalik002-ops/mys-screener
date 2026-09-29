@@ -45,8 +45,10 @@ class MarketCapBackfillTests(unittest.TestCase):
         self.assertRegex(self.src, r'fetched_mcap\s+and\s+fetched_mcap\s*>\s*0')
 
     def test_the_seed_row_still_starts_from_zero_meaning_unknown(self):
-        seed = inspect.getsource(FreeMarketDataProvider._build_ipo_seed_row)
-        self.assertIn('"market_cap_crore": 0.0', seed)
+        # Without a share count from the listing metadata the cap is unknown,
+        # not guessed. (With one — BSE's, via ipo_listings — it is shares x close.)
+        reference = FreeMarketDataProvider._ipo_listing_reference({"listing_date": "2026-09-01"}, 250.0)
+        self.assertEqual(reference["market_cap_crore"], 0.0)
 
     def test_the_profile_fetcher_derives_cap_from_issued_size(self):
         profile = inspect.getsource(FreeMarketDataProvider._company_profile_from_quote_payload)

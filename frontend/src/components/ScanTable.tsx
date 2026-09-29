@@ -840,9 +840,11 @@ export function ScanTable({
         ? "expansion_date_desc"
         : scan?.id === "positive-earnings"
           ? "earnings_date_desc"
-          : sortMode === "rs"
-            ? "rs_desc"
-            : "change_desc",
+          : scan?.id === "ipo"
+            ? "listing_desc"
+            : sortMode === "rs"
+              ? "rs_desc"
+              : "change_desc",
   );
   // Date-tracked scanners are meant to read newest signal first, so force
   // their date sort whenever that scanner is (re)opened.
@@ -850,6 +852,8 @@ export function ScanTable({
     if (scan?.id === "volume") setSortBy("volume_date_desc");
     if (scan?.id === "ema-expansion") setSortBy("expansion_date_desc");
     if (scan?.id === "positive-earnings") setSortBy("earnings_date_desc");
+    // The IPO panel promises "newest debuts first"; open it that way.
+    if (scan?.id === "ipo") setSortBy("listing_desc");
   }, [scan?.id]);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
