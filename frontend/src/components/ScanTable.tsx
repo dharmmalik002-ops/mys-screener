@@ -1,7 +1,9 @@
 import {
   Suspense,
   lazy,
+  memo,
   type CSSProperties,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -472,6 +474,325 @@ type ScanTableProps = {
   // sees — not the parent's flat pre-arrangement list.
   onVisibleOrderChange?: (symbols: string[]) => void;
 };
+
+type ScanRowProps = {
+  entryKey: string;
+  item: ScanMatch;
+  isActive: boolean;
+  isExpanded: boolean;
+  virtualHeight?: number;
+  gridTemplate: string;
+  visibleCols: Set<ColumnKey>;
+  scanId: string | undefined;
+  market: MarketKey;
+  registerRow?: (symbol: string, element: HTMLDivElement | null) => void;
+  onPick: (symbol: string) => void;
+  onPrefetch?: (symbol: string) => void;
+  onToggleExpand: (entryKey: string) => void;
+  onAddToWatchlist: (symbol: string) => void;
+};
+
+// One result row. Memoised, with every callback stable, so moving the chart to
+// the next stock re-renders the two rows whose highlight changed rather than
+// all of them — a 200-row scan used to rebuild every row twice per step, which
+// was most of what "next chart" cost.
+const ScanRow = memo(function ScanRow({
+  entryKey,
+  item,
+  isActive,
+  isExpanded,
+  virtualHeight,
+  gridTemplate,
+  visibleCols,
+  scanId,
+  market,
+  registerRow,
+  onPick,
+  onPrefetch,
+  onToggleExpand,
+  onAddToWatchlist,
+}: ScanRowProps) {
+  const logoUrl = getLogoUrl(item.symbol);
+  const up = item.change_pct >= 0;
+  // Colour by the series the line actually draws. Using today's change_pct
+  // would paint a 20-session decline green on a green day, which is the
+  // opposite of what the reader takes from the shape.
+  const sparkSeries = item.spark_closes ?? [];
+  const sparkUp =
+    sparkSeries.length >= 2
+      ? sparkSeries[sparkSeries.length - 1] >= sparkSeries[0]
+      : up;
+  const sparkColor = sparkUp ? "var(--positive)" : "var(--negative)";
+  const volBadge = scanId === "volume" ? volumeTierBadge(item) : null;
+
+  const detailChips: Array<{ label: string; value: string }> = [];
+  if (item.gap_pct !== null && item.gap_pct !== undefined && Number.isFinite(item.gap_pct)) {
+    detailChips.push({ label: "Gap", value: `${item.gap_pct >= 0 ? "+" : ""}${item.gap_pct.toFixed(2)}%` });
+  }
+  if (item.rs_rating !== null && item.rs_rating !== undefined) {
+    detailChips.push({ label: "RS", value: String(Math.round(item.rs_rating)) });
+  }
+  if (item.relative_volume) {
+    detailChips.push({ label: "RVOL", value: `${item.relative_volume.toFixed(2)}x` });
+  }
+  if (item.volume_push_date) detailChips.push({ label: "Volume push", value: item.volume_push_date });
+  if (item.earnings_date) detailChips.push({ label: "Earnings", value: item.earnings_date });
+  if (item.session_date) detailChips.push({ label: "Session", value: item.session_date });
+
+  return (
+    <div
+      className={`scan-row st-row${isActive ? " active" : ""}${isExpanded ? " is-expanded" : ""}`}
+      ref={registerRow ? (element) => registerRow(item.symbol, element) : undefined}
+      style={
+        {
+          "--st-grid": gridTemplate,
+          ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
+        } as CSSProperties
+      }
+    >
+      <button
+        type="button"
+        className="scan-row-main st-row-main"
+        onMouseEnter={onPrefetch ? () => onPrefetch(item.symbol) : undefined}
+        onFocus={onPrefetch ? () => onPrefetch(item.symbol) : undefined}
+        onClick={() => onPick(item.symbol)}
+      >
+        <span className="st-logo">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt=""
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <span className="st-logo-fallback">{initials(item.symbol)}</span>
+          )}
+        </span>
+        <span className="st-name">
+          <strong>
+            {item.symbol}
+            {volBadge ? (
+              <span
+                title={volBadge.title}
+                style={{
+                  display: "inline-block",
+                  marginLeft: 6,
+                  fontSize: "var(--fs-nano)",
+                  fontWeight: 500,
+                  letterSpacing: "0.04em",
+                  lineHeight: "14px",
+                  color: "#fff",
+                  background: volBadge.color,
+                  border: "1px solid rgba(255,255,255,0.4)",
+                  borderRadius: 4,
+                  padding: "0 5px",
+                  verticalAlign: "middle",
+                }}
+              >
+                {volBadge.code}
+              </span>
+            ) : null}
+            {item.new_since_prev ? (
+              <span className="st-new-chip" title="Entered this scanner today (was not in the previous session's results)">
+                NEW
+              </span>
+            ) : null}
+          </strong>
+          <small>
+            {scanRowSubtitle(item)}
+            {item.also_in && item.also_in.length > 0 ? (
+              <span className="st-confluence" title={`Also flagged today by: ${item.also_in.join(", ")}`}>
+                {" · also in "}
+                {item.also_in.join(", ")}
+              </span>
+            ) : null}
+          </small>
+        </span>
+      </button>
+
+      <span className="st-price">{formatPrice(item.last_price, market)}</span>
+
+      <span className={`st-change ${up ? "positive-text" : "negative-text"}`}>
+        {item.change_pct >= 0 ? "+" : ""}
+        {item.change_pct.toFixed(2)}%
+      </span>
+
+      {visibleCols.has("spark") ? (
+        <span className="st-spark">
+          <Sparkline
+            values={sparkSeries}
+            minRangePct={10}
+            color={sparkColor}
+            width={52}
+            height={22}
+            className="st-spark-svg"
+            label={
+              sparkSeries.length >= 2
+                ? `${item.symbol}: ${sparkSeries.length}-session close trend, ${sparkSeries[0].toFixed(2)} to ${sparkSeries[sparkSeries.length - 1].toFixed(2)}`
+                : `${item.symbol}: no recent close history`
+            }
+          />
+        </span>
+      ) : null}
+
+      {visibleCols.has("rs") ? (
+        <span className="st-cell-center">
+          <RsBadge rs={item.rs_rating} />
+        </span>
+      ) : null}
+
+      {visibleCols.has("rs1m") ? (
+        <span className="st-cell-center">
+          <RsBadge rs={item.rs_rating_1m_ago} />
+        </span>
+      ) : null}
+
+      {visibleCols.has("rvol") ? (
+        <span className="st-cell-center st-rvol" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, lineHeight: 1.1 }}>
+          {volBadge ? (
+            <span
+              title={volBadge.title}
+              style={{
+                fontSize: "var(--fs-nano)",
+                fontWeight: 500,
+                letterSpacing: "0.03em",
+                color: "#fff",
+                background: volBadge.color,
+                border: "1px solid rgba(255,255,255,0.4)",
+                borderRadius: 3,
+                padding: "0 3px",
+              }}
+            >
+              {volBadge.code}
+            </span>
+          ) : null}
+          <span>{item.relative_volume.toFixed(2)}×</span>
+        </span>
+      ) : null}
+
+      {visibleCols.has("adr") ? (
+        <span
+          className={`st-cell-center st-adr ${adrClass(adrOf(item))}`}
+          title={
+            adrOf(item) === null
+              ? "No average daily range on record"
+              : `Average daily range ${adrOf(item)!.toFixed(2)}% over 20 sessions — a stop tighter than this sits inside one ordinary day's noise`
+          }
+        >
+          {adrOf(item) === null ? "—" : `${adrOf(item)!.toFixed(1)}%`}
+        </span>
+      ) : null}
+
+      {visibleCols.has("turnover") ? (
+        <span
+          className="st-cell-center st-turnover"
+          title={
+            item.avg_rupee_volume_30d_crore == null
+              ? "No traded value on record"
+              : `${item.avg_rupee_volume_30d_crore.toFixed(2)} Cr traded per day over 30 sessions`
+          }
+        >
+          {formatTurnoverCrore(item.avg_rupee_volume_30d_crore)}
+        </span>
+      ) : null}
+
+      {visibleCols.has("vdate") ? (
+        <span className="st-cell-center st-vdate" title={item.volume_push_date ? `High-volume push on ${item.volume_push_date}` : undefined}>
+          {item.volume_push_date ? formatVolumeDate(item.volume_push_date) : "—"}
+        </span>
+      ) : null}
+
+      {visibleCols.has("sdate") ? (
+        <span className="st-cell-center st-vdate" title={item.session_date ? `Showed expansion on ${item.session_date}` : undefined}>
+          {item.session_date ? formatVolumeDate(item.session_date) : "—"}
+        </span>
+      ) : null}
+
+      {visibleCols.has("edate") ? (
+        <span className="st-cell-center st-vdate" title={item.earnings_date ? `Result announced on ${item.earnings_date}` : undefined}>
+          {item.earnings_date ? formatVolumeDate(item.earnings_date) : "—"}
+        </span>
+      ) : null}
+
+      {visibleCols.has("gap") ? (
+        <span className="st-cell-center">
+          {item.gap_pct !== null && item.gap_pct !== undefined
+            ? `${item.gap_pct.toFixed(2)}%`
+            : "—"}
+        </span>
+      ) : null}
+
+      <span className="st-row-tools">
+        <button
+          type="button"
+          className={`st-expand-btn${isExpanded ? " open" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpand(entryKey);
+          }}
+          aria-expanded={isExpanded}
+          title={isExpanded ? "Hide why this matched" : "Why did this match?"}
+        >
+          <ChevronDown size={14} strokeWidth={2.4} />
+        </button>
+        <button
+          type="button"
+          className="st-watch-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToWatchlist(item.symbol);
+          }}
+          title={`Add ${item.symbol} to watchlist`}
+        >
+          <Plus size={14} strokeWidth={2.4} />
+        </button>
+      </span>
+
+      {isExpanded ? (
+        // These fields were already loaded and surfaced only as a native
+        // browser tooltip, which is invisible on touch and uncopyable.
+        <div className="st-row-detail" onClick={(e) => e.stopPropagation()}>
+          {item.reasons && item.reasons.length > 0 ? (
+            <div className="st-detail-block">
+              <span className="st-detail-label">Why it matched</span>
+              <ul className="st-detail-reasons">
+                {item.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="st-detail-block">
+              <span className="st-detail-label">Why it matched</span>
+              <p className="st-detail-muted">This scanner did not record per-stock reasons.</p>
+            </div>
+          )}
+
+          <div className="st-detail-block">
+            {detailChips.length > 0 ? (
+              <div className="st-detail-chips">
+                {detailChips.map((chip) => (
+                  <span key={chip.label} className="st-detail-chip">
+                    <span className="st-detail-chip-label">{chip.label}</span>
+                    {chip.value}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {item.also_in && item.also_in.length > 0 ? (
+              <div className="st-detail-alsoin">
+                <span className="st-detail-label">Also flagged by</span>
+                <span className="st-detail-scanners">{item.also_in.join(" · ")}</span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+});
 
 export function ScanTable({
   market,
@@ -953,6 +1274,22 @@ export function ScanTable({
     }
   };
 
+  // Row callbacks read the latest props through a ref so their identity never
+  // changes — the parent recreates its handlers on every render, which would
+  // otherwise defeat ScanRow's memo.
+  const rowCallbacksRef = useRef({ onPickSymbol, onPrefetchSymbol, onRequestAddToWatchlist });
+  rowCallbacksRef.current = { onPickSymbol, onPrefetchSymbol, onRequestAddToWatchlist };
+  const handlePickRow = useCallback((symbol: string) => rowCallbacksRef.current.onPickSymbol(symbol), []);
+  const handlePrefetchRow = useCallback((symbol: string) => rowCallbacksRef.current.onPrefetchSymbol?.(symbol), []);
+  const handleAddRow = useCallback((symbol: string) => rowCallbacksRef.current.onRequestAddToWatchlist(symbol), []);
+  const handleToggleRow = useCallback(
+    (entryKey: string) => setExpandedRowKey((current) => (current === entryKey ? null : entryKey)),
+    [],
+  );
+  const registerRow = useCallback((symbol: string, element: HTMLDivElement | null) => {
+    rowRefs.current[symbol] = element;
+  }, []);
+
   const renderEntry = (entry: ScanTableEntry, virtualHeight?: number) => {
     if (entry.type === "header") {
       return (
@@ -978,295 +1315,24 @@ export function ScanTable({
       );
     }
 
-    const { item } = entry;
-    const logoUrl = getLogoUrl(item.symbol);
-    const up = item.change_pct >= 0;
-    // Colour by the series the line actually draws. Using today's change_pct
-    // would paint a 20-session decline green on a green day, which is the
-    // opposite of what the reader takes from the shape.
-    const sparkSeries = item.spark_closes ?? [];
-    const sparkUp =
-      sparkSeries.length >= 2
-        ? sparkSeries[sparkSeries.length - 1] >= sparkSeries[0]
-        : up;
-    const sparkColor = sparkUp ? "var(--positive)" : "var(--negative)";
-    const isActive = selectedSymbol === item.symbol;
-    const volBadge = scan?.id === "volume" ? volumeTierBadge(item) : null;
-
-    const isExpanded = expandedRowKey === entry.key;
-    const detailChips: Array<{ label: string; value: string }> = [];
-    if (item.gap_pct !== null && item.gap_pct !== undefined && Number.isFinite(item.gap_pct)) {
-      detailChips.push({ label: "Gap", value: `${item.gap_pct >= 0 ? "+" : ""}${item.gap_pct.toFixed(2)}%` });
-    }
-    if (item.rs_rating !== null && item.rs_rating !== undefined) {
-      detailChips.push({ label: "RS", value: String(Math.round(item.rs_rating)) });
-    }
-    if (item.relative_volume) {
-      detailChips.push({ label: "RVOL", value: `${item.relative_volume.toFixed(2)}x` });
-    }
-    if (item.volume_push_date) detailChips.push({ label: "Volume push", value: item.volume_push_date });
-    if (item.earnings_date) detailChips.push({ label: "Earnings", value: item.earnings_date });
-    if (item.session_date) detailChips.push({ label: "Session", value: item.session_date });
-
     return (
-      <div
+      <ScanRow
         key={entry.key}
-        className={`scan-row st-row${isActive ? " active" : ""}${isExpanded ? " is-expanded" : ""}`}
-        ref={
-          shouldVirtualize
-            ? undefined
-            : (element) => {
-                rowRefs.current[item.symbol] = element;
-              }
-        }
-        style={
-          {
-            "--st-grid": gridTemplate,
-            ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
-          } as CSSProperties
-        }
-      >
-        <button
-          type="button"
-          className="scan-row-main st-row-main"
-          onMouseEnter={onPrefetchSymbol ? () => onPrefetchSymbol(item.symbol) : undefined}
-          onFocus={onPrefetchSymbol ? () => onPrefetchSymbol(item.symbol) : undefined}
-          onClick={() => onPickSymbol(item.symbol)}
-        >
-          <span className="st-logo">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt=""
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <span className="st-logo-fallback">{initials(item.symbol)}</span>
-            )}
-          </span>
-          <span className="st-name">
-            <strong>
-              {item.symbol}
-              {volBadge ? (
-                <span
-                  title={volBadge.title}
-                  style={{
-                    display: "inline-block",
-                    marginLeft: 6,
-                    fontSize: "var(--fs-nano)",
-                    fontWeight: 500,
-                    letterSpacing: "0.04em",
-                    lineHeight: "14px",
-                    color: "#fff",
-                    background: volBadge.color,
-                    border: "1px solid rgba(255,255,255,0.4)",
-                    borderRadius: 4,
-                    padding: "0 5px",
-                    verticalAlign: "middle",
-                  }}
-                >
-                  {volBadge.code}
-                </span>
-              ) : null}
-              {item.new_since_prev ? (
-                <span className="st-new-chip" title="Entered this scanner today (was not in the previous session's results)">
-                  NEW
-                </span>
-              ) : null}
-            </strong>
-            <small>
-              {scanRowSubtitle(item)}
-              {item.also_in && item.also_in.length > 0 ? (
-                <span className="st-confluence" title={`Also flagged today by: ${item.also_in.join(", ")}`}>
-                  {" · also in "}
-                  {item.also_in.join(", ")}
-                </span>
-              ) : null}
-            </small>
-          </span>
-        </button>
-
-        <span className="st-price">{formatPrice(item.last_price, market)}</span>
-
-        <span className={`st-change ${up ? "positive-text" : "negative-text"}`}>
-          {item.change_pct >= 0 ? "+" : ""}
-          {item.change_pct.toFixed(2)}%
-        </span>
-
-        {visibleCols.has("spark") ? (
-          <span className="st-spark">
-            <Sparkline
-              values={sparkSeries}
-              minRangePct={10}
-              color={sparkColor}
-              width={52}
-              height={22}
-              className="st-spark-svg"
-              label={
-                sparkSeries.length >= 2
-                  ? `${item.symbol}: ${sparkSeries.length}-session close trend, ${sparkSeries[0].toFixed(2)} to ${sparkSeries[sparkSeries.length - 1].toFixed(2)}`
-                  : `${item.symbol}: no recent close history`
-              }
-            />
-          </span>
-        ) : null}
-
-        {visibleCols.has("rs") ? (
-          <span className="st-cell-center">
-            <RsBadge rs={item.rs_rating} />
-          </span>
-        ) : null}
-
-        {visibleCols.has("rs1m") ? (
-          <span className="st-cell-center">
-            <RsBadge rs={item.rs_rating_1m_ago} />
-          </span>
-        ) : null}
-
-        {visibleCols.has("rvol") ? (
-          <span className="st-cell-center st-rvol" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, lineHeight: 1.1 }}>
-            {volBadge ? (
-              <span
-                title={volBadge.title}
-                style={{
-                  fontSize: "var(--fs-nano)",
-                  fontWeight: 500,
-                  letterSpacing: "0.03em",
-                  color: "#fff",
-                  background: volBadge.color,
-                  border: "1px solid rgba(255,255,255,0.4)",
-                  borderRadius: 3,
-                  padding: "0 3px",
-                }}
-              >
-                {volBadge.code}
-              </span>
-            ) : null}
-            <span>{item.relative_volume.toFixed(2)}×</span>
-          </span>
-        ) : null}
-
-        {visibleCols.has("adr") ? (
-          <span
-            className={`st-cell-center st-adr ${adrClass(adrOf(item))}`}
-            title={
-              adrOf(item) === null
-                ? "No average daily range on record"
-                : `Average daily range ${adrOf(item)!.toFixed(2)}% over 20 sessions — a stop tighter than this sits inside one ordinary day's noise`
-            }
-          >
-            {adrOf(item) === null ? "—" : `${adrOf(item)!.toFixed(1)}%`}
-          </span>
-        ) : null}
-
-        {visibleCols.has("turnover") ? (
-          <span
-            className="st-cell-center st-turnover"
-            title={
-              item.avg_rupee_volume_30d_crore == null
-                ? "No traded value on record"
-                : `${item.avg_rupee_volume_30d_crore.toFixed(2)} Cr traded per day over 30 sessions`
-            }
-          >
-            {formatTurnoverCrore(item.avg_rupee_volume_30d_crore)}
-          </span>
-        ) : null}
-
-        {visibleCols.has("vdate") ? (
-          <span className="st-cell-center st-vdate" title={item.volume_push_date ? `High-volume push on ${item.volume_push_date}` : undefined}>
-            {item.volume_push_date ? formatVolumeDate(item.volume_push_date) : "—"}
-          </span>
-        ) : null}
-
-        {visibleCols.has("sdate") ? (
-          <span className="st-cell-center st-vdate" title={item.session_date ? `Showed expansion on ${item.session_date}` : undefined}>
-            {item.session_date ? formatVolumeDate(item.session_date) : "—"}
-          </span>
-        ) : null}
-
-        {visibleCols.has("edate") ? (
-          <span className="st-cell-center st-vdate" title={item.earnings_date ? `Result announced on ${item.earnings_date}` : undefined}>
-            {item.earnings_date ? formatVolumeDate(item.earnings_date) : "—"}
-          </span>
-        ) : null}
-
-        {visibleCols.has("gap") ? (
-          <span className="st-cell-center">
-            {item.gap_pct !== null && item.gap_pct !== undefined
-              ? `${item.gap_pct.toFixed(2)}%`
-              : "—"}
-          </span>
-        ) : null}
-
-        <span className="st-row-tools">
-          <button
-            type="button"
-            className={`st-expand-btn${isExpanded ? " open" : ""}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpandedRowKey((current) => (current === entry.key ? null : entry.key));
-            }}
-            aria-expanded={isExpanded}
-            title={isExpanded ? "Hide why this matched" : "Why did this match?"}
-          >
-            <ChevronDown size={14} strokeWidth={2.4} />
-          </button>
-          <button
-            type="button"
-            className="st-watch-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRequestAddToWatchlist(item.symbol);
-            }}
-            title={`Add ${item.symbol} to watchlist`}
-          >
-            <Plus size={14} strokeWidth={2.4} />
-          </button>
-        </span>
-
-        {isExpanded ? (
-          // These fields were already loaded and surfaced only as a native
-          // browser tooltip, which is invisible on touch and uncopyable.
-          <div className="st-row-detail" onClick={(e) => e.stopPropagation()}>
-            {item.reasons && item.reasons.length > 0 ? (
-              <div className="st-detail-block">
-                <span className="st-detail-label">Why it matched</span>
-                <ul className="st-detail-reasons">
-                  {item.reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="st-detail-block">
-                <span className="st-detail-label">Why it matched</span>
-                <p className="st-detail-muted">This scanner did not record per-stock reasons.</p>
-              </div>
-            )}
-
-            <div className="st-detail-block">
-              {detailChips.length > 0 ? (
-                <div className="st-detail-chips">
-                  {detailChips.map((chip) => (
-                    <span key={chip.label} className="st-detail-chip">
-                      <span className="st-detail-chip-label">{chip.label}</span>
-                      {chip.value}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              {item.also_in && item.also_in.length > 0 ? (
-                <div className="st-detail-alsoin">
-                  <span className="st-detail-label">Also flagged by</span>
-                  <span className="st-detail-scanners">{item.also_in.join(" · ")}</span>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-      </div>
+        entryKey={entry.key}
+        item={entry.item}
+        isActive={selectedSymbol === entry.item.symbol}
+        isExpanded={expandedRowKey === entry.key}
+        virtualHeight={virtualHeight}
+        gridTemplate={gridTemplate}
+        visibleCols={visibleCols}
+        scanId={scan?.id}
+        market={market}
+        registerRow={shouldVirtualize ? undefined : registerRow}
+        onPick={handlePickRow}
+        onPrefetch={onPrefetchSymbol ? handlePrefetchRow : undefined}
+        onToggleExpand={handleToggleRow}
+        onAddToWatchlist={handleAddRow}
+      />
     );
   };
 

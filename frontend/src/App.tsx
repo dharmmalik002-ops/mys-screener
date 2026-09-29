@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Bot,
   GraduationCap,
@@ -1916,16 +1916,36 @@ export default function App(props: AppProps) {
 
 function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const { showToast } = useToast();
-  const bootstrapMarket = initialMarket ?? readActiveMarket();
-  // ?symbol=XXX&chart=full — the link the chart grid's expand icon opens in a
-  // new tab. Read here rather than in an effect so the chart modal is already
-  // mounted on the first paint and no empty dashboard flashes behind it.
-  const bootstrapChartSymbol = readChartDeepLink();
-  const initialPreferences = readChartPreferences(bootstrapMarket);
-  const initialWatchlists = readWatchlists(bootstrapMarket);
-  const initialScannerSettings = readScannerSettings(bootstrapMarket);
-  const initialSavedScanners = readSavedScanners(bootstrapMarket);
-  const initialSavedDrawings = readSavedDrawings(bootstrapMarket);
+  // Everything read from localStorage to seed state is read ONCE. These were
+  // plain calls in the render body, so every App render — two per step to the
+  // next chart — re-parsed preferences, watchlists, scanner settings, saved
+  // scanners and drawings even though only the first read was ever used.
+  const [bootstrap] = useState(() => {
+    const market = initialMarket ?? readActiveMarket();
+    const watchlists = readWatchlists(market);
+    return {
+      market,
+      // ?symbol=XXX&chart=full — the link the chart grid's expand icon opens in
+      // a new tab. Read here rather than in an effect so the chart modal is
+      // already mounted on the first paint and no empty dashboard flashes
+      // behind it.
+      chartSymbol: readChartDeepLink(),
+      preferences: readChartPreferences(market),
+      watchlists,
+      activeWatchlistId: readActiveWatchlistId(watchlists, market),
+      scannerSettings: readScannerSettings(market),
+      savedScanners: readSavedScanners(market),
+      savedDrawings: readSavedDrawings(market),
+      chartPalette: readChartPalette(market),
+    };
+  });
+  const bootstrapMarket = bootstrap.market;
+  const bootstrapChartSymbol = bootstrap.chartSymbol;
+  const initialPreferences = bootstrap.preferences;
+  const initialWatchlists = bootstrap.watchlists;
+  const initialScannerSettings = bootstrap.scannerSettings;
+  const initialSavedScanners = bootstrap.savedScanners;
+  const initialSavedDrawings = bootstrap.savedDrawings;
   const [activeMarket, setActiveMarket] = useState<MarketKey>(bootstrapMarket);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [universeCatalog, setUniverseCatalog] = useState<ScanMatch[]>([]);
@@ -1955,7 +1975,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [chartPanelTab, setChartPanelTab] = useState<ChartPanelTab>(initialPreferences.chartPanelTab);
   const [timeframe, setTimeframe] = useState(initialPreferences.timeframe);
   const [chartStyle, setChartStyle] = useState<ChartStyle>(initialPreferences.chartStyle);
-  const [chartPalette, setChartPalette] = useState<ChartPaletteKey>(readChartPalette(bootstrapMarket));
+  const [chartPalette, setChartPalette] = useState<ChartPaletteKey>(bootstrap.chartPalette);
   const [showBenchmarkOverlay, setShowBenchmarkOverlay] = useState(initialPreferences.showBenchmarkOverlay);
   const [indicatorKeys, setIndicatorKeys] = useState<IndicatorKey[]>(initialPreferences.indicatorKeys);
   const [universeFilter, setUniverseFilter] = useState<UniverseFilter>(() => readUniverseFilter(bootstrapMarket));
@@ -2077,7 +2097,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     window.location.reload();
   }, [design]);
   const [watchlists, setWatchlists] = useState<LocalWatchlist[]>(initialWatchlists);
-  const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
+  const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(bootstrap.activeWatchlistId);
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
   const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number; suggestedStopLoss?: number; setup?: string } | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
@@ -2135,12 +2155,32 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const watchlistsServerSignatureRef = useRef<Record<MarketKey, string | null>>({ india: null });
   const watchlistsHydrationRequestIdRef = useRef(0);
   const autoRefreshAttemptKeyRef = useRef<Record<MarketKey, string | null>>({ india: null });
-  const persistedChartCacheRef = useRef<Record<MarketKey, Record<string, PersistedChartCacheEntry>>>({
-    india: readPersistedChartCache("india"),
-  });
-  const marketViewCacheRef = useRef<Record<MarketKey, MarketViewCacheEntry>>({
-    india: readPersistedMarketViewCache("india"),
-  });
+  // useRef evaluates its argument on every render and ignores it after the
+  // first — these two parsed ~0.5 MB of cached charts and the whole market view
+  // (dashboard, groups, universe) out of localStorage on each one.
+  const [persistedCachesAtBoot] = useState(() => ({
+    charts: { india: readPersistedChartCache("india") } as Record<MarketKey, Record<string, PersistedChartCacheEntry>>,
+    view: { india: readPersistedMarketViewCache("india") } as Record<MarketKey, MarketViewCacheEntry>,
+  }));
+  const persistedChartCacheRef = useRef(persistedCachesAtBoot.charts);
+  const marketViewCacheRef = useRef(persistedCachesAtBoot.view);
+  // The in-memory copy updates at once; the localStorage write is coalesced.
+  // It serialises the dashboard, groups and the whole universe, and it used to
+  // run synchronously on every chart step because the selected symbol is part
+  // of the entry.
+  const marketViewPersistTimerRef = useRef<number | null>(null);
+  const marketViewPersistPendingRef = useRef<Set<MarketKey>>(new Set());
+  const flushMarketViewCache = () => {
+    if (marketViewPersistTimerRef.current !== null) {
+      window.clearTimeout(marketViewPersistTimerRef.current);
+      marketViewPersistTimerRef.current = null;
+    }
+    const pending = [...marketViewPersistPendingRef.current];
+    marketViewPersistPendingRef.current.clear();
+    for (const market of pending) {
+      persistMarketViewCache(market, marketViewCacheRef.current[market]);
+    }
+  };
   const updateMarketViewCache = (
     market: MarketKey,
     updates: Partial<MarketViewCacheEntry>,
@@ -2149,8 +2189,25 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       ...marketViewCacheRef.current[market],
       ...updates,
     };
-    persistMarketViewCache(market, marketViewCacheRef.current[market]);
+    marketViewPersistPendingRef.current.add(market);
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (marketViewPersistTimerRef.current !== null) {
+      window.clearTimeout(marketViewPersistTimerRef.current);
+    }
+    marketViewPersistTimerRef.current = window.setTimeout(flushMarketViewCache, 1000);
   };
+  const flushMarketViewCacheRef = useRef(flushMarketViewCache);
+  flushMarketViewCacheRef.current = flushMarketViewCache;
+  useEffect(() => {
+    const flush = () => flushMarketViewCacheRef.current();
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
 
   // Every primary-nav entry point (header pills, bottom tab bar) goes through
   // here so the Groups reset stays in one place.
@@ -2367,7 +2424,16 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     const requestId = chartRequestIdRef.current + 1;
     chartRequestIdRef.current = requestId;
 
-    let cachedChart = readCachedChart(market, symbol, chartTimeframe);
+    const memoryChart = readCachedChart(market, symbol, chartTimeframe);
+    if (memoryChart && shouldUseCached && !options.forceNetwork) {
+      // Already on screen: displayedChart reads the memory cache during the
+      // render that changed the selection, so there is nothing to set here —
+      // and every setter would cost another full App render.
+      setChartError(null);
+      setChartLoading(false);
+      return memoryChart;
+    }
+    let cachedChart = memoryChart;
     let staleChart = cachedChart ? null : readStaleCachedChart(market, symbol, chartTimeframe);
     if (!cachedChart && !staleChart && shouldUseCached) {
       const stored = await readStoredChart(market, symbol, chartTimeframe);
@@ -3615,22 +3681,30 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             : activeScanner === "improving-rs"
               ? "52W High RS"
               : "Matches";
-  const orderedScanItems =
-    activePage !== "screener" || activeScanner === "improving-rs"
-      ? []
-      : scanResults?.scan.id === "custom-scan"
-        ? [...(scanResults?.items ?? [])]
-        : [...(scanResults?.items ?? [])].sort((left, right) => {
-            if (resultSortMode === "change") {
-              return right.change_pct - left.change_pct;
-            }
-            return (right.rs_rating ?? Number.NEGATIVE_INFINITY) - (left.rs_rating ?? Number.NEGATIVE_INFINITY);
-          });
+  // Memoised: rebuilt on every App render, this handed ScanTable a new array
+  // each time the chart moved to the next stock, so every row re-rendered.
+  const orderedScanItems = useMemo(
+    () =>
+      activePage !== "screener" || activeScanner === "improving-rs"
+        ? []
+        : scanResults?.scan.id === "custom-scan"
+          ? [...(scanResults?.items ?? [])]
+          : [...(scanResults?.items ?? [])].sort((left, right) => {
+              if (resultSortMode === "change") {
+                return right.change_pct - left.change_pct;
+              }
+              return (right.rs_rating ?? Number.NEGATIVE_INFINITY) - (left.rs_rating ?? Number.NEGATIVE_INFINITY);
+            }),
+    [activePage, activeScanner, resultSortMode, scanResults],
+  );
   // The universe gate is applied HERE and nowhere else. Every screener surface
   // reads `visibleScanItems`, so filtering once keeps the strip's count, the
   // table, the distribution charts, the chart grid, the CSV export and the
   // arrow-key order from disagreeing about what the universe is.
-  const universeGate = applyUniverseFilter(orderedScanItems, universeFilter);
+  const universeGate = useMemo(
+    () => applyUniverseFilter(orderedScanItems, universeFilter),
+    [orderedScanItems, universeFilter],
+  );
   const visibleScanItems = universeGate.items;
   const screenerGateActive = activePage === "screener" && activeScanner !== "improving-rs" && universeGate.removed > 0;
   const activeViewMetric =
@@ -3673,7 +3747,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     ),
   );
   const navigationSeedKey = navigationSeed.join("|");
-  const displayedChart = chart && chart.symbol === selectedSymbol && chart.timeframe === timeframe ? chart : null;
+  // A chart already in memory is drawn by the very render that changes the
+  // selection. Waiting for loadChartForSelection's setChart put a second full
+  // App render between the key press and the candles on every step.
+  const memoryCachedChart = selectedSymbol ? readCachedChart(activeMarket, selectedSymbol, timeframe) : null;
+  const displayedChart =
+    memoryCachedChart
+    ?? (chart && chart.symbol === selectedSymbol && chart.timeframe === timeframe ? chart : null);
+  const displayedChartCacheState = memoryCachedChart && memoryCachedChart !== chart ? "cached" : chartCacheState;
   const activeChartKey = selectedSymbol ? `${selectedSymbol}:${timeframe}` : null;
   const activeAnnotations = activeChartKey ? savedDrawings[activeChartKey] ?? [] : [];
   const activeFundamentals = selectedSymbol ? fundamentalsBySymbol[selectedSymbol] ?? null : null;
@@ -5946,6 +6027,22 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
    * it in the right column, and the group dialog renders the same panel in its
    * own right pane. Two copies of ~45 props drift; one object cannot.
    */
+  // While the chart modal is open it covers the page, yet the page's own
+  // ChartPanel (Screener, Groups, Watchlists) re-rendered and rebuilt its chart
+  // on every step through the list — two full chart mounts per "next stock",
+  // one of them invisible. Handing React the same element object again makes it
+  // skip that subtree entirely; the panel stays mounted (layout and scroll are
+  // untouched) and catches up the moment the modal closes.
+  const frozenPagePanelsRef = useRef<Record<string, ReactNode>>({});
+  const freezeBehindChartModal = (slot: string, node: ReactNode) => {
+    const frozen = frozenPagePanelsRef.current;
+    if (chartOpen && slot in frozen) {
+      return frozen[slot];
+    }
+    frozen[slot] = node;
+    return node;
+  };
+
   const pageChartPanelProps = {
     market: activeMarket,
     symbol: selectedSymbol,
@@ -5964,7 +6061,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     onPanelTabChange: setChartPanelTab,
     chartError: chartError,
     chartLoading: chartLoading,
-    chartCacheState: chartCacheState,
+    chartCacheState: displayedChartCacheState,
     fundamentals: activeFundamentals,
     fundamentalsLoading: fundamentalsLoading,
     fundamentalsError: fundamentalsError,
@@ -6809,6 +6906,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                     )}
                   </div>
 
+                  {freezeBehindChartModal("screener", (
                   <ChartPanel
                     key={activeChartKey ?? "empty-chart"}
                     market={activeMarket}
@@ -6828,7 +6926,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                     onPanelTabChange={setChartPanelTab}
                     chartError={chartError}
                     chartLoading={chartLoading}
-                    chartCacheState={chartCacheState}
+                    chartCacheState={displayedChartCacheState}
                     fundamentals={activeFundamentals}
                     fundamentalsLoading={fundamentalsLoading}
                     fundamentalsError={fundamentalsError}
@@ -6859,6 +6957,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                     {...fullscreenPane("screener")}
                     expanded
                   />
+                  ))}
                 </>
               ) : activePage === "groups" ? (
                 <GroupsPanel
@@ -6901,6 +7000,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               )}
 
               {(activePage === "groups" && groupsView !== "rotation") || activePage === "watchlists" ? (
+                freezeBehindChartModal("page", (
                 <ChartPanel
                   key={activeChartKey ?? "empty-chart"}
                   {...pageChartPanelProps}
@@ -6910,6 +7010,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   // pane and the chart began at the bottom of the screen.
                   expanded
                 />
+                ))
               ) : null}
             </section>
             </>
@@ -7014,7 +7115,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                         onPanelTabChange={setChartPanelTab}
                         chartError={chartError}
                         chartLoading={chartLoading}
-                        chartCacheState={chartCacheState}
+                        chartCacheState={displayedChartCacheState}
                         fundamentals={activeFundamentals}
                         fundamentalsLoading={fundamentalsLoading}
                         fundamentalsError={fundamentalsError}
