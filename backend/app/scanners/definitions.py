@@ -70,8 +70,11 @@ def scanner_sector_label(sector: str | None, sub_sector: str | None) -> str:
 
 
 def _gap_from_level(current: float, level: float) -> float:
-    if level == 0:
-        return 0.0
+    # A missing level is not a level. Returning 0.0 here read as "exactly AT
+    # the high" (or low), which passes every at-the-level test there is. NaN
+    # fails every comparison instead, so a scanner simply does not fire.
+    if not level or level <= 0:
+        return float("nan")
     return ((current / level) - 1) * 100
 
 
@@ -449,13 +452,14 @@ def _evaluate_run_up_consolidation(snapshot: StockSnapshot) -> tuple[float, list
         + max(volume_dryup_ratio, 0.0) * 10
     )
     recovery_reason = (
-        "Base held above 60% of the 52W high"
+        # From the constant: the text said 60% after the rule moved to 70%.
+        f"Base held above {CONSOLIDATING_BASE_LOW_TO_52W_HIGH_RATIO:.0%} of the 52W high"
         if normal_base_ok
-        else "Recovered to within 10% of the 52W high after a deeper base"
+        else f"Recovered to within {1 - CONSOLIDATING_DEEP_BASE_RECOVERY_RATIO:.0%} of the 52W high after a deeper base"
     )
     reasons = [
         recovery_reason,
-        f"15D range tightened to {tightness_pct:.2f}%",
+        f"{CONSOLIDATING_TIGHTNESS_WINDOW_DAYS}D range tightened to {tightness_pct:.2f}%",
         f"10D avg volume is {(recent_avg_volume / avg_volume_50d):.2f}x of 50D avg",
     ]
     return round(score, 2), reasons
@@ -563,6 +567,16 @@ def _relative_strength(snapshot: StockSnapshot) -> tuple[float, list[str]] | Non
     return None
 
 
+# Criterion 8 of Minervini's Trend Template: relative strength ranking of at
+# least 70. It was only a score bonus here, so a name lagging most of the
+# market still passed the template.
+MINERVINI_MIN_RS_RATING = 70
+
+
+def _passes_template_rs(snapshot: StockSnapshot) -> bool:
+    return bool(snapshot.rs_eligible) and snapshot.rs_rating >= MINERVINI_MIN_RS_RATING
+
+
 def _minervini_1m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     sma50 = snapshot.sma50
     sma150 = snapshot.sma150
@@ -583,6 +597,8 @@ def _minervini_1m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
     if snapshot.pct_from_52w_high > 25:
         return None
+    if not _passes_template_rs(snapshot):
+        return None
 
     distance_to_high_score = max(0.0, 25 - snapshot.pct_from_52w_high)
     distance_from_low_score = min(max(snapshot.pct_from_52w_low - 25, 0.0), 40.0)
@@ -599,6 +615,7 @@ def _minervini_1m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         f"Price above 50/150/200 SMA ({sma50:.2f} / {sma150:.2f} / {sma200:.2f})",
         f"200 SMA up vs 1M ago ({sma200_1m_ago:.2f} -> {sma200:.2f})",
         f"{snapshot.pct_from_52w_low:.2f}% above 52W low and {snapshot.pct_from_52w_high:.2f}% below 52W high",
+        f"RS Rating {snapshot.rs_rating} (>= {MINERVINI_MIN_RS_RATING})",
     ]
     return round(score, 2), reasons
 
@@ -624,6 +641,8 @@ def _minervini_5m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
     if snapshot.pct_from_52w_high > 25:
         return None
+    if not _passes_template_rs(snapshot):
+        return None
 
     distance_to_high_score = max(0.0, 25 - snapshot.pct_from_52w_high)
     distance_from_low_score = min(max(snapshot.pct_from_52w_low - 30, 0.0), 45.0)
@@ -642,6 +661,7 @@ def _minervini_5m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         f"Price above 50/150/200 SMA ({sma50:.2f} / {sma150:.2f} / {sma200:.2f})",
         f"200 SMA rising over 1M and 5M ({sma200_5m_ago:.2f} -> {sma200_1m_ago:.2f} -> {sma200:.2f})",
         f"{snapshot.pct_from_52w_low:.2f}% above 52W low and {snapshot.pct_from_52w_high:.2f}% below 52W high",
+        f"RS Rating {snapshot.rs_rating} (>= {MINERVINI_MIN_RS_RATING})",
     ]
     return round(score, 2), reasons
 
@@ -705,7 +725,7 @@ def _ema_expansion_with_thresholds(
         score = 75 + rvol_20 * 2 + snapshot.change_pct
         return round(score, 2), [
             "Expansion setup",
-            f"Daily Change: {snapshot.change_pct}%",
+            f"Daily Change: {snapshot.change_pct:.2f}%",
             f"20-Day RVOL: {rvol_20:.2f}x",
             f"Price: {snapshot.last_price:.2f}",
         ]
@@ -963,6 +983,7 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 # pattern's 5-session follow-through doesn't exist yet on day one.
 POSITIVE_EARNINGS_LOOKBACK_DAYS = 60
 POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE = 0.75
+EARNINGS_SEASON_GRACE_DAYS = 21
 
 
 def current_earnings_season_start(today: date) -> date:
@@ -975,9 +996,16 @@ def current_earnings_season_start(today: date) -> date:
     reactions and excludes the prior quarter's tail that a flat 60-day lookback
     would otherwise sweep in.
     """
-    reporting_months = (1, 4, 7, 10)
-    month = max(m for m in reporting_months if m <= today.month)
-    return date(today.year, month, 1)
+    # The new quarter's first results print around the 10th, so for the first
+    # weeks of a reporting month every company's LATEST result still belongs to
+    # the previous season. Switching on the 1st emptied the scanner for up to
+    # three weeks, four times a year. The 60-day lookback still bounds age.
+    starts = [date(today.year, m, 1) for m in (1, 4, 7, 10)] + [date(today.year - 1, 10, 1)]
+    begun = sorted(start for start in starts if start <= today)
+    season = begun[-1]
+    if (today - season).days < EARNINGS_SEASON_GRACE_DAYS and len(begun) > 1:
+        season = begun[-2]
+    return season
 POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT = 1.0
 POSITIVE_EARNINGS_MIN_DAY_RVOL = 2.0
 POSITIVE_EARNINGS_MIN_RETURN_5D_PCT = 10.0
@@ -1112,6 +1140,10 @@ def _rs_line_leads(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     if avg_vol_20 < 25000 or snapshot.last_price <= 30:
         return None
     if not snapshot.rs_eligible or snapshot.rs_rating < 80:
+        return None
+    # "A fresh high" needs the earlier readings: 0 means unknown, and against
+    # an unknown every rating is a new high (with a +80 "gain" in the score).
+    if not (snapshot.rs_rating_1d_ago and snapshot.rs_rating_1w_ago and snapshot.rs_rating_1m_ago):
         return None
     prior_best = max(snapshot.rs_rating_1d_ago, snapshot.rs_rating_1w_ago, snapshot.rs_rating_1m_ago)
     if snapshot.rs_rating < prior_best or snapshot.rs_rating <= snapshot.rs_rating_1m_ago:
@@ -1527,6 +1559,8 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
     if snapshot.pct_from_52w_high > 25 or snapshot.pct_from_52w_low < 30:
         return None
+    if not _passes_template_rs(snapshot):
+        return None  # the template's 8th rule; VCPs form in leaders
 
     # Sessions, not list slots — see _session_closes. An 18-week base plus the
     # run-up that built it needs months of history, which 20 daily closes cannot
@@ -1805,7 +1839,10 @@ def _tight_closes(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
     if snapshot.pct_from_52w_high > 15:
         return None
-    closes = [float(v) for v in (snapshot.recent_closes or []) if v is not None]
+    # Ending TODAY: `recent_closes` can still stop at yesterday before the
+    # session's patch lands, and the three closes measured would then be the
+    # three before today. sparkline_closes appends today's close when missing.
+    closes = sparkline_closes(snapshot, limit=10)
     if len(closes) < 5 or closes[-1] <= 0:
         return None
     last = closes[-1]
@@ -1879,8 +1916,8 @@ SCANS: list[ScanDefinition] = [
         _contraction,
     ),
     ScanDefinition("relative-strength", "Relative Strengths", "Setups", "Composite RS leaders across 20D and 60D.", _relative_strength),
-    ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
-    ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),
+    ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, strong 52-week positioning, and RS Rating 70+.", _minervini_1m),
+    ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, strong 52-week positioning, and RS Rating 70+.", _minervini_5m),
     ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 6.5%, 20-day RVOL > 3.0, and liquidity floors (AvgVol20 > 25k, Vol > 50k, Price > 30).", _ema_expansion),
     ScanDefinition(
         "positive-earnings",
@@ -1914,7 +1951,7 @@ SCANS: list[ScanDefinition] = [
         "vcp",
         "VCP",
         "Setups",
-        "Minervini Volatility Contraction Pattern: 30%+ prior run-up, 2-18 week base under 30% deep, progressively shallower pullbacks (T1 > T2 > T3), volume dry-up into a tight final leg, within 6% of the pivot — entry/stop/risk included.",
+        "Minervini Volatility Contraction Pattern in a Stage-2 leader (RS 70+): 30%+ prior run-up, 2-18 week base under 30% deep, progressively shallower pullbacks (T1 > T2 > T3), volume dry-up into a tight final leg, within 6% of the pivot — entry/stop/risk included.",
         _vcp,
     ),
     ScanDefinition(
@@ -2044,12 +2081,80 @@ def ipo_batch_listing_dates(snapshots: list[StockSnapshot], today: date | None =
     return {listed for listed, count in counts.items() if count >= IPO_BATCH_LISTING_MIN}
 
 
-def run_scan(scan: ScanDefinition, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
-    matches: list[ScanMatch] = []
-    if scan.id == "ipo":
+# Scanners that compare today with a long look-back window. `None` = the whole
+# listed life (all-time levels). A stock's "52-week high" is only a 52-week high
+# when the app holds 52 weeks of its prices: 192 of the companies NSE admitted
+# in bulk arrived with only their NSE bars, so every short rally read as a fresh
+# 52-week or all-time high for companies that have traded on BSE for decades.
+#
+# The evidence used is the long moving average, not `history_bars`: the daily
+# patch rolls prices forward without bumping that count (MILKYMIST, listed 41
+# days earlier, read 2; KMCSHIL read 2 while carrying a real 200-day average and
+# a 65-167 52-week range). A 200-session SMA only exists when 200 sessions do.
+LEVEL_SCAN_MIN_SESSIONS: dict[str, int | None] = {
+    "six-month-high": 120,
+    "six-month-low": 120,
+    "high-52w": 240,
+    "low-52w": 240,
+    "near-52w-high": 240,
+    "near-52w-low": 240,
+    "breakout-52w": 240,
+    "all-time-high": None,
+    "all-time-low": None,
+    "near-ath": None,
+    "near-atl": None,
+    "breakout-ath": None,
+}
+# A genuine listing inside this many days has had its highs and lows tracked
+# since its first session, so its levels cover its whole life.
+RECENT_LISTING_DAYS = 400
+
+
+def _history_covers_window(
+    snapshot: StockSnapshot,
+    sessions_needed: int | None,
+    batch_dates: set[date],
+    today: date,
+) -> bool:
+    long_average = snapshot.sma150 if sessions_needed is not None and sessions_needed <= 150 else snapshot.sma200
+    if long_average is not None:
+        return True
+    listed = snapshot.listing_date
+    if listed is None or listed in batch_dates:
+        # No long history, and no whole-life coverage either: a bulk admission's
+        # history starts at NSE admission, not at the company's listing.
+        return False
+    return 0 <= (today - listed).days <= RECENT_LISTING_DAYS
+
+
+def _long_averages_populated(snapshots: list[StockSnapshot]) -> bool:
+    # A cache that carries no moving averages at all would empty every 52-week
+    # scan through this gate, so the gate stands down instead.
+    if not snapshots:
+        return False
+    return sum(1 for s in snapshots if s.sma200 is not None) >= len(snapshots) * 0.5
+
+
+def eligible_for_scan(scan_id: str, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
+    """The universe a scanner may judge. Some rules need context no single
+    snapshot carries (which listing dates are bulk admissions); every path that
+    runs a scanner's rule — the catalog and the Custom Scanner's pattern — goes
+    through here so they cannot disagree."""
+    if scan_id == "ipo":
         batch_dates = ipo_batch_listing_dates(snapshots)
         if batch_dates:
-            snapshots = [s for s in snapshots if s.listing_date not in batch_dates]
+            return [s for s in snapshots if s.listing_date not in batch_dates]
+    elif scan_id in LEVEL_SCAN_MIN_SESSIONS and _long_averages_populated(snapshots):
+        batch_dates = ipo_batch_listing_dates(snapshots)
+        today = date.today()
+        needed = LEVEL_SCAN_MIN_SESSIONS[scan_id]
+        return [s for s in snapshots if _history_covers_window(s, needed, batch_dates, today)]
+    return snapshots
+
+
+def run_scan(scan: ScanDefinition, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
+    matches: list[ScanMatch] = []
+    snapshots = eligible_for_scan(scan.id, snapshots)
     for snapshot in snapshots:
         outcome = scan.evaluator(snapshot)
         if not outcome:
@@ -2080,6 +2185,12 @@ def _return_for_period(snapshot: StockSnapshot, period: str) -> float:
 
 
 def _near_high_distance(snapshot: StockSnapshot, period: str) -> float:
+    distance = _raw_near_high_distance(snapshot, period)
+    # Unknown level (NaN) must fail a max-distance filter, not slip past it.
+    return distance if distance == distance else float("inf")
+
+
+def _raw_near_high_distance(snapshot: StockSnapshot, period: str) -> float:
     if period == "1M":
         return abs(min(_gap_from_level(snapshot.last_price, snapshot.month_high_level), 0))
     if period == "3M":
@@ -2383,6 +2494,8 @@ def _custom_sort_value(item: ScanMatch, sort_by: str) -> float:
 
 def run_custom_scan(request: CustomScanRequest, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
     matches: list[ScanMatch] = []
+    if request.pattern and request.pattern != "any":
+        snapshots = eligible_for_scan(request.pattern, snapshots)
     for snapshot in snapshots:
         if not _passes_custom_filters(snapshot, request):
             continue
@@ -2483,14 +2596,17 @@ def run_returns_scan(request: ReturnsScanRequest, snapshots: list[StockSnapshot]
         
         # Check volume contraction against 50-day MA
         if request.enable_volume_contraction:
-            if snapshot.avg_volume_30d <= 0:
+            # The filter is "vs 50-day average" (max_volume_vs_50d_avg); the
+            # snapshot carries the real one, so the 30-day stand-in is only a
+            # fallback now.
+            baseline_volume = snapshot.avg_volume_50d or snapshot.avg_volume_30d
+            if not baseline_volume or baseline_volume <= 0:
                 continue
-            # Use recent volumes and compare against 50d average (approximated by avg_volume_30d)
             recent_volumes = snapshot.recent_volumes[-5:] if snapshot.recent_volumes else []
             if not recent_volumes:
                 continue
             avg_recent_volume = sum(recent_volumes) / len(recent_volumes)
-            volume_ratio = avg_recent_volume / snapshot.avg_volume_30d if snapshot.avg_volume_30d > 0 else 1.0
+            volume_ratio = avg_recent_volume / baseline_volume
             if volume_ratio > request.max_volume_vs_50d_avg:
                 continue
         
@@ -2598,22 +2714,42 @@ def _ema_series(values: list[float], span: int) -> list[float]:
 
 
 def _mb_closes(snapshot: StockSnapshot) -> list[float]:
-    """Long daily close series (~240 bars) from the snapshot's chart grid points."""
-    points = getattr(snapshot, "chart_grid_points", None) or []
-    closes: list[float] = []
-    for p in points:
+    """DAILY closes, oldest first, ending today.
+
+    Every window here is counted in sessions — the 10/21 EMAs, the burst and
+    consolidation windows — and the trailing `recent_volumes` are matched to
+    the last closes one-for-one. `chart_grid_points` is not a daily series
+    (~2.17 sessions per point for a full history; see _session_closes), so
+    reading it as one made the "10 EMA" a ~22-session EMA, doubled every
+    window, and paired each volume with the wrong session. The same mistake was
+    fixed in VCP, Power Base and Qullamaggie; this scanner still had it.
+    """
+    daily = close_history.closes_for(snapshot)
+    if daily:
+        return daily
+
+    points: list[tuple[int, float]] = []
+    for p in getattr(snapshot, "chart_grid_points", None) or []:
         value = getattr(p, "value", None)
-        if value is None and isinstance(p, dict):
-            value = p.get("value")
-        if value is None:
-            continue
+        time = getattr(p, "time", None)
+        if isinstance(p, dict):
+            value = p.get("value", value)
+            time = p.get("time", time)
         try:
-            fv = float(value)
+            fv = float(value) if value is not None else 0.0
+            ft = int(time or 0)
         except (TypeError, ValueError):
             continue
         if fv > 0:
-            closes.append(fv)
-    return closes
+            points.append((ft, fv))
+    if len(points) >= 2:
+        gaps = sorted(b[0] - a[0] for a, b in zip(points, points[1:]) if b[0] > a[0])
+        # A grid built from under ~240 bars is sampled 1:1, i.e. genuinely
+        # daily (a weekend gap is 3 days); only then may it stand in.
+        if gaps and gaps[len(gaps) // 2] <= 2 * 86400:
+            return [value for _, value in points]
+
+    return sparkline_closes(snapshot, limit=len(snapshot.recent_closes or []) + 1)
 
 
 def _mb_volume_at(vols: list[int], voffset: int, close_index: int) -> float | None:
@@ -2937,7 +3073,8 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
     This scanner is intentionally strict about the major trend: every candidate
     must trade above the 50 SMA and 200 SMA, with the 50 SMA above the 200 SMA.
     It then looks for the user's preferred structure: a recent institutional
-    push of roughly 15-20% in a few sessions, followed by a controlled pullback
+    push of roughly 15-20% in a few sessions (the gate itself is 10%, set when
+    the scanner was rewritten in 54c24611), followed by a controlled pullback
     or surf around the 10/21 EMA.
     """
     matches: list[ScanMatch] = []

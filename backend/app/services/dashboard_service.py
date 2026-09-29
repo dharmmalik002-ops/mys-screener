@@ -93,6 +93,7 @@ from app.scanners.definitions import (
     scanner_sector_label,
     sparkline_closes,
 )
+from app.services import close_history
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.market_environment import (
     build_focus_list,
@@ -1377,7 +1378,7 @@ class DashboardService:
                     id="bread-butter",
                     name="Bread & Butter",
                     category="Setups",
-                    description="Stage 2 stocks above the 50/200 SMA after a fresh 15-20% impulse and an orderly rest around the 10/21 EMA.",
+                    description="Stage 2 stocks above the 50/200 SMA after a fresh 10%+ push (typically 15-20%) in 2-6 sessions and an orderly rest around the 10/21 EMA.",
                     hit_count=len(bread_butter),
                 )
             )
@@ -2083,6 +2084,46 @@ class DashboardService:
             for timestamp, row in weekly.iterrows()
         ]
 
+    @staticmethod
+    def _daily_close_points(snapshot: StockSnapshot) -> list[ChartLinePoint]:
+        """True DAILY closes for the demand-zone fallback.
+
+        The zone logic counts bars as sessions and maps the trailing daily
+        highs/lows/volumes onto the last points one-for-one. `chart_grid_points`
+        is ~2.17 sessions per point for a full history, so building "daily" bars
+        from it stretched every window and mis-paired the recent bars. It is used
+        only when it is genuinely daily (a short history sampled 1:1); otherwise
+        the committed daily close history is used, dated back by weekday from
+        the snapshot's session. Neither available -> no bars, not invented ones.
+        """
+        grid = [
+            ChartLinePoint(time=int(point.time), value=round(float(point.value), 4))
+            for point in (snapshot.chart_grid_points or [])
+            if point.value not in (None, 0)
+        ]
+        if len(grid) >= 2:
+            gaps = sorted(b.time - a.time for a, b in zip(grid, grid[1:]) if b.time > a.time)
+            if gaps and gaps[len(gaps) // 2] <= 2 * 86400:
+                return grid
+        closes = close_history.closes_for(snapshot)
+        if not closes:
+            return []
+        day = snapshot.history_session_date or date.today()
+        days: list[date] = []
+        for _ in closes:
+            while day.weekday() >= 5:
+                day -= timedelta(days=1)
+            days.append(day)
+            day -= timedelta(days=1)
+        days.reverse()
+        return [
+            ChartLinePoint(
+                time=int(datetime(d.year, d.month, d.day, tzinfo=timezone.utc).timestamp()),
+                value=round(float(value), 4),
+            )
+            for d, value in zip(days, closes)
+        ]
+
     @classmethod
     def _snapshot_demand_zone_bars(
         cls,
@@ -2090,11 +2131,7 @@ class DashboardService:
         timeframe: str,
         bars: int,
     ) -> list[ChartBar]:
-        points = [
-            ChartLinePoint(time=int(point.time), value=round(float(point.value), 4))
-            for point in (snapshot.chart_grid_points or [])
-            if point.value not in (None, 0)
-        ]
+        points = cls._daily_close_points(snapshot)
         if len(points) < 30:
             return []
         daily_limit = max(260, bars * 7) if timeframe == "weekly" else bars
@@ -4115,7 +4152,7 @@ class DashboardService:
                 "id": "bread-butter",
                 "name": "Bread & Butter",
                 "category": "Setups",
-                "description": "Stage 2 stocks above the 50/200 SMA after a fresh 15-20% impulse, strong volume footprint, and an orderly rest around the 10/21 EMA.",
+                "description": "Stage 2 stocks above the 50/200 SMA after a fresh 10%+ push (typically 15-20%) in 2-6 sessions, strong volume footprint, and an orderly rest around the 10/21 EMA.",
                 "hit_count": len(items),
             }
             return await self._scan_results_response(

@@ -126,12 +126,22 @@ class PositiveEarningsEvaluatorTests(unittest.TestCase):
 
 class EarningsSeasonStartTests(unittest.TestCase):
     def test_season_starts_map_to_reporting_months(self) -> None:
-        self.assertEqual(current_earnings_season_start(date(2026, 7, 14)), date(2026, 7, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 7, 25)), date(2026, 7, 1))
         self.assertEqual(current_earnings_season_start(date(2026, 8, 30)), date(2026, 7, 1))
         self.assertEqual(current_earnings_season_start(date(2026, 9, 30)), date(2026, 7, 1))
-        self.assertEqual(current_earnings_season_start(date(2026, 10, 3)), date(2026, 10, 1))
         self.assertEqual(current_earnings_season_start(date(2026, 2, 5)), date(2026, 1, 1))
         self.assertEqual(current_earnings_season_start(date(2026, 5, 20)), date(2026, 4, 1))
+
+    def test_the_previous_season_holds_until_new_results_arrive(self) -> None:
+        # New-quarter results start printing around the 10th. Switching on the
+        # 1st emptied the scanner for three weeks every season, because every
+        # company's latest result still belonged to the previous one.
+        self.assertEqual(current_earnings_season_start(date(2026, 10, 3)), date(2026, 7, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 7, 14)), date(2026, 4, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 10, 22)), date(2026, 10, 1))
+
+    def test_january_falls_back_across_the_year(self) -> None:
+        self.assertEqual(current_earnings_season_start(date(2026, 1, 6)), date(2025, 10, 1))
 
 
 class ComputeOneReactionTests(unittest.TestCase):

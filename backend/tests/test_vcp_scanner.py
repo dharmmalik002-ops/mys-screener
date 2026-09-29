@@ -92,6 +92,9 @@ def _make_snapshot(**overrides) -> StockSnapshot:
         "darvas_low": 141.0,
         "pullback_depth_pct": 2.3,
         "trend_strength": 0.9,
+        # A leader: the trend template's 8th rule is RS >= 70.
+        "rs_eligible": True,
+        "rs_rating": 88,
         "sma50": 138.0,
         "sma150": 125.0,
         "sma200": 112.0,
@@ -169,6 +172,17 @@ class VcpScannerTests(unittest.TestCase):
     def test_broken_trend_rejected(self) -> None:
         snapshot = _make_snapshot(sma50=160.0)  # price below 50 SMA
         self.assertIsNone(_vcp(snapshot))
+
+    def test_a_laggard_is_rejected_by_the_template_rs_rule(self) -> None:
+        self.assertIsNone(_vcp(_make_snapshot(rs_rating=55)))
+        self.assertIsNone(_vcp(_make_snapshot(rs_eligible=False)))
+
+    def test_tight_closes_measure_the_session_ending_today(self) -> None:
+        # recent_closes still stops at yesterday: the last three STORED closes
+        # are tight, but today's close (last_price) broke 4% out of the band.
+        closes = [140.0] * 17 + [146.0, 146.4, 146.2]
+        stale_tail = _make_snapshot(recent_closes=closes, last_price=152.0, change_pct=4.0)
+        self.assertIsNone(_tight_closes(stale_tail))
 
 
 class TightClosesTests(unittest.TestCase):
