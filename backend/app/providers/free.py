@@ -3665,6 +3665,11 @@ class FreeMarketDataProvider:
         except (TypeError, ValueError):
             close = 0.0
         reference = self._ipo_listing_reference(listing_meta, close)
+        # A baked seed row can predate its NSE listing date (TAALTECH carried
+        # None). Without one it is judged by market cap alone, falls under the
+        # universe floor, and never reaches the IPO scan.
+        if not row.get("listing_date") and listing_meta.get("listing_date"):
+            row["listing_date"] = str(listing_meta["listing_date"])
         for key in ("sector", "sub_sector"):
             if str(row.get(key) or "").strip() in ("", "Unclassified") and reference[key] != "Unclassified":
                 row[key] = reference[key]

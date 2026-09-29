@@ -193,6 +193,15 @@ class SeedRowIndicatorTests(unittest.TestCase):
         self.assertEqual((row["sector"], row["sub_sector"]), ("Metals & Mining", "Precious Metals"))
         self.assertAlmostEqual(row["market_cap_crore"], 9.137354 * 964.75, places=1)
 
+    def test_an_existing_row_gains_a_missing_listing_date(self):
+        # Without it a sub-floor row fails the universe filter and never
+        # reaches the IPO scan (TAALTECH on the Space).
+        provider = FreeMarketDataProvider()
+        row = {"symbol": "TAALTECH", "listing_date": None, "last_price": 1069.1, "sector": "IT", "market_cap_crore": 333.0}
+        provider._fill_seed_row_reference(row, {"listing_date": "2026-04-20"})
+        self.assertEqual(row["listing_date"], "2026-04-20")
+        self.assertEqual(row["market_cap_crore"], 333.0)
+
     def test_a_nan_price_never_becomes_a_seed_row(self):
         # One NaN row fails the schema check for the whole snapshot file.
         provider = FreeMarketDataProvider()
