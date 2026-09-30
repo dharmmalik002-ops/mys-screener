@@ -1,5 +1,5 @@
 {
- "as_of": "2026-09-29",
+ "as_of": "2026-09-30",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,18 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544527": {
-   "name": "Atlanta Electricals Limited",
-   "symbol": "ATLANTAELE",
-   "listing_date": "2025-09-29",
-   "issue_price": 754.0
-  },
-  "544528": {
-   "name": "Ganesh Consumer Products Limited",
-   "symbol": "GANESHCP",
-   "listing_date": "2025-09-29",
-   "issue_price": 322.0
-  },
   "544530": {
    "name": "ANAND RATHI SHARE AND STOCK BROKERS LIMITED",
    "symbol": "ARSSBL",
@@ -857,6 +845,20 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "ADROITIND": {
+   "listing_date": "2026-09-30",
+   "name": "Adroit Industries (India) Limited",
+   "isin": "INE505M01015",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544950",
+   "checked_session": "2026-09-29",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "ADVAIT": {
    "listing_date": "2026-01-20",
    "name": "Advait Energy Transitions Limited",
@@ -1161,6 +1163,20 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "ARMEE": {
+   "listing_date": "2026-09-30",
+   "name": "ArMee Infotech Limited",
+   "isin": "INE0TWE01016",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "544951",
+   "checked_session": "2026-09-29",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "ARSSBL": {
    "listing_date": "2025-09-30",
    "name": "Anand Rathi Share and Stock Brokers Limited",
@@ -1224,20 +1240,6 @@
    "bse_code": "531847",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "ATLANTAELE": {
-   "listing_date": "2025-09-29",
-   "name": "Atlanta Electricals Limited",
-   "isin": "INE0Z4F01028",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544527",
-   "sector": "Capital Goods",
-   "sub_sector": "Heavy Electrical Equipment",
-   "shares_crore": 7.689664,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 754.0
   },
   "AUGMONT": {
    "listing_date": "2026-08-31",
@@ -1999,6 +2001,20 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "ELEVATE": {
+   "listing_date": "2026-09-30",
+   "name": "Elevate Campuses Limited",
+   "isin": "INE147X01013",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "544945",
+   "checked_session": "2026-09-29",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "ELITECON": {
    "listing_date": "2026-04-20",
    "name": "Elitecon International Limited",
@@ -2197,20 +2213,6 @@
    "basis": "bse_ipo_list",
    "issue_price": 160.0
   },
-  "GANESHCP": {
-   "listing_date": "2025-09-29",
-   "name": "Ganesh Consumer Products Limited",
-   "isin": "INE652V01016",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544528",
-   "sector": "Fast Moving Consumer Goods",
-   "sub_sector": "Packaged Foods",
-   "shares_crore": 4.041284,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 322.0
-  },
   "GAUDIUMIVF": {
    "listing_date": "2026-02-27",
    "name": "Gaudium IVF and Women Health Limited",
@@ -2380,6 +2382,20 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 320.0
+  },
+  "GSPLTRANS": {
+   "listing_date": "2026-09-30",
+   "name": "GSPL Transmission Limited",
+   "isin": "INE1TUG01013",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544801",
+   "checked_session": "2026-09-29",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "GYFTR": {
    "listing_date": "2026-07-10",
@@ -2805,12 +2821,9 @@
    "isin": "INE398L01017",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "541005",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "KANOHAR": {
    "listing_date": "2026-09-16",
@@ -3611,12 +3624,9 @@
    "isin": "INE596B01017",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "530341",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "MVELECTRO": {
    "listing_date": "2026-08-06",
@@ -4430,12 +4440,9 @@
    "isin": "INE318C01014",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "523710",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAYAJIIND": {
    "listing_date": "2026-08-17",
@@ -4945,12 +4952,9 @@
    "isin": "INE671C01016",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "537253",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SUNRAKSHAK": {
    "listing_date": "2026-08-17",
@@ -5035,6 +5039,20 @@
    "bse_code": "526365",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "SWASTIKAIN": {
+   "listing_date": "2026-09-30",
+   "name": "Swastika Infra Limited",
+   "isin": "INE1QJA01015",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544949",
+   "checked_session": "2026-09-29",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "SWISSMLTRY": {
    "listing_date": "2026-08-17",
@@ -5208,12 +5226,9 @@
    "isin": "INE077P01034",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "509945",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "THAKDEV": {
    "listing_date": "2026-04-20",
