@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Newspaper, NotebookPen } from "lucide-react";
 
 import { SortableTh, nextSort, type SortDirection } from "./SortableTh";
+import { SplitResizer } from "./SplitResizer";
 
 type LogSortKey =
   | "symbol" | "setup" | "entryPx" | "exitPx"
@@ -4070,6 +4071,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <button type="submit" className="tj-btn primary" style={{ width: "100%", marginTop: 16 }}>Add Trade</button>
               </form>
             </div>
+            <SplitResizer storageKey="journal-entry" minPx={260} label="Resize calculator and form" />
           </div>
         </div>
       )}

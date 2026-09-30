@@ -27,6 +27,7 @@ import {
 
 import { SignalArchivePanel } from "./SignalArchivePanel";
 import "./StudyPanel.css";
+import { SplitResizer } from "./SplitResizer";
 
 const LOG_KEY = "study-drill-log:v1";
 const STYLE_KEY = "study-drill-style:v1";
@@ -1020,6 +1021,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
               </div>
             </div>
           </aside>
+          <SplitResizer storageKey="study" minPx={280} label="Resize chart and side panel" />
         </div>
       ) : null}
 

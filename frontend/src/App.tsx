@@ -109,6 +109,7 @@ import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
 import { AppStatusBanners } from "./components/AppStatusBanners";
 import { UniverseFilterCard } from "./components/UniverseFilterCard";
+import { SplitResizer } from "./components/SplitResizer";
 import {
   applyUniverseFilter,
   EMPTY_UNIVERSE_FILTER,
@@ -7012,6 +7013,17 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                 />
                 ))
               ) : null}
+              <SplitResizer
+                storageKey={
+                  activePage === "groups" ? `groups-${groupsView}` : activePage
+                }
+                boundary={activePage === "screener" ? 1 : 0}
+                minPx={320}
+                // The results table's row template is fixed-pixel (~524px); the
+                // stylesheet floors that column at 560px and so does the drag.
+                minBefore={activePage === "screener" ? 560 : undefined}
+                label={activePage === "screener" ? "Resize results and chart" : "Resize list and chart"}
+              />
             </section>
             </>
           </Suspense>

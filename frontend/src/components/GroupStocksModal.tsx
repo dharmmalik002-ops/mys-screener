@@ -5,6 +5,7 @@ import type { IndustryGroupStockItem, MarketKey } from "../lib/api";
 import { useModalShell } from "../lib/useModalShell";
 
 import "./GroupStocksModal.css";
+import { SplitResizer } from "./SplitResizer";
 
 export type GroupStocksMember = IndustryGroupStockItem & { group_member_rank: number };
 
@@ -229,6 +230,7 @@ export function GroupStocksModal({
           </div>
 
           <div className="gsm-chart">{chart}</div>
+          <SplitResizer storageKey="group-dialog" minPx={300} label="Resize stocks and chart" />
         </div>
       </div>
     </div>,

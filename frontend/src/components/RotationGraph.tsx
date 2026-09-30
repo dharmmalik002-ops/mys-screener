@@ -22,6 +22,7 @@ import {
 } from "../lib/api";
 
 import "./RotationGraph.css";
+import { SplitResizer } from "./SplitResizer";
 
 /**
  * Tail choices per timeframe, in that timeframe's own units.
@@ -778,6 +779,7 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
             )}
           </div>
         </div>
+        <SplitResizer storageKey="rotation" minPx={240} label="Resize graph and list" />
       </div>
 
       <div className="rrg-timeline">

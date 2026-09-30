@@ -16,6 +16,7 @@ import { LayoutGrid, Newspaper, Plus, Trash2 } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { SortableHeader, nextSort, type SortDirection } from "./SortableTh";
 import { Sparkline } from "./Sparkline";
+import { SplitResizer } from "./SplitResizer";
 
 type WatchlistSortKey = "symbol" | "price" | "change" | "rs" | "groupRank" | "rankInGroup";
 
@@ -1440,6 +1441,7 @@ export function WatchlistsPanel({
         market={market}
         accentColor={newsContext?.accent}
       />
+      <SplitResizer storageKey="watchlists-sidebar" minBefore={232} minAfter={420} label="Resize watchlists and stocks" />
     </div>
   );
 }
