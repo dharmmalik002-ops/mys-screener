@@ -7244,6 +7244,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               </Suspense>
               </aside>
             ) : null}
+            <SplitResizer storageKey="chart-modal-peers" minBefore={420} minAfter={260} label="Resize chart and group stocks" />
             </div>
           </div>
         </div>

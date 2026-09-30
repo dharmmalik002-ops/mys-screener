@@ -3,7 +3,8 @@ import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerE
 import "./SplitResizer.css";
 
 /**
- * A drag handle that lets the user resize two side-by-side columns of a CSS grid.
+ * A drag handle that lets the user resize two side-by-side panes — the columns of
+ * a CSS grid, or two children of a flex row.
  *
  * Drop it in as a child of the grid container. It is absolutely positioned, so it
  * takes no grid cell, and it finds the container through its own parent — no ref
@@ -63,9 +64,13 @@ function parseTracks(template: string): number[] {
 }
 
 type Geometry = {
-  tracks: number[];
+  /** Width of the pane left of the seam, and of the two panes together. */
+  before: number;
+  pair: number;
+  /** Space between the two panes (grid gap, flex gap, or margins). */
   gap: number;
-  paddingLeft: number;
+  /** Left edge of the pane before the seam, from the container's border-box left. */
+  pairOffset: number;
 };
 
 export function SplitResizer({
@@ -102,6 +107,17 @@ export function SplitResizer({
     [minPx, minBefore, minAfter],
   );
 
+  /** Panes whose inline flex we set, so a re-measure (or unmount) can hand them back. */
+  const touchedRef = useRef<HTMLElement[]>([]);
+
+  const releasePanes = () => {
+    for (const pane of touchedRef.current) {
+      pane.style.flex = "";
+      pane.style.minWidth = "";
+    }
+    touchedRef.current = [];
+  };
+
   /** Re-derive the layout from the stylesheet, then re-apply the saved split. */
   const apply = useCallback(() => {
     const container = containerOf();
@@ -109,15 +125,23 @@ export function SplitResizer({
     if (!container || !handle) return;
 
     container.style.gridTemplateColumns = "";
+    releasePanes();
     const style = window.getComputedStyle(container);
-    const natural = parseTracks(style.gridTemplateColumns);
-    const panes = Array.from(container.children).filter((child) => {
-      if (child === handle) return false;
+    const panes = Array.from(container.children).filter((child): child is HTMLElement => {
+      if (child === handle || !(child instanceof HTMLElement)) return false;
       const childStyle = window.getComputedStyle(child);
       return childStyle.display !== "none" && childStyle.position !== "absolute" && childStyle.position !== "fixed";
     });
-    const sideBySide =
-      style.display.includes("grid") && natural.length >= boundary + 2 && panes.length >= boundary + 2;
+    const isGrid = style.display.includes("grid");
+    const isFlexRow = style.display.includes("flex") && style.flexDirection === "row";
+    const natural = isGrid ? parseTracks(style.gridTemplateColumns) : [];
+    let sideBySide = panes.length >= boundary + 2 && (isGrid ? natural.length >= boundary + 2 : isFlexRow);
+    if (sideBySide && isFlexRow) {
+      // A wrapped flex row stacks its panes: only a true row gets a seam.
+      const a = panes[boundary].getBoundingClientRect();
+      const b = panes[boundary + 1].getBoundingClientRect();
+      sideBySide = b.left >= a.right - 1 && b.top < a.bottom && a.top < b.bottom;
+    }
     if (!sideBySide) {
       geometryRef.current = null;
       setActive(false);
@@ -125,30 +149,60 @@ export function SplitResizer({
     }
 
     if (style.position === "static") container.style.position = "relative";
-    const gap = Number.parseFloat(style.columnGap) || 0;
-    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
-    let tracks = natural;
-    const naturalPair = natural[boundary] + natural[boundary + 1];
-    // A split saved on a wider window must still respect the floors on this one.
-    const ratio =
-      ratioRef.current != null && naturalPair > 0 ? clampRatio(ratioRef.current * naturalPair, naturalPair) : null;
-    if (ratio != null) {
-      const template = natural
-        .map((width, index) => {
-          if (index === boundary) return `minmax(0, ${ratio.toFixed(4)}fr)`;
-          if (index === boundary + 1) return `minmax(0, ${(1 - ratio).toFixed(4)}fr)`;
-          return `${width}px`;
-        })
-        .join(" ");
-      container.style.gridTemplateColumns = template;
-      tracks = parseTracks(window.getComputedStyle(container).gridTemplateColumns);
-    }
-    geometryRef.current = { tracks, gap, paddingLeft };
+    const containerRect = container.getBoundingClientRect();
+    let geometry: Geometry;
 
-    const left = paddingLeft + tracks.slice(0, boundary + 1).reduce((sum, width) => sum + width, 0) + gap * boundary + gap / 2;
-    handle.style.left = `${left}px`;
-    const pair = tracks[boundary] + tracks[boundary + 1];
-    setRatioLabel(pair > 0 ? Math.round((tracks[boundary] / pair) * 100) : 50);
+    if (isGrid) {
+      const gap = Number.parseFloat(style.columnGap) || 0;
+      const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+      let tracks = natural;
+      const naturalPair = natural[boundary] + natural[boundary + 1];
+      // A split saved on a wider window must still respect the floors on this one.
+      const ratio =
+        ratioRef.current != null && naturalPair > 0 ? clampRatio(ratioRef.current * naturalPair, naturalPair) : null;
+      if (ratio != null) {
+        container.style.gridTemplateColumns = natural
+          .map((width, index) => {
+            if (index === boundary) return `minmax(0, ${ratio.toFixed(4)}fr)`;
+            if (index === boundary + 1) return `minmax(0, ${(1 - ratio).toFixed(4)}fr)`;
+            return `${width}px`;
+          })
+          .join(" ");
+        tracks = parseTracks(window.getComputedStyle(container).gridTemplateColumns);
+      }
+      geometry = {
+        before: tracks[boundary],
+        pair: tracks[boundary] + tracks[boundary + 1],
+        gap,
+        pairOffset:
+          container.clientLeft + paddingLeft + tracks.slice(0, boundary).reduce((sum, width) => sum + width, 0) + gap * boundary,
+      };
+    } else {
+      const beforePane = panes[boundary];
+      const afterPane = panes[boundary + 1];
+      const measure = () => {
+        const a = beforePane.getBoundingClientRect();
+        const b = afterPane.getBoundingClientRect();
+        return { before: a.width, pair: a.width + b.width, gap: Math.max(0, b.left - a.right), pairOffset: a.left - containerRect.left };
+      };
+      geometry = measure();
+      const ratio =
+        ratioRef.current != null && geometry.pair > 0 ? clampRatio(ratioRef.current * geometry.pair, geometry.pair) : null;
+      if (ratio != null) {
+        // The pane before the seam takes a fixed share of the pair; the one after
+        // takes whatever is left, so the row still fills the window.
+        beforePane.style.flex = `0 0 ${(ratio * geometry.pair).toFixed(1)}px`;
+        beforePane.style.minWidth = "0";
+        afterPane.style.flex = "1 1 0px";
+        afterPane.style.minWidth = "0";
+        touchedRef.current = [beforePane, afterPane];
+        geometry = measure();
+      }
+    }
+    geometryRef.current = geometry;
+
+    handle.style.left = `${geometry.pairOffset - container.clientLeft + geometry.before + geometry.gap / 2}px`;
+    setRatioLabel(geometry.pair > 0 ? Math.round((geometry.before / geometry.pair) * 100) : 50);
     setActive(true);
   }, [boundary, clampRatio]);
 
@@ -193,6 +247,7 @@ export function SplitResizer({
       window.removeEventListener("resize", schedule);
       if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
       container.style.gridTemplateColumns = "";
+      releasePanes();
     };
   }, [apply]);
 
@@ -218,12 +273,9 @@ export function SplitResizer({
     const geometry = geometryRef.current;
     const container = containerOf();
     if (!dragRef.current || dragRef.current.pointerId !== event.pointerId || !geometry || !container) return;
-    const { tracks, gap, paddingLeft } = geometry;
-    const rect = container.getBoundingClientRect();
-    const pairStart =
-      rect.left + container.clientLeft + paddingLeft + tracks.slice(0, boundary).reduce((sum, width) => sum + width, 0) + gap * boundary;
-    const pair = tracks[boundary] + tracks[boundary + 1];
+    const { pair, gap, pairOffset } = geometry;
     if (pair <= 0) return;
+    const pairStart = container.getBoundingClientRect().left + pairOffset;
     setRatio(clampRatio(event.clientX - pairStart - gap / 2, pair), false);
   };
 
@@ -242,8 +294,8 @@ export function SplitResizer({
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const geometry = geometryRef.current;
     if (!geometry) return;
-    const pair = geometry.tracks[boundary] + geometry.tracks[boundary + 1];
-    const current = pair > 0 ? geometry.tracks[boundary] / pair : 0.5;
+    const { pair } = geometry;
+    const current = pair > 0 ? geometry.before / pair : 0.5;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       const next = current + (event.key === "ArrowLeft" ? -KEY_STEP : KEY_STEP);
