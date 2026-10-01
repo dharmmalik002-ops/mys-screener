@@ -278,3 +278,9 @@
 @media (max-width: 760px) {
   .lookalike-compare { grid-template-columns: 1fr; }
 }
+
+/* Near full-screen dialogs: the charts are the point. */
+.lookalike-modal.is-wide { width: 98vw; max-width: none; min-height: 92vh; }
+.lookalike-modal-backdrop:has(.lookalike-modal.is-wide) { padding: 2vh 1vw; }
+.lookalike-modal.is-wide .lookalike-compare { gap: 20px; }
+.lookalike-similar-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
