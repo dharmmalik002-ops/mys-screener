@@ -17,6 +17,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.bot_routes import build_bot_router
+from app.api.lookalike_routes import build_lookalike_router
 from app.api.mutual_funds_routes import build_mutual_funds_router
 from app.api.routes import build_router
 from app.core.config import get_settings
@@ -980,6 +981,9 @@ app.include_router(
         state_dir=settings.app_state_dir,
     )
 )
+# Chart look-alikes read one committed file written offline by
+# scripts/scan_lookalikes.py; the Space has neither torch nor the bar store.
+app.include_router(build_lookalike_router(Path(__file__).resolve().parents[1] / "data"))
 app.include_router(
     build_mutual_funds_router(
         MutualFundService(

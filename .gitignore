@@ -32,6 +32,9 @@ backend/data/earnings_history/
 backend/data/quarterly_results/
 backend/data/bot_exit_sweep.json
 backend/data/chart_cache_us/
+# Chart look-alikes: the reference library (a newsletter's paid picks) and the
+# US bars behind it. Only the public scan result, data/lookalikes.json, ships.
+backend/data/lookalike/
 backend/data/scan_history.json
 backend/app/data/scan_history.json
 backend/data/news_cache/

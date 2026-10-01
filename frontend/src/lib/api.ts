@@ -5936,3 +5936,196 @@ export type BotRegimeTiming = {
   method: string;
   caveat: string;
 };
+
+/* ── Chart look-alikes ─────────────────────────────────────────────────────
+   Indian charts that resemble the reference setup library. Built offline by
+   backend/scripts/scan_lookalikes.py; windows are 0..1 shapes, not prices. */
+
+export type LookalikeWindow = {
+  o: number[];
+  h: number[];
+  l: number[];
+  c: number[];
+  sma: number[];
+  v: number[];
+};
+
+export type LookalikeReference = {
+  name: string;
+  style: string;
+  ticker?: string;
+  date?: string;
+  link?: string;
+  source?: string | null;
+  label: "worked" | "failed" | "pending";
+  max_gain_pct: number;
+  max_loss_pct: number;
+  days_to_result: number | null;
+  window: LookalikeWindow;
+};
+
+export type LookalikeMatch = {
+  rank: number;
+  symbol: string;
+  session: string;
+  close: number;
+  turnover_crore: number;
+  score: number;
+  percentile: number;
+  window: LookalikeWindow;
+  rules: Record<string, boolean> | null;
+  template: number | null;
+  reason?: string | null;
+  links?: { tradingview?: string };
+  nearest: Array<{ key: string; similarity: number }>;
+};
+
+export type LookalikeLibrary = {
+  style: string;
+  built_at: string;
+  model: string;
+  window_sessions: number;
+  outcome_rule: { target_pct: number; stop_pct: number; horizon_sessions: number };
+  submitted: number;
+  references: number;
+  tickers: number;
+  first_date: string;
+  last_date: string;
+  outcomes: { worked: number; failed: number; pending: number };
+  worked_rate_pct: { setups: number | null; ordinary_days: number | null };
+  controls: { train: number; calibration: number };
+  rules?: Array<{
+    rule: string;
+    label: string;
+    setups_pass_pct: number | null;
+    ordinary_pass_pct: number | null;
+    worked_when_pass_pct: number | null;
+    worked_when_fail_pct: number | null;
+    decided_pass: number;
+    decided_fail: number;
+  }>;
+  skipped: number;
+  evaluation: {
+    method: "chronological" | "grouped_by_ticker";
+    setup_vs_random_auc: number | null;
+    outcome_auc: number | null;
+    worked: number;
+    failed: number;
+    warnings: string[];
+    learning_curve: Array<{ charts: number; auc: number }>;
+  };
+};
+
+export type LookalikeStyle = { library: LookalikeLibrary; matches: LookalikeMatch[] };
+
+export type Lookalikes =
+  | { available: false; reason: string }
+  | {
+      available: true;
+      generated_at: string;
+      session: string;
+      scanned: number;
+      filters: { min_turnover_crore: number; stale_days: number };
+      rule_labels?: Record<string, string>;
+      reference_names_shown: boolean;
+      styles: Record<string, LookalikeStyle>;
+      references: Record<string, LookalikeReference>;
+    };
+
+export function getLookalikes() {
+  return whileWaking(() => request<Lookalikes>("/api/lookalikes", undefined, { timeoutMs: 30000 }), { label: "look-alike scan" });
+}
+
+export type LookalikePickOutcome = {
+  label: "worked" | "failed" | "pending";
+  max_gain_pct?: number;
+  max_loss_pct?: number;
+  sessions_observed?: number;
+  days_to_result?: number | null;
+  resolved_on?: string | null;
+  reviewed_on?: string;
+};
+
+export type LookalikePick = {
+  id: string;
+  date: string;
+  style: string;
+  rank: number;
+  symbol: string;
+  session: string;
+  close: number;
+  turnover_crore: number;
+  score: number;
+  percentile: number;
+  template: number | null;
+  rules: Record<string, boolean> | null;
+  nearest: Array<{
+    name: string;
+    ticker: string;
+    date: string;
+    label: "worked" | "failed" | "pending";
+    max_gain_pct: number;
+    max_loss_pct: number;
+    days_to_result: number | null;
+    link: string;
+    similarity: number;
+  }>;
+  reason: string;
+  ranked_by: "style_score" | "learned_outcome";
+  links: { tradingview?: string };
+  source: "backfill" | "live";
+  outcome: LookalikePickOutcome;
+};
+
+export type LookalikePicksSummary =
+  | { available: false; reason: string }
+  | {
+      available: true;
+      generated_at: string;
+      selection: { styles: string[]; max_picks: number; min_percentile: number; required_template: number; repick_gap_days: number };
+      outcome_rule: { target_pct: number; stop_pct: number; horizon_sessions: number };
+      summary: {
+        picks: number;
+        days: number;
+        decided: number;
+        worked: number;
+        failed: number;
+        worked_pct: number | null;
+        by_source: Record<string, { decided: number; worked: number; worked_pct: number | null }>;
+        style_base_rate_pct: number | null;
+      };
+      learning: { in_use: boolean; status: string; auc: number | null; train: Record<string, number>; test: Record<string, number> };
+      baselines?: Record<
+        "picks" | "template8" | "all" | "learned_ranked",
+        { worked: number; charts: number; worked_pct: number | null; margin_pct?: number }
+      >;
+      lessons: Array<{
+        condition: string;
+        with: number;
+        without: number;
+        worked_with_pct: number | null;
+        worked_without_pct: number | null;
+        enough: boolean;
+      }>;
+      weekly: Array<{ week_of: string; picks: number; worked: number; failed: number; pending: number; worked_pct: number | null; best: string | null }>;
+      rule_labels: Record<string, string>;
+      calendar: Record<string, { picks: number; worked: number; failed: number; pending: number; source: string | null }>;
+    };
+
+export function getLookalikePicks() {
+  return whileWaking(() => request<LookalikePicksSummary>("/api/lookalikes/picks", undefined, { timeoutMs: 30000 }), {
+    label: "look-alike picks",
+  });
+}
+
+export function getLookalikePicksForDay(day: string) {
+  return whileWaking(
+    () =>
+      request<{ date: string; picks: LookalikePick[]; note?: string; rule_labels?: Record<string, string> }>(
+        `/api/lookalikes/picks/${encodeURIComponent(day)}`,
+        undefined,
+        { timeoutMs: 30000 },
+      ),
+    { label: "look-alike picks" },
+  );
+}

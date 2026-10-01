@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useR
 import {
   Bot,
   GraduationCap,
+  ScanSearch,
   Globe,
   House,
   ListChecks,
@@ -151,6 +152,7 @@ const LivePanel = lazy(() => import("./components/LivePanel").then((module) => (
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
 const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then((module) => ({ default: module.MutualFundsPanel })));
 const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
+const LookalikesPanel = lazy(() => import("./components/LookalikesPanel").then((module) => ({ default: module.LookalikesPanel })));
 const BotPanel = lazy(() => import("./components/BotPanel").then((module) => ({ default: module.BotPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
@@ -236,7 +238,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "bot";
+type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "bot";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -261,6 +263,7 @@ const NAV_PAGES: NavPage[] = [
   { page: "live", label: "Live", short: "Live", Icon: Zap },
   { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
   { page: "study", label: "Chart Gym", short: "Gym", Icon: GraduationCap },
+  { page: "lookalikes", label: "Look-alikes", short: "Alike", Icon: ScanSearch },
   // Last in the bar deliberately: the bot is a research surface built on a
   // backtest, not the daily routine. It should be reached on purpose.
   { page: "bot", label: "Bot", short: "Bot", Icon: Bot },
@@ -2281,6 +2284,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
     if (page === "bot") {
       void import("./components/BotPanel");
+      return;
+    }
+
+    if (page === "lookalikes") {
+      void import("./components/LookalikesPanel");
       return;
     }
   };
@@ -6377,6 +6385,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <StudyPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
+        {activePage === "lookalikes" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Ungated on `loading`: reads its own committed scan file. */}
+            <LookalikesPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
+          </Suspense>
+        ) : null}
         {activePage === "bot" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading` for the same reason as Chart Gym: the bot
@@ -6397,7 +6411,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "bot" ? (
+        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "lookalikes" && activePage !== "bot" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">
