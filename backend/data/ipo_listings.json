@@ -1084,6 +1084,7 @@
    "isin": "INE0OTC01025",
    "series": "EQ",
    "exchange": "NSE",
+   "bse_code": "544952",
    "checked_session": "2026-09-30",
    "prior_trading": false,
    "nse_checked": true,
@@ -3551,6 +3552,7 @@
    "isin": "INE0PTN01011",
    "series": "EQ",
    "exchange": "NSE",
+   "bse_code": "544953",
    "checked_session": "2026-09-30",
    "prior_trading": false,
    "nse_checked": true,
@@ -3642,12 +3644,9 @@
    "isin": "INE605D01012",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "508670",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "NEPHROPLUS": {
    "listing_date": "2025-12-17",
