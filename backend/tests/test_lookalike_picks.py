@@ -177,6 +177,27 @@ class FeedbackTests(unittest.TestCase):
         self.assertTrue(all(not row["enough"] for row in picks.lessons(ledger)))
 
 
+class FingerprintStoreTests(unittest.TestCase):
+    def test_per_day_files_round_trip_and_an_unchanged_day_is_not_rewritten(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            rng = np.random.default_rng(3)
+            fps = {f"2025-01-0{i}:minervini:S{j}": rng.normal(size=8).astype(np.float32) for i in (3, 4) for j in range(3)}
+            picks.save_fingerprints(d, fps)
+            back = picks.load_fingerprints(d)
+            self.assertEqual(set(back), set(fps))
+            self.assertTrue(all(np.array_equal(back[k], fps[k]) for k in fps))
+            day = picks._lib_dir(d) / picks.FINGERPRINTS_DIR / "2025-01-03.npy"
+            before = day.stat().st_mtime_ns
+            fps["2025-01-05:minervini:NEW"] = rng.normal(size=8).astype(np.float32)
+            picks.save_fingerprints(d, fps)
+            self.assertEqual(day.stat().st_mtime_ns, before)
+            self.assertEqual(len(picks.load_fingerprints(d)), 7)
+
+
 class SelfUpdateTests(unittest.TestCase):
     def test_only_a_newer_readable_copy_replaces_the_file(self):
         import json

@@ -42,8 +42,12 @@ MIN_PERCENTILE = 95.0
 REQUIRED_TEMPLATE = 8
 REPICK_GAP_DAYS = 28
 
-LEDGER_FILE = "picks.json"            # under data/lookalike/ (private)
-FINGERPRINTS_FILE = "picks_fingerprints.npz"
+LEDGER_FILE = "picks.json"            # under data/lookalike_state/ (committed)
+# One small file pair per pick day rather than one archive: the daily job
+# commits this folder, and rewriting a multi-megabyte binary every evening
+# would add its full size to the repository's history each time. np.save is
+# byte-for-byte deterministic, so a day that did not change is not rewritten.
+FINGERPRINTS_DIR = "picks_fingerprints"
 PUBLIC_FILE = "lookalike_picks.json"  # under data/ (served)
 
 # The learner may reorder picks only after this much evidence, judged on picks
@@ -57,7 +61,9 @@ LESSON_MIN_EACH = 20
 # ── ledger ────────────────────────────────────────────────────────────────
 
 def _lib_dir(data_dir: Path) -> Path:
-    return data_dir / "lookalike"
+    from .pipeline import library_dir
+
+    return library_dir(data_dir)
 
 
 def load_ledger(data_dir: Path) -> dict:
@@ -76,16 +82,36 @@ def save_ledger(data_dir: Path, ledger: dict) -> None:
 
 
 def load_fingerprints(data_dir: Path) -> dict[str, np.ndarray]:
-    path = _lib_dir(data_dir) / FINGERPRINTS_FILE
-    if not path.exists():
-        return {}
-    arr = np.load(path)
-    return {k: arr[k] for k in arr.files}
+    root = _lib_dir(data_dir) / FINGERPRINTS_DIR
+    out: dict[str, np.ndarray] = {}
+    if not root.exists():
+        return out
+    for ids_path in sorted(root.glob("*.json")):
+        ids = json.loads(ids_path.read_text())
+        mat = np.load(ids_path.with_suffix(".npy"))
+        out.update({pid: mat[i] for i, pid in enumerate(ids)})
+    return out
 
 
 def save_fingerprints(data_dir: Path, fps: dict[str, np.ndarray]) -> None:
-    path = _lib_dir(data_dir) / FINGERPRINTS_FILE
-    np.savez_compressed(path, **fps)
+    root = _lib_dir(data_dir) / FINGERPRINTS_DIR
+    root.mkdir(parents=True, exist_ok=True)
+    by_day: dict[str, list[str]] = defaultdict(list)
+    for pid in fps:
+        by_day[pid.split(":", 1)[0]].append(pid)
+    for day, ids in by_day.items():
+        ids = sorted(ids)
+        mat = np.stack([np.asarray(fps[i], dtype=np.float32) for i in ids])
+        ids_path, mat_path = root / f"{day}.json", root / f"{day}.npy"
+        if ids_path.exists() and mat_path.exists():
+            if json.loads(ids_path.read_text()) == ids and np.array_equal(np.load(mat_path), mat):
+                continue
+        ids_path.write_text(json.dumps(ids))
+        np.save(mat_path, mat)
+    for ids_path in root.glob("*.json"):
+        if ids_path.stem not in by_day:
+            ids_path.unlink()
+            ids_path.with_suffix(".npy").unlink(missing_ok=True)
 
 
 # ── explain ───────────────────────────────────────────────────────────────

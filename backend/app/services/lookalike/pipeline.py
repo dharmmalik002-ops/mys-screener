@@ -33,7 +33,7 @@ from .references import Reference
 
 logger = logging.getLogger(__name__)
 
-LIBRARY_DIR = "lookalike"
+STATE_DIR = "lookalike_state"
 RESULT_FILE = "lookalikes.json"
 # Random days per reference: the first TRAIN_CONTROLS teach the model what an
 # ordinary day in that stock looks like; the rest are held back to turn a raw
@@ -60,7 +60,12 @@ INDIA_INDEX = "NIFTY500"
 
 
 def library_dir(data_dir: Path) -> Path:
-    return data_dir / LIBRARY_DIR
+    """Where the trained library and the pick ledger live: a COMMITTED folder,
+    because the daily run happens on a GitHub runner that starts empty every
+    time (.github/workflows/lookalike-daily.yml). The raw material behind the
+    library — reference lists, US bars, page extracts — stays private in
+    data/lookalike/ and is only needed to rebuild it."""
+    return data_dir / STATE_DIR
 
 
 def _controls(series: us_bars.Series, ref_indices: list[int], seed: str) -> list[int]:

@@ -39,3 +39,8 @@ frontend/public/api/free_snapshots_us.json
 backend/data/chart_cache
 backend/data/chart_cache_us
 backend/data/news_cache
+
+# Look-alike library and pick ledger: committed for the GitHub runner, which
+# starts empty each day. The Space only reads the two public JSON files, and
+# the fingerprints here are binary .npy files its pre-receive hook rejects.
+backend/data/lookalike_state
