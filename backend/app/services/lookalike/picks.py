@@ -26,6 +26,7 @@ a model that changes itself on every new result learns the noise.
 from __future__ import annotations
 
 import json
+import zlib
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
@@ -48,7 +49,11 @@ LEDGER_FILE = "picks.json"            # under data/lookalike_state/ (committed)
 # would add its full size to the repository's history each time. np.save is
 # byte-for-byte deterministic, so a day that did not change is not rewritten.
 FINGERPRINTS_DIR = "picks_fingerprints"
-PUBLIC_FILE = "lookalike_picks.json"  # under data/ (served)
+PUBLIC_FILE = "lookalike_picks.json"  # under data/ (served): summary + calendar
+REFS_FILE = "lookalike_refs.json"     # under data/ (served): every reference with its chart
+INDEX_FILE = "lookalike_index.json"   # under data/ (served): per-stock similar charts, today
+DAYS_DIR = "lookalike_days"           # under data/ (served): one file per pick day
+PEERS = 6
 
 # The learner may reorder picks only after this much evidence, judged on picks
 # it did not learn from. Declared, not tuned.
@@ -484,10 +489,124 @@ def _baseline_summary(ledger: dict, cache: dict) -> dict:
 
 # ── export ────────────────────────────────────────────────────────────────
 
-def export(data_dir: Path, ledger: dict, feedback: Feedback, library: Library, baselines: dict | None = None) -> dict:
-    days: dict[str, list] = defaultdict(list)
+def _write_if_changed(path: Path, obj) -> bool:
+    """Deterministic JSON, written only when it differs — every file here is
+    committed daily, and rewriting unchanged files would bloat the history."""
+    text = json.dumps(obj, separators=(",", ":"), sort_keys=True)
+    if path.exists() and path.read_text() == text:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    return True
+
+
+def ref_key(ref: dict) -> str:
+    return f"{ref['style']}:{ref['ticker']}@{ref['date']}"
+
+
+def export_refs(data_dir: Path, library: Library) -> dict:
+    """Every reference with its before-and-after chart. Changes only when the
+    library is rebuilt."""
+    rows = {}
+    for style, refs in library.refs.items():
+        for r in refs:
+            rows[ref_key(r)] = {
+                **_ref_public(r),
+                "style": style,
+                "source": library.sources.get(r["key"]),
+                "chart": r.get("chart"),
+            }
+    built = {s: v.get("built_at") for s, v in library.styles.items()}
+    payload = {"generated_at": max((b for b in built.values() if b), default=""), "library_built": built, "refs": rows}
+    _write_if_changed(data_dir / REFS_FILE, payload)
+    return payload
+
+
+def _pick_chart(p: dict, by_symbol: dict) -> dict | None:
+    from . import render
+
+    bars = by_symbol.get(p["symbol"])
+    if bars is None:
+        return None
+    idx = int(np.searchsorted(bars.dates, date.fromisoformat(p["session"]), side="right")) - 1
+    if idx < 0 or bars.dates[idx].isoformat() != p["session"]:
+        return None
+    return render.extended(bars.open, bars.high, bars.low, bars.close, bars.volume, idx, bars.dates)
+
+
+def export_index(data_dir: Path, scored: Scored, library: Library) -> dict:
+    """For every stock scanned today: how much it looks like each style, its
+    closest examples, and the Indian stocks whose charts look most like it.
+    What the "Similar charts" button on the big chart reads — the Space has no
+    image model, so this is computed here, once a day, for every stock."""
+    norm = scored.X / (np.linalg.norm(scored.X, axis=1, keepdims=True) + 1e-12)
+    peer_sims = norm @ norm.T
+    np.fill_diagonal(peer_sims, -1)
+    symbols = {}
+    for i, sym in enumerate(scored.symbols):
+        styles = {}
+        for style in library.styles:
+            near = np.argsort(-scored.sims[style][i])[:5]
+            styles[style] = {
+                "percentile": round(float(scored.percentile[style][i]), 1),
+                "near": [[ref_key(library.refs[style][j]), round(float(scored.sims[style][i, j]), 3)] for j in near],
+            }
+        peers = np.argsort(-peer_sims[i])[:PEERS]
+        w = scored.windows[i]
+        symbols[sym] = {
+            "session": scored.sessions[i].isoformat(),
+            "template": rules.template_score(scored.flags[i]),
+            "styles": styles,
+            "peers": [[scored.symbols[j], round(float(peer_sims[i, j]), 3)] for j in peers],
+            # closes only, 0-999: enough for a sparkline of a peer, small
+            # enough to ship ~1,500 of them every day
+            "closes": [int(round(x * 999)) for x in w["c"]] if w else None,
+        }
+    payload = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "session": scored.as_of.isoformat(), "symbols": symbols}
+    (data_dir / INDEX_FILE).write_text(json.dumps(payload, separators=(",", ":")))
+    return payload
+
+
+def export(
+    data_dir: Path,
+    ledger: dict,
+    feedback: Feedback,
+    library: Library,
+    baselines: dict | None = None,
+    universe=None,
+) -> dict:
+    by_symbol = {b.symbol: b for b in (universe or [])}
+    by_day: dict[str, list] = defaultdict(list)
     for p in sorted(ledger["picks"].values(), key=lambda p: (p["date"], p["rank"])):
-        days[p["date"]].append({k: v for k, v in p.items() if k not in ("metrics",)})
+        row = {k: v for k, v in p.items() if k not in ("metrics",)}
+        row["nearest"] = [{**n, "key": f"{p['style']}:{n['ticker']}@{n['date']}"} for n in p["nearest"]]
+        by_day[p["date"]].append(row)
+
+    calendar = {}
+    days_dir = data_dir / DAYS_DIR
+    for day, rows in by_day.items():
+        path = days_dir / f"{day}.json"
+        old = json.loads(path.read_text()) if path.exists() else {}
+        old_charts = {r["id"]: r.get("chart") for r in old.get("picks", [])}
+        for r in rows:
+            # A pick's chart only grows (more sessions after it) until its
+            # result is in; reuse the stored one when the bars are not here.
+            r["chart"] = _pick_chart(r, by_symbol) if by_symbol else old_charts.get(r["id"])
+        _write_if_changed(path, {"date": day, "picks": rows})
+        labels = [r["outcome"]["label"] for r in rows]
+        calendar[day] = {
+            "picks": len(rows),
+            "worked": labels.count(outcome.WORKED),
+            "failed": labels.count(outcome.FAILED),
+            "pending": labels.count(outcome.PENDING),
+            "source": rows[0]["source"],
+            # lets the Space tell a stale copy of this day's file from a current one
+            "stamp": f"{zlib.crc32(path.read_bytes()):08x}",
+        }
+    for stale in days_dir.glob("*.json") if days_dir.exists() else []:
+        if stale.stem not in by_day:
+            stale.unlink()
+
     decided = _decided(ledger)
     w = sum(p["outcome"]["label"] == outcome.WORKED for p in decided)
     by_source = {}
@@ -508,7 +627,7 @@ def export(data_dir: Path, ledger: dict, feedback: Feedback, library: Library, b
         "outcome_rule": {"target_pct": outcome.TARGET_PCT, "stop_pct": outcome.STOP_PCT, "horizon_sessions": outcome.HORIZON},
         "summary": {
             "picks": len(ledger["picks"]),
-            "days": len(days),
+            "days": len(by_day),
             "decided": len(decided),
             "worked": w,
             "failed": len(decided) - w,
@@ -527,7 +646,7 @@ def export(data_dir: Path, ledger: dict, feedback: Feedback, library: Library, b
         "lessons": lessons(ledger),
         "weekly": weekly(ledger),
         "rule_labels": dict(rules.RULES),
-        "days": days,
+        "calendar": calendar,
     }
     (data_dir / PUBLIC_FILE).write_text(json.dumps(payload, separators=(",", ":")))
     return payload

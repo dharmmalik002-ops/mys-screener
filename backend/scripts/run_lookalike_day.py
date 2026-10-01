@@ -84,7 +84,9 @@ def main() -> int:
     fb = picks.feedback_status(ledger, fps)
     pipeline.scan_india(args.data_dir, show_reference_names=SHOW_REFERENCE_NAMES, scored=today, library=library)
     baselines = picks.update_baselines(args.data_dir, ledger, universe, index)
-    out = picks.export(args.data_dir, ledger, fb, library, baselines)
+    out = picks.export(args.data_dir, ledger, fb, library, baselines, universe=universe)
+    picks.export_refs(args.data_dir, library)
+    picks.export_index(args.data_dir, today, library)
 
     s = out["summary"]
     print(f"\ntoday {today.as_of}: {len(made)} picks — " + ", ".join(p["symbol"] for p in made))

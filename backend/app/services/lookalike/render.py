@@ -128,3 +128,47 @@ def picture(o, h, l, c, v, end: int) -> tuple[Image.Image, dict[str, list[float]
     if arrs is None:
         return None
     return draw(arrs), normalised(arrs)
+
+
+AFTER_SESSIONS = 40
+
+
+def extended(o, h, l, c, v, end: int, dates=None, after: int = AFTER_SESSIONS) -> dict | None:
+    """The picture's window plus up to `after` sessions that followed, for
+    showing a setup next to how it played out. Normalised on the setup window's
+    own range — exactly as the model saw it — so the sessions after can run
+    above 1 or below 0. Carries the real price range and the dates so a page
+    can label it. Display only: nothing here is ever fed back to the model."""
+    arrs = window_arrays(o, h, l, c, v, end)
+    if arrs is None:
+        return None
+    lo = float(min(arrs["l"].min(), arrs["sma"].min()))
+    hi = float(max(arrs["h"].max(), arrs["sma"].max()))
+    span = hi - lo or 1.0
+    vmax = float(arrs["v"].max()) or 1.0
+    last = min(len(c) - 1, end + after)
+    s = slice(end - WINDOW + 1, last + 1)
+    cc = np.asarray(c, dtype=float)
+    sma = [float(cc[max(0, i - SMA_LEN + 1): i + 1].mean()) for i in range(end - WINDOW + 1, last + 1)]
+
+    def p(a):
+        return [round((float(x) - lo) / span, 3) for x in a]
+
+    out = {
+        "o": p(np.asarray(o, dtype=float)[s]),
+        "h": p(np.asarray(h, dtype=float)[s]),
+        "l": p(np.asarray(l, dtype=float)[s]),
+        "c": p(cc[s]),
+        "sma": p(sma),
+        "v": [round(float(x) / vmax, 3) for x in np.nan_to_num(np.asarray(v, dtype=float)[s])],
+        "setup_index": WINDOW - 1,
+        "lo": round(lo, 4),
+        "hi": round(hi, 4),
+    }
+    if dates is not None:
+        out["dates"] = {
+            "start": dates[end - WINDOW + 1].isoformat(),
+            "setup": dates[end].isoformat(),
+            "end": dates[last].isoformat(),
+        }
+    return out

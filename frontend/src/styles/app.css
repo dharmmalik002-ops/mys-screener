@@ -10116,3 +10116,10 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
+
+/* Similar sits left of Show Group (or where Show Group would be). Shares the
+   toggle's look; the header reserves room for the extra button. */
+.chart-modal-similar-toggle { right: 90px; }
+.chart-modal-similar-toggle.with-group { right: 206px; }
+.chart-modal:has(> .chart-modal-similar-toggle.with-group) .chart-panel .panel-header { padding-right: 300px; }
+.chart-modal:has(> .chart-modal-similar-toggle.with-group) .chart-panel.chart-compact > .panel-header { padding-right: 276px; }

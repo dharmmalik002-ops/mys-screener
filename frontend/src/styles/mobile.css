@@ -1604,3 +1604,8 @@ html .mobile-tabbar {
     padding: 6px 10px 4px;
   }
 }
+
+@media (max-width: 768px) {
+  html .chart-modal .chart-modal-similar-toggle { right: 78px; }
+  html .chart-modal .chart-modal-similar-toggle.with-group { right: 182px; }
+}

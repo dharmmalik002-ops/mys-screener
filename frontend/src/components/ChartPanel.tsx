@@ -11,6 +11,7 @@ import { computeCandleWeights, WeightedCandleSeries } from "../lib/weightedCandl
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
 import { StageBadge } from "./StageBadge";
+import { SimilarChartsModal } from "./LookalikeModals";
 import { isClassicDesign, CANDLE_DOWN, CANDLE_UP, NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
@@ -2029,6 +2030,9 @@ export function ChartPanel({
   // against the fresh chart instance after the rare full recreations
   // (technical-tab mount, candles<->bars switch).
   const [chartEpoch, setChartEpoch] = useState(0);
+  // The Similar button: reference setups and Indian stocks whose charts look
+  // like this one, from the evening look-alike run.
+  const [similarOpen, setSimilarOpen] = useState(false);
   // The chart container mounts BEHIND the loading/error skeletons, so the
   // create effect must key on the node's actual attachment — a plain ref
   // would be null on first run and the narrow deps would never retry.
@@ -5509,6 +5513,20 @@ export function ChartPanel({
                 <strong>{groupSummary.groupName}</strong>
               </div>
             )
+          ) : null}
+          {summary.symbol ? (
+            <button
+              type="button"
+              className="chart-summary-chip chart-summary-chip-action"
+              onClick={() => setSimilarOpen(true)}
+              title="Minervini setups and Indian stocks with charts like this one"
+            >
+              <span>Similar</span>
+              <strong>Charts</strong>
+            </button>
+          ) : null}
+          {similarOpen && summary.symbol ? (
+            <SimilarChartsModal symbol={summary.symbol} onClose={() => setSimilarOpen(false)} />
           ) : null}
           {groupSummary ? (
             <div className="chart-summary-chip">

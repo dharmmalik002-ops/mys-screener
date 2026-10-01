@@ -5957,6 +5957,7 @@ export type LookalikeReference = {
   date?: string;
   link?: string;
   source?: string | null;
+  chart?: LookalikeChartSeries | null;
   label: "worked" | "failed" | "pending";
   max_gain_pct: number;
   max_loss_pct: number;
@@ -6069,10 +6070,12 @@ export type LookalikePick = {
     days_to_result: number | null;
     link: string;
     similarity: number;
+    key?: string;
   }>;
   reason: string;
   ranked_by: "style_score" | "learned_outcome";
   links: { tradingview?: string };
+  chart?: LookalikeChartSeries | null;
   source: "backfill" | "live";
   outcome: LookalikePickOutcome;
 };
@@ -6109,7 +6112,7 @@ export type LookalikePicksSummary =
       }>;
       weekly: Array<{ week_of: string; picks: number; worked: number; failed: number; pending: number; worked_pct: number | null; best: string | null }>;
       rule_labels: Record<string, string>;
-      calendar: Record<string, { picks: number; worked: number; failed: number; pending: number; source: string | null }>;
+      calendar: Record<string, { picks: number; worked: number; failed: number; pending: number; source: string | null; stamp?: string }>;
     };
 
 export function getLookalikePicks() {
@@ -6121,11 +6124,67 @@ export function getLookalikePicks() {
 export function getLookalikePicksForDay(day: string) {
   return whileWaking(
     () =>
-      request<{ date: string; picks: LookalikePick[]; note?: string; rule_labels?: Record<string, string> }>(
+      request<{
+        date: string;
+        picks: LookalikePick[];
+        refs?: Record<string, LookalikeRefRow>;
+        note?: string;
+        rule_labels?: Record<string, string>;
+      }>(
         `/api/lookalikes/picks/${encodeURIComponent(day)}`,
         undefined,
         { timeoutMs: 30000 },
       ),
     { label: "look-alike picks" },
+  );
+}
+
+/* Look-alike references and per-stock similar charts. A reference's `chart`
+   carries the 120 sessions up to its setup date plus up to 40 after it. */
+export type LookalikeChartSeries = {
+  o: number[];
+  h: number[];
+  l: number[];
+  c: number[];
+  sma: number[];
+  v: number[];
+  setup_index: number;
+  lo: number;
+  hi: number;
+  dates?: { start: string; setup: string; end: string };
+};
+
+export type LookalikeRefRow = {
+  name: string;
+  ticker: string;
+  date: string;
+  style: string;
+  label: "worked" | "failed" | "pending";
+  max_gain_pct: number;
+  max_loss_pct: number;
+  days_to_result: number | null;
+  link: string;
+  source?: string | null;
+  chart?: LookalikeChartSeries | null;
+};
+
+export type LookalikeSimilar =
+  | { available: false; reason: string; session?: string }
+  | {
+      available: true;
+      symbol: string;
+      session: string;
+      index_session: string;
+      template: number | null;
+      closes: number[] | null;
+      styles: Record<string, { percentile: number; near: Array<[string, number]> }>;
+      peers: Array<{ symbol: string; similarity: number; closes: number[] | null; session?: string }>;
+      refs: Record<string, LookalikeRefRow>;
+    };
+
+export function getLookalikeSimilar(symbol: string) {
+  return whileWaking(
+    () => request<LookalikeSimilar>(`/api/lookalikes/similar/${encodeURIComponent(symbol)}`, undefined, { timeoutMs: 30000 }),
+    { label: "similar-charts index" },
   );
 }

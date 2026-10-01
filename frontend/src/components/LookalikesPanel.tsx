@@ -14,6 +14,8 @@ import {
 import { CANDLE_DOWN, CANDLE_UP } from "../lib/marketColors";
 import { Panel } from "./Panel";
 import { CalendarView, ReviewsView } from "./LookalikePicks";
+import { CompareModal } from "./LookalikeModals";
+import { fullChartUrl } from "../lib/chartLink";
 
 import "./LookalikesPanel.css";
 
@@ -223,6 +225,7 @@ function MatchCard({
   onOpen?: (symbol: string) => void;
 }) {
   const [showRules, setShowRules] = useState(false);
+  const [comparing, setComparing] = useState(false);
   const [pick, setPick] = useState(0);
   const nearest = match.nearest ?? [];
   const chosen = nearest[Math.min(pick, nearest.length - 1)];
@@ -232,9 +235,9 @@ function MatchCard({
     <article className="lookalike-card">
       <header className="lookalike-card-head">
         <span className="lookalike-rank">#{match.rank}</span>
-        <button type="button" className="lookalike-symbol" onClick={() => onOpen?.(match.symbol)}>
+        <a className="lookalike-symbol" href={fullChartUrl(match.symbol)} target="_blank" rel="noreferrer noopener" title="Open on my site in a new tab">
           {match.symbol}
-        </button>
+        </a>
         <span className="lookalike-meta">
           ₹{match.close.toLocaleString("en-IN")} · ₹{match.turnover_crore.toFixed(1)} cr/day
         </span>
@@ -279,20 +282,35 @@ function MatchCard({
       </div>
       {match.reason ? <p className="lookalike-reason">{match.reason}</p> : null}
       <div className="lookalike-links">
-        <button type="button" className="lookalike-link" onClick={() => onOpen?.(match.symbol)}>
-          Open chart
-        </button>
-        {match.links?.tradingview ? (
-          <a className="lookalike-link" href={match.links.tradingview} target="_blank" rel="noreferrer noopener">
-            {match.symbol} on TradingView <ExternalLink size={12} />
-          </a>
-        ) : null}
-        {reference?.link ? (
-          <a className="lookalike-link" href={reference.link} target="_blank" rel="noreferrer noopener">
-            {reference.name} on TradingView <ExternalLink size={12} />
-          </a>
+        <a className="lookalike-link" href={fullChartUrl(match.symbol)} target="_blank" rel="noreferrer noopener">
+          Open {match.symbol} on my site <ExternalLink size={12} />
+        </a>
+        {reference?.chart ? (
+          <button type="button" className="lookalike-link" onClick={() => setComparing(true)}>
+            Compare with {reference.name} at its date
+          </button>
         ) : null}
       </div>
+      {comparing && reference?.chart && reference.ticker && reference.date && reference.link ? (
+        <CompareModal
+          symbol={match.symbol}
+          chart={match.window}
+          session={match.session}
+          reference={{
+            name: reference.name,
+            ticker: reference.ticker,
+            date: reference.date,
+            style: reference.style,
+            label: reference.label,
+            max_gain_pct: reference.max_gain_pct,
+            max_loss_pct: reference.max_loss_pct,
+            days_to_result: reference.days_to_result,
+            link: reference.link,
+            chart: reference.chart,
+          }}
+          onClose={() => setComparing(false)}
+        />
+      ) : null}
       {showRules ? <RuleChecklist flags={match.rules} labels={ruleLabels} /> : null}
       {nearest.length > 1 ? (
         <div className="lookalike-nearest" role="tablist" aria-label="Closest reference setups">

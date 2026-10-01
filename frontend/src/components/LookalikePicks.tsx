@@ -5,7 +5,11 @@ import {
   getLookalikePicksForDay,
   type LookalikePick,
   type LookalikePicksSummary,
+  type LookalikeRefRow,
 } from "../lib/api";
+import { fullChartUrl } from "../lib/chartLink";
+import { LookalikeChart } from "./LookalikeChart";
+import { CompareModal, RefOutcome } from "./LookalikeModals";
 
 /* The pick calendar and the review / learning views of the Look-alikes page.
 
@@ -36,53 +40,105 @@ export function OutcomeChip({ outcome }: { outcome: LookalikePick["outcome"] }) 
   const label = outcome?.label ?? "pending";
   const text =
     label === "worked"
-      ? `Worked · +${(outcome.max_gain_pct ?? 0).toFixed(1)}%${outcome.days_to_result ? ` in ${outcome.days_to_result}d` : ""}`
+      ? `Worked · +${(outcome.max_gain_pct ?? 0).toFixed(1)}%${outcome.days_to_result ? ` in ${outcome.days_to_result} session${outcome.days_to_result === 1 ? "" : "s"}` : ""}`
       : label === "failed"
-        ? `Failed · ${(outcome.max_loss_pct ?? 0).toFixed(1)}%${outcome.days_to_result ? ` in ${outcome.days_to_result}d` : ""}`
+        ? `Failed · ${(outcome.max_loss_pct ?? 0).toFixed(1)}%${outcome.days_to_result ? ` in ${outcome.days_to_result} session${outcome.days_to_result === 1 ? "" : "s"}` : ""}`
         : outcome?.sessions_observed
           ? `Open · best +${(outcome.max_gain_pct ?? 0).toFixed(1)}%, worst ${(outcome.max_loss_pct ?? 0).toFixed(1)}% after ${outcome.sessions_observed}d`
           : "Open · not reviewed yet";
   return <span className={`lookalike-chip is-${label}`}>{text}</span>;
 }
 
-function PickRow({ pick, onOpen }: { pick: LookalikePick; onOpen?: (symbol: string) => void }) {
-  const near = pick.nearest?.[0];
+function PickCard({ pick, refs }: { pick: LookalikePick; refs: Record<string, LookalikeRefRow> }) {
+  const [pickIdx, setPickIdx] = useState(0);
+  const [compare, setCompare] = useState<LookalikeRefRow | null>(null);
+  const nearest = pick.nearest ?? [];
+  const near = nearest[Math.min(pickIdx, nearest.length - 1)];
+  const ref = near?.key ? refs[near.key] : undefined;
   return (
     <article className="lookalike-pick">
       <header className="lookalike-card-head">
         <span className="lookalike-rank">#{pick.rank}</span>
-        <button type="button" className="lookalike-symbol" onClick={() => onOpen?.(pick.symbol)}>
+        <a className="lookalike-symbol" href={fullChartUrl(pick.symbol)} target="_blank" rel="noreferrer noopener" title="Open on my site in a new tab">
           {pick.symbol}
-        </button>
+        </a>
         <span className="lookalike-meta">
-          ₹{pick.close.toLocaleString("en-IN")} on {formatDate(pick.session)} · beats {pick.percentile.toFixed(0)}% of ordinary charts ·
-          Trend Template {pick.template ?? "—"}/8
+          ₹{pick.close.toLocaleString("en-IN")} · beats {pick.percentile.toFixed(0)}% of ordinary charts · Trend Template{" "}
+          {pick.template ?? "—"}/8
         </span>
         <OutcomeChip outcome={pick.outcome} />
       </header>
-      <p className="lookalike-reason">{pick.reason}</p>
+      <div className="lookalike-pair">
+        <figure>
+          <LookalikeChart data={pick.chart} height={160} labels ariaLabel={`${pick.symbol} at ${pick.session}`} />
+          <figcaption>
+            {pick.symbol} on {formatDate(pick.session)}
+          </figcaption>
+        </figure>
+        <figure>
+          {ref ? (
+            <button type="button" className="lookalike-chart-button" onClick={() => setCompare(ref)} title="Compare large, at its own date">
+              <LookalikeChart data={ref.chart} height={160} labels ariaLabel={`${ref.ticker} at ${ref.date}`} />
+            </button>
+          ) : (
+            <div className="lookalike-canvas lookalike-missing" style={{ height: 160 }}>
+              Example unavailable
+            </div>
+          )}
+          <figcaption>
+            {near ? (
+              <>
+                <span>
+                  {near.name} · {(near.similarity * 100).toFixed(0)}% alike
+                </span>
+                {ref ? <RefOutcome ref={ref} /> : null}
+              </>
+            ) : (
+              "—"
+            )}
+          </figcaption>
+        </figure>
+      </div>
+      {nearest.length > 1 ? (
+        <div className="lookalike-nearest" role="tablist" aria-label="Closest examples">
+          {nearest.map((n, i) => (
+            <button
+              key={`${n.ticker}-${n.date}`}
+              type="button"
+              role="tab"
+              aria-selected={i === pickIdx}
+              className={`lookalike-near-tab${i === pickIdx ? " is-active" : ""}`}
+              onClick={() => setPickIdx(i)}
+            >
+              {i + 1}. {n.ticker} · {(n.similarity * 100).toFixed(0)}%
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <details className="lookalike-why">
+        <summary>Why it was chosen</summary>
+        <p className="lookalike-reason">{pick.reason}</p>
+      </details>
       <div className="lookalike-links">
-        <button type="button" className="lookalike-link" onClick={() => onOpen?.(pick.symbol)}>
-          Open chart
-        </button>
-        {pick.links?.tradingview ? (
-          <a className="lookalike-link" href={pick.links.tradingview} target="_blank" rel="noreferrer noopener">
-            {pick.symbol} on TradingView <ExternalLink size={12} />
-          </a>
-        ) : null}
-        {near?.link ? (
-          <a className="lookalike-link" href={near.link} target="_blank" rel="noreferrer noopener">
-            Closest example: {near.name} <ExternalLink size={12} />
-          </a>
+        <a className="lookalike-link" href={fullChartUrl(pick.symbol)} target="_blank" rel="noreferrer noopener">
+          Open {pick.symbol} on my site <ExternalLink size={12} />
+        </a>
+        {ref ? (
+          <button type="button" className="lookalike-link" onClick={() => setCompare(ref)}>
+            Compare with {ref.ticker} at {formatDate(ref.date)}
+          </button>
         ) : null}
         {pick.source === "backfill" ? <span className="lookalike-tag">backfilled</span> : null}
         {pick.ranked_by === "learned_outcome" ? <span className="lookalike-tag">ranked by what has worked</span> : null}
       </div>
+      {compare ? (
+        <CompareModal symbol={pick.symbol} chart={pick.chart} session={pick.session} reference={compare} onClose={() => setCompare(null)} />
+      ) : null}
     </article>
   );
 }
 
-export function CalendarView({ summary, onOpen }: { summary: Summary; onOpen?: (symbol: string) => void }) {
+export function CalendarView({ summary }: { summary: Summary; onOpen?: (symbol: string) => void }) {
   const days = useMemo(() => Object.keys(summary.calendar ?? {}).sort(), [summary]);
   const lastDay = days[days.length - 1] ?? iso(new Date());
   const [selected, setSelected] = useState<string>(lastDay);
@@ -91,6 +147,7 @@ export function CalendarView({ summary, onOpen }: { summary: Summary; onOpen?: (
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [dayPicks, setDayPicks] = useState<LookalikePick[] | null>(null);
+  const [dayRefs, setDayRefs] = useState<Record<string, LookalikeRefRow>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,7 +157,10 @@ export function CalendarView({ summary, onOpen }: { summary: Summary; onOpen?: (
     setError(null);
     getLookalikePicksForDay(selected)
       .then((res) => {
-        if (!cancelled) setDayPicks(res?.picks ?? []);
+        if (!cancelled) {
+          setDayPicks(res?.picks ?? []);
+          setDayRefs(res?.refs ?? {});
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Could not load that day's picks.");
@@ -189,9 +249,9 @@ export function CalendarView({ summary, onOpen }: { summary: Summary; onOpen?: (
           </p>
         ) : null}
         {!loading && dayPicks?.length ? (
-          <div className="lookalike-pick-list">
+          <div className="lookalike-day-grid">
             {dayPicks.map((pick) => (
-              <PickRow key={pick.id} pick={pick} onOpen={onOpen} />
+              <PickCard key={pick.id} pick={pick} refs={dayRefs} />
             ))}
           </div>
         ) : null}

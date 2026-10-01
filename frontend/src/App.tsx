@@ -152,6 +152,7 @@ const LivePanel = lazy(() => import("./components/LivePanel").then((module) => (
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
 const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then((module) => ({ default: module.MutualFundsPanel })));
 const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
+const SimilarChartsModal = lazy(() => import("./components/LookalikeModals").then((module) => ({ default: module.SimilarChartsModal })));
 const LookalikesPanel = lazy(() => import("./components/LookalikesPanel").then((module) => ({ default: module.LookalikesPanel })));
 const BotPanel = lazy(() => import("./components/BotPanel").then((module) => ({ default: module.BotPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
@@ -1951,6 +1952,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const initialSavedScanners = bootstrap.savedScanners;
   const initialSavedDrawings = bootstrap.savedDrawings;
   const [activeMarket, setActiveMarket] = useState<MarketKey>(bootstrapMarket);
+  // The big chart's Similar button: which symbol's similar charts are open.
+  const [similarChartsSymbol, setSimilarChartsSymbol] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [universeCatalog, setUniverseCatalog] = useState<ScanMatch[]>([]);
   const [scanResults, setScanResults] = useState<ScanResultsResponse | null>(null);
@@ -7095,6 +7098,16 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <button type="button" className="chart-modal-close" onClick={() => setChartOpen(false)}>
               Close
             </button>
+            {selectedSymbol ? (
+              <button
+                type="button"
+                className={`chart-modal-widget-toggle chart-modal-similar-toggle${groupWidgetContext ? " with-group" : ""}`}
+                onClick={() => setSimilarChartsSymbol(selectedSymbol)}
+                title="Minervini setups and Indian stocks with charts like this one"
+              >
+                Similar
+              </button>
+            ) : null}
             {groupWidgetContext ? (
               <button
                 type="button"
@@ -7108,6 +7121,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               >
                 {groupWidgetOpen ? "Hide Group" : "Show Group"}
               </button>
+            ) : null}
+            {similarChartsSymbol ? (
+              <Suspense fallback={null}>
+                <SimilarChartsModal symbol={similarChartsSymbol} onClose={() => setSimilarChartsSymbol(null)} />
+              </Suspense>
             ) : null}
             {/* The chart and its group's peers side by side: the peer list used to
                 float over the chart (and under its drawing rail), so comparing a

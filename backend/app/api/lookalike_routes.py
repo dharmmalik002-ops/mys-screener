@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 RESULT_FILE = "lookalikes.json"
 PICKS_FILE = "lookalike_picks.json"
+REFS_FILE = "lookalike_refs.json"
+INDEX_FILE = "lookalike_index.json"
+DAYS_DIR = "lookalike_days"
+PUBLIC_FILES = (RESULT_FILE, PICKS_FILE, REFS_FILE, INDEX_FILE)
 
 # The evening job on the workstation commits both files with [skip ci], so no
 # deploy carries them to the Space — the same situation as breakout_stats.json
@@ -53,7 +57,7 @@ def pull_latest(data_dir: Path) -> list[str]:
     import requests
 
     changed = []
-    for name in (RESULT_FILE, PICKS_FILE):
+    for name in PUBLIC_FILES:
         path = data_dir / name
         try:
             resp = requests.get(RAW_BASE + name, timeout=25)
@@ -112,55 +116,110 @@ def build_lookalike_router(data_dir: Path) -> APIRouter:
                 return {"available": False, "reason": "The look-alike scan file could not be read."}
         return {"available": True, **cache["payload"]}
 
-    picks_cache: dict[str, Any] = {"mtime": None, "payload": None}
+    file_cache: dict[str, dict[str, Any]] = {}
 
-    def _picks() -> dict[str, Any] | None:
-        path = data_dir / PICKS_FILE
+    def _load(name: str) -> dict[str, Any] | None:
+        path = data_dir / name
         try:
             mtime = path.stat().st_mtime
         except OSError:
             return None
-        if picks_cache["mtime"] != mtime:
+        hit = file_cache.get(name)
+        if hit is None or hit["mtime"] != mtime:
             try:
-                picks_cache["payload"] = json.loads(path.read_text())
-                picks_cache["mtime"] = mtime
+                file_cache[name] = {"mtime": mtime, "payload": json.loads(path.read_text())}
             except (OSError, ValueError) as exc:
                 logger.warning("unreadable %s: %s", path, exc)
                 return None
-        return picks_cache["payload"]
+        return file_cache[name]["payload"]
+
+    def _refs(keys) -> dict[str, Any]:
+        refs = (_load(REFS_FILE) or {}).get("refs", {})
+        return {k: refs[k] for k in keys if k in refs}
+
+    def _day_file(day: str, stamp: str | None) -> dict[str, Any] | None:
+        """A day's picks. Thousands of day files cannot all be pulled hourly,
+        so a stale one is fetched from the repository the first time it is
+        asked for — the calendar carries each file's checksum, which is how
+        a stale copy is recognised."""
+        import zlib
+
+        path = data_dir / DAYS_DIR / f"{day}.json"
+        local = path.read_bytes() if path.exists() else None
+        if stamp and (local is None or f"{zlib.crc32(local):08x}" != stamp) and os.environ.get("LOOKALIKE_SELF_UPDATE", "1") != "0":
+            try:
+                import requests
+
+                resp = requests.get(f"{RAW_BASE}{DAYS_DIR}/{day}.json", timeout=10)
+                if resp.status_code == 200 and f"{zlib.crc32(resp.content):08x}" == stamp:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(resp.content)
+                    local = resp.content
+            except Exception as exc:  # serve what we have
+                logger.info("look-alike day %s fetch skipped: %s", day, exc)
+        if local is None:
+            return None
+        try:
+            return json.loads(local)
+        except ValueError:
+            return None
 
     @router.get("/picks")
     def picks_summary() -> dict[str, Any]:
-        """Everything the calendar needs except the picks themselves: which days
-        have picks and how each day turned out, plus the reviews and lessons."""
+        """The calendar (which days have picks and how each turned out), plus
+        the reviews, lessons, baselines and learner status."""
         _maybe_pull_in_background(data_dir)
-        payload = _picks()
+        payload = _load(PICKS_FILE)
         if payload is None:
             return {"available": False, "reason": "No picks have been made yet."}
-        calendar = {}
-        for day, rows in payload.get("days", {}).items():
-            labels = [r.get("outcome", {}).get("label") for r in rows]
-            calendar[day] = {
-                "picks": len(rows),
-                "worked": labels.count("worked"),
-                "failed": labels.count("failed"),
-                "pending": labels.count("pending"),
-                "source": rows[0].get("source") if rows else None,
-            }
-        return {
-            "available": True,
-            **{k: v for k, v in payload.items() if k != "days"},
-            "calendar": calendar,
-        }
+        return {"available": True, **{k: v for k, v in payload.items() if k != "days"}}
 
     @router.get("/picks/{day}")
     def picks_for_day(day: str) -> dict[str, Any]:
-        payload = _picks()
-        if payload is None:
-            raise HTTPException(status_code=404, detail="No picks have been made yet.")
-        rows = payload.get("days", {}).get(day)
-        if rows is None:
-            return {"date": day, "picks": [], "note": "No picks were made on this date."}
-        return {"date": day, "picks": rows, "rule_labels": payload.get("rule_labels", {})}
+        """A day's picks, each with its own chart at the pick date and the
+        reference charts it resembles, so the page can lay both out side by side."""
+        if len(day) != 10 or not day.replace("-", "").isdigit():
+            raise HTTPException(status_code=400, detail="Use YYYY-MM-DD.")
+        summary = _load(PICKS_FILE) or {}
+        stamp = (summary.get("calendar") or {}).get(day, {}).get("stamp")
+        data = _day_file(day, stamp)
+        if data is None:
+            return {"date": day, "picks": [], "refs": {}, "note": "No picks were made on this date."}
+        keys = {n["key"] for p in data.get("picks", []) for n in p.get("nearest", []) if n.get("key")}
+        return {**data, "refs": _refs(keys), "rule_labels": summary.get("rule_labels", {})}
+
+    @router.get("/similar/{symbol}")
+    def similar(symbol: str) -> dict[str, Any]:
+        """For the big chart's Similar button: the reference setups this stock's
+        latest chart most resembles, per style, and the Indian stocks whose
+        charts look most like it — all computed by the evening run."""
+        _maybe_pull_in_background(data_dir)
+        index = _load(INDEX_FILE)
+        if index is None:
+            return {"available": False, "reason": "The similar-charts index has not been built yet."}
+        sym = symbol.strip().upper()
+        row = (index.get("symbols") or {}).get(sym)
+        if row is None:
+            return {
+                "available": False,
+                "reason": f"{sym} was not in the last scan (it needs a year of history and at least ₹2 cr a day of turnover).",
+                "session": index.get("session"),
+            }
+        keys = {k for st in row.get("styles", {}).values() for k, _ in st.get("near", [])}
+        peers = []
+        for peer, sim in row.get("peers", []):
+            other = index["symbols"].get(peer, {})
+            peers.append({"symbol": peer, "similarity": sim, "closes": other.get("closes"), "session": other.get("session")})
+        return {
+            "available": True,
+            "symbol": sym,
+            "session": row.get("session"),
+            "index_session": index.get("session"),
+            "template": row.get("template"),
+            "closes": row.get("closes"),
+            "styles": row.get("styles"),
+            "peers": peers,
+            "refs": _refs(keys),
+        }
 
     return router

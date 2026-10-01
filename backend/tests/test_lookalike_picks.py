@@ -198,6 +198,45 @@ class FingerprintStoreTests(unittest.TestCase):
             self.assertEqual(len(picks.load_fingerprints(d)), 7)
 
 
+class DayFileTests(unittest.TestCase):
+    def test_unchanged_content_is_not_rewritten(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "d.json"
+            self.assertTrue(picks._write_if_changed(path, {"b": 1, "a": [1, 2]}))
+            self.assertFalse(picks._write_if_changed(path, {"a": [1, 2], "b": 1}))
+            self.assertTrue(picks._write_if_changed(path, {"a": [1, 3], "b": 1}))
+
+    def test_a_stale_day_file_is_fetched_once_its_checksum_differs(self):
+        import json
+        import tempfile
+        import zlib
+        from pathlib import Path
+        from unittest import mock
+
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from app.api import lookalike_routes as lr
+
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            fresh = json.dumps({"date": "2025-01-03", "picks": [{"id": "x", "nearest": []}]}).encode()
+            (d / lr.DAYS_DIR).mkdir()
+            (d / lr.DAYS_DIR / "2025-01-03.json").write_text(json.dumps({"date": "2025-01-03", "picks": []}))
+            (d / lr.PICKS_FILE).write_text(json.dumps({"calendar": {"2025-01-03": {"stamp": f"{zlib.crc32(fresh):08x}"}}}))
+            app = FastAPI()
+            app.include_router(lr.build_lookalike_router(d))
+            with mock.patch.dict("os.environ", {"LOOKALIKE_SELF_UPDATE": "1"}), \
+                 mock.patch("requests.get", lambda url, timeout: mock.Mock(status_code=200, content=fresh)), \
+                 mock.patch.object(lr, "_maybe_pull_in_background", lambda data_dir: None):
+                body = TestClient(app).get("/api/lookalikes/picks/2025-01-03").json()
+            self.assertEqual([p["id"] for p in body["picks"]], ["x"])
+            self.assertEqual((d / lr.DAYS_DIR / "2025-01-03.json").read_bytes(), fresh)
+
+
 class SelfUpdateTests(unittest.TestCase):
     def test_only_a_newer_readable_copy_replaces_the_file(self):
         import json

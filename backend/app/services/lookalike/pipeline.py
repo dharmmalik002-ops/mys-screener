@@ -127,6 +127,7 @@ def _gather(data_dir: Path, references: list[Reference], today: date):
             ref_images.append(image)
             indices.append(idx)
             ref_rows.append({
+                "chart": render.extended(series.o, series.h, series.l, series.c, series.v, idx, series.dates),
                 "rules": _rule_flags(series, idx, index),
                 "key": ref.key,
                 "style": ref.style,
@@ -287,7 +288,7 @@ def build_library(data_dir: Path, references: list[Reference], today: date | Non
     out = library_dir(data_dir)
     out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out / "library.npz", **arrays)
-    (out / "library.json").write_text(json.dumps({"styles": summaries, "references": all_rows}, indent=1))
+    (out / "library.json").write_text(json.dumps({"styles": summaries, "references": all_rows}, separators=(",", ":")))
     return summaries
 
 
@@ -326,6 +327,7 @@ def scan_india(
                 key = _public_key(ref, show_reference_names)
                 if key not in public_refs:
                     row = {k: ref[k] for k in ("style", "label", "max_gain_pct", "max_loss_pct", "days_to_result", "window")}
+                    row["chart"] = ref.get("chart")
                     if show_reference_names:
                         row["name"] = f"{ref['ticker']} · {ref['date']}"
                         row["ticker"] = ref["ticker"]
