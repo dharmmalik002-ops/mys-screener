@@ -75,6 +75,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      # The runner is Python 3.11 and development is on 3.12+; a syntax that only
+      # newer Python accepts stopped the first evening's run at import. Fail in
+      # seconds, before the slow install, rather than after it.
+      - name: Check the scripts load on this Python
+        if: steps.due.outputs.run == 'true'
+        run: |
+          python -m py_compile backend/app/services/lookalike/*.py backend/app/api/lookalike_routes.py \
+            backend/scripts/run_lookalike_day.py backend/scripts/build_deep_history.py
+
       - name: Install dependencies
         if: steps.due.outputs.run == 'true'
         run: |

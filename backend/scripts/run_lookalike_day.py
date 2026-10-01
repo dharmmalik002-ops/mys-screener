@@ -53,7 +53,8 @@ def main() -> int:
     library = scoring.load_library(args.data_dir)
     universe, index = scoring.load_universe(args.data_dir)
     latest = max(b.last_date for b in universe)
-    print(f"library: {', '.join(f'{k} {v['references']}' for k, v in library.styles.items())}; "
+    styles = ", ".join(f"{k} {v['references']}" for k, v in library.styles.items())
+    print(f"library: {styles}; "
           f"universe {len(universe)} symbols through {latest} ({time.time() - t0:.0f}s)")
 
     ledger = picks.load_ledger(args.data_dir)

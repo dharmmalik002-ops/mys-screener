@@ -250,6 +250,40 @@ class EveningTriggerTests(unittest.TestCase):
         self.assertFalse(m.lookalike_ran_today("", now))
 
 
+class GithubPythonCompatTests(unittest.TestCase):
+    def test_no_f_string_reuses_its_own_quote(self):
+        """The daily run is on GitHub's Python 3.11; development is on 3.12+,
+        which accepts an f-string that reuses its own quote inside {}. 3.11
+        refuses to load the whole script — the first evening's run failed on
+        exactly this — so the pattern is caught here instead."""
+        import re
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        files = sorted((root / "app/services/lookalike").glob("*.py")) + sorted((root / "scripts").glob("*lookalike*.py")) + [
+            root / "app/api/lookalike_routes.py",
+            root / "scripts/import_chart_extracts.py",
+            root / "scripts/build_deep_history.py",
+        ]
+        bad = []
+        for f in files:
+            for n, line in enumerate(f.read_text().splitlines(), 1):
+                for m in re.finditer(r"""\bf(["'])""", line):
+                    quote, i, depth = m.group(1), m.end(), 0
+                    while i < len(line):
+                        ch = line[i]
+                        if ch == "{":
+                            depth += 1
+                        elif ch == "}":
+                            depth = max(0, depth - 1)
+                        elif ch == quote:
+                            if depth:
+                                bad.append(f"{f.name}:{n}")
+                            break
+                        i += 1
+        self.assertEqual(bad, [])
+
+
 class SelfUpdateTests(unittest.TestCase):
     def test_only_a_newer_readable_copy_replaces_the_file(self):
         import json
