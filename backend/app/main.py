@@ -833,6 +833,70 @@ def trigger_github_bhavcopy_if_stale() -> None:
         logger.warning("Bhavcopy trigger watchdog failed: %s", exc)
 
 
+
+# The run is due from 18:00 IST. A publish earlier in the day (a manual run on
+# the previous session's bars) must not count as today's.
+LOOKALIKE_RUN_HOUR = 18
+
+
+def lookalike_ran_today(generated_at: str, now_ist: datetime) -> bool:
+    """True when the look-alike picks were published today after the close —
+    the shared "already done" test for the watchdogs and the workflow itself,
+    so redundant triggers cost a skipped run and nothing more. Read on the
+    publish time rather than the session date so a market holiday counts as
+    done after one run instead of re-triggering all evening."""
+    try:
+        stamp = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00")).astimezone(IST)
+    except (TypeError, ValueError):
+        return False
+    return stamp.date() == now_ist.date() and stamp.hour >= LOOKALIKE_RUN_HOUR
+
+
+_lookalike_dispatches: dict[str, int] = {}
+LOOKALIKE_MAX_DISPATCHES_PER_DAY = 6
+
+
+def trigger_github_lookalike_if_stale() -> None:
+    """Watchdog for the 6 PM look-alike run (.github/workflows/lookalike-daily.yml).
+
+    GitHub runs this repository's scheduled workflows hours late — the 7:53 PM
+    bot job routinely starts after midnight — so the cron line alone left the
+    site without the day's picks all evening. Same remedy as the bhavcopy
+    watchdog: on weekday evenings, if the published picks are not from today,
+    send a ``repository_dispatch`` (``lookalike-trigger``). Reads the small
+    published summary straight from GitHub, so it does not depend on this Space
+    having pulled it yet. Capped per day so a broken run cannot loop.
+    """
+    import requests as _requests
+
+    try:
+        now_ist = datetime.now(IST)
+        if now_ist.weekday() >= 5 or now_ist.hour < 18:
+            return
+        today = now_ist.date().isoformat()
+        if _lookalike_dispatches.get(today, 0) >= LOOKALIKE_MAX_DISPATCHES_PER_DAY:
+            return
+        repo = os.environ.get("GITHUB_DATA_REPO", "dharmmalik002-ops/mys-screener")
+        resp = _requests.get(f"https://raw.githubusercontent.com/{repo}/main/backend/data/lookalike_picks.json", timeout=25)
+        generated = resp.json().get("generated_at", "") if resp.status_code == 200 else ""
+        if lookalike_ran_today(generated, now_ist):
+            return
+        token = (os.environ.get("GITHUB_PAT") or "").strip()
+        if not token:
+            logger.info("Look-alike trigger watchdog: picks stale (%s) but GITHUB_PAT is not set — skipping", generated or "<none>")
+            return
+        response = _requests.post(
+            f"https://api.github.com/repos/{repo}/dispatches",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+            json={"event_type": "lookalike-trigger"},
+            timeout=20,
+        )
+        _lookalike_dispatches[today] = _lookalike_dispatches.get(today, 0) + 1
+        logger.info("Look-alike trigger watchdog: picks from %s -> repository_dispatch HTTP %s", generated or "<none>", response.status_code)
+    except Exception as exc:
+        logger.warning("Look-alike trigger watchdog failed: %s", exc)
+
+
 _universe_chart_warm_running = False
 
 
@@ -905,6 +969,14 @@ async def lifespan(app: FastAPI):
             trigger_github_bhavcopy_if_stale,
             CronTrigger(hour="16,17,18,19,21", minute=42, day_of_week="mon-fri", timezone=IST),
             id="india_bhavcopy_github_trigger",
+            replace_existing=True,
+        )
+        # The 6 PM look-alike picks: GitHub's cron runs hours late, so this
+        # Space starts the workflow itself until the day's picks are published.
+        scheduler.add_job(
+            trigger_github_lookalike_if_stale,
+            CronTrigger(hour="18-23", minute="5,35", day_of_week="mon-fri", timezone=IST),
+            id="lookalike_github_trigger",
             replace_existing=True,
         )
         # After the evening bhavcopy lands, and once each morning, re-fill any

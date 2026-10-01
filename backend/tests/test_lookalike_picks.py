@@ -237,6 +237,19 @@ class DayFileTests(unittest.TestCase):
             self.assertEqual((d / lr.DAYS_DIR / "2025-01-03.json").read_bytes(), fresh)
 
 
+class EveningTriggerTests(unittest.TestCase):
+    def test_only_a_publish_after_six_pm_today_counts_as_done(self):
+        from datetime import datetime
+
+        from app import main as m
+
+        now = datetime(2026, 10, 1, 19, 30, tzinfo=m.IST)
+        self.assertTrue(m.lookalike_ran_today("2026-10-01T13:00:00+00:00", now))   # 18:30 IST today
+        self.assertFalse(m.lookalike_ran_today("2026-10-01T10:32:53+00:00", now))  # 16:02 IST, a manual run
+        self.assertFalse(m.lookalike_ran_today("2026-09-30T13:00:00+00:00", now))  # yesterday
+        self.assertFalse(m.lookalike_ran_today("", now))
+
+
 class SelfUpdateTests(unittest.TestCase):
     def test_only_a_newer_readable_copy_replaces_the_file(self):
         import json

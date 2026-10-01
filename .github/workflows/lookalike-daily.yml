@@ -6,8 +6,24 @@ name: Look-alike Daily Picks
 # hour (backend/app/api/lookalike_routes.py), and the commit carries [skip ci].
 on:
   schedule:
-    - cron: "30 12 * * 1-5"   # 6:00 PM IST, Mon-Fri (GitHub may start it a few minutes late)
+    - cron: "30 12 * * 1-5"   # 6:00 PM IST, Mon-Fri
+  # GitHub runs this repository's schedules HOURS late (the 7:53 PM bot job
+  # routinely starts after midnight), so the cron line alone is not a 6 PM
+  # job. The Space's watchdog (main.py::trigger_github_lookalike_if_stale)
+  # sends this event every 30 minutes from 18:05 IST until the day's picks
+  # are out, and keep-alive.yml does the same as a fallback.
+  repository_dispatch:
+    types: [lookalike-trigger]
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/lookalike-daily.yml"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Run even if today's picks are already published"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -27,12 +43,40 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Several triggers fire each evening; only the first one that finds the
+      # day's picks missing does the work. "Done" means published today at or
+      # after 18:00 IST (same test as main.py::lookalike_ran_today), so a
+      # market holiday is done after one run rather than re-run all evening.
+      - name: Is today's run still due?
+        id: due
+        env:
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timedelta, timezone
+          ist = timezone(timedelta(hours=5, minutes=30))
+          now = datetime.now(ist)
+          try:
+              stamp = json.load(open("backend/data/lookalike_picks.json")).get("generated_at", "")
+              done = datetime.fromisoformat(stamp.replace("Z", "+00:00")).astimezone(ist)
+              ran = done.date() == now.date() and done.hour >= 18
+          except Exception:
+              ran = False
+          run = os.environ["FORCE"] == "true" or (not ran and now.weekday() < 5 and now.hour >= 18)
+          print(f"now {now:%Y-%m-%d %H:%M} IST · last published {stamp or 'never'} · run={run}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"run={'true' if run else 'false'}\n")
+          PY
+
       - name: Set up Python
+        if: steps.due.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dependencies
+        if: steps.due.outputs.run == 'true'
         run: |
           pip install --index-url https://download.pytorch.org/whl/cpu torch
           pip install transformers pillow yfinance pandas numpy requests
@@ -41,6 +85,7 @@ jobs:
       # keep one cache warm between them and each run is a top-up, not a
       # 5-million-bar re-fetch.
       - name: Restore deep history store
+        if: steps.due.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: backend/data/deep_history
@@ -49,21 +94,25 @@ jobs:
             deep-history-v1-${{ hashFiles('backend/app/services/bot/history.py', 'backend/app/services/bot/context_series.py') }}-
 
       - name: Restore the image model
+        if: steps.due.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
           key: hf-dinov2-small-v1
 
       - name: Top up prices
+        if: steps.due.outputs.run == 'true'
         run: python backend/scripts/build_deep_history.py
 
       - name: Review open picks, pick today, re-export
+        if: steps.due.outputs.run == 'true'
         working-directory: backend
         run: python scripts/run_lookalike_day.py
 
       # A throttled runner that fetched a fraction of the market would publish
       # a day picked from a few hundred stocks as if it were the whole market.
       - name: Refuse to publish a degraded scan
+        if: steps.due.outputs.run == 'true'
         working-directory: backend
         run: |
           python - <<'PY'
@@ -74,6 +123,7 @@ jobs:
           PY
 
       - name: Commit and push
+        if: steps.due.outputs.run == 'true'
         run: |
           set -euo pipefail
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

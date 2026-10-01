@@ -94,3 +94,38 @@ jobs:
           if [ "$HTTP_CODE" != "204" ]; then
             echo "WARN: dispatch returned ${HTTP_CODE} (expected 204). Will retry on next keep-alive tick."
           fi
+
+      # Same watchdog for the 6 PM look-alike picks (lookalike-daily.yml),
+      # which GitHub's own schedule starts hours late. The Space's watchdog is
+      # the primary trigger; this is the fallback. The workflow skips itself
+      # once the day's picks are published, so repeats are cheap.
+      - name: Watchdog — dispatch look-alike picks if today's are missing
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          IST_DOW=$(TZ='Asia/Kolkata' date +%u)
+          IST_HOUR=$(TZ='Asia/Kolkata' date +%H)
+          if [ "$IST_DOW" -gt 5 ] || [ "$IST_HOUR" -lt 18 ]; then
+            echo "Not a weekday evening in IST — skipping."
+            exit 0
+          fi
+          STAMP=$(curl -s -L --max-time 30 "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/backend/data/lookalike_picks.json" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('generated_at',''))" 2>/dev/null || echo "")
+          DUE=$(python3 -c "
+          from datetime import datetime, timedelta, timezone
+          ist = timezone(timedelta(hours=5, minutes=30)); now = datetime.now(ist)
+          try:
+              d = datetime.fromisoformat('$STAMP'.replace('Z', '+00:00')).astimezone(ist)
+              print('no' if (d.date() == now.date() and d.hour >= 18) else 'yes')
+          except Exception:
+              print('yes')")
+          echo "Look-alike picks last published: ${STAMP:-never} · due: $DUE"
+          if [ "$DUE" != "yes" ]; then exit 0; fi
+          HTTP_CODE=$(curl -s -o /tmp/la.json -w "%{http_code}" -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/lookalike-daily.yml/dispatches" \
+            -d '{"ref":"main"}')
+          echo "Dispatch HTTP: ${HTTP_CODE}"
