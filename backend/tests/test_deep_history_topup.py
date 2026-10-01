@@ -77,5 +77,17 @@ class MergeTailTests(unittest.TestCase):
         self.assertIsNone(bdh.merge_tail(stored, [_row(D[3], 104.0)]))
 
 
+
+class UnclosedSessionTests(unittest.TestCase):
+    def test_a_mid_session_bar_is_never_stored(self):
+        """A 15:18 IST run fetched today's half-finished bar; stored, it made
+        every symbol look current at the evening run and the partial prices
+        stayed. Only closed sessions may be written."""
+        cutoff = bdh.latest_session(datetime(2026, 10, 1, 15, 18, tzinfo=IST))
+        self.assertEqual(cutoff, date(2026, 9, 30))
+        rows = [{"date": date(2026, 9, 30), "close": 1.0}, {"date": date(2026, 10, 1), "close": 2.0}]
+        self.assertEqual([r["date"] for r in bdh.drop_unclosed(rows, cutoff)], [date(2026, 9, 30)])
+
+
 if __name__ == "__main__":
     unittest.main()

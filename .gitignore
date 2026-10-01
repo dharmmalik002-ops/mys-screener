@@ -35,6 +35,11 @@ backend/data/chart_cache_us/
 # Chart look-alikes: the reference library (a newsletter's paid picks) and the
 # US bars behind it. Only the public scan result, data/lookalikes.json, ships.
 backend/data/lookalike/
+# On the workstation both stores live in ~/lookalike-runner (outside ~/Desktop, which
+# macOS keeps away from background jobs) and are symlinked here. A symlink is not a
+# directory to git, so the trailing-slash rules above do not match it.
+backend/data/lookalike
+backend/data/deep_history
 backend/data/scan_history.json
 backend/app/data/scan_history.json
 backend/data/news_cache/

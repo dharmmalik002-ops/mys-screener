@@ -150,6 +150,15 @@ def merge_tail(stored: hist.Bars, tail: list[dict]) -> list[dict] | None:
     return _bars_to_rows(stored) + tail
 
 
+def drop_unclosed(rows: list[dict], cutoff: date) -> list[dict]:
+    """Rows for sessions that have closed. A top-up run before ~16:00 IST gets
+    today's half-finished bar from Yahoo; stored, it would make the symbol look
+    current at the evening run (`already_current`) and the partial prices would
+    never be replaced. Dropping it leaves the symbol one session behind, which
+    the next run fills in properly."""
+    return [r for r in rows if isinstance(r.get("date"), date) and r["date"] <= cutoff]
+
+
 def update_one(data_dir: Path, symbol: str, ticker: str, full: bool) -> list[dict]:
     """Rows to write for one symbol: the missing tail appended when that is
     safe, the full history otherwise."""
@@ -204,6 +213,7 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001
                 logger.debug("worker crashed on %s: %s", symbol, exc)
                 rows = []
+            rows = drop_unclosed(rows, cutoff)
             if rows:
                 written = hist.write_bars(data_dir, symbol, ticker, rows)
                 if written:
