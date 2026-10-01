@@ -1,5 +1,5 @@
 {
- "as_of": "2026-09-30",
+ "as_of": "2026-10-01",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,30 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544530": {
-   "name": "ANAND RATHI SHARE AND STOCK BROKERS LIMITED",
-   "symbol": "ARSSBL",
-   "listing_date": "2025-09-30",
-   "issue_price": 414.0
-  },
-  "544532": {
-   "name": "Solarworld Energy Solutions Limited",
-   "symbol": "SOLARWORLD",
-   "listing_date": "2025-09-30",
-   "issue_price": 351.0
-  },
-  "544533": {
-   "name": "Seshaasai Technologies Limited",
-   "symbol": "STYL",
-   "listing_date": "2025-09-30",
-   "issue_price": 423.0
-  },
-  "544534": {
-   "name": "Jaro Institute of Technology Management and Research Limited",
-   "symbol": "JARO",
-   "listing_date": "2025-09-30",
-   "issue_price": 890.0
-  },
   "544537": {
    "name": "Jain Resource Recycling Limited",
    "symbol": "JAINREC",
@@ -1102,11 +1078,24 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "AONESTEELS": {
+   "listing_date": "2026-10-01",
+   "name": "A-One Steels India Limited",
+   "isin": "INE0OTC01025",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-09-30",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "APOORVA": {
    "listing_date": "2026-08-17",
    "name": "Apoorva Leasing Finance and Investment Company Limited",
    "isin": "INE217S01014",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "539545",
    "sector": "Financial Services",
@@ -1176,20 +1165,6 @@
    "prior_rule": "issuer_prefix",
    "basis": "isin_history",
    "ipo": true
-  },
-  "ARSSBL": {
-   "listing_date": "2025-09-30",
-   "name": "Anand Rathi Share and Stock Brokers Limited",
-   "isin": "INE549H01021",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544530",
-   "sector": "Financial Services",
-   "sub_sector": "Stockbroking & Allied",
-   "shares_crore": 6.306649,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 414.0
   },
   "ARYAMAN": {
    "listing_date": "2026-08-17",
@@ -1932,7 +1907,7 @@
    "listing_date": "2026-02-17",
    "name": "DCM Shriram Fine Chemicals Limited",
    "isin": "INE0OFM01015",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "544703",
    "sector": "Chemicals",
@@ -1975,7 +1950,7 @@
    "listing_date": "2026-08-17",
    "name": "EKI Energy Services Limited",
    "isin": "INE0CPR01018",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "543284",
    "ipo": false,
@@ -2698,20 +2673,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 232.0
-  },
-  "JARO": {
-   "listing_date": "2025-09-30",
-   "name": "Jaro Institute of Technology Management and Research Limited",
-   "isin": "INE00YJ01010",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544534",
-   "sector": "Consumer Services",
-   "sub_sector": "E-Learning",
-   "shares_crore": 2.227033,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 890.0
   },
   "JAYKAY": {
    "listing_date": "2025-12-03",
@@ -3578,11 +3539,24 @@
    "listing_date": "2025-10-15",
    "name": "Moneyboxx Finance Limited",
    "isin": "INE296Q01012",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "538446",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "MONEYVIEW": {
+   "listing_date": "2026-10-01",
+   "name": "Moneyview Limited",
+   "isin": "INE0PTN01011",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-09-30",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "MPDL": {
    "listing_date": "2026-08-17",
@@ -4784,20 +4758,6 @@
    "basis": "bse_ipo_list",
    "issue_price": 138.0
   },
-  "SOLARWORLD": {
-   "listing_date": "2025-09-30",
-   "name": "Solarworld Energy Solutions Limited",
-   "isin": "INE0TY101024",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544532",
-   "sector": "Construction",
-   "sub_sector": "Civil Construction",
-   "shares_crore": 8.667232,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 351.0
-  },
   "SOLEX": {
    "listing_date": "2025-10-08",
    "name": "Solex Energy Limited",
@@ -4907,20 +4867,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 585.0
-  },
-  "STYL": {
-   "listing_date": "2025-09-30",
-   "name": "Seshaasai Technologies Limited",
-   "isin": "INE04VU01023",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544533",
-   "sector": "Financial Services",
-   "sub_sector": "Financial Technology (Fintech)",
-   "shares_crore": 16.180574,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 423.0
   },
   "SUDEEPPHRM": {
    "listing_date": "2025-11-28",
