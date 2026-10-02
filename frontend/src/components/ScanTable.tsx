@@ -384,6 +384,7 @@ function sectorSortValue(
 function formatSectorLine(
   summary: ScanSectorSummary | undefined,
   sectorSortMode: "1W" | "1M" | "count-desc" | "count-asc",
+  counting: boolean,
 ) {
   if (!summary) return "";
   const label =
@@ -395,7 +396,9 @@ function formatSectorLine(
           ? "Most stocks first"
           : "Fewest stocks first";
   if (summary.prior_week_hits === null || summary.prior_month_hits === null) {
-    return `${label} · Counting earlier hits…`;
+    // Still null after the page stopped asking: the backend could not measure
+    // enough of the sector yet, so say nothing rather than a made-up count.
+    return counting ? `${label} · Counting earlier hits…` : label;
   }
   return `${label} · Last week ${summary.prior_week_hits} · Last month ${summary.prior_month_hits}`;
 }
@@ -1338,7 +1341,7 @@ export function ScanTable({
     entry: Extract<ScanTableEntry, { type: "header" }>,
     options: { virtualHeight?: number; pinned?: boolean; offset?: number } = {},
   ) => {
-    const detail = entry.subtitle ?? formatSectorLine(entry.summary, sectorSortMode);
+    const detail = entry.subtitle ?? formatSectorLine(entry.summary, sectorSortMode, sectorSummaryLoading);
     return (
       <button
         key={options.pinned ? `pinned:${entry.key}` : entry.key}

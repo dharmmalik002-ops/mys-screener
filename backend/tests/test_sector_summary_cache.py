@@ -59,6 +59,8 @@ class _Provider:
         self.updated_at = datetime(2026, 9, 30, 10, 0, tzinfo=timezone.utc)
         self.reads: list[str] = []
         self.builds: list[tuple[str, int]] = []
+        # Symbols whose chart is not cached yet (as on a freshly deployed Space).
+        self.uncached: set[str] = set()
 
     def get_snapshot_updated_at(self) -> datetime:
         return self.updated_at
@@ -70,6 +72,8 @@ class _Provider:
     def _history_frame_from_cached_bars(self, symbol: str, bars: int, allow_legacy: bool = True):
         del allow_legacy
         self.reads.append(symbol)
+        if symbol in self.uncached:
+            return pd.DataFrame()
         index = pd.bdate_range(end="2026-09-30", periods=bars)
         return pd.DataFrame({"Close": [100.0 + i for i in range(bars)]}, index=index)
 
@@ -85,6 +89,7 @@ def _service(provider: _Provider) -> DashboardService:
     service._historical_snapshot_cache = {}
     service._historical_snapshot_cache_version = None
     service._historical_build_tasks = {}
+    service._historical_missing_at = {}
     service._scan_sector_summary_cache = {}
     return service
 
@@ -168,6 +173,38 @@ class SectorSummaryResponseTests(unittest.TestCase):
         self.assertEqual(second[0].prior_month_hits, 1)
         # Two stocks, read once each, by the single background rebuild.
         self.assertEqual(sorted(provider.reads), ["AAA", "BBB"])
+
+
+    def test_an_empty_chart_cache_reads_unknown_not_zero_then_recovers(self) -> None:
+        """Right after a deploy no chart is cached; the counts must not say 0."""
+        provider = _Provider()
+        provider.uncached = {"AAA", "BBB"}
+        service = _service(provider)
+        universe = [_snapshot("AAA", "Healthcare"), _snapshot("BBB", "Healthcare")]
+        sector = universe[0].sector
+        item = ScanMatch.model_construct(symbol="AAA", sector=sector)
+
+        def runner(snapshots):
+            return [ScanMatch.model_construct(symbol=s.symbol, sector=s.sector) for s in snapshots if s.symbol == "AAA"]
+
+        kwargs = dict(scan_key="demo", request_signature="{}", snapshots=universe, items=[item], historical_runner=runner)
+
+        async def poll():
+            result = await service._build_scan_sector_summaries(**kwargs)
+            await asyncio.gather(*service._historical_build_tasks.values())
+            return await service._build_scan_sector_summaries(**kwargs)
+
+        still_cold = asyncio.run(poll())
+        self.assertIsNone(still_cold[0].prior_week_hits)
+
+        # The warm-up job fills the cache; once the retry window has passed
+        # the stocks are read again and the counts appear.
+        provider.uncached.clear()
+        for symbol in list(service._historical_missing_at):
+            service._historical_missing_at[symbol] -= 10_000
+        warmed = asyncio.run(poll())
+        self.assertEqual(warmed[0].prior_week_hits, 1)
+        self.assertEqual(provider.reads.count("AAA"), 2)
 
 
 if __name__ == "__main__":

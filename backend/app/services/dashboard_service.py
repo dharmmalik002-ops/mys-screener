@@ -111,6 +111,12 @@ from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchli
 
 logger = logging.getLogger(__name__)
 
+# Sector summaries' prior-hit counts: how long a "no chart history" verdict is
+# trusted before the stock is read again, and the share of a sector's stocks
+# that must be rebuildable before the counts are reported at all.
+HISTORY_MISSING_RETRY_SECONDS = 300.0
+HISTORY_MIN_COVERAGE = 0.5
+
 # Bound on fetching index bars for the Markets context tiles. The verdict
 # itself never waits on them.
 INDEX_BARS_TIMEOUT_SECONDS = 8.0
@@ -350,6 +356,11 @@ class DashboardService:
         # snapshot version changes.
         self._historical_snapshot_cache: dict[tuple[str, int], StockSnapshot | None] = {}
         self._historical_snapshot_cache_version: datetime | None = None
+        # symbol -> time.monotonic() when its chart history was found missing.
+        # `chart_cache/` is empty after every deploy and refilled gradually, so
+        # "no history" is often temporary: such entries are retried after
+        # HISTORY_MISSING_RETRY_SECONDS instead of being trusted for the day.
+        self._historical_missing_at: dict[str, float] = {}
         # In-flight background rebuilds, keyed by (snapshot version, sectors),
         # so repeated polls for the same scan start one rebuild, not one each.
         self._historical_build_tasks: dict[tuple[datetime, frozenset[str]], asyncio.Task] = {}
@@ -1711,6 +1722,7 @@ class DashboardService:
         version = self._snapshot_updated_at()
         if self._historical_snapshot_cache_version != version:
             self._historical_snapshot_cache.clear()
+            self._historical_missing_at.clear()
             self._historical_snapshot_cache_version = version
         cache = self._historical_snapshot_cache
 
@@ -1718,12 +1730,14 @@ class DashboardService:
         pending = [
             snapshot
             for snapshot in targets
-            if any((snapshot.symbol, offset) not in cache for offset in offsets)
+            if not self._historical_entry_known(snapshot.symbol, offsets)
         ]
         bars = max(620, 520 + max(offsets))
 
         if pending:
             benchmark_close = await self._benchmark_close_series(bars)
+
+            missing: set[str] = set()
 
             def build_pending() -> dict[tuple[str, int], StockSnapshot | None]:
                 built: dict[tuple[str, int], StockSnapshot | None] = {}
@@ -1732,6 +1746,8 @@ class DashboardService:
                         full_history = history_reader(snapshot.symbol, bars, allow_legacy=True)
                     except Exception:
                         full_history = None
+                    if full_history is None or full_history.empty:
+                        missing.add(snapshot.symbol)
                     instrument = {
                         "symbol": snapshot.symbol,
                         "name": snapshot.name,
@@ -1767,6 +1783,12 @@ class DashboardService:
                 return built
 
             cache.update(await asyncio.to_thread(build_pending))
+            now = time.monotonic()
+            for snapshot in pending:
+                if snapshot.symbol in missing:
+                    self._historical_missing_at[snapshot.symbol] = now
+                else:
+                    self._historical_missing_at.pop(snapshot.symbol, None)
 
         result: dict[int, list[StockSnapshot]] = {offset: [] for offset in offsets}
         for snapshot in targets:
@@ -1776,6 +1798,13 @@ class DashboardService:
                     result[offset].append(historical)
         return result
 
+    def _historical_entry_known(self, symbol: str, offsets: tuple[int, ...]) -> bool:
+        cache = self._historical_snapshot_cache
+        if any((symbol, offset) not in cache for offset in offsets):
+            return False
+        missing_since = self._historical_missing_at.get(symbol)
+        return missing_since is None or time.monotonic() - missing_since < HISTORY_MISSING_RETRY_SECONDS
+
     def _historical_snapshots_ready(
         self,
         snapshots: list[StockSnapshot],
@@ -1784,12 +1813,10 @@ class DashboardService:
     ) -> bool:
         if self._historical_snapshot_cache_version != self._snapshot_updated_at():
             return False
-        cache = self._historical_snapshot_cache
         return all(
-            (snapshot.symbol, offset) in cache
+            self._historical_entry_known(snapshot.symbol, offsets)
             for snapshot in snapshots
             if snapshot.sector in sectors
-            for offset in offsets
         )
 
     def _schedule_historical_build(
@@ -1846,7 +1873,17 @@ class DashboardService:
                 sector_universe.setdefault(snapshot.sector, []).append(snapshot)
 
         offsets = (5, 20)
-        if not self._historical_snapshots_ready(snapshots, sectors, offsets):
+        ready = self._historical_snapshots_ready(snapshots, sectors, offsets)
+        if ready:
+            historical = await self._historical_sector_snapshots_multi(snapshots, sectors, offsets)
+            target_count = sum(len(sector_universe.get(sector, [])) for sector in sectors)
+            # Right after a deploy most charts are not cached yet, so most
+            # stocks have no history to rebuild. Counting the few that do would
+            # print a confident "0 last week" for every sector; report the
+            # counts as unknown until enough of the sector can be measured.
+            if target_count and len(historical[5]) < HISTORY_MIN_COVERAGE * target_count:
+                ready = False
+        if not ready:
             # The cheap half answers now — sector returns set the order the
             # sectors are listed in, so nothing reshuffles later — and the
             # prior-hit counts are rebuilt in the background for the next poll.
@@ -1863,7 +1900,6 @@ class DashboardService:
                 for sector in current_counts
             ]
 
-        historical = await self._historical_sector_snapshots_multi(snapshots, sectors, offsets)
         historical_1w_snapshots = historical[5]
         historical_1m_snapshots = historical[20]
         historical_1w_items = await asyncio.to_thread(historical_runner, historical_1w_snapshots) if historical_1w_snapshots else []
@@ -7254,6 +7290,7 @@ class DashboardService:
         self._scan_sector_summary_cache.clear()
         self._historical_snapshot_cache.clear()
         self._historical_snapshot_cache_version = None
+        self._historical_missing_at.clear()
         self._historical_build_tasks.clear()
         self._market_overview_cache = None
         self._industry_groups_cache = None
