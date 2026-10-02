@@ -261,3 +261,45 @@ class PublicFileTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SimilarityLayerTests(unittest.TestCase):
+    def test_shape_reads_no_future_bars_and_ignores_price_level(self):
+        from app.services.lookalike import shape
+
+        o, h, l, c, v = _bars(400, seed=9)
+        a = shape.features(o, h, l, c, v, 300)
+        o2, h2, l2, c2, v2 = (np.concatenate([x[:301], x[301:] * 5]) for x in (o, h, l, c, v))
+        self.assertTrue(np.allclose(a, shape.features(o2, h2, l2, c2, v2, 300), equal_nan=True))
+        self.assertTrue(np.allclose(a, shape.features(o * 50, h * 50, l * 50, c * 50, v, 300), equal_nan=True))
+
+    def test_pullbacks_are_found_most_recent_first(self):
+        from app.services.lookalike import shape
+
+        path = [100, 110, 99, 115, 109, 120, 117, 125]  # falls of 10%, ~5.2%, 2.5%
+        self.assertEqual([round(x, 1) for x in shape._pullbacks(np.array(path, dtype=float), 4.0)], [5.2, 10.0])
+
+    def test_rerank_breaks_a_look_tie_by_shape_and_never_returns_itself(self):
+        from app.services.lookalike import similarity
+
+        cos = np.array([0.90, 0.90, 0.10, 0.99])
+        shape_row = np.array([2.0, 0.1, 0.0, 0.0])
+        order = similarity.ranked(cos, shape_row, 3, exclude=3)
+        self.assertNotIn(3, order)
+        self.assertEqual(int(order[0]), 1)  # same look as 0, closer shape
+
+    def test_scales_without_a_picture_are_left_out_of_the_blend(self):
+        from app.services.lookalike import similarity
+
+        q = {120: np.array([[1.0, 0.0]]), 250: np.array([[0.0, 0.0]])}   # no 250 picture
+        r = {120: np.array([[1.0, 0.0]]), 250: np.array([[0.0, 1.0]])}
+        self.assertAlmostEqual(float(similarity.blended_cosine(q, r, None)[0, 0]), 1.0)
+
+
+class AlikeDisplayTests(unittest.TestCase):
+    def test_alike_is_the_share_of_others_a_match_beats(self):
+        from app.services.lookalike import similarity
+
+        row = np.array([0.10, 0.50, 0.30, np.nan, 0.20])
+        self.assertEqual(similarity.alike(row, 1), 1.0)   # best of four real candidates
+        self.assertAlmostEqual(similarity.alike(row, 4), 1 / 3)

@@ -32,26 +32,32 @@ _SMA = (90, 120, 200)
 _VOL = (170, 170, 170)
 
 
-def min_bars_needed() -> int:
-    return WINDOW + SMA_LEN - 1
+# Extra window lengths for the multi-scale similarity layer: a short look at
+# the base itself and a long one at the trend it sits in. The model's style
+# classifier still reads 120 only.
+SCALES = (60, 120, 250)
 
 
-def _sma(close: np.ndarray, end: int) -> np.ndarray:
-    start = end - WINDOW + 1
-    out = np.empty(WINDOW)
+def min_bars_needed(window: int = WINDOW) -> int:
+    return window + SMA_LEN - 1
+
+
+def _sma(close: np.ndarray, end: int, window: int = WINDOW) -> np.ndarray:
+    start = end - window + 1
+    out = np.empty(window)
     csum = np.cumsum(np.insert(close[: end + 1].astype(float), 0, 0.0))
     for k, i in enumerate(range(start, end + 1)):
         out[k] = (csum[i + 1] - csum[i + 1 - SMA_LEN]) / SMA_LEN
     return out
 
 
-def window_arrays(o, h, l, c, v, end: int) -> dict[str, np.ndarray] | None:
+def window_arrays(o, h, l, c, v, end: int, window: int = WINDOW) -> dict[str, np.ndarray] | None:
     """The `WINDOW` sessions ending at `end` (inclusive), plus the 50-day
     average over the same span. None when there is not enough history, or the
     window holds bad prices — never a padded or partial picture."""
-    if end < min_bars_needed() - 1 or end >= len(c):
+    if end < min_bars_needed(window) - 1 or end >= len(c):
         return None
-    s = slice(end - WINDOW + 1, end + 1)
+    s = slice(end - window + 1, end + 1)
     arrs = {
         "o": np.asarray(o[s], dtype=float),
         "h": np.asarray(h[s], dtype=float),
@@ -64,7 +70,7 @@ def window_arrays(o, h, l, c, v, end: int) -> dict[str, np.ndarray] | None:
     if (arrs["l"] <= 0).any():
         return None
     arrs["v"] = np.nan_to_num(arrs["v"], nan=0.0)
-    arrs["sma"] = _sma(np.asarray(c, dtype=float), end)
+    arrs["sma"] = _sma(np.asarray(c, dtype=float), end, window)
     return arrs
 
 
@@ -91,7 +97,7 @@ def normalised(arrs: dict[str, np.ndarray]) -> dict[str, list[float]]:
 
 
 def draw(arrs: dict[str, np.ndarray]) -> Image.Image:
-    n = WINDOW
+    n = len(arrs["c"])
     W = H = SIZE * _SCALE
     img = Image.new("RGB", (W, H), _BG)
     g = ImageDraw.Draw(img)
@@ -123,8 +129,8 @@ def draw(arrs: dict[str, np.ndarray]) -> Image.Image:
     return img.resize((SIZE, SIZE), Image.LANCZOS)
 
 
-def picture(o, h, l, c, v, end: int) -> tuple[Image.Image, dict[str, list[float]]] | None:
-    arrs = window_arrays(o, h, l, c, v, end)
+def picture(o, h, l, c, v, end: int, window: int = WINDOW) -> tuple[Image.Image, dict[str, list[float]]] | None:
+    arrs = window_arrays(o, h, l, c, v, end, window)
     if arrs is None:
         return None
     return draw(arrs), normalised(arrs)

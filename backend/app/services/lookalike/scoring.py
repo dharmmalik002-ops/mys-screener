@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import embed, model, render, rules
+from . import embed, model, projection, render, rules, shape, similarity
 
 MIN_TURNOVER_CRORE = 2.0
 STALE_DAYS = 6
@@ -34,6 +34,10 @@ class Library:
     X_ref: dict[str, np.ndarray]
     cal_logits: dict[str, np.ndarray]
     sources: dict[str, str] = field(default_factory=dict)  # ref key -> source list it came from
+    # similarity layers: fingerprints per scale, measured shapes, trained head
+    X_ref_scales: dict[str, dict[int, np.ndarray]] = field(default_factory=dict)
+    F_ref: dict[str, np.ndarray] = field(default_factory=dict)
+    head: object = None
 
 
 def load_library(data_dir: Path) -> Library:
@@ -60,6 +64,12 @@ def load_library(data_dir: Path) -> Library:
         X_ref={s: arrays[f"{s}__X_ref"] for s in styles},
         cal_logits={s: arrays[f"{s}__cal_logits"] for s in styles},
         sources=sources,
+        X_ref_scales={
+            s: {render.WINDOW: arrays[f"{s}__X_ref"], **{sc: arrays[f"{s}__X_ref{sc}"] for sc in render.SCALES if f"{s}__X_ref{sc}" in arrays}}
+            for s in styles
+        },
+        F_ref={s: arrays[f"{s}__F_ref"] for s in styles if f"{s}__F_ref" in arrays},
+        head=projection.load(data_dir),
     )
 
 
@@ -88,7 +98,27 @@ class Scored:
     # per style
     logits: dict[str, np.ndarray]
     percentile: dict[str, np.ndarray]
-    sims: dict[str, np.ndarray]
+    sims: dict[str, np.ndarray]          # blended look across scales — the displayed "% alike"
+    Xs: dict[int, np.ndarray] = field(default_factory=dict)   # fingerprints per scale (zero rows = no picture)
+    F: np.ndarray | None = None          # measured shapes
+    shape_d: dict[str, np.ndarray] = field(default_factory=dict)  # shape distance to each style's references
+    head: object = None
+
+    def nearest(self, style: str, i: int, k: int) -> np.ndarray:
+        """The closest references to stock `i`: all three similarity layers."""
+        d = self.shape_d.get(style)
+        return similarity.ranked(self.sims[style][i], None if d is None else d[i], k)
+
+    def alike(self, style: str, i: int, j: int) -> float:
+        return similarity.alike(self.sims[style][i], j)
+
+    def peers(self, k: int) -> list[np.ndarray]:
+        """For every stock, the other stocks whose charts look most like it."""
+        cos = similarity.blended_cosine(self.Xs, self.Xs, self.head)
+        d = None
+        if self.F is not None:
+            d = similarity.shape_distances(self.F, self.F, shape.robust_scale(self.F))
+        return [similarity.ranked(cos[i], None if d is None else d[i], k, exclude=i) for i in range(len(cos))]
 
 
 def _turnover_crore(close: np.ndarray, volume: np.ndarray, end: int) -> float:
@@ -119,7 +149,14 @@ def score(universe, index, library: Library, as_of: date | None = None) -> Score
         if index is not None and end >= 126:
             ret = rules.index_return(index[0], index[1], bars.dates[end], bars.dates[end - 126])
         m = rules.metrics(bars.open, bars.high, bars.low, bars.close, bars.volume, end, ret)
-        rows.append((bars.symbol, bars.dates[end], float(bars.close[end]), turnover, pic[1], m))
+        extra = {}
+        for sc in render.SCALES:
+            if sc == render.WINDOW:
+                continue
+            ep = render.picture(bars.open, bars.high, bars.low, bars.close, bars.volume, end, sc)
+            extra[sc] = ep[0] if ep else None
+        f = shape.features(bars.open, bars.high, bars.low, bars.close, bars.volume, end)
+        rows.append((bars.symbol, bars.dates[end], float(bars.close[end]), turnover, pic[1], m, extra, f))
         images.append(pic[0])
     if not rows:
         return None
@@ -129,12 +166,26 @@ def score(universe, index, library: Library, as_of: date | None = None) -> Score
     images = [images[i] for i in keep]
 
     X = embed.fingerprints(images)
-    logits, pct, sims = {}, {}, {}
+    Xs = {render.WINDOW: X}
+    for sc in render.SCALES:
+        if sc == render.WINDOW:
+            continue
+        imgs = [r[6][sc] for r in rows]
+        have = [i for i, im in enumerate(imgs) if im is not None]
+        Xsc = np.zeros_like(X)
+        if have:
+            Xsc[have] = embed.fingerprints([imgs[i] for i in have])
+        Xs[sc] = Xsc
+    F = np.array([r[7] if r[7] is not None else np.full(len(shape.NAMES), np.nan) for r in rows])
+    F_scale = shape.robust_scale(F)
+    logits, pct, sims, shape_d = {}, {}, {}, {}
     for style in library.styles:
         lg = library.clf[style].logit(X)
         logits[style] = lg
         pct[style] = model.percentile_against(lg, library.cal_logits[style])
-        sims[style] = X @ library.X_ref[style].T
+        sims[style] = similarity.blended_cosine(Xs, library.X_ref_scales.get(style, {render.WINDOW: library.X_ref[style]}), library.head)
+        if style in library.F_ref:
+            shape_d[style] = similarity.shape_distances(F, library.F_ref[style], F_scale)
     return Scored(
         as_of=latest,
         symbols=[r[0] for r in rows],
@@ -148,6 +199,10 @@ def score(universe, index, library: Library, as_of: date | None = None) -> Score
         logits=logits,
         percentile=pct,
         sims=sims,
+        Xs=Xs,
+        F=F,
+        shape_d=shape_d,
+        head=library.head,
     )
 
 

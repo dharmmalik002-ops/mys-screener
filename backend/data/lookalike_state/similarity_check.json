@@ -1,0 +1,97 @@
+{
+ "checked_at": "2026-10-02T02:08:48+00:00",
+ "session": "2026-09-30",
+ "charts": 1222,
+ "trained_layer_in_use": true,
+ "trained_layer_test": {
+  "60": {
+   "raw_fingerprint": {
+    "candidates": 1304,
+    "top1_pct": 61.1,
+    "top5_pct": 76.8,
+    "median_rank": 1.0
+   },
+   "trained_layer": {
+    "candidates": 1304,
+    "top1_pct": 86.1,
+    "top5_pct": 95.9,
+    "median_rank": 1.0
+   }
+  },
+  "120": {
+   "raw_fingerprint": {
+    "candidates": 1296,
+    "top1_pct": 54.1,
+    "top5_pct": 70.8,
+    "median_rank": 1.0
+   },
+   "trained_layer": {
+    "candidates": 1296,
+    "top1_pct": 87.2,
+    "top5_pct": 98.0,
+    "median_rank": 1.0
+   }
+  },
+  "250": {
+   "raw_fingerprint": {
+    "candidates": 1196,
+    "top1_pct": 65.2,
+    "top5_pct": 81.9,
+    "median_rank": 1.0
+   },
+   "trained_layer": {
+    "candidates": 1196,
+    "top1_pct": 86.6,
+    "top5_pct": 97.7,
+    "median_rank": 1.0
+   }
+  }
+ },
+ "closest_minervini_example": {
+  "path_120": {
+   "old_median": 0.2989,
+   "new_median": 0.2497,
+   "improvement_pct": 16.5,
+   "new_closer_pct": 61.8,
+   "same_match_pct": 7.4
+  },
+  "path_60": {
+   "old_median": 0.3661,
+   "new_median": 0.3206,
+   "improvement_pct": 12.4,
+   "new_closer_pct": 59.2,
+   "same_match_pct": 7.4
+  },
+  "shape": {
+   "old_median": 1.2668,
+   "new_median": 0.841,
+   "improvement_pct": 33.6,
+   "new_closer_pct": 84.7,
+   "same_match_pct": 7.4
+  }
+ },
+ "closest_indian_peer": {
+  "path_120": {
+   "old_median": 0.2208,
+   "new_median": 0.1861,
+   "improvement_pct": 15.7,
+   "new_closer_pct": 65.0,
+   "same_match_pct": 7.0
+  },
+  "path_60": {
+   "old_median": 0.2724,
+   "new_median": 0.2273,
+   "improvement_pct": 16.6,
+   "new_closer_pct": 62.4,
+   "same_match_pct": 7.0
+  },
+  "shape": {
+   "old_median": 0.8585,
+   "new_median": 0.5103,
+   "improvement_pct": 40.6,
+   "new_closer_pct": 87.9,
+   "same_match_pct": 7.0
+  }
+ },
+ "note": "Lower is more alike. 'path' measures compare the closing-price curves and are the independent test; 'shape' is what the new ranking optimises."
+}

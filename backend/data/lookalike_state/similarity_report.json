@@ -1,0 +1,49 @@
+{
+ "trained_at": "2026-10-02T02:05:34+00:00",
+ "by_scale": {
+  "60": {
+   "raw_fingerprint": {
+    "candidates": 1304,
+    "top1_pct": 61.1,
+    "top5_pct": 76.8,
+    "median_rank": 1.0
+   },
+   "trained_layer": {
+    "candidates": 1304,
+    "top1_pct": 86.1,
+    "top5_pct": 95.9,
+    "median_rank": 1.0
+   }
+  },
+  "120": {
+   "raw_fingerprint": {
+    "candidates": 1296,
+    "top1_pct": 54.1,
+    "top5_pct": 70.8,
+    "median_rank": 1.0
+   },
+   "trained_layer": {
+    "candidates": 1296,
+    "top1_pct": 87.2,
+    "top5_pct": 98.0,
+    "median_rank": 1.0
+   }
+  },
+  "250": {
+   "raw_fingerprint": {
+    "candidates": 1196,
+    "top1_pct": 65.2,
+    "top5_pct": 81.9,
+    "median_rank": 1.0
+   },
+   "trained_layer": {
+    "candidates": 1196,
+    "top1_pct": 86.6,
+    "top5_pct": 97.7,
+    "median_rank": 1.0
+   }
+  }
+ },
+ "use_head": true,
+ "verdict": "The trained layer finds the twin more often at every scale on stocks it never saw, so it is used for similarity."
+}

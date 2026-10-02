@@ -28,7 +28,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import embed, model, outcome, render, rules, us_bars
+from . import embed, model, outcome, render, rules, shape, us_bars
 from .references import Reference
 
 logger = logging.getLogger(__name__)
@@ -83,6 +83,64 @@ def _controls(series: us_bars.Series, ref_indices: list[int], seed: str) -> list
     return [allowed[p] for p in picks]
 
 
+EXTRA_SCALES = tuple(s for s in render.SCALES if s != render.WINDOW)
+
+
+def _ref_extras(series, idx: int):
+    """The other-scale pictures and the measured shape of one reference, for
+    the similarity layers. None where the history is too short."""
+    pics = {}
+    for scale in EXTRA_SCALES:
+        pic = render.picture(series.o, series.h, series.l, series.c, series.v, idx, scale)
+        pics[scale] = pic[0] if pic else None
+    return pics, shape.features(series.o, series.h, series.l, series.c, series.v, idx)
+
+
+def _extra_arrays(style: str, extras: list) -> dict[str, np.ndarray]:
+    """Fingerprints per extra scale (zero rows where a picture is missing) and
+    the shape matrix (nan rows where it is missing), keyed for library.npz."""
+    out = {}
+    for scale in EXTRA_SCALES:
+        imgs = [e[0][scale] for e in extras]
+        have = [i for i, im in enumerate(imgs) if im is not None]
+        X = np.zeros((len(imgs), 768), dtype=np.float32)
+        if have:
+            X[have] = embed.fingerprints([imgs[i] for i in have])
+        out[f"{style}__X_ref{scale}"] = X
+    out[f"{style}__F_ref"] = np.array(
+        [e[1] if e[1] is not None else np.full(len(shape.NAMES), np.nan) for e in extras], dtype=np.float64
+    )
+    return out
+
+
+def extend_library(data_dir: Path) -> dict:
+    """Add the similarity layers' inputs (60/250-session fingerprints and the
+    shape of every reference) to an existing library without rebuilding it.
+    Reads the cached US bars, so workstation only."""
+    lib_dir = library_dir(data_dir)
+    meta = json.loads((lib_dir / "library.json").read_text())
+    arrays = dict(np.load(lib_dir / "library.npz"))
+    cache: dict[str, us_bars.Series | None] = {}
+    counts = {}
+    for style in meta["styles"]:
+        extras = []
+        for r in [r for r in meta["references"] if r["style"] == style]:
+            if r["ticker"] not in cache:
+                cache[r["ticker"]] = us_bars._read(us_bars.cache_dir(data_dir) / f"{r['ticker']}.json")
+            series = cache[r["ticker"]]
+            idx = series.index_on_or_before(date.fromisoformat(r["session"])) if series else None
+            if series is None or idx is None or series.dates[idx].isoformat() != r["session"]:
+                extras.append(({s: None for s in EXTRA_SCALES}, None))
+            else:
+                extras.append(_ref_extras(series, idx))
+        arrays.update(_extra_arrays(style, extras))
+        counts[style] = {
+            str(sc): int((np.abs(arrays[f"{style}__X_ref{sc}"]).sum(axis=1) > 0).sum()) for sc in EXTRA_SCALES
+        } | {"shape": int(np.isfinite(arrays[f"{style}__F_ref"]).all(axis=1).sum()), "references": len(extras)}
+    np.savez_compressed(lib_dir / "library.npz", **arrays)
+    return counts
+
+
 def _rule_flags(series, idx: int, index) -> dict[str, bool] | None:
     ret = None
     if index is not None and idx >= 126:
@@ -101,6 +159,7 @@ def _gather(data_dir: Path, references: list[Reference], today: date):
 
     ref_rows: list[dict] = []
     ref_images = []
+    ref_extras: list = []
     ctrl_images, ctrl_meta = [], []  # (ticker, day, role, outcome label)
     skipped: list[dict] = []
 
@@ -124,6 +183,7 @@ def _gather(data_dir: Path, references: list[Reference], today: date):
                 continue
             graded = outcome.grade(series.o, series.h, series.l, idx)
             image, window = pic
+            ref_extras.append(_ref_extras(series, idx))
             ref_images.append(image)
             indices.append(idx)
             ref_rows.append({
@@ -153,7 +213,7 @@ def _gather(data_dir: Path, references: list[Reference], today: date):
                 outcome.grade(series.o, series.h, series.l, idx).label,
                 _rule_flags(series, idx, index),
             ))
-    return ref_rows, ref_images, ctrl_images, ctrl_meta, skipped
+    return ref_rows, ref_images, ctrl_images, ctrl_meta, skipped, ref_extras
 
 
 def _worked_rate(labels: list[str]) -> float | None:
@@ -198,7 +258,7 @@ def _rules_report(ref_rows: list[dict], ctrl_meta: list) -> list[dict]:
 
 
 def _build_style(data_dir: Path, style: str, references: list[Reference], today: date):
-    ref_rows, ref_images, ctrl_images, ctrl_meta, skipped = _gather(data_dir, references, today)
+    ref_rows, ref_images, ctrl_images, ctrl_meta, skipped, ref_extras = _gather(data_dir, references, today)
     if not ref_rows:
         logger.warning("style %s: no usable reference charts", style)
         return None
@@ -260,6 +320,7 @@ def _build_style(data_dir: Path, style: str, references: list[Reference], today:
         f"{style}__b": np.array([final.b]),
         f"{style}__mean": final.mean,
         f"{style}__cal_logits": cal_logits,
+        **_extra_arrays(style, ref_extras),
     }
     return summary, ref_rows, arrays
 
@@ -321,7 +382,7 @@ def scan_india(
         sims = scored.sims[style]
         matches = []
         for rank, i in enumerate(np.argsort(-logits)[:top], start=1):
-            near = np.argsort(-sims[i])[:NEAREST]
+            near = scored.nearest(style, i, NEAREST)
             for j in near:
                 ref = refs[j]
                 key = _public_key(ref, show_reference_names)
@@ -337,7 +398,7 @@ def scan_india(
                     else:
                         row["name"] = f"{style.title()} setup · {date.fromisoformat(ref['date']).strftime('%b %Y')}"
                     public_refs[key] = row
-            nearest_rows = [{**public_refs[_public_key(refs[j], show_reference_names)], "similarity": round(float(sims[i, j]), 3)} for j in near]
+            nearest_rows = [{**public_refs[_public_key(refs[j], show_reference_names)], "similarity": round(scored.alike(style, i, j), 3)} for j in near]
             flags = scored.flags[i]
             matches.append({
                 "rank": rank,
@@ -355,7 +416,7 @@ def scan_india(
                     if scored.metrics[i] is not None else None
                 ),
                 "links": {"tradingview": scoring.tradingview_india(scored.symbols[i])},
-                "nearest": [{"key": _public_key(refs[j], show_reference_names), "similarity": round(float(sims[i, j]), 3)} for j in near],
+                "nearest": [{"key": _public_key(refs[j], show_reference_names), "similarity": round(scored.alike(style, i, j), 3)} for j in near],
             })
         public_summary = dict(summary)
         public_summary["skipped"] = len(summary.get("skipped", []))

@@ -276,8 +276,9 @@ export function SimilarChartsModal({ symbol, onClose }: { symbol: string; onClos
         <>
           <div className="lookalike-toolbar">
             <span className="lookalike-stat-sub" style={{ marginRight: "auto" }}>
-              Based on {symbol}'s last 120 sessions up to {fmtDate(ok.session)} · Trend Template {ok.template ?? "—"}/8 ·
-              updated each weekday evening.
+              Matched on {symbol}'s chart up to {fmtDate(ok.session)} over 60, 120 and 250 sessions, then checked on
+              measured shape (distance from high, base depth, pullbacks, tightness, volume, trend) · Trend Template{" "}
+              {ok.template ?? "—"}/8 · updated each weekday evening.
             </span>
             <span>Charts per row:</span>
             {[1, 2, 3, 4, 5, 6].map((n) => (

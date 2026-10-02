@@ -34,7 +34,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import model, outcome, rules
+from . import model, outcome, rules, similarity
 from .scoring import Library, Scored, tradingview_india, tradingview_us
 
 PICK_STYLES = ("minervini",)
@@ -220,8 +220,8 @@ def choose(
             fps.pop(pid, None)
 
         for rank, i in enumerate(chosen, start=1):
-            near_idx = np.argsort(-scored.sims[style][i])[:3]
-            nearest = [{**_ref_public(refs[j]), "similarity": round(float(scored.sims[style][i, j]), 3)} for j in near_idx]
+            near_idx = scored.nearest(style, i, 3)
+            nearest = [{**_ref_public(refs[j]), "similarity": round(scored.alike(style, i, j), 3)} for j in near_idx]
             m = {k: (None if v is None else round(float(v), 3)) for k, v in scored.metrics[i].items()}
             f = scored.flags[i]
             pid = f"{day.isoformat()}:{style}:{scored.symbols[i]}"
@@ -539,25 +539,24 @@ def export_index(data_dir: Path, scored: Scored, library: Library) -> dict:
     closest examples, and the Indian stocks whose charts look most like it.
     What the "Similar charts" button on the big chart reads — the Space has no
     image model, so this is computed here, once a day, for every stock."""
-    norm = scored.X / (np.linalg.norm(scored.X, axis=1, keepdims=True) + 1e-12)
-    peer_sims = norm @ norm.T
-    np.fill_diagonal(peer_sims, -1)
+    peer_cos = similarity.blended_cosine(scored.Xs, scored.Xs, scored.head) if scored.Xs else scored.X @ scored.X.T
+    peer_lists = scored.peers(PEERS)
     symbols = {}
     for i, sym in enumerate(scored.symbols):
         styles = {}
         for style in library.styles:
-            near = np.argsort(-scored.sims[style][i])[:5]
+            near = scored.nearest(style, i, 5)
             styles[style] = {
                 "percentile": round(float(scored.percentile[style][i]), 1),
-                "near": [[ref_key(library.refs[style][j]), round(float(scored.sims[style][i, j]), 3)] for j in near],
+                "near": [[ref_key(library.refs[style][j]), round(scored.alike(style, i, j), 3)] for j in near],
             }
-        peers = np.argsort(-peer_sims[i])[:PEERS]
+        peers = peer_lists[i]
         w = scored.windows[i]
         symbols[sym] = {
             "session": scored.sessions[i].isoformat(),
             "template": rules.template_score(scored.flags[i]),
             "styles": styles,
-            "peers": [[scored.symbols[j], round(float(peer_sims[i, j]), 3)] for j in peers],
+            "peers": [[scored.symbols[j], round(similarity.alike(np.where(np.arange(len(peer_cos)) == i, np.nan, peer_cos[i]), j), 3)] for j in peers],
             # closes only, 0-999: enough for a sparkline of a peer, small
             # enough to ship ~1,500 of them every day
             "closes": [int(round(x * 999)) for x in w["c"]] if w else None,
