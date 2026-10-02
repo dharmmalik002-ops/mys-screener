@@ -18,6 +18,8 @@
   /* Editorial serif for page titles and hero numerals only — never tables. */
   --font-serif: "Instrument Serif", "Iowan Old Style", "Georgia", serif;
   --font-mono: "Geist Mono", "SFMono-Regular", "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+  --font-editorial: var(--font-serif);
+  --font-caption: var(--font-mono);
   --bg: #0a0a0c;
   --bg-alt: #0e0f12;
   /* The page canvas. Flat, on purpose: this used to be a blue gradient mesh

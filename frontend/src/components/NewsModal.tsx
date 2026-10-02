@@ -6,6 +6,15 @@ import type { MarketKey, QuarterlyResultItem } from "../lib/api";
 
 import "./NewsModal.css";
 
+/** Feeds sometimes encode their text twice, so headlines arrive reading
+    "Round 1&amp;2". Decoded as text (never as markup), so nothing renders. */
+function decodeEntities(value: string): string {
+  if (!value || !value.includes("&")) return value;
+  const doc = new DOMParser().parseFromString(`<!doctype html><body>${value}`, "text/html");
+  return doc.body.textContent ?? value;
+}
+
+
 export type NewsModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -389,16 +398,16 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
                     <>
                       {row.upcoming.length > 0 && (
                         <section className="news-section">
-                          <div className="news-section-title news-section-upcoming">📆 Upcoming · Result Date</div>
+                          <div className="news-section-title news-section-upcoming"><CalendarDays size={13} strokeWidth={2.2} aria-hidden="true" /> Upcoming · Result Date</div>
                           <ul className="news-list">
                             {row.upcoming.map((item, i) => (
                               <li key={`u-${i}`} className="news-item">
-                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{item.title}</a>
+                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{decodeEntities(item.title)}</a>
                                 <div className="news-item-meta">
                                   {item.source && <span className="news-item-source">{item.source}</span>}
-                                  {item.date && <span className="news-item-date">🕐 {item.date}</span>}
+                                  {item.date && <span className="news-item-date">{item.date}</span>}
                                 </div>
-                                {item.summary && <p className="news-item-summary">{item.summary}</p>}
+                                {item.summary && <p className="news-item-summary">{decodeEntities(item.summary)}</p>}
                               </li>
                             ))}
                           </ul>
@@ -413,12 +422,12 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
                           <ul className="news-list">
                             {row.results.map((item, i) => (
                               <li key={`r-${i}`} className="news-item">
-                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{item.title}</a>
+                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{decodeEntities(item.title)}</a>
                                 <div className="news-item-meta">
                                   {item.source && <span className="news-item-source">{item.source}</span>}
-                                  {item.date && <span className="news-item-date">🕐 {item.date}</span>}
+                                  {item.date && <span className="news-item-date">{item.date}</span>}
                                 </div>
-                                {item.summary && <p className="news-item-summary">{item.summary}</p>}
+                                {item.summary && <p className="news-item-summary">{decodeEntities(item.summary)}</p>}
                               </li>
                             ))}
                           </ul>
@@ -433,12 +442,12 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
                           <ul className="news-list">
                             {row.general.map((item, i) => (
                               <li key={`g-${i}`} className="news-item">
-                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{item.title}</a>
+                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{decodeEntities(item.title)}</a>
                                 <div className="news-item-meta">
                                   {item.source && <span className="news-item-source">{item.source}</span>}
-                                  {item.date && <span className="news-item-date">🕐 {item.date}</span>}
+                                  {item.date && <span className="news-item-date">{item.date}</span>}
                                 </div>
-                                {item.summary && <p className="news-item-summary">{item.summary}</p>}
+                                {item.summary && <p className="news-item-summary">{decodeEntities(item.summary)}</p>}
                               </li>
                             ))}
                           </ul>

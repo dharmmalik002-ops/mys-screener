@@ -1188,71 +1188,98 @@ export function HomePanel({
       .slice(0, 3);
     const topGroups = rankedGroups.slice(0, 3);
     if (!xp && !breadth && topGroups.length === 0) return null;
-    return { xp, breadth, improving, topGroups };
+    // How long the current (steadied) condition has held, in sessions.
+    let conditionAge: string | null = null;
+    const history = xp?.history ?? [];
+    if (history.length) {
+      let i = history.length - 1;
+      while (i > 0 && history[i - 1].regime === history[history.length - 1].regime) i -= 1;
+      const sessions = history.length - i;
+      conditionAge = `held ${sessions} session${sessions === 1 ? "" : "s"}`;
+    }
+    return { xp, breadth, improving, topGroups, conditionAge };
   })();
 
   return (
     <div className="homepro">
       {briefing ? (
-        <div className="homepro-briefing">
-          <div className="homepro-briefing-title">Market Briefing · {snapshotDateLabel}</div>
-          <div className="homepro-briefing-body">
+        <section className="homepro-briefing" aria-label="Market briefing">
+          <div className="ol-kicker">Market briefing · {snapshotDateLabel}</div>
+          {/* One plain-English sentence first, the way an editorial page leads
+              with its headline; the numbers it summarises sit under it. */}
+          <h2 className="homepro-briefing-headline">
             {briefing.xp ? (
-              <span>
-                Market regime is{" "}
-                <strong
+              <>
+                The market reads{" "}
+                <span
                   className="homepro-briefing-regime"
                   style={{ "--regime-color": briefing.xp.regime_color || "var(--text)" } as CSSProperties}
                 >
                   {briefing.xp.regime}
-                </strong>
-                {" "}(XP {briefing.xp.xp_score.toFixed(1)}).
-              </span>
+                </span>
+                .{" "}
+              </>
             ) : null}
             {briefing.breadth && briefing.breadth.total > 0 ? (
-              <span>
-                {" "}Breadth: <strong className={briefing.breadth.advances >= briefing.breadth.declines ? "pos" : "neg"}>
-                  {briefing.breadth.advances} adv / {briefing.breadth.declines} dec
-                </strong>.
+              <span className="homepro-briefing-headline-soft">
+                {briefing.breadth.advances.toLocaleString("en-IN")} stocks rose and{" "}
+                {briefing.breadth.declines.toLocaleString("en-IN")} fell.
               </span>
             ) : null}
-            {briefing.improving.length > 0 ? (
-              <span>
-                {" "}Improving groups:{" "}
-                {briefing.improving.map((g, i) => (
-                  <Fragment key={g.group_id}>
-                  {i > 0 ? ", " : null}
-                  <button
-                    type="button"
-                    className="homepro-briefing-link"
-                    onClick={() => onOpenGroups({ groupId: g.group_id })}
-                  >
-                    {g.group_name} (▲{g.rank_change_1w})
-                  </button>
-                  </Fragment>
-                ))}
-                .
-              </span>
-            ) : briefing.topGroups.length > 0 ? (
-              <span>
-                {" "}Leading groups:{" "}
-                {briefing.topGroups.map((g, i) => (
-                  <Fragment key={g.group_id}>
-                  {i > 0 ? ", " : null}
-                  <button
-                    type="button"
-                    className="homepro-briefing-link"
-                    onClick={() => onOpenGroups({ groupId: g.group_id })}
-                  >
-                    {g.group_name}
-                  </button>
-                  </Fragment>
-                ))}
-                .
-              </span>
+          </h2>
+          <dl className="homepro-briefing-stats">
+            {briefing.xp ? (
+              <div>
+                <dt>XP score</dt>
+                <dd>
+                  {briefing.xp.xp_score.toFixed(1)}
+                  {briefing.conditionAge ? <small> · {briefing.conditionAge}</small> : null}
+                </dd>
+              </div>
             ) : null}
-          </div>
-        </div>
+            {niftyPrice !== null ? (
+              <div>
+                <dt>Nifty 50</dt>
+                <dd>
+                  {niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  {niftyChange !== null && Number.isFinite(niftyChange) ? (
+                    <small className={niftyChange >= 0 ? "pos" : "neg"}>
+                      {" "}{niftyChange >= 0 ? "+" : ""}{niftyChange.toFixed(2)}%
+                    </small>
+                  ) : null}
+                </dd>
+              </div>
+            ) : null}
+            {briefing.breadth && briefing.breadth.total > 0 && briefing.breadth.declines > 0 ? (
+              <div>
+                <dt>Adv / dec</dt>
+                <dd className={briefing.breadth.advances >= briefing.breadth.declines ? "pos" : "neg"}>
+                  {(briefing.breadth.advances / briefing.breadth.declines).toFixed(2)}
+                </dd>
+              </div>
+            ) : null}
+            {briefing.improving.length > 0 || briefing.topGroups.length > 0 ? (
+              <div className="homepro-briefing-groups">
+                <dt>{briefing.improving.length > 0 ? "Improving groups" : "Leading groups"}</dt>
+                <dd>
+                  {(briefing.improving.length > 0 ? briefing.improving : briefing.topGroups).map((g, i) => (
+                    <Fragment key={g.group_id}>
+                      {i > 0 ? ", " : null}
+                      <button
+                        type="button"
+                        className="homepro-briefing-link"
+                        onClick={() => onOpenGroups({ groupId: g.group_id })}
+                      >
+                        {g.group_name}
+                        {briefing.improving.length > 0 ? ` ▲${g.rank_change_1w}` : ""}
+                      </button>
+                    </Fragment>
+                  ))}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
       ) : null}
       {/* ============ ROW 1 — KPIs + SNAPSHOT ============ */}
       <div className="homepro-row-top">

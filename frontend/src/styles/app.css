@@ -6,6 +6,12 @@
   /* Editorial serif for page titles and hero numerals only — never tables. */
   --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-sans);
+  /* Two deliberate exceptions to the all-sans house face, used sparingly:
+     an editorial serif for one-sentence headlines (the Home briefing) and a
+     small monospace for captions above sections and news items. Both are
+     system faces ("New York" / "SF Mono" on Apple), so nothing downloads. */
+  --font-editorial: ui-serif, "New York", "Iowan Old Style", Palatino, Georgia, serif;
+  --font-caption: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --bg: #111112;
   --bg-alt: #111112;
   /* The page canvas. Flat, on purpose: this used to be a blue gradient mesh
@@ -10089,3 +10095,15 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
 .chart-modal-similar-toggle.with-group { right: 206px; }
 .chart-modal:has(> .chart-modal-similar-toggle.with-group) .chart-panel .panel-header { padding-right: 300px; }
 .chart-modal:has(> .chart-modal-similar-toggle.with-group) .chart-panel.chart-compact > .panel-header { padding-right: 276px; }
+
+/* Small monospace caption above a section — "MARKET BRIEFING · 01 OCT 2026".
+   Shared by both designs; each supplies its own --font-caption. */
+.ol-kicker {
+  font-family: var(--font-caption);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

@@ -1431,39 +1431,76 @@ html:root .homepro-xp-tip .homepro-xp-tip-regime {
   background: var(--hp-card-bg);
   border: 1px solid var(--hp-border);
   border-radius: var(--radius-xl);
-  padding: 14px 18px;
+  padding: 20px 24px 18px;
   box-shadow: var(--hp-shadow);
 }
 
-.homepro-briefing-title {
-  font-size: var(--fs-micro);
-  font-weight: 500;
+/* The headline: one editorial sentence, then the figures under it. */
+.homepro-briefing-headline {
+  margin: 10px 0 16px;
+  max-width: 34em;
+  font-family: var(--font-editorial);
+  font-size: clamp(21px, 2.2vw, 29px);
+  font-weight: 400;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.homepro-briefing-headline-soft {
+  color: var(--text-muted);
+}
+
+.homepro-briefing-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 36px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.homepro-briefing-stats > div {
+  min-width: 0;
+}
+
+.homepro-briefing-stats dt {
+  margin-bottom: 3px;
+  font-family: var(--font-caption);
+  font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--hp-muted);
-  margin-bottom: 6px;
+  color: var(--text-muted);
 }
 
-.homepro-briefing-body {
-  font-size: var(--fs-base);
-  line-height: 1.65;
-  color: var(--hp-text);
+.homepro-briefing-stats dd {
+  margin: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
-.homepro-briefing-body .pos { color: var(--hp-green); }
-.homepro-briefing-body .neg { color: var(--hp-red); }
+.homepro-briefing-stats dd small {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.homepro-briefing-stats .pos { color: var(--hp-green); }
+.homepro-briefing-stats .neg { color: var(--hp-red); }
+
+.homepro-briefing-groups {
+  flex: 1 1 280px;
+}
 
 .homepro-briefing-link {
   border: 0;
   padding: 0;
-  margin-right: 4px;
   background: transparent;
   color: var(--hp-blue);
-  font-size: inherit;
-  font-weight: 500;
+  font: inherit;
   cursor: pointer;
 }
-
 .homepro-briefing-link:hover { text-decoration: underline; }
 
 
@@ -1746,20 +1783,7 @@ html:root .homepro-xp-legend-item .homepro-legend-swatch {
 html:root .homepro-briefing {
   border-color: transparent;
   box-shadow: none;
-  padding: 18px 20px;
-}
-html:root .homepro-briefing-title {
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-html:root .homepro-briefing-body {
-  font-size: 15px;
-  line-height: 1.6;
-  letter-spacing: -0.01em;
+  padding: 22px 24px 18px;
 }
 html:root .homepro-briefing-link {
   color: var(--text);
