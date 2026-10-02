@@ -832,8 +832,13 @@ class ScanResultsResponse(BaseModel):
 class ScanSectorSummary(BaseModel):
     sector: str
     current_hits: int
-    prior_week_hits: int = 0
-    prior_month_hits: int = 0
+    # None = not counted yet. Counting means rebuilding every stock in the
+    # sector as it stood 5 and 20 sessions ago (~2 min cold for a dozen
+    # sectors), so the first request after a data update answers with the
+    # cheap fields and these follow on a later request once the background
+    # rebuild lands.
+    prior_week_hits: int | None = 0
+    prior_month_hits: int | None = 0
     sector_return_1w: float = 0.0
     sector_return_1m: float = 0.0
 

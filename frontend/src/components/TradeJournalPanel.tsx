@@ -46,6 +46,7 @@ import {
   type ChargesConfig, type ChargesBreakdown, type Product,
 } from "../lib/chargesCalculator";
 import { NewsModal } from "./NewsModal";
+import { PnlYearGrid } from "./PnlYearGrid";
 import { PositionSizer } from "./PositionSizer";
 import "./TradeJournalPanel.css";
 
@@ -1001,6 +1002,41 @@ function LastTradesTable({
   );
 }
 
+// ─── P&L Year Heatmap ──────────────────────────────────────────────────────────
+function PnlYearCard({
+  closed,
+  onOpenSymbolChart,
+}: {
+  closed: ClosedTrade[];
+  onOpenSymbolChart?: (symbol: string) => void;
+}) {
+  const entries = useMemo(
+    () => closed.map((trade) => ({ date: trade.exitDate, pnl: trade.pnl, item: trade })),
+    [closed],
+  );
+  const [selected, setSelected] = useState<{ key: string; trades: ClosedTrade[]; weekOf: boolean } | null>(null);
+  return (
+    <>
+      <PnlYearGrid
+        entries={entries}
+        onSelectCell={(label, trades) => {
+          const weekOf = label.startsWith("Week of ");
+          setSelected({ key: weekOf ? label.slice("Week of ".length) : label, trades, weekOf });
+        }}
+      />
+      {selected ? (
+        <CalendarDayModal
+          dayKey={selected.key}
+          trades={selected.trades}
+          weekOf={selected.weekOf}
+          onClose={() => setSelected(null)}
+          onOpenSymbolChart={onOpenSymbolChart}
+        />
+      ) : null}
+    </>
+  );
+}
+
 // ─── Monthly P&L Calendar ──────────────────────────────────────────────────────
 function MonthlyCalendar({
   closed,
@@ -1143,9 +1179,12 @@ function CalendarDayModal({
   trades,
   onClose,
   onOpenSymbolChart,
+  weekOf = false,
 }: {
   dayKey: string;
   trades: ClosedTrade[];
+  /** `dayKey` is the Monday of a week and the trades are that week's. */
+  weekOf?: boolean;
   onClose: () => void;
   onOpenSymbolChart?: (symbol: string) => void;
 }) {
@@ -1158,9 +1197,11 @@ function CalendarDayModal({
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
   const wins = trades.filter(t => t.pnl > 0).length;
   const losses = trades.length - wins;
-  const dateLabel = new Date(dayKey + "T00:00:00").toLocaleDateString("en-IN", {
-    weekday: "long", day: "numeric", month: "short", year: "numeric",
-  });
+  const dateLabel = weekOf
+    ? `Week of ${new Date(dayKey + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+    : new Date(dayKey + "T00:00:00").toLocaleDateString("en-IN", {
+        weekday: "long", day: "numeric", month: "short", year: "numeric",
+      });
 
   return (
     <div className="tj-overlay" onClick={onClose}>
@@ -1169,7 +1210,7 @@ function CalendarDayModal({
         <div className="tj-modal-title">{dateLabel}</div>
         <div className="tj-cal-modal-summary">
           <div>
-            <span className="tj-cal-modal-stat-label">Day P&L</span>
+            <span className="tj-cal-modal-stat-label">{weekOf ? "Week P&L" : "Day P&L"}</span>
             <span className={`tj-cal-modal-stat-val ${totalPnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(totalPnl)}</span>
           </div>
           <div>
@@ -3731,6 +3772,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <span className="tj-card-hdr-sub">Most recent at top · Cumulative over the window</span>
             </div>
             <LastTradesTable closed={closedTrades} onOpenSymbolChart={onOpenSymbolChart} />
+          </div>
+
+          <div className="tj-card">
+            <div className="tj-card-hdr">
+              P&L Year
+              <span className="tj-card-hdr-sub">Every closed trade by the day it closed · click a square for its trades</span>
+            </div>
+            <PnlYearCard closed={closedTrades} onOpenSymbolChart={onOpenSymbolChart} />
           </div>
 
           <div className="tj-card">

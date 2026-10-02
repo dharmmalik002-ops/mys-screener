@@ -17,7 +17,7 @@ export function GapUpScannerPanel({
 }: GapUpScannerPanelProps) {
   return (
     <Panel
-      title="Gap Up Openers"
+      title="Filters"
       subtitle="Find stocks that opened above the previous close by a selected percentage."
       className="gap-up-panel"
     >

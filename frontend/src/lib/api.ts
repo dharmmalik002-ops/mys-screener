@@ -150,8 +150,9 @@ export type ScanResultsResponse = {
 export type ScanSectorSummary = {
   sector: string;
   current_hits: number;
-  prior_week_hits: number;
-  prior_month_hits: number;
+  /** null = still being counted by the backend; ask again shortly. */
+  prior_week_hits: number | null;
+  prior_month_hits: number | null;
   sector_return_1w: number;
   sector_return_1m: number;
 };
@@ -1082,6 +1083,13 @@ function defaultApiBases() {
   ];
 
   if (hostname === "localhost" || hostname === "127.0.0.1") {
+    // When the dev server was started with VITE_PROXY_TARGET, "" already goes
+    // to the backend the developer chose. Falling back to direct local ports
+    // after it fails only produced a burst of ERR_CONNECTION_REFUSED in the
+    // console (and seconds of retry waits) for backends nobody started.
+    if (import.meta.env.VITE_PROXY_TARGET) {
+      return ["", API_BASE];
+    }
     return localhostBases;
   }
 
@@ -1103,6 +1111,14 @@ const FALLBACK_API_BASES = defaultApiBases().filter(
 const RETRYABLE_STATUS_CODES = new Set([404, 500, 502, 503, 504]);
 const SAME_BASE_RETRY_STATUS_CODES = new Set([500, 502, 503, 504]);
 let preferredApiBase: string | null = null;
+// Direct local ports (http://127.0.0.1:8000 and friends) that refused a
+// connection. Nothing is listening there, so they are skipped for the rest of
+// the session instead of being retried — and logged — on every request.
+const refusedLocalBases = new Set<string>();
+
+function isDirectLocalBase(base: string) {
+  return /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(base);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -1320,8 +1336,8 @@ function normalizeScanSectorSummary(value: unknown): ScanSectorSummary {
   return {
     sector: readString(raw.sector, "Unclassified"),
     current_hits: readNumber(raw.current_hits),
-    prior_week_hits: readNumber(raw.prior_week_hits),
-    prior_month_hits: readNumber(raw.prior_month_hits),
+    prior_week_hits: readNullableNumber(raw.prior_week_hits),
+    prior_month_hits: readNullableNumber(raw.prior_month_hits),
     sector_return_1w: readNumber(raw.sector_return_1w),
     sector_return_1m: readNumber(raw.sector_return_1m),
   };
@@ -2111,10 +2127,11 @@ function routeScopedMarket(): MarketKey | null {
 }
 
 function orderedApiBases() {
-  if (!preferredApiBase) {
-    return FALLBACK_API_BASES;
+  const live = FALLBACK_API_BASES.filter((base) => !refusedLocalBases.has(base));
+  if (!preferredApiBase || refusedLocalBases.has(preferredApiBase)) {
+    return live;
   }
-  return [preferredApiBase, ...FALLBACK_API_BASES.filter((base) => base !== preferredApiBase)];
+  return [preferredApiBase, ...live.filter((base) => base !== preferredApiBase)];
 }
 
 /** The backend answered and refused (4xx with a JSON body). Not retried on
@@ -2222,6 +2239,12 @@ async function request<T>(
           break;
         } else if (error instanceof TypeError) {
           lastError = new Error("Backend is waking up, please wait...");
+          // A refused local port is not a Space waking up: retrying it only
+          // waits and logs. Drop it for the session and move on.
+          if (isDirectLocalBase(base)) {
+            refusedLocalBases.add(base);
+            break;
+          }
           if (attempt < SAME_BASE_RETRY_ATTEMPTS) {
             await new Promise((resolve) => setTimeout(resolve, SAME_BASE_RETRY_BACKOFF_MS));
             continue;
@@ -2280,7 +2303,10 @@ export async function pingBackendHealth(): Promise<boolean> {
         preferredApiBase = base;
         return true;
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof TypeError && isDirectLocalBase(base)) {
+        refusedLocalBases.add(base);
+      }
       // try next base
     }
   }

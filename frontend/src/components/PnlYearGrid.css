@@ -1,0 +1,228 @@
+/* ==========================================================================
+   PnlYearGrid — a year of realised P&L, one square per trading day
+   ========================================================================== */
+
+.pyg-root {
+  --pyg-gap: 3px;
+  --pyg-empty: color-mix(in srgb, var(--text) 6%, transparent);
+  --pyg-pos: var(--positive);
+  --pyg-neg: var(--negative);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pyg-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pyg-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-lead);
+  font-variant-numeric: tabular-nums;
+}
+
+.pyg-year strong {
+  font-weight: 500;
+}
+
+.pyg-nav {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pyg-nav:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--pyg-empty);
+}
+
+.pyg-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pyg-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--pyg-empty);
+}
+
+.pyg-seg-btn {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-small);
+  cursor: pointer;
+}
+
+.pyg-seg-btn.is-active {
+  background: var(--surface-strong, #fff);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.pyg-empty {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* The grid keeps a minimum cell size and scrolls sideways on narrow screens
+   rather than shrinking 53 weeks into specks. */
+.pyg-scroll {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.pyg-frame {
+  display: grid;
+  grid-template-columns: 28px minmax(calc(var(--pyg-weeks) * 11px), 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  row-gap: 6px;
+}
+
+.pyg-weekdays {
+  display: grid;
+  grid-template-rows: repeat(5, 1fr);
+  gap: var(--pyg-gap);
+  font-size: var(--fs-tiny, 10px);
+  color: var(--text-muted);
+}
+
+.pyg-weekdays span {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.pyg-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--pyg-weeks), minmax(8px, 1fr));
+  grid-template-rows: repeat(5, auto);
+  gap: var(--pyg-gap);
+}
+
+.pyg-months {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--pyg-weeks), minmax(8px, 1fr));
+  gap: var(--pyg-gap);
+  font-size: var(--fs-tiny, 10px);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.pyg-cell {
+  display: block;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--pyg-empty);
+}
+
+button.pyg-cell {
+  cursor: pointer;
+}
+
+button.pyg-cell:hover {
+  outline: 1.5px solid var(--text);
+  outline-offset: 1px;
+}
+
+button.pyg-cell:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.pyg-cell.is-out {
+  visibility: hidden;
+}
+
+.pyg-cell.is-future {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.pyg-cell.is-pos.l1 { background: color-mix(in srgb, var(--pyg-pos) 28%, transparent); }
+.pyg-cell.is-pos.l2 { background: color-mix(in srgb, var(--pyg-pos) 50%, transparent); }
+.pyg-cell.is-pos.l3 { background: color-mix(in srgb, var(--pyg-pos) 74%, transparent); }
+.pyg-cell.is-pos.l4 { background: var(--pyg-pos); }
+
+.pyg-cell.is-neg.l1 { background: color-mix(in srgb, var(--pyg-neg) 28%, transparent); }
+.pyg-cell.is-neg.l2 { background: color-mix(in srgb, var(--pyg-neg) 50%, transparent); }
+.pyg-cell.is-neg.l3 { background: color-mix(in srgb, var(--pyg-neg) 74%, transparent); }
+.pyg-cell.is-neg.l4 { background: var(--pyg-neg); }
+
+.pyg-cell.is-flat { background: color-mix(in srgb, var(--text) 18%, transparent); }
+
+.pyg-cell.pyg-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Weekly reading: one bar per week spanning all five weekday rows. */
+.pyg-cell.pyg-bar {
+  grid-row: 1 / span 5;
+  aspect-ratio: auto;
+}
+
+.pyg-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+.pyg-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.pyg-stats strong {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.pyg-stats .pos { color: var(--positive); }
+.pyg-stats .neg { color: var(--negative); }
+
+.pyg-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-tiny, 10px);
+  color: var(--text-muted);
+}
+
+.pyg-legend .pyg-cell {
+  width: 10px;
+  height: 10px;
+}
+
+.pyg-legend span:first-child { margin-right: 3px; }
+.pyg-legend span:last-child { margin-left: 3px; }

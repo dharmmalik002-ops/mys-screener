@@ -343,6 +343,16 @@ class DashboardService:
         self._index_constituents_cache: tuple[datetime, dict[str, set[str]]] | None = None
         self._index_constituent_task: asyncio.Task[dict[str, set[str]]] | None = None
         self._scan_sector_summary_cache: dict[tuple[str, str, datetime], list[ScanSectorSummary]] = {}
+        # (symbol, offset_bars) -> that stock's snapshot as of `offset_bars`
+        # sessions ago, or None when its history is too short. Shared by every
+        # scanner's sector summary, so once a stock has been rebuilt for one
+        # scan the next scan touching its sector reuses it. Reset whenever the
+        # snapshot version changes.
+        self._historical_snapshot_cache: dict[tuple[str, int], StockSnapshot | None] = {}
+        self._historical_snapshot_cache_version: datetime | None = None
+        # In-flight background rebuilds, keyed by (snapshot version, sectors),
+        # so repeated polls for the same scan start one rebuild, not one each.
+        self._historical_build_tasks: dict[tuple[datetime, frozenset[str]], asyncio.Task] = {}
         self._market_overview_cache: tuple[float, object] | None = None
         self._industry_groups_cache: IndustryGroupsResponse | None = None
         self._market_health_cache: MarketHealthResponse | None = None
@@ -1677,50 +1687,131 @@ class DashboardService:
             dtype=float,
         ).sort_index()
 
-    async def _historical_sector_snapshots(
+    async def _historical_sector_snapshots_multi(
         self,
         snapshots: list[StockSnapshot],
         sectors: set[str],
-        offset_bars: int,
-    ) -> list[StockSnapshot]:
+        offsets: tuple[int, ...],
+    ) -> dict[int, list[StockSnapshot]]:
+        """Each sector stock as it stood `offset` sessions ago, for every offset.
+
+        This used to read and rebuild every stock in the scan's sectors once
+        per offset, on the event loop, for every request: ~30 s for a scan
+        spanning a dozen sectors, during which the whole worker answered
+        nothing else. Now each stock's history is read once for all offsets,
+        the rebuild runs on a worker thread, and the result is kept per stock
+        until the snapshot version changes, so a second scanner touching the
+        same sectors costs a dictionary lookup.
+        """
         history_reader = getattr(self.provider, "_history_frame_from_cached_bars", None)
         history_builder = getattr(self.provider, "_history_to_snapshot", None)
-        if not callable(history_reader) or not callable(history_builder):
-            return []
+        if not callable(history_reader) or not callable(history_builder) or not offsets:
+            return {offset: [] for offset in offsets}
 
-        benchmark_close = await self._benchmark_close_series(max(620, 520 + offset_bars))
-        historical_snapshots: list[StockSnapshot] = []
+        version = self._snapshot_updated_at()
+        if self._historical_snapshot_cache_version != version:
+            self._historical_snapshot_cache.clear()
+            self._historical_snapshot_cache_version = version
+        cache = self._historical_snapshot_cache
 
-        for snapshot in snapshots:
-            if snapshot.sector not in sectors:
-                continue
-            history = history_reader(snapshot.symbol, max(620, 520 + offset_bars), allow_legacy=True)
-            if history is None or history.empty:
-                continue
-            if offset_bars > 0:
-                if len(history) <= offset_bars:
-                    continue
-                history = history.iloc[:-offset_bars]
-            if history.empty or len(history) < 30:
-                continue
+        targets = [snapshot for snapshot in snapshots if snapshot.sector in sectors]
+        pending = [
+            snapshot
+            for snapshot in targets
+            if any((snapshot.symbol, offset) not in cache for offset in offsets)
+        ]
+        bars = max(620, 520 + max(offsets))
 
-            benchmark_history = benchmark_close[benchmark_close.index <= history.index[-1]] if not benchmark_close.empty else benchmark_close
-            instrument = {
-                "symbol": snapshot.symbol,
-                "name": snapshot.name,
-                "exchange": snapshot.exchange,
-                "listing_date": snapshot.listing_date.isoformat() if snapshot.listing_date else None,
-                "sector": snapshot.sector,
-                "sub_sector": snapshot.sub_sector,
-                "market_cap_crore": snapshot.market_cap_crore,
-                "ticker": snapshot.instrument_key or f"{snapshot.symbol}.NS",
-            }
-            row = history_builder(instrument, history, benchmark_history)
-            if row is None:
-                continue
-            historical_snapshots.append(StockSnapshot.model_validate(row))
+        if pending:
+            benchmark_close = await self._benchmark_close_series(bars)
 
-        return historical_snapshots
+            def build_pending() -> dict[tuple[str, int], StockSnapshot | None]:
+                built: dict[tuple[str, int], StockSnapshot | None] = {}
+                for snapshot in pending:
+                    try:
+                        full_history = history_reader(snapshot.symbol, bars, allow_legacy=True)
+                    except Exception:
+                        full_history = None
+                    instrument = {
+                        "symbol": snapshot.symbol,
+                        "name": snapshot.name,
+                        "exchange": snapshot.exchange,
+                        "listing_date": snapshot.listing_date.isoformat() if snapshot.listing_date else None,
+                        "sector": snapshot.sector,
+                        "sub_sector": snapshot.sub_sector,
+                        "market_cap_crore": snapshot.market_cap_crore,
+                        "ticker": snapshot.instrument_key or f"{snapshot.symbol}.NS",
+                    }
+                    for offset in offsets:
+                        key = (snapshot.symbol, offset)
+                        built[key] = None
+                        if full_history is None or full_history.empty:
+                            continue
+                        history = full_history
+                        if offset > 0:
+                            if len(history) <= offset:
+                                continue
+                            history = history.iloc[:-offset]
+                        if history.empty or len(history) < 30:
+                            continue
+                        benchmark_history = (
+                            benchmark_close[benchmark_close.index <= history.index[-1]]
+                            if not benchmark_close.empty
+                            else benchmark_close
+                        )
+                        try:
+                            row = history_builder(instrument, history, benchmark_history)
+                            built[key] = StockSnapshot.model_validate(row) if row is not None else None
+                        except Exception:
+                            built[key] = None
+                return built
+
+            cache.update(await asyncio.to_thread(build_pending))
+
+        result: dict[int, list[StockSnapshot]] = {offset: [] for offset in offsets}
+        for snapshot in targets:
+            for offset in offsets:
+                historical = cache.get((snapshot.symbol, offset))
+                if historical is not None:
+                    result[offset].append(historical)
+        return result
+
+    def _historical_snapshots_ready(
+        self,
+        snapshots: list[StockSnapshot],
+        sectors: set[str],
+        offsets: tuple[int, ...],
+    ) -> bool:
+        if self._historical_snapshot_cache_version != self._snapshot_updated_at():
+            return False
+        cache = self._historical_snapshot_cache
+        return all(
+            (snapshot.symbol, offset) in cache
+            for snapshot in snapshots
+            if snapshot.sector in sectors
+            for offset in offsets
+        )
+
+    def _schedule_historical_build(
+        self,
+        snapshots: list[StockSnapshot],
+        sectors: set[str],
+        offsets: tuple[int, ...],
+    ) -> None:
+        key = (self._snapshot_updated_at(), frozenset(sectors))
+        running = self._historical_build_tasks.get(key)
+        if running is not None and not running.done():
+            return
+
+        async def build() -> None:
+            try:
+                await self._historical_sector_snapshots_multi(snapshots, sectors, offsets)
+            except Exception as exc:  # pragma: no cover - logged, retried on next poll
+                logger.warning("Background sector history rebuild failed: %s", exc)
+            finally:
+                self._historical_build_tasks.pop(key, None)
+
+        self._historical_build_tasks[key] = asyncio.create_task(build())
 
     async def _build_scan_sector_summaries(
         self,
@@ -1754,8 +1845,27 @@ class DashboardService:
             if snapshot.sector in sectors:
                 sector_universe.setdefault(snapshot.sector, []).append(snapshot)
 
-        historical_1w_snapshots = await self._historical_sector_snapshots(snapshots, sectors, 5)
-        historical_1m_snapshots = await self._historical_sector_snapshots(snapshots, sectors, 20)
+        offsets = (5, 20)
+        if not self._historical_snapshots_ready(snapshots, sectors, offsets):
+            # The cheap half answers now — sector returns set the order the
+            # sectors are listed in, so nothing reshuffles later — and the
+            # prior-hit counts are rebuilt in the background for the next poll.
+            self._schedule_historical_build(snapshots, sectors, offsets)
+            return [
+                ScanSectorSummary(
+                    sector=sector,
+                    current_hits=current_counts.get(sector, 0),
+                    prior_week_hits=None,
+                    prior_month_hits=None,
+                    sector_return_1w=self._weighted_average_return(sector_universe.get(sector, []), "stock_return_5d"),
+                    sector_return_1m=self._weighted_average_return(sector_universe.get(sector, []), "stock_return_20d"),
+                )
+                for sector in current_counts
+            ]
+
+        historical = await self._historical_sector_snapshots_multi(snapshots, sectors, offsets)
+        historical_1w_snapshots = historical[5]
+        historical_1m_snapshots = historical[20]
         historical_1w_items = await asyncio.to_thread(historical_runner, historical_1w_snapshots) if historical_1w_snapshots else []
         historical_1m_items = await asyncio.to_thread(historical_runner, historical_1m_snapshots) if historical_1m_snapshots else []
 
@@ -7142,6 +7252,9 @@ class DashboardService:
         self._chart_response_cache.clear()
         self._index_constituent_task = None
         self._scan_sector_summary_cache.clear()
+        self._historical_snapshot_cache.clear()
+        self._historical_snapshot_cache_version = None
+        self._historical_build_tasks.clear()
         self._market_overview_cache = None
         self._industry_groups_cache = None
         self._market_health_cache = None

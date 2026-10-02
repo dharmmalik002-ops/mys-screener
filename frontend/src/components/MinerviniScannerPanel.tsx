@@ -1,7 +1,8 @@
 import { Panel } from "./Panel";
 
 type MinerviniScannerPanelProps = {
-  title: string;
+  /** Unused since the header names the scanner; kept so callers compile. */
+  title?: string;
   subtitle: string;
   minLiquidityCrore: number | null;
   onMinLiquidityCroreChange: (value: number | null) => void;
@@ -10,7 +11,6 @@ type MinerviniScannerPanelProps = {
 };
 
 export function MinerviniScannerPanel({
-  title,
   subtitle,
   minLiquidityCrore,
   onMinLiquidityCroreChange,
@@ -19,14 +19,14 @@ export function MinerviniScannerPanel({
 }: MinerviniScannerPanelProps) {
   return (
     <Panel
-      title={title}
+      title="Filters"
       subtitle={subtitle}
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filter
           </button>
         </div>

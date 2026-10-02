@@ -169,14 +169,14 @@ export function CustomScannerPanel({
 
   return (
     <Panel
-      title="Custom Scanner"
+      title="Filters"
       subtitle="Filter the full universe by price, RS, volume, momentum, moving averages, and breakout context."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

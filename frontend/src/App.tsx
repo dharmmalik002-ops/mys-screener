@@ -160,6 +160,10 @@ const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModa
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
 
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
+// Sector summaries arrive in two steps (see loadSectorSummaries): poll every
+// few seconds, for up to three minutes, for the earlier-hit counts.
+const SECTOR_SUMMARY_POLL_MS = 5000;
+const SECTOR_SUMMARY_POLLS = 36;
 const UNIVERSE_FILTER_KEY = "mr-malik-universe-filter:v1";
 const CHART_DRAWINGS_KEY = "mr-malik-chart-drawings:v1";
 const CHART_RESPONSE_CACHE_KEY = "mr-malik-chart-response-cache:v3";
@@ -3034,7 +3038,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         scanSectorSummaryRequestIdRef.current += 1;
         setScanSectorSummaries([]);
         setScanSectorSummariesLoading(false);
-        const payload = await requestActiveScannerResults(scanArrangementMode === "sector");
+        // Never ask for sector summaries here: they rebuild a month of history
+        // for every stock in the matched sectors, and asking for them on this
+        // request held the whole table back until they were done. The effect
+        // below fetches them separately once the rows are on screen.
+        const payload = await requestActiveScannerResults();
 
         if (!payload || !active || scanRequestIdRef.current !== requestId) {
           return;
@@ -3092,8 +3100,17 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     improvingRsWindow,
     loading,
     scannerRunNonce,
-    scanArrangementMode,
   ]);
+
+  // "partial" = sector returns are in but the earlier-hit counts are still
+  // being rebuilt. The effect below keys on this rather than on the list's
+  // length, so the first partial answer does not cancel its own polling.
+  const sectorSummaryState =
+    scanSectorSummaries.length === 0
+      ? "empty"
+      : scanSectorSummaries.some((summary) => summary.prior_week_hits === null || summary.prior_month_hits === null)
+        ? "partial"
+        : "complete";
 
   useEffect(() => {
     if (
@@ -3104,7 +3121,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       scanLoading ||
       !scanResults ||
       scanResults.items.length === 0 ||
-      scanSectorSummaries.length > 0
+      sectorSummaryState === "complete"
     ) {
       return;
     }
@@ -3116,11 +3133,23 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
     async function loadSectorSummaries() {
       try {
-        const payload = await requestActiveScannerResults(true);
-        if (!payload || !active || scanSectorSummaryRequestIdRef.current !== requestId) {
-          return;
+        // The backend answers with sector returns at once and fills in the
+        // earlier-hit counts once its background rebuild lands (null until
+        // then), so ask again a few times until they arrive.
+        for (let attempt = 0; attempt < SECTOR_SUMMARY_POLLS; attempt += 1) {
+          const payload = await requestActiveScannerResults(true);
+          if (!payload || !active || scanSectorSummaryRequestIdRef.current !== requestId) {
+            return;
+          }
+          const summaries = payload.sector_summaries ?? [];
+          setScanSectorSummaries(summaries);
+          const pending = summaries.some(
+            (summary) => summary.prior_week_hits === null || summary.prior_month_hits === null,
+          );
+          if (!pending) return;
+          await new Promise((resolve) => setTimeout(resolve, SECTOR_SUMMARY_POLL_MS));
+          if (!active || scanSectorSummaryRequestIdRef.current !== requestId) return;
         }
-        setScanSectorSummaries(payload.sector_summaries ?? []);
       } catch {
         if (active && scanSectorSummaryRequestIdRef.current === requestId) {
           setScanSectorSummaries([]);
@@ -3155,7 +3184,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     scanArrangementMode,
     scanLoading,
     scanResults,
-    scanSectorSummaries.length,
+    sectorSummaryState,
   ]);
 
   useEffect(() => {
@@ -5866,7 +5895,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         setSelectedSymbol(nextSelectedSymbol);
       } else if (activePage === "screener") {
         scanSectorSummaryRequestIdRef.current += 1;
-        const scanPayload = await requestActiveScannerResults(scanArrangementMode === "sector");
+        // Rows first; sector summaries follow from their own effect.
+        const scanPayload = await requestActiveScannerResults();
         if (!scanPayload) {
           throw new Error("Scanner settings are not ready yet");
         }

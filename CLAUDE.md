@@ -77,6 +77,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 - `components/ScreenerSidebar.tsx` & `CustomScannerPanel.tsx`: Filter controls for custom technical & fundamental parameter scans.
 - `components/MarketsPanel.tsx` & `GroupsPanel.tsx`: Market breadth metrics, sector heatmap, and industry group leadership tables.
 - `components/TradeJournalPanel.tsx`: Comprehensive trade logging, analytics, and journal management.
+- `components/PnlYearGrid.tsx`: the Journal dashboard's **P&L Year** card — one square per weekday, Daily / Weekly / Cumulative readings, colour depth scaled to the year's 90th-percentile day so one outsized day cannot wash the rest out. Weekend exits (Budget Saturday) are filed under the Friday before.
 - `components/LivePanel.tsx`: Streaming intraday watch — quotes flow browser-side, the backend is not involved.
 - AI surfaces are journal-scoped only (`/api/ai/swing-analysis`, `/ai/journal-review`, `/ai/learnings-review`,
   reached from `TradeJournalPanel`). The standalone Gemini screener and chat window were removed in `0d84f790`;

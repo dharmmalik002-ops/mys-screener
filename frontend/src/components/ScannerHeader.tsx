@@ -3,7 +3,7 @@ import {
   Pencil,
   Play,
   Save,
-  Settings2,
+  SlidersHorizontal,
   Check,
   X,
   Loader2,
@@ -141,26 +141,32 @@ export function ScannerHeader({
           </div>
         </div>
 
+        {/* One labelled action per header. Filters and Save used to be two
+            more full-size buttons beside Run Scanner, all at the same weight;
+            they are icon buttons now so the eye lands on the thing people
+            actually press. */}
         <div className="sh-actions">
           <button
             type="button"
-            className="sh-btn sh-btn-ghost"
+            className={`sh-icon-btn sh-icon-action${settingsOpen ? " is-on" : ""}`}
             onClick={onToggleSettings}
-            title={settingsOpen ? "Hide filter panel" : "Show filter panel"}
+            aria-pressed={settingsOpen}
+            aria-label={settingsOpen ? "Hide filters" : "Show filters"}
+            title={settingsOpen ? "Hide filters" : "Show filters"}
           >
-            <Settings2 size={14} strokeWidth={2.2} />
-            <span>{settingsOpen ? "Hide Settings" : "Show Settings"}</span>
+            <SlidersHorizontal size={15} strokeWidth={2.1} />
           </button>
 
           {isSavable && onSaveScanner ? (
             <button
               type="button"
-              className="sh-btn sh-btn-ghost"
+              className="sh-icon-btn sh-icon-action"
               onClick={onSaveScanner}
               disabled={saving}
+              aria-label={savedExists ? "Update saved scanner" : "Save scanner"}
+              title={saving ? "Saving…" : savedExists ? "Update saved scanner" : "Save scanner"}
             >
-              <Save size={14} strokeWidth={2.2} />
-              <span>{saving ? "Saving…" : savedExists ? "Update" : "Save"}</span>
+              {saving ? <Loader2 size={15} className="sh-spin" /> : <Save size={15} strokeWidth={2.1} />}
             </button>
           ) : null}
 

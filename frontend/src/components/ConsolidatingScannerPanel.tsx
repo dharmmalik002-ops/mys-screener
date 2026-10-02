@@ -54,14 +54,14 @@ export function ConsolidatingScannerPanel({
 }: ConsolidatingScannerPanelProps) {
   return (
     <Panel
-      title="Consolidating"
+      title="Filters"
       subtitle="Select long run-up consolidations, near 3-year breakouts, or the union of both."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

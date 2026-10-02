@@ -252,3 +252,23 @@
     margin-left: auto;
   }
 }
+
+/* ----- Secondary actions as icon buttons ----- */
+
+.sh-icon-btn.sh-icon-action {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--sh-text-soft);
+}
+
+.sh-icon-btn.sh-icon-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sh-icon-btn.sh-icon-action.is-on {
+  border-color: color-mix(in srgb, var(--sh-text) 28%, transparent);
+  background: color-mix(in srgb, var(--sh-text) 7%, transparent);
+  color: var(--sh-text);
+}

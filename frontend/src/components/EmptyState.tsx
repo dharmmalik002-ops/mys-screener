@@ -41,7 +41,18 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={["empty-state-v2", compact ? "is-compact" : "", className ?? ""].filter(Boolean).join(" ")}>
-      {icon ? <div className="empty-state-icon" aria-hidden="true">{icon}</div> : null}
+      {compact ? (
+        icon ? <div className="empty-state-icon" aria-hidden="true">{icon}</div> : null
+      ) : (
+        // A faint stack of placeholder rows — the shape of what will appear
+        // here — with the icon resting on top of it.
+        <div className="empty-state-art" aria-hidden="true">
+          <span className="empty-state-ghost" />
+          <span className="empty-state-ghost" />
+          <span className="empty-state-ghost" />
+          {icon ? <div className="empty-state-icon">{icon}</div> : null}
+        </div>
+      )}
       <p className="empty-state-title">{title}</p>
       {body ? <p className="empty-state-body">{body}</p> : null}
       {action || secondaryAction ? (

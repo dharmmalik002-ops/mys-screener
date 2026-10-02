@@ -76,14 +76,14 @@ export function ReturnsScannerPanel({
 }: ReturnsScannerPanelProps) {
   return (
     <Panel
-      title="Returns"
+      title="Filters"
       subtitle="Scan for stocks with returns using optional consolidation, volume, and price movement filters."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

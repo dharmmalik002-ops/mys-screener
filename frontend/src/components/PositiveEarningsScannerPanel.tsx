@@ -45,14 +45,14 @@ export function PositiveEarningsScannerPanel({
 
   return (
     <Panel
-      title="Positive Earnings"
+      title="Filters"
       subtitle="Stocks with a confirmed strong reaction to the latest quarterly result. Loosen any gate to widen the result set."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filter
           </button>
         </div>

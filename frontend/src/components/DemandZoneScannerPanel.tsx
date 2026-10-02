@@ -66,14 +66,14 @@ export function DemandZoneScannerPanel({
 
   return (
     <Panel
-      title="Demand Zone Scanner"
+      title="Filters"
       subtitle="Stage 2 stocks trading within 3% of strong rally-base-rally demand-zone lows."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

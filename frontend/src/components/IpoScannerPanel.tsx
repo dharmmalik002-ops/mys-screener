@@ -20,14 +20,14 @@ export function IpoScannerPanel({
 }: IpoScannerPanelProps) {
   return (
     <Panel
-      title="IPO"
+      title="Filters"
       subtitle="Stocks listed within the last 1 year, newest debuts first."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filter
           </button>
         </div>

@@ -78,14 +78,14 @@ export function PullBackScannerPanel({
 }: PullBackScannerPanelProps) {
   return (
     <Panel
-      title="Pull Backs"
+      title="Filters"
       subtitle="Scan for momentum stocks with a 40-day run, sideways consolidation, low 3-day volume, and EMA support."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

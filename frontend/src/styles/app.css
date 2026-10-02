@@ -4127,41 +4127,7 @@ button {
   align-items: center;
 }
 
-.scan-sector-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px 10px;
-  margin-top: 8px;
-  border-top: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
-  border-left: 4px solid var(--sector-accent, color-mix(in srgb, var(--brand-primary) 65%, white));
-  border-radius: var(--radius-md);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--sector-accent, var(--brand-primary)) 12%, transparent), transparent 52%);
-}
-
-.scan-sector-header:first-child {
-  margin-top: 0;
-  border-top: 0;
-  padding-top: 2px;
-}
-
-.scan-sector-header-first {
-  margin-top: 0;
-  border-top: 0;
-  padding-top: 2px;
-}
-
-.scan-sector-header strong {
-  display: block;
-  font-size: var(--fs-lead);
-  color: color-mix(in srgb, var(--sector-accent, white) 68%, white);
-}
-
-.scan-sector-header small {
-  color: var(--text-soft);
-  font-size: var(--fs-small);
-}
+/* .scan-sector-header lives in components/ScanTable.css. */
 
 .scan-table-head {
   padding: 0 14px;

@@ -33,14 +33,14 @@ export function NearPivotScannerPanel({
 }: NearPivotScannerPanelProps) {
   return (
     <Panel
-      title="Near Pivot"
+      title="Filters"
       subtitle="High-RS stocks within 20% of their 52-week high and holding a tight recent consolidation."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

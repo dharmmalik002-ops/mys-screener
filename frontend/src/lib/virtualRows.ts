@@ -158,5 +158,7 @@ export function useVirtualRows<T>({ items, getKey, getHeight, overscan = 420 }: 
     scrollToKey,
     totalHeight: rows.totalHeight,
     visibleRows,
+    rows: rows.rows,
+    scrollTop: scrollState.scrollTop,
   };
 }

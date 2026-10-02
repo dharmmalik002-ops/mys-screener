@@ -51,14 +51,14 @@ export function MomentumBurstScannerPanel({
   const set = onFiltersChange;
   return (
     <Panel
-      title="Momentum Burst"
+      title="Filters"
       subtitle="Fresh explosive legs (Burst) plus the buyable rest near the 10/21 EMA. Moving averages, price action, volume and RS only — no oscillators."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
             Reset
           </button>
-          <button type="button" className="nav-button primary" onClick={onApply}>
+          <button type="button" className="nav-button ghost" onClick={onApply}>
             Apply Filters
           </button>
         </div>

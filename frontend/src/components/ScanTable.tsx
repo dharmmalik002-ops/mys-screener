@@ -20,6 +20,9 @@ import {
   EyeOff,
   Plus,
   ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Search as SearchIcon,
   SearchX,
 } from "lucide-react";
@@ -59,18 +62,21 @@ const SCAN_ROW_SLOT_HEIGHT = 76;
    useVirtualRows already takes a per-item getHeight, so expansion works WITH
    virtualization instead of forcing us to disable it. */
 const SCAN_ROW_DETAIL_HEIGHT = 132;
-const SCAN_HEADER_SLOT_HEIGHT = 64;
+const SCAN_HEADER_SLOT_HEIGHT = 50;
 
 type ScanTableEntry =
   | {
       key: string;
       type: "header";
-      sector: string;
+      title: string;
+      /** Industry-group rank, shown as its own chip when grouping by group. */
+      rank?: number;
       accent: string;
       summary: ScanSectorSummary | undefined;
       subtitle?: string;
       count: number;
       isFirst: boolean;
+      collapsed: boolean;
     }
   | {
       key: string;
@@ -388,6 +394,9 @@ function formatSectorLine(
         : sectorSortMode === "count-desc"
           ? "Most stocks first"
           : "Fewest stocks first";
+  if (summary.prior_week_hits === null || summary.prior_month_hits === null) {
+    return `${label} · Counting earlier hits…`;
+  }
   return `${label} · Last week ${summary.prior_week_hits} · Last month ${summary.prior_month_hits}`;
 }
 
@@ -864,6 +873,18 @@ export function ScanTable({
   // One row open at a time — this is a "why did this match" detail, not a
   // comparison view, and it keeps the virtual height bookkeeping trivial.
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
+  // Header keys of sector / industry-group sections folded shut. A collapsed
+  // section keeps its header (and count) and drops its rows, so they also
+  // leave the keyboard walk — folding a group is how you skip it.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
+  const toggleGroup = useCallback((key: string) => {
+    setCollapsedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   // Reset the symbol filter whenever the underlying result set changes (a
   // different scanner ran), so the input doesn't silently hide rows from the
@@ -1002,16 +1023,21 @@ export function ScanTable({
     if (arrangementMode === "group" && groupsData) {
       const entries: ScanTableEntry[] = [];
       groupBuckets.ordered.forEach(([groupId, bucket], index) => {
+        const key = `gheader:${groupId}`;
+        const collapsed = collapsedGroups.has(key);
         entries.push({
-          key: `gheader:${groupId}`,
+          key,
           type: "header",
-          sector: `${bucket.name} · #${bucket.rank}`,
+          title: bucket.name,
+          rank: bucket.rank,
           accent: sectorAccentColor(bucket.name),
           summary: undefined,
-          subtitle: `Group rank ${bucket.rank} of ${bucket.total} · ${bucket.items.length} stock${bucket.items.length === 1 ? "" : "s"} in this scan`,
+          subtitle: `Rank ${bucket.rank} of ${bucket.total}`,
           count: bucket.items.length,
           isFirst: index === 0,
+          collapsed,
         });
+        if (collapsed) return;
         for (const item of bucket.items) {
           entries.push({
             key: `row:${item.scan_id}:${item.symbol}`,
@@ -1021,22 +1047,26 @@ export function ScanTable({
         }
       });
       if (groupBuckets.unranked.length > 0) {
+        const collapsed = collapsedGroups.has("gheader:unranked");
         entries.push({
           key: "gheader:unranked",
           type: "header",
-          sector: "Ungrouped",
+          title: "Ungrouped",
           accent: "#a3a097",
           summary: undefined,
-          subtitle: `${groupBuckets.unranked.length} stock${groupBuckets.unranked.length === 1 ? "" : "s"} without a resolved group`,
+          subtitle: "No resolved industry group",
           count: groupBuckets.unranked.length,
           isFirst: groupBuckets.ordered.length === 0,
+          collapsed,
         });
-        for (const item of groupBuckets.unranked) {
-          entries.push({
-            key: `row:${item.scan_id}:${item.symbol}`,
-            type: "row",
-            item,
-          });
+        if (!collapsed) {
+          for (const item of groupBuckets.unranked) {
+            entries.push({
+              key: `row:${item.scan_id}:${item.symbol}`,
+              type: "row",
+              item,
+            });
+          }
         }
       }
       return entries;
@@ -1051,15 +1081,19 @@ export function ScanTable({
     return sectorGroups.flatMap(([sector, sectorItems], index) => {
       const summary = summaryBySector[sector];
       const accent = sectorAccentColor(sector);
+      const key = `header:${sector}`;
+      const collapsed = collapsedGroups.has(key);
       const header = {
-        key: `header:${sector}`,
+        key,
         type: "header",
-        sector,
+        title: sector,
         accent,
         summary,
         count: summary?.current_hits ?? sectorItems.length,
         isFirst: index === 0,
+        collapsed,
       } satisfies ScanTableEntry;
+      if (collapsed) return [header];
       const rows = sectorItems.map(
         (item) =>
           ({
@@ -1070,7 +1104,13 @@ export function ScanTable({
       );
       return [header, ...rows];
     });
-  }, [arrangementMode, groupBuckets, groupsData, sectorGroups, sortedItems, summaryBySector]);
+  }, [arrangementMode, collapsedGroups, groupBuckets, groupsData, sectorGroups, sortedItems, summaryBySector]);
+
+  const headerKeys = useMemo(
+    () => tableEntries.filter((entry) => entry.type === "header").map((entry) => entry.key),
+    [tableEntries],
+  );
+  const allCollapsed = headerKeys.length > 0 && headerKeys.every((key) => collapsedGroups.has(key));
 
   // Lift the displayed row order to the parent for keyboard chart navigation.
   // Keyed on the joined symbol string so we only notify when the sequence
@@ -1091,7 +1131,7 @@ export function ScanTable({
   }, [visibleOrderKey]);
 
   const shouldVirtualize = hasWideTableLayout && tableEntries.length > 120;
-  const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
+  const { containerRef, scrollToKey, totalHeight, visibleRows, rows: virtualRows, scrollTop } = useVirtualRows({
     items: tableEntries,
     getKey: (entry) => entry.key,
     getHeight: (entry) => scanEntryHeight(entry, expandedRowKey),
@@ -1294,29 +1334,73 @@ export function ScanTable({
     rowRefs.current[symbol] = element;
   }, []);
 
+  const renderHeader = (
+    entry: Extract<ScanTableEntry, { type: "header" }>,
+    options: { virtualHeight?: number; pinned?: boolean; offset?: number } = {},
+  ) => {
+    const detail = entry.subtitle ?? formatSectorLine(entry.summary, sectorSortMode);
+    return (
+      <button
+        key={options.pinned ? `pinned:${entry.key}` : entry.key}
+        type="button"
+        className={[
+          "scan-sector-header",
+          entry.isFirst ? "scan-sector-header-first" : "",
+          entry.collapsed ? "is-collapsed" : "",
+          options.pinned ? "is-pinned" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        onClick={() => toggleGroup(entry.key)}
+        aria-expanded={!entry.collapsed}
+        title={entry.collapsed ? "Show these stocks" : "Hide these stocks"}
+        style={
+          {
+            "--sector-accent": entry.accent,
+            ...(options.virtualHeight ? { height: `${options.virtualHeight}px` } : {}),
+            ...(options.offset ? { transform: `translateY(${options.offset}px)` } : {}),
+          } as CSSProperties
+        }
+      >
+        <span className="ssh-chevron" aria-hidden="true">
+          {entry.collapsed ? <ChevronRight size={14} strokeWidth={2.2} /> : <ChevronDown size={14} strokeWidth={2.2} />}
+        </span>
+        <span className="ssh-dot" aria-hidden="true" />
+        <strong className="ssh-title">{entry.title}</strong>
+        {entry.rank !== undefined ? <span className="ssh-rank">#{entry.rank}</span> : null}
+        <span className="ssh-count">{entry.count}</span>
+        {detail ? <small className="ssh-detail">{detail}</small> : null}
+      </button>
+    );
+  };
+
+  // Virtualised slots are absolutely positioned, so CSS `position: sticky`
+  // cannot pin their headers. Instead the section that owns the top of the
+  // viewport is drawn once more as an overlay, and pushed up by the next
+  // header as it arrives — the same hand-off a sticky header makes.
+  const pinnedHeader = useMemo(() => {
+    if (!shouldVirtualize || headerKeys.length === 0) return null;
+    let current: (typeof virtualRows)[number] | null = null;
+    let next: (typeof virtualRows)[number] | null = null;
+    for (const row of virtualRows) {
+      if (row.item.type !== "header") continue;
+      if (row.top <= scrollTop) current = row;
+      else {
+        next = row;
+        break;
+      }
+    }
+    if (!current || current.item.type !== "header") return null;
+    // Already fully in view at its own position: no overlay needed.
+    if (current.top === scrollTop) return null;
+    const height = SCAN_HEADER_SLOT_HEIGHT - SCAN_SLOT_GAP;
+    const offset = next ? Math.min(0, next.top - scrollTop - height) : 0;
+    return { entry: current.item, offset };
+  }, [headerKeys.length, scrollTop, shouldVirtualize, virtualRows]);
+
   const renderEntry = (entry: ScanTableEntry, virtualHeight?: number) => {
     if (entry.type === "header") {
-      return (
-        <div
-          key={entry.key}
-          className={
-            entry.isFirst ? "scan-sector-header scan-sector-header-first" : "scan-sector-header"
-          }
-          style={
-            {
-              "--sector-accent": entry.accent,
-              ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
-            } as CSSProperties
-          }
-        >
-          <div>
-            <strong>
-              {entry.sector} ({entry.count})
-            </strong>
-            <small>{entry.subtitle ?? formatSectorLine(entry.summary, sectorSortMode)}</small>
-          </div>
-        </div>
-      );
+      return renderHeader(entry, { virtualHeight });
     }
 
     return (
@@ -1571,6 +1655,18 @@ export function ScanTable({
             </select>
           ) : null}
 
+          {arrangementMode !== "flat" && headerKeys.length > 1 ? (
+            <button
+              type="button"
+              className="st-btn st-btn-icon"
+              onClick={() => setCollapsedGroups(allCollapsed ? new Set() : new Set(headerKeys))}
+              title={allCollapsed ? "Expand every section" : "Collapse every section"}
+              aria-label={allCollapsed ? "Expand every section" : "Collapse every section"}
+            >
+              {allCollapsed ? <ChevronsUpDown size={13} strokeWidth={2.2} /> : <ChevronsDownUp size={13} strokeWidth={2.2} />}
+            </button>
+          ) : null}
+
           {/* Export */}
           <button
             type="button"
@@ -1650,6 +1746,16 @@ export function ScanTable({
               />
             )
           ) : shouldVirtualize ? (
+            <>
+            {pinnedHeader ? (
+              <div className="scan-sector-pin">
+                {renderHeader(pinnedHeader.entry, {
+                  pinned: true,
+                  virtualHeight: SCAN_HEADER_SLOT_HEIGHT - SCAN_SLOT_GAP,
+                  offset: pinnedHeader.offset,
+                })}
+              </div>
+            ) : null}
             <div
               className="scan-table-virtual-spacer"
               style={{ height: `${totalHeight}px` }}
@@ -1664,6 +1770,7 @@ export function ScanTable({
                 </div>
               ))}
             </div>
+            </>
           ) : (
             tableEntries.map((entry) => renderEntry(entry))
           )}
