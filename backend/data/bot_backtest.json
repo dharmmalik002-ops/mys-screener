@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-10-01T19:41:06.629476+00:00",
+  "generated_at": "2026-10-02T19:30:48.295403+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -19,7 +19,7 @@
     "last_session": "2026-10-01",
     "symbols_with_trades": 1405,
     "trades_total": 146480,
-    "trades_resolved": 144833,
+    "trades_resolved": 144838,
     "validation_split": "2022-12-20"
   },
   "regime_distribution": [
@@ -893,10 +893,10 @@
     "pct_from_200dma": -7.94,
     "pct_from_52w_high": -14.98,
     "ma200_slope": -0.0426,
-    "breadth_above_200dma": 46.84,
-    "breadth_net_new_highs": -7.93,
+    "breadth_above_200dma": 47.14,
+    "breadth_net_new_highs": -7.57,
     "vix_percentile": 66.1,
-    "constituents": 1439,
+    "constituents": 1466,
     "regime_label": "Correction"
   },
   "strategy_totals": [
@@ -998,18 +998,18 @@
     {
       "strategy": "gap_continuation",
       "regime": "ALL",
-      "trades": 3323,
-      "win_rate": 34.5,
-      "avg_r": 0.174,
+      "trades": 3324,
+      "win_rate": 34.6,
+      "avg_r": 0.175,
       "median_r": -1.036,
-      "total_r": 578.4,
+      "total_r": 581.4,
       "profit_factor": 1.27,
       "avg_win_r": 2.39,
       "avg_loss_r": -1.0,
       "avg_hold": 36.6,
-      "expectancy_pct": 1.8,
-      "r_ci_low": 0.112,
-      "r_ci_high": 0.238,
+      "expectancy_pct": 1.81,
+      "r_ci_low": 0.114,
+      "r_ci_high": 0.24,
       "p_value": 0.0,
       "significant": true,
       "reportable": true
@@ -1036,17 +1036,17 @@
     {
       "strategy": "nr7_release",
       "regime": "ALL",
-      "trades": 22808,
+      "trades": 22809,
       "win_rate": 29.0,
       "avg_r": 0.169,
       "median_r": -1.054,
-      "total_r": 3847.5,
+      "total_r": 3853.3,
       "profit_factor": 1.23,
       "avg_win_r": 3.08,
       "avg_loss_r": -1.02,
       "avg_hold": 32.2,
       "expectancy_pct": 1.21,
-      "r_ci_low": 0.141,
+      "r_ci_low": 0.139,
       "r_ci_high": 0.198,
       "p_value": 0.0,
       "significant": true,
@@ -1055,18 +1055,18 @@
     {
       "strategy": "week52_breakout",
       "regime": "ALL",
-      "trades": 10701,
+      "trades": 10702,
       "win_rate": 30.1,
       "avg_r": 0.166,
       "median_r": -1.05,
-      "total_r": 1771.8,
+      "total_r": 1772.7,
       "profit_factor": 1.23,
       "avg_win_r": 2.9,
       "avg_loss_r": -1.01,
       "avg_hold": 31.8,
       "expectancy_pct": 1.18,
-      "r_ci_low": 0.125,
-      "r_ci_high": 0.209,
+      "r_ci_low": 0.124,
+      "r_ci_high": 0.207,
       "p_value": 0.0,
       "significant": true,
       "reportable": true
@@ -1093,18 +1093,18 @@
     {
       "strategy": "momentum_burst",
       "regime": "ALL",
-      "trades": 17315,
+      "trades": 17316,
       "win_rate": 33.0,
-      "avg_r": 0.163,
+      "avg_r": 0.164,
       "median_r": -1.044,
-      "total_r": 2826.2,
+      "total_r": 2831.8,
       "profit_factor": 1.24,
       "avg_win_r": 2.56,
       "avg_loss_r": -1.01,
       "avg_hold": 37.4,
       "expectancy_pct": 1.49,
-      "r_ci_low": 0.133,
-      "r_ci_high": 0.192,
+      "r_ci_low": 0.134,
+      "r_ci_high": 0.193,
       "p_value": 0.0,
       "significant": true,
       "reportable": true
@@ -1131,17 +1131,17 @@
     {
       "strategy": "minervini_breakout",
       "regime": "ALL",
-      "trades": 13300,
+      "trades": 13301,
       "win_rate": 27.3,
       "avg_r": 0.152,
       "median_r": -1.059,
-      "total_r": 2026.1,
+      "total_r": 2027.2,
       "profit_factor": 1.2,
       "avg_win_r": 3.29,
       "avg_loss_r": -1.03,
       "avg_hold": 28.9,
       "expectancy_pct": 0.99,
-      "r_ci_low": 0.113,
+      "r_ci_low": 0.114,
       "r_ci_high": 0.193,
       "p_value": 0.0,
       "significant": true,
@@ -1701,6 +1701,25 @@
       "reportable": true
     },
     {
+      "strategy": "gap_continuation",
+      "regime": "correction",
+      "trades": 397,
+      "win_rate": 36.8,
+      "avg_r": 0.204,
+      "median_r": -1.033,
+      "total_r": 81.0,
+      "profit_factor": 1.33,
+      "avg_win_r": 2.25,
+      "avg_loss_r": -0.99,
+      "avg_hold": 39.6,
+      "expectancy_pct": 2.57,
+      "r_ci_low": 0.037,
+      "r_ci_high": 0.379,
+      "p_value": 0.0155,
+      "significant": true,
+      "reportable": true
+    },
+    {
       "strategy": "week52_breakout",
       "regime": "bull_strong",
       "trades": 8181,
@@ -1716,25 +1735,6 @@
       "r_ci_low": 0.156,
       "r_ci_high": 0.25,
       "p_value": 0.0,
-      "significant": true,
-      "reportable": true
-    },
-    {
-      "strategy": "gap_continuation",
-      "regime": "correction",
-      "trades": 396,
-      "win_rate": 36.6,
-      "avg_r": 0.197,
-      "median_r": -1.034,
-      "total_r": 77.9,
-      "profit_factor": 1.31,
-      "avg_win_r": 2.25,
-      "avg_loss_r": -0.99,
-      "avg_hold": 39.7,
-      "expectancy_pct": 2.51,
-      "r_ci_low": 0.035,
-      "r_ci_high": 0.369,
-      "p_value": 0.022,
       "significant": true,
       "reportable": true
     },
@@ -1874,19 +1874,19 @@
     {
       "strategy": "nr7_release",
       "regime": "correction",
-      "trades": 3064,
+      "trades": 3065,
       "win_rate": 29.6,
-      "avg_r": 0.075,
+      "avg_r": 0.077,
       "median_r": -1.05,
-      "total_r": 230.2,
-      "profit_factor": 1.1,
-      "avg_win_r": 2.7,
+      "total_r": 236.0,
+      "profit_factor": 1.11,
+      "avg_win_r": 2.71,
       "avg_loss_r": -1.03,
       "avg_hold": 33.7,
-      "expectancy_pct": 0.68,
-      "r_ci_low": 0.012,
-      "r_ci_high": 0.143,
-      "p_value": 0.023,
+      "expectancy_pct": 0.69,
+      "r_ci_low": 0.013,
+      "r_ci_high": 0.147,
+      "p_value": 0.024,
       "significant": true,
       "reportable": true
     },
@@ -2024,6 +2024,25 @@
       "reportable": true
     },
     {
+      "strategy": "momentum_burst",
+      "regime": "correction",
+      "trades": 1846,
+      "win_rate": 31.1,
+      "avg_r": 0.015,
+      "median_r": -1.041,
+      "total_r": 27.3,
+      "profit_factor": 1.02,
+      "avg_win_r": 2.29,
+      "avg_loss_r": -1.01,
+      "avg_hold": 37.7,
+      "expectancy_pct": 0.28,
+      "r_ci_low": -0.061,
+      "r_ci_high": 0.093,
+      "p_value": 0.3865,
+      "significant": false,
+      "reportable": true
+    },
+    {
       "strategy": "pocket_pivot",
       "regime": "recovery",
       "trades": 1477,
@@ -2039,25 +2058,6 @@
       "r_ci_low": -0.1,
       "r_ci_high": 0.127,
       "p_value": 0.438,
-      "significant": false,
-      "reportable": true
-    },
-    {
-      "strategy": "momentum_burst",
-      "regime": "correction",
-      "trades": 1845,
-      "win_rate": 31.1,
-      "avg_r": 0.012,
-      "median_r": -1.041,
-      "total_r": 21.7,
-      "profit_factor": 1.02,
-      "avg_win_r": 2.28,
-      "avg_loss_r": -1.01,
-      "avg_hold": 37.7,
-      "expectancy_pct": 0.25,
-      "r_ci_low": -0.066,
-      "r_ci_high": 0.093,
-      "p_value": 0.401,
       "significant": false,
       "reportable": true
     },
@@ -2102,19 +2102,19 @@
     {
       "strategy": "week52_breakout",
       "regime": "correction",
-      "trades": 893,
-      "win_rate": 27.0,
-      "avg_r": -0.06,
+      "trades": 894,
+      "win_rate": 27.1,
+      "avg_r": -0.059,
       "median_r": -1.046,
-      "total_r": -53.5,
+      "total_r": -52.5,
       "profit_factor": 0.92,
-      "avg_win_r": 2.53,
+      "avg_win_r": 2.52,
       "avg_loss_r": -1.02,
       "avg_hold": 31.2,
-      "expectancy_pct": -0.63,
-      "r_ci_low": -0.175,
-      "r_ci_high": 0.067,
-      "p_value": 0.795,
+      "expectancy_pct": -0.62,
+      "r_ci_low": -0.178,
+      "r_ci_high": 0.068,
+      "p_value": 0.79,
       "significant": false,
       "reportable": true
     },
@@ -2159,19 +2159,19 @@
     {
       "strategy": "minervini_breakout",
       "regime": "correction",
-      "trades": 1288,
+      "trades": 1289,
       "win_rate": 23.4,
-      "avg_r": -0.109,
+      "avg_r": -0.108,
       "median_r": -1.054,
-      "total_r": -140.8,
+      "total_r": -139.7,
       "profit_factor": 0.86,
       "avg_win_r": 2.86,
       "avg_loss_r": -1.02,
       "avg_hold": 27.5,
       "expectancy_pct": -1.14,
-      "r_ci_low": -0.211,
-      "r_ci_high": -0.005,
-      "p_value": 0.958,
+      "r_ci_low": -0.21,
+      "r_ci_high": -0.004,
+      "p_value": 0.9565,
       "significant": false,
       "reportable": true
     },
@@ -3175,7 +3175,7 @@
         "profit_factor": 1.19,
         "avg_win_r": 2.0,
         "avg_loss_r": -0.99,
-        "avg_hold": 38.3,
+        "avg_hold": 38.2,
         "expectancy_pct": 0.85,
         "r_ci_low": -0.049,
         "r_ci_high": 0.287,
@@ -3519,24 +3519,24 @@
       "out_sample": {
         "strategy": "gap_continuation",
         "regime": "correction",
-        "trades": 236,
-        "win_rate": 39.0,
-        "avg_r": 0.288,
-        "median_r": -1.031,
-        "total_r": 68.1,
-        "profit_factor": 1.47,
-        "avg_win_r": 2.31,
+        "trades": 237,
+        "win_rate": 39.2,
+        "avg_r": 0.3,
+        "median_r": -1.03,
+        "total_r": 71.1,
+        "profit_factor": 1.49,
+        "avg_win_r": 2.32,
         "avg_loss_r": -1.0,
-        "avg_hold": 39.5,
-        "expectancy_pct": 3.66,
-        "r_ci_low": 0.061,
-        "r_ci_high": 0.532,
-        "p_value": 0.0165,
+        "avg_hold": 39.4,
+        "expectancy_pct": 3.76,
+        "r_ci_low": 0.068,
+        "r_ci_high": 0.546,
+        "p_value": 0.0135,
         "significant": true,
         "reportable": true
       },
       "verdict": "confirmed_weak",
-      "note": "Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.29R)."
+      "note": "Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.30R)."
     },
     {
       "strategy": "nr7_release",
@@ -3563,24 +3563,24 @@
       "out_sample": {
         "strategy": "nr7_release",
         "regime": "correction",
-        "trades": 1475,
-        "win_rate": 27.1,
-        "avg_r": 0.123,
-        "median_r": -1.053,
-        "total_r": 181.5,
-        "profit_factor": 1.16,
-        "avg_win_r": 3.23,
+        "trades": 1476,
+        "win_rate": 27.2,
+        "avg_r": 0.127,
+        "median_r": -1.052,
+        "total_r": 187.3,
+        "profit_factor": 1.17,
+        "avg_win_r": 3.24,
         "avg_loss_r": -1.03,
         "avg_hold": 30.7,
-        "expectancy_pct": 1.31,
-        "r_ci_low": 0.018,
-        "r_ci_high": 0.236,
-        "p_value": 0.027,
-        "significant": false,
+        "expectancy_pct": 1.34,
+        "r_ci_low": 0.023,
+        "r_ci_high": 0.24,
+        "p_value": 0.0215,
+        "significant": true,
         "reportable": true
       },
       "verdict": "confirmed_weak",
-      "note": "Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.12R)."
+      "note": "Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.13R)."
     },
     {
       "strategy": "pocket_pivot",
@@ -4399,19 +4399,19 @@
       "out_sample": {
         "strategy": "momentum_burst",
         "regime": "correction",
-        "trades": 1110,
+        "trades": 1111,
         "win_rate": 33.0,
-        "avg_r": 0.141,
+        "avg_r": 0.146,
         "median_r": -1.039,
-        "total_r": 156.4,
-        "profit_factor": 1.21,
-        "avg_win_r": 2.48,
+        "total_r": 162.0,
+        "profit_factor": 1.22,
+        "avg_win_r": 2.49,
         "avg_loss_r": -1.01,
-        "avg_hold": 38.1,
-        "expectancy_pct": 1.88,
-        "r_ci_low": 0.034,
-        "r_ci_high": 0.246,
-        "p_value": 0.0135,
+        "avg_hold": 38.0,
+        "expectancy_pct": 1.92,
+        "r_ci_low": 0.036,
+        "r_ci_high": 0.257,
+        "p_value": 0.0175,
         "significant": true,
         "reportable": true
       },
@@ -4531,19 +4531,19 @@
       "out_sample": {
         "strategy": "week52_breakout",
         "regime": "correction",
-        "trades": 441,
-        "win_rate": 27.4,
-        "avg_r": 0.004,
+        "trades": 442,
+        "win_rate": 27.6,
+        "avg_r": 0.007,
         "median_r": -1.044,
-        "total_r": 1.9,
+        "total_r": 2.9,
         "profit_factor": 1.01,
-        "avg_win_r": 2.71,
+        "avg_win_r": 2.7,
         "avg_loss_r": -1.02,
         "avg_hold": 29.9,
-        "expectancy_pct": 0.41,
-        "r_ci_low": -0.178,
+        "expectancy_pct": 0.43,
+        "r_ci_low": -0.167,
         "r_ci_high": 0.189,
-        "p_value": 0.486,
+        "p_value": 0.4995,
         "significant": false,
         "reportable": true
       },
@@ -4707,19 +4707,19 @@
       "out_sample": {
         "strategy": "minervini_breakout",
         "regime": "correction",
-        "trades": 616,
-        "win_rate": 20.8,
-        "avg_r": -0.167,
+        "trades": 617,
+        "win_rate": 20.9,
+        "avg_r": -0.165,
         "median_r": -1.054,
-        "total_r": -103.1,
+        "total_r": -102.0,
         "profit_factor": 0.8,
-        "avg_win_r": 3.15,
+        "avg_win_r": 3.13,
         "avg_loss_r": -1.04,
         "avg_hold": 23.8,
-        "expectancy_pct": -1.25,
-        "r_ci_low": -0.324,
-        "r_ci_high": -0.013,
-        "p_value": 0.963,
+        "expectancy_pct": -1.24,
+        "r_ci_low": -0.313,
+        "r_ci_high": -0.003,
+        "p_value": 0.9515,
         "significant": false,
         "reportable": true
       },
@@ -6055,11 +6055,11 @@
           "family": "momentum",
           "verdict": "confirmed_weak",
           "in_sample_r": 0.062,
-          "out_sample_r": 0.288,
-          "out_sample_trades": 236,
-          "win_rate": 39.0,
+          "out_sample_r": 0.3,
+          "out_sample_trades": 237,
+          "win_rate": 39.2,
           "risk_per_trade_pct": 0.06,
-          "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.29R)."
+          "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.30R)."
         },
         {
           "strategy": "nr7_release",
@@ -6067,11 +6067,11 @@
           "family": "volatility",
           "verdict": "confirmed_weak",
           "in_sample_r": 0.031,
-          "out_sample_r": 0.123,
-          "out_sample_trades": 1475,
-          "win_rate": 27.1,
+          "out_sample_r": 0.127,
+          "out_sample_trades": 1476,
+          "win_rate": 27.2,
           "risk_per_trade_pct": 0.06,
-          "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.12R)."
+          "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.13R)."
         }
       ],
       "max_concurrent": 3,
@@ -6140,8 +6140,8 @@
         "end": "today",
         "symbols_existing": 1152,
         "coverage_pct": 72.5,
-        "trades": 67961,
-        "avg_r": 0.153,
+        "trades": 67966,
+        "avg_r": 0.154,
         "win_rate": 28.3,
         "note": "Coverage is high here; survivorship distortion is smallest."
       }
@@ -6153,18 +6153,18 @@
   "learning": {
     "available": true,
     "population": {
-      "trades": 144833,
+      "trades": 144838,
       "first_entry": "2007-09-17",
       "last_entry": "2026-10-01"
     },
     "review_summary": {
-      "trades": 144833,
+      "trades": 144838,
       "book_avg_r": 0.173,
       "verdicts": [
         {
           "verdict": "clean_loss",
           "label": "Clean loss \u2014 wrong fast, cheap",
-          "trades": 67324,
+          "trades": 67325,
           "pct_of_trades": 46.5,
           "avg_r": -1.077,
           "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
@@ -6172,7 +6172,7 @@
         {
           "verdict": "round_trip_loss",
           "label": "Was well in profit, lost it all",
-          "trades": 29896,
+          "trades": 29895,
           "pct_of_trades": 20.6,
           "avg_r": -0.704,
           "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
@@ -6180,7 +6180,7 @@
         {
           "verdict": "clean_win",
           "label": "Clean win",
-          "trades": 16114,
+          "trades": 16117,
           "pct_of_trades": 11.1,
           "avg_r": 5.352,
           "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
@@ -6188,7 +6188,7 @@
         {
           "verdict": "gave_back_win",
           "label": "Won, gave back most of it",
-          "trades": 15190,
+          "trades": 15192,
           "pct_of_trades": 10.5,
           "avg_r": 1.261,
           "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
@@ -6221,7 +6221,7 @@
       "tags": [
         {
           "tag": "weak_breadth_entry",
-          "trades": 19883,
+          "trades": 19882,
           "avg_r": 0.071,
           "kind": "entry"
         },
@@ -6257,7 +6257,7 @@
         },
         {
           "tag": "profit_handed_back",
-          "trades": 29181,
+          "trades": 29180,
           "avg_r": -0.845,
           "kind": "outcome"
         },
@@ -6269,13 +6269,13 @@
         },
         {
           "tag": "left_over_1.5R_on_table",
-          "trades": 87474,
+          "trades": 87479,
           "avg_r": 0.378,
           "kind": "outcome"
         },
         {
           "tag": "gave_back_most_of_move",
-          "trades": 22452,
+          "trades": 22454,
           "avg_r": 1.058,
           "kind": "outcome"
         },
@@ -6287,7 +6287,7 @@
         },
         {
           "tag": "never_in_trouble",
-          "trades": 16243,
+          "trades": 16247,
           "avg_r": 2.945,
           "kind": "outcome"
         },
@@ -6301,7 +6301,7 @@
       "entry_tags": [
         {
           "tag": "weak_breadth_entry",
-          "trades": 19883,
+          "trades": 19882,
           "avg_r": 0.071,
           "kind": "entry"
         },
@@ -6339,7 +6339,7 @@
         },
         {
           "tag": "profit_handed_back",
-          "trades": 29181,
+          "trades": 29180,
           "avg_r": -0.845,
           "kind": "outcome"
         },
@@ -6351,13 +6351,13 @@
         },
         {
           "tag": "left_over_1.5R_on_table",
-          "trades": 87474,
+          "trades": 87479,
           "avg_r": 0.378,
           "kind": "outcome"
         },
         {
           "tag": "gave_back_most_of_move",
-          "trades": 22452,
+          "trades": 22454,
           "avg_r": 1.058,
           "kind": "outcome"
         },
@@ -6369,7 +6369,7 @@
         },
         {
           "tag": "never_in_trouble",
-          "trades": 16243,
+          "trades": 16247,
           "avg_r": 2.945,
           "kind": "outcome"
         },
@@ -6391,7 +6391,7 @@
         }
       ],
       "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
-      "structural_note": "31% of trades either handed back a real profit or kept less than half their best excursion (29896 round-trip losses, 15190 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      "structural_note": "31% of trades either handed back a real profit or kept less than half their best excursion (29895 round-trip losses, 15192 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
     },
     "review_by_regime": [
       {
@@ -6643,8 +6643,8 @@
       {
         "regime": "correction",
         "label": "Correction",
-        "trades": 18978,
-        "book_avg_r": 0.03,
+        "trades": 18983,
+        "book_avg_r": 0.031,
         "verdicts": [
           {
             "verdict": "clean_loss",
@@ -6665,7 +6665,7 @@
           {
             "verdict": "clean_win",
             "label": "Clean win",
-            "trades": 2169,
+            "trades": 2172,
             "pct_of_trades": 11.4,
             "avg_r": 4.466,
             "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
@@ -6673,7 +6673,7 @@
           {
             "verdict": "gave_back_win",
             "label": "Won, gave back most of it",
-            "trades": 1762,
+            "trades": 1764,
             "pct_of_trades": 9.3,
             "avg_r": 1.078,
             "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
@@ -6754,13 +6754,13 @@
           },
           {
             "tag": "left_over_1.5R_on_table",
-            "trades": 10406,
-            "avg_r": 0.088,
+            "trades": 10411,
+            "avg_r": 0.09,
             "kind": "outcome"
           },
           {
             "tag": "gave_back_most_of_move",
-            "trades": 2690,
+            "trades": 2692,
             "avg_r": 0.872,
             "kind": "outcome"
           },
@@ -6772,7 +6772,7 @@
           },
           {
             "tag": "never_in_trouble",
-            "trades": 2070,
+            "trades": 2074,
             "avg_r": 2.658,
             "kind": "outcome"
           },
@@ -6836,13 +6836,13 @@
           },
           {
             "tag": "left_over_1.5R_on_table",
-            "trades": 10406,
-            "avg_r": 0.088,
+            "trades": 10411,
+            "avg_r": 0.09,
             "kind": "outcome"
           },
           {
             "tag": "gave_back_most_of_move",
-            "trades": 2690,
+            "trades": 2692,
             "avg_r": 0.872,
             "kind": "outcome"
           },
@@ -6854,7 +6854,7 @@
           },
           {
             "tag": "never_in_trouble",
-            "trades": 2070,
+            "trades": 2074,
             "avg_r": 2.658,
             "kind": "outcome"
           },
@@ -6870,7 +6870,7 @@
             "tag": "weak_breadth_entry",
             "trades": 6579,
             "avg_r": 0.257,
-            "delta_vs_book": 0.227,
+            "delta_vs_book": 0.226,
             "direction": "better",
             "text": "On 6579 trades, trades entered with breadth under 40% averaged +0.26R \u2014 0.23R above the book average."
           },
@@ -6878,13 +6878,13 @@
             "tag": "tight_atr_entry",
             "trades": 405,
             "avg_r": 0.272,
-            "delta_vs_book": 0.242,
+            "delta_vs_book": 0.241,
             "direction": "better",
             "text": "On 405 trades, trades in names with ATR under 2% of price averaged +0.27R \u2014 0.24R above the book average."
           }
         ],
         "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
-        "structural_note": "29% of trades either handed back a real profit or kept less than half their best excursion (3680 round-trip losses, 1762 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+        "structural_note": "29% of trades either handed back a real profit or kept less than half their best excursion (3680 round-trip losses, 1764 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
       },
       {
         "regime": "recovery",
@@ -7141,17 +7141,17 @@
           {
             "verdict": "clean_loss",
             "label": "Clean loss \u2014 wrong fast, cheap",
-            "trades": 3515,
-            "pct_of_trades": 41.2,
+            "trades": 3516,
+            "pct_of_trades": 41.3,
             "avg_r": -1.068,
             "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
           },
           {
             "verdict": "round_trip_loss",
             "label": "Was well in profit, lost it all",
-            "trades": 1848,
+            "trades": 1847,
             "pct_of_trades": 21.7,
-            "avg_r": -0.662,
+            "avg_r": -0.661,
             "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
           },
           {
@@ -7204,7 +7204,7 @@
           },
           {
             "tag": "weak_breadth_entry",
-            "trades": 1163,
+            "trades": 1162,
             "avg_r": -0.065,
             "kind": "entry"
           },
@@ -7234,7 +7234,7 @@
           },
           {
             "tag": "profit_handed_back",
-            "trades": 1740,
+            "trades": 1739,
             "avg_r": -0.812,
             "kind": "outcome"
           },
@@ -7284,7 +7284,7 @@
           },
           {
             "tag": "weak_breadth_entry",
-            "trades": 1163,
+            "trades": 1162,
             "avg_r": -0.065,
             "kind": "entry"
           },
@@ -7316,7 +7316,7 @@
           },
           {
             "tag": "profit_handed_back",
-            "trades": 1740,
+            "trades": 1739,
             "avg_r": -0.812,
             "kind": "outcome"
           },
@@ -7368,11 +7368,11 @@
           },
           {
             "tag": "weak_breadth_entry",
-            "trades": 1163,
+            "trades": 1162,
             "avg_r": -0.065,
             "delta_vs_book": -0.299,
             "direction": "worse",
-            "text": "On 1163 trades, trades entered with breadth under 40% averaged -0.07R \u2014 0.30R below the book average."
+            "text": "On 1162 trades, trades entered with breadth under 40% averaged -0.07R \u2014 0.30R below the book average."
           },
           {
             "tag": "high_volatility_entry",
@@ -7392,7 +7392,7 @@
           }
         ],
         "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
-        "structural_note": "34% of trades either handed back a real profit or kept less than half their best excursion (1848 round-trip losses, 1058 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+        "structural_note": "34% of trades either handed back a real profit or kept less than half their best excursion (1847 round-trip losses, 1058 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
       },
       {
         "regime": "bull_narrow",
@@ -7902,15 +7902,15 @@
         "end": "2026-10-01",
         "years": 3.78,
         "starting_equity": 1000000.0,
-        "ending_equity": 1181254.53,
-        "cagr_pct": 4.5,
-        "max_drawdown_pct": -19.15,
+        "ending_equity": 1185413.82,
+        "cagr_pct": 4.6,
+        "max_drawdown_pct": -19.14,
         "sharpe": 0.68,
-        "total_return_pct": 18.13,
-        "trades_taken": 1741,
-        "signals_declined": 41348,
-        "win_rate": 28.9,
-        "avg_r": 0.179,
+        "total_return_pct": 18.54,
+        "trades_taken": 1742,
+        "signals_declined": 41349,
+        "win_rate": 29.0,
+        "avg_r": 0.18,
         "payoff": 3.05,
         "exposure_pct": 99.8,
         "equity_curve": [
@@ -9241,1008 +9241,1008 @@
           },
           {
             "day": "2025-02-11",
-            "equity": 1102925.84,
-            "open": 54
+            "equity": 1101761.9,
+            "open": 53
           },
           {
             "day": "2025-02-13",
-            "equity": 1082518.61,
-            "open": 36
+            "equity": 1081355.88,
+            "open": 35
           },
           {
             "day": "2025-02-17",
-            "equity": 1072090.56,
-            "open": 28
+            "equity": 1070929.07,
+            "open": 27
           },
           {
             "day": "2025-02-19",
-            "equity": 1070943.51,
-            "open": 28
+            "equity": 1069783.24,
+            "open": 27
           },
           {
             "day": "2025-02-21",
-            "equity": 1070943.51,
-            "open": 38
-          },
-          {
-            "day": "2025-02-25",
-            "equity": 1066203.79,
+            "equity": 1069783.24,
             "open": 37
           },
           {
-            "day": "2025-02-28",
-            "equity": 1055515.52,
+            "day": "2025-02-25",
+            "equity": 1065044.73,
             "open": 36
           },
           {
+            "day": "2025-02-28",
+            "equity": 1054363.98,
+            "open": 35
+          },
+          {
             "day": "2025-03-04",
-            "equity": 1051889.01,
+            "equity": 1052039.89,
             "open": 35
           },
           {
             "day": "2025-03-06",
-            "equity": 1049688.27,
+            "equity": 1049838.83,
             "open": 38
           },
           {
             "day": "2025-03-10",
-            "equity": 1049688.27,
+            "equity": 1049838.83,
             "open": 58
           },
           {
             "day": "2025-03-12",
-            "equity": 1056501.15,
+            "equity": 1056651.56,
             "open": 58
           },
           {
             "day": "2025-03-17",
-            "equity": 1056501.15,
+            "equity": 1056651.56,
             "open": 58
           },
           {
             "day": "2025-03-19",
-            "equity": 1055404.23,
+            "equity": 1055554.48,
             "open": 57
           },
           {
             "day": "2025-03-21",
-            "equity": 1054309.4,
+            "equity": 1054459.5,
             "open": 56
           },
           {
             "day": "2025-03-25",
-            "equity": 1053224.03,
+            "equity": 1053373.97,
             "open": 55
           },
           {
             "day": "2025-03-27",
-            "equity": 1050949.35,
+            "equity": 1051098.97,
             "open": 53
           },
           {
             "day": "2025-04-01",
-            "equity": 1050949.35,
+            "equity": 1051098.97,
             "open": 53
           },
           {
             "day": "2025-04-03",
-            "equity": 1054562.41,
+            "equity": 1054711.86,
             "open": 50
           },
           {
             "day": "2025-04-07",
-            "equity": 1031954.36,
+            "equity": 1032114.73,
             "open": 19
           },
           {
             "day": "2025-04-09",
-            "equity": 1030838.7,
+            "equity": 1030998.9,
             "open": 18
           },
           {
             "day": "2025-04-15",
-            "equity": 1030838.7,
+            "equity": 1030998.9,
             "open": 18
           },
           {
             "day": "2025-04-17",
-            "equity": 1030838.7,
+            "equity": 1030998.9,
             "open": 18
           },
           {
             "day": "2025-04-22",
-            "equity": 1030838.7,
+            "equity": 1030998.9,
             "open": 18
           },
           {
             "day": "2025-04-24",
-            "equity": 1030838.7,
+            "equity": 1030998.9,
             "open": 18
           },
           {
             "day": "2025-04-28",
-            "equity": 1029668.29,
+            "equity": 1029828.33,
             "open": 17
           },
           {
             "day": "2025-04-30",
-            "equity": 1029668.29,
+            "equity": 1029828.33,
             "open": 17
           },
           {
             "day": "2025-05-05",
-            "equity": 1029668.29,
+            "equity": 1029828.33,
             "open": 17
           },
           {
             "day": "2025-05-07",
-            "equity": 1029668.29,
+            "equity": 1029828.33,
             "open": 17
           },
           {
             "day": "2025-05-09",
-            "equity": 1028769.67,
+            "equity": 1028929.84,
             "open": 15
           },
           {
             "day": "2025-05-13",
-            "equity": 1026618.52,
+            "equity": 1026778.35,
             "open": 59
           },
           {
             "day": "2025-05-15",
-            "equity": 1028399.24,
+            "equity": 1028557.13,
             "open": 59
           },
           {
             "day": "2025-05-19",
-            "equity": 1027289.46,
+            "equity": 1027447.18,
             "open": 59
           },
           {
             "day": "2025-05-21",
-            "equity": 1026205.35,
+            "equity": 1026362.9,
             "open": 59
           },
           {
             "day": "2025-05-23",
-            "equity": 1025151.02,
+            "equity": 1025308.4,
             "open": 59
           },
           {
             "day": "2025-05-27",
-            "equity": 1024054.9,
+            "equity": 1024212.11,
             "open": 59
           },
           {
             "day": "2025-05-29",
-            "equity": 1024054.9,
+            "equity": 1024212.11,
             "open": 59
           },
           {
             "day": "2025-06-02",
-            "equity": 1024054.9,
+            "equity": 1024212.11,
             "open": 59
           },
           {
             "day": "2025-06-04",
-            "equity": 1022952.31,
+            "equity": 1023109.35,
             "open": 59
           },
           {
             "day": "2025-06-06",
-            "equity": 1022952.31,
+            "equity": 1023109.35,
             "open": 59
           },
           {
             "day": "2025-06-10",
-            "equity": 1022952.31,
+            "equity": 1023109.35,
             "open": 59
           },
           {
             "day": "2025-06-12",
-            "equity": 1021638.85,
+            "equity": 1021795.73,
             "open": 59
           },
           {
             "day": "2025-06-16",
-            "equity": 1022967.19,
+            "equity": 1023123.93,
             "open": 59
           },
           {
             "day": "2025-06-18",
-            "equity": 1021872.82,
+            "equity": 1022029.38,
             "open": 59
           },
           {
             "day": "2025-06-20",
-            "equity": 1020051.28,
+            "equity": 1020207.57,
             "open": 59
           },
           {
             "day": "2025-06-24",
-            "equity": 1020051.28,
+            "equity": 1020207.57,
             "open": 59
           },
           {
             "day": "2025-06-26",
-            "equity": 1020051.28,
+            "equity": 1020207.57,
             "open": 59
           },
           {
             "day": "2025-06-30",
-            "equity": 1020051.28,
+            "equity": 1020207.57,
             "open": 59
           },
           {
             "day": "2025-07-02",
-            "equity": 1020914.12,
+            "equity": 1021062.59,
             "open": 59
           },
           {
             "day": "2025-07-04",
-            "equity": 1026453.04,
+            "equity": 1026595.51,
             "open": 59
           },
           {
             "day": "2025-07-08",
-            "equity": 1024440.07,
+            "equity": 1024582.27,
             "open": 59
           },
           {
             "day": "2025-07-10",
-            "equity": 1025933.22,
+            "equity": 1026072.49,
             "open": 59
           },
           {
             "day": "2025-07-14",
-            "equity": 1028597.59,
+            "equity": 1028733.79,
             "open": 60
           },
           {
             "day": "2025-07-16",
-            "equity": 1027470.84,
+            "equity": 1027606.89,
             "open": 59
           },
           {
             "day": "2025-07-18",
-            "equity": 1036443.38,
+            "equity": 1036580.76,
             "open": 60
           },
           {
             "day": "2025-07-22",
-            "equity": 1039496.88,
+            "equity": 1039634.71,
             "open": 60
           },
           {
             "day": "2025-07-24",
-            "equity": 1051199.16,
+            "equity": 1051338.8,
             "open": 60
           },
           {
             "day": "2025-07-28",
-            "equity": 1047532.16,
+            "equity": 1047671.38,
             "open": 60
           },
           {
             "day": "2025-07-30",
-            "equity": 1044179.27,
+            "equity": 1044318.04,
             "open": 60
           },
           {
             "day": "2025-08-01",
-            "equity": 1039077.59,
+            "equity": 1039215.67,
             "open": 60
           },
           {
             "day": "2025-08-05",
-            "equity": 1037741.62,
+            "equity": 1037879.51,
             "open": 60
           },
           {
             "day": "2025-08-07",
-            "equity": 1031852.24,
+            "equity": 1031989.34,
             "open": 60
           },
           {
             "day": "2025-08-11",
-            "equity": 1031118.64,
+            "equity": 1031255.73,
             "open": 60
           },
           {
             "day": "2025-08-13",
-            "equity": 1030913.82,
+            "equity": 1031050.92,
             "open": 60
           },
           {
             "day": "2025-08-18",
-            "equity": 1039444.42,
+            "equity": 1039582.84,
             "open": 60
           },
           {
             "day": "2025-08-20",
-            "equity": 1039794.55,
+            "equity": 1039933.04,
             "open": 60
           },
           {
             "day": "2025-08-22",
-            "equity": 1039794.55,
+            "equity": 1039933.04,
             "open": 60
           },
           {
             "day": "2025-08-26",
-            "equity": 1035182.77,
+            "equity": 1035320.65,
             "open": 60
           },
           {
             "day": "2025-08-29",
-            "equity": 1037082.31,
+            "equity": 1037220.53,
             "open": 60
           },
           {
             "day": "2025-09-02",
-            "equity": 1037082.31,
+            "equity": 1037220.53,
             "open": 60
           },
           {
             "day": "2025-09-04",
-            "equity": 1047793.17,
+            "equity": 1047933.08,
             "open": 60
           },
           {
             "day": "2025-09-08",
-            "equity": 1047793.17,
+            "equity": 1047933.08,
             "open": 60
           },
           {
             "day": "2025-09-10",
-            "equity": 1047793.17,
+            "equity": 1047933.08,
             "open": 60
           },
           {
             "day": "2025-09-12",
-            "equity": 1045519.64,
+            "equity": 1045659.25,
             "open": 60
           },
           {
             "day": "2025-09-16",
-            "equity": 1053256.03,
+            "equity": 1053396.87,
             "open": 59
           },
           {
             "day": "2025-09-18",
-            "equity": 1096896.56,
+            "equity": 1097044.19,
             "open": 54
           },
           {
             "day": "2025-09-22",
-            "equity": 1095685.59,
+            "equity": 1095833.05,
             "open": 55
           },
           {
             "day": "2025-09-24",
-            "equity": 1095187.05,
+            "equity": 1095334.45,
             "open": 55
           },
           {
             "day": "2025-09-26",
-            "equity": 1097211.37,
+            "equity": 1097359.04,
             "open": 55
           },
           {
             "day": "2025-09-30",
-            "equity": 1091116.37,
+            "equity": 1091263.1,
             "open": 51
           },
           {
             "day": "2025-10-03",
-            "equity": 1089649.44,
+            "equity": 1089795.97,
             "open": 51
           },
           {
             "day": "2025-10-07",
-            "equity": 1089649.44,
+            "equity": 1089795.97,
             "open": 51
           },
           {
             "day": "2025-10-09",
-            "equity": 1092547.64,
+            "equity": 1092694.56,
             "open": 51
           },
           {
             "day": "2025-10-13",
-            "equity": 1095666.75,
+            "equity": 1095814.07,
             "open": 57
           },
           {
             "day": "2025-10-15",
-            "equity": 1094509.73,
+            "equity": 1094656.89,
             "open": 57
           },
           {
             "day": "2025-10-17",
-            "equity": 1093302.3,
+            "equity": 1093449.3,
             "open": 58
           },
           {
             "day": "2025-10-21",
-            "equity": 1092844.99,
+            "equity": 1092991.93,
             "open": 58
           },
           {
             "day": "2025-10-24",
-            "equity": 1110712.96,
+            "equity": 1110862.64,
             "open": 60
           },
           {
             "day": "2025-10-28",
-            "equity": 1116213.7,
+            "equity": 1116364.22,
             "open": 60
           },
           {
             "day": "2025-10-30",
-            "equity": 1127669.68,
+            "equity": 1127821.87,
             "open": 60
           },
           {
             "day": "2025-11-03",
-            "equity": 1124562.9,
+            "equity": 1124714.66,
             "open": 60
           },
           {
             "day": "2025-11-06",
-            "equity": 1116262.53,
+            "equity": 1116413.17,
             "open": 58
           },
           {
             "day": "2025-11-10",
-            "equity": 1116897.13,
+            "equity": 1117047.86,
             "open": 59
           },
           {
             "day": "2025-11-12",
-            "equity": 1120410.32,
+            "equity": 1120561.58,
             "open": 58
           },
           {
             "day": "2025-11-14",
-            "equity": 1118276.16,
+            "equity": 1118427.11,
             "open": 59
           },
           {
             "day": "2025-11-18",
-            "equity": 1116234.51,
+            "equity": 1116385.2,
             "open": 59
           },
           {
             "day": "2025-11-20",
-            "equity": 1121159.05,
+            "equity": 1121310.39,
             "open": 57
           },
           {
             "day": "2025-11-24",
-            "equity": 1141840.41,
+            "equity": 1141994.39,
             "open": 53
           },
           {
             "day": "2025-11-26",
-            "equity": 1144829.21,
+            "equity": 1144983.6,
             "open": 53
           },
           {
             "day": "2025-11-28",
-            "equity": 1145046.93,
+            "equity": 1145201.34,
             "open": 53
           },
           {
             "day": "2025-12-02",
-            "equity": 1145046.93,
+            "equity": 1145201.34,
             "open": 53
           },
           {
             "day": "2025-12-04",
-            "equity": 1143752.5,
+            "equity": 1143906.74,
             "open": 53
           },
           {
             "day": "2025-12-08",
-            "equity": 1145655.16,
+            "equity": 1145809.3,
             "open": 50
           },
           {
             "day": "2025-12-10",
-            "equity": 1148581.09,
+            "equity": 1148735.61,
             "open": 53
           },
           {
             "day": "2025-12-12",
-            "equity": 1157347.6,
+            "equity": 1157503.29,
             "open": 53
           },
           {
             "day": "2025-12-16",
-            "equity": 1159667.57,
+            "equity": 1159823.56,
             "open": 54
           },
           {
             "day": "2025-12-18",
-            "equity": 1157370.12,
+            "equity": 1157526.0,
             "open": 52
           },
           {
             "day": "2025-12-22",
-            "equity": 1154410.42,
+            "equity": 1154565.9,
             "open": 53
           },
           {
             "day": "2025-12-24",
-            "equity": 1154410.42,
+            "equity": 1154565.9,
             "open": 53
           },
           {
             "day": "2025-12-29",
-            "equity": 1153199.17,
+            "equity": 1153354.49,
             "open": 53
           },
           {
             "day": "2025-12-31",
-            "equity": 1154863.3,
+            "equity": 1155018.84,
             "open": 53
           },
           {
             "day": "2026-01-02",
-            "equity": 1166976.37,
+            "equity": 1167133.54,
             "open": 53
           },
           {
             "day": "2026-01-06",
-            "equity": 1166976.37,
+            "equity": 1167133.54,
             "open": 53
           },
           {
             "day": "2026-01-08",
-            "equity": 1164492.26,
+            "equity": 1164649.09,
             "open": 53
           },
           {
             "day": "2026-01-12",
-            "equity": 1160686.7,
+            "equity": 1160843.17,
             "open": 36
           },
           {
             "day": "2026-01-14",
-            "equity": 1159437.2,
+            "equity": 1159593.51,
             "open": 38
           },
           {
             "day": "2026-01-19",
-            "equity": 1158961.48,
+            "equity": 1159117.72,
             "open": 36
           },
           {
             "day": "2026-01-21",
-            "equity": 1155968.8,
+            "equity": 1156124.64,
             "open": 24
           },
           {
             "day": "2026-01-23",
-            "equity": 1163498.36,
+            "equity": 1163655.22,
             "open": 23
           },
           {
             "day": "2026-01-28",
-            "equity": 1168331.45,
+            "equity": 1168488.95,
             "open": 23
           },
           {
             "day": "2026-01-30",
-            "equity": 1165894.68,
+            "equity": 1166051.86,
             "open": 23
           },
           {
             "day": "2026-02-03",
-            "equity": 1163941.78,
+            "equity": 1164099.27,
             "open": 20
           },
           {
             "day": "2026-02-05",
-            "equity": 1167007.76,
+            "equity": 1167165.63,
             "open": 41
           },
           {
             "day": "2026-02-09",
-            "equity": 1173242.35,
+            "equity": 1173401.06,
             "open": 42
           },
           {
             "day": "2026-02-11",
-            "equity": 1172008.57,
+            "equity": 1172167.11,
             "open": 52
           },
           {
             "day": "2026-02-13",
-            "equity": 1175132.52,
+            "equity": 1175291.52,
             "open": 52
           },
           {
             "day": "2026-02-17",
-            "equity": 1172139.21,
+            "equity": 1172297.8,
             "open": 54
           },
           {
             "day": "2026-02-19",
-            "equity": 1170927.77,
+            "equity": 1171086.2,
             "open": 55
           },
           {
             "day": "2026-02-23",
-            "equity": 1170927.77,
+            "equity": 1171086.2,
             "open": 55
           },
           {
             "day": "2026-02-25",
-            "equity": 1160988.52,
+            "equity": 1161145.61,
             "open": 48
           },
           {
             "day": "2026-02-27",
-            "equity": 1163963.17,
+            "equity": 1164120.65,
             "open": 46
           },
           {
             "day": "2026-03-04",
-            "equity": 1152212.05,
+            "equity": 1152367.94,
             "open": 37
           },
           {
             "day": "2026-03-06",
-            "equity": 1149753.48,
+            "equity": 1149909.04,
             "open": 42
           },
           {
             "day": "2026-03-10",
-            "equity": 1145708.93,
+            "equity": 1145863.94,
             "open": 36
           },
           {
             "day": "2026-03-12",
-            "equity": 1145435.1,
+            "equity": 1145590.08,
             "open": 42
           },
           {
             "day": "2026-03-16",
-            "equity": 1137708.22,
+            "equity": 1137862.15,
             "open": 38
           },
           {
             "day": "2026-03-18",
-            "equity": 1135280.58,
+            "equity": 1135434.19,
             "open": 40
           },
           {
             "day": "2026-03-20",
-            "equity": 1130863.71,
+            "equity": 1131016.72,
             "open": 49
           },
           {
             "day": "2026-03-24",
-            "equity": 1121963.43,
+            "equity": 1122115.23,
             "open": 55
           },
           {
             "day": "2026-03-27",
-            "equity": 1121963.43,
+            "equity": 1122115.23,
             "open": 59
           },
           {
             "day": "2026-04-01",
-            "equity": 1117179.49,
+            "equity": 1117330.65,
             "open": 57
           },
           {
             "day": "2026-04-06",
-            "equity": 1113602.89,
+            "equity": 1113753.56,
             "open": 59
           },
           {
             "day": "2026-04-08",
-            "equity": 1113602.89,
+            "equity": 1113753.56,
             "open": 59
           },
           {
             "day": "2026-04-10",
-            "equity": 1113602.89,
+            "equity": 1113753.56,
             "open": 59
           },
           {
             "day": "2026-04-15",
-            "equity": 1114303.89,
+            "equity": 1114454.66,
             "open": 59
           },
           {
             "day": "2026-04-17",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-04-21",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-04-23",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-04-27",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-04-29",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-05-04",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-05-06",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-05-08",
-            "equity": 1113110.71,
+            "equity": 1113261.32,
             "open": 59
           },
           {
             "day": "2026-05-12",
-            "equity": 1116381.0,
+            "equity": 1116532.05,
             "open": 58
           },
           {
             "day": "2026-05-14",
-            "equity": 1135036.66,
+            "equity": 1135190.23,
             "open": 56
           },
           {
             "day": "2026-05-18",
-            "equity": 1132687.2,
+            "equity": 1132840.46,
             "open": 59
           },
           {
             "day": "2026-05-20",
-            "equity": 1134219.85,
+            "equity": 1134373.31,
             "open": 59
           },
           {
             "day": "2026-05-22",
-            "equity": 1134219.85,
+            "equity": 1134373.31,
             "open": 59
           },
           {
             "day": "2026-05-26",
-            "equity": 1134219.85,
+            "equity": 1134373.31,
             "open": 59
           },
           {
             "day": "2026-06-01",
-            "equity": 1139159.55,
+            "equity": 1139313.68,
             "open": 60
           },
           {
             "day": "2026-06-03",
-            "equity": 1142178.0,
+            "equity": 1142332.54,
             "open": 60
           },
           {
             "day": "2026-06-05",
-            "equity": 1146821.28,
+            "equity": 1146976.45,
             "open": 60
           },
           {
             "day": "2026-06-09",
-            "equity": 1143844.13,
+            "equity": 1143998.89,
             "open": 58
           },
           {
             "day": "2026-06-11",
-            "equity": 1150553.03,
+            "equity": 1150708.7,
             "open": 57
           },
           {
             "day": "2026-06-15",
-            "equity": 1157941.73,
+            "equity": 1158098.4,
             "open": 56
           },
           {
             "day": "2026-06-17",
-            "equity": 1167971.23,
+            "equity": 1168129.25,
             "open": 54
           },
           {
             "day": "2026-06-19",
-            "equity": 1173547.01,
+            "equity": 1173705.78,
             "open": 52
           },
           {
             "day": "2026-06-23",
-            "equity": 1179110.29,
+            "equity": 1179269.82,
             "open": 49
           },
           {
             "day": "2026-06-25",
-            "equity": 1177920.77,
+            "equity": 1178080.14,
             "open": 48
           },
           {
             "day": "2026-07-01",
-            "equity": 1179881.91,
+            "equity": 1180041.54,
             "open": 46
           },
           {
             "day": "2026-07-03",
-            "equity": 1179881.91,
+            "equity": 1180041.54,
             "open": 46
           },
           {
             "day": "2026-07-07",
-            "equity": 1188819.51,
+            "equity": 1188980.35,
             "open": 43
           },
           {
             "day": "2026-07-09",
-            "equity": 1197551.95,
+            "equity": 1197713.98,
             "open": 39
           },
           {
             "day": "2026-07-13",
-            "equity": 1195083.65,
+            "equity": 1195245.34,
             "open": 37
           },
           {
             "day": "2026-07-15",
-            "equity": 1202069.58,
+            "equity": 1202232.22,
             "open": 35
           },
           {
             "day": "2026-07-17",
-            "equity": 1202069.58,
+            "equity": 1202232.22,
             "open": 35
           },
           {
             "day": "2026-07-21",
-            "equity": 1212976.45,
+            "equity": 1213140.56,
             "open": 33
           },
           {
             "day": "2026-07-23",
-            "equity": 1211754.13,
+            "equity": 1211918.08,
             "open": 32
           },
           {
             "day": "2026-07-27",
-            "equity": 1211742.63,
+            "equity": 1211906.58,
             "open": 31
           },
           {
             "day": "2026-07-29",
-            "equity": 1235530.42,
+            "equity": 1235697.58,
             "open": 25
           },
           {
             "day": "2026-07-31",
-            "equity": 1264749.94,
+            "equity": 1264921.05,
             "open": 19
           },
           {
             "day": "2026-08-04",
-            "equity": 1281960.25,
+            "equity": 1282133.69,
             "open": 15
           },
           {
             "day": "2026-08-06",
-            "equity": 1286617.77,
+            "equity": 1286791.84,
             "open": 14
           },
           {
             "day": "2026-08-10",
-            "equity": 1291999.81,
+            "equity": 1292174.62,
             "open": 12
           },
           {
             "day": "2026-08-12",
-            "equity": 1290801.38,
+            "equity": 1290976.03,
             "open": 11
           },
           {
             "day": "2026-08-14",
-            "equity": 1290801.38,
+            "equity": 1290976.03,
             "open": 11
           },
           {
             "day": "2026-08-18",
-            "equity": 1294616.79,
+            "equity": 1294791.95,
             "open": 9
           },
           {
             "day": "2026-08-20",
-            "equity": 1294435.0,
+            "equity": 1294610.14,
             "open": 8
           },
           {
             "day": "2026-08-24",
-            "equity": 1294435.0,
+            "equity": 1294610.14,
             "open": 8
           },
           {
             "day": "2026-08-26",
-            "equity": 1294435.0,
+            "equity": 1294610.14,
             "open": 10
           },
           {
             "day": "2026-08-28",
-            "equity": 1293035.72,
+            "equity": 1293210.66,
             "open": 27
           },
           {
             "day": "2026-09-01",
-            "equity": 1288796.86,
+            "equity": 1288971.24,
             "open": 45
           },
           {
             "day": "2026-09-03",
-            "equity": 1281722.31,
+            "equity": 1281895.73,
             "open": 40
           },
           {
             "day": "2026-09-07",
-            "equity": 1277625.06,
+            "equity": 1277797.92,
             "open": 59
           },
           {
             "day": "2026-09-09",
-            "equity": 1269210.34,
+            "equity": 1269382.06,
             "open": 60
           },
           {
             "day": "2026-09-11",
-            "equity": 1253922.55,
-            "open": 54
+            "equity": 1254092.2,
+            "open": 55
           },
           {
             "day": "2026-09-16",
-            "equity": 1219147.37,
-            "open": 22
+            "equity": 1219521.07,
+            "open": 23
           },
           {
             "day": "2026-09-18",
-            "equity": 1215134.37,
-            "open": 21
+            "equity": 1215507.08,
+            "open": 22
           },
           {
             "day": "2026-09-22",
-            "equity": 1218255.64,
-            "open": 20
+            "equity": 1218628.55,
+            "open": 21
           },
           {
             "day": "2026-09-24",
-            "equity": 1214244.39,
-            "open": 19
-          },
-          {
-            "day": "2026-09-28",
-            "equity": 1207253.66,
+            "equity": 1214616.06,
             "open": 20
           },
           {
+            "day": "2026-09-28",
+            "equity": 1207623.44,
+            "open": 21
+          },
+          {
             "day": "2026-09-30",
-            "equity": 1200018.79,
-            "open": 16
+            "equity": 1200386.93,
+            "open": 17
           }
         ]
       },
@@ -10252,15 +10252,15 @@
         "end": "2026-10-01",
         "years": 3.78,
         "starting_equity": 1000000.0,
-        "ending_equity": 1135705.6,
-        "cagr_pct": 3.42,
+        "ending_equity": 1139352.53,
+        "cagr_pct": 3.51,
         "max_drawdown_pct": -17.59,
-        "sharpe": 0.59,
-        "total_return_pct": 13.57,
-        "trades_taken": 1777,
-        "signals_declined": 41312,
+        "sharpe": 0.6,
+        "total_return_pct": 13.94,
+        "trades_taken": 1778,
+        "signals_declined": 41313,
         "win_rate": 28.0,
-        "avg_r": 0.122,
+        "avg_r": 0.124,
         "payoff": 2.99,
         "exposure_pct": 99.8,
         "equity_curve": [
@@ -12562,37 +12562,37 @@
           {
             "day": "2026-09-11",
             "equity": 1204798.21,
-            "open": 53
+            "open": 54
           },
           {
             "day": "2026-09-16",
             "equity": 1172139.64,
-            "open": 22
+            "open": 23
           },
           {
             "day": "2026-09-18",
             "equity": 1168280.77,
-            "open": 21
+            "open": 22
           },
           {
             "day": "2026-09-22",
             "equity": 1171284.08,
-            "open": 20
+            "open": 21
           },
           {
             "day": "2026-09-24",
             "equity": 1167427.49,
-            "open": 19
+            "open": 20
           },
           {
             "day": "2026-09-28",
             "equity": 1160705.69,
-            "open": 20
+            "open": 21
           },
           {
             "day": "2026-09-30",
             "equity": 1153748.32,
-            "open": 16
+            "open": 17
           }
         ]
       },
@@ -14958,7 +14958,7 @@
         "sharpe": 0.14,
         "total_return_pct": 21.0,
         "trades_taken": 8601,
-        "signals_declined": 136232,
+        "signals_declined": 136237,
         "win_rate": 29.3,
         "avg_r": 0.067,
         "payoff": 2.63,
@@ -17027,253 +17027,253 @@
         {
           "positions": 60,
           "total_risk_pct": 8.0,
-          "cagr_pct": 6.06,
+          "cagr_pct": 6.18,
           "max_drawdown_pct": -21.5,
-          "sharpe": 0.71,
-          "trades": 1714
+          "sharpe": 0.72,
+          "trades": 1715
         },
         {
           "positions": 70,
           "total_risk_pct": 9.0,
-          "cagr_pct": 5.69,
+          "cagr_pct": 5.81,
           "max_drawdown_pct": -23.41,
-          "sharpe": 0.69,
-          "trades": 1898
+          "sharpe": 0.7,
+          "trades": 1899
+        },
+        {
+          "positions": 100,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 5.7,
+          "max_drawdown_pct": -23.34,
+          "sharpe": 0.67,
+          "trades": 2563
         },
         {
           "positions": 100,
           "total_risk_pct": 6.0,
-          "cagr_pct": 5.48,
+          "cagr_pct": 5.64,
           "max_drawdown_pct": -17.01,
-          "sharpe": 0.74,
-          "trades": 2778
-        },
-        {
-          "positions": 100,
-          "total_risk_pct": 9.0,
-          "cagr_pct": 5.46,
-          "max_drawdown_pct": -23.34,
-          "sharpe": 0.65,
-          "trades": 2561
+          "sharpe": 0.75,
+          "trades": 2780
         },
         {
           "positions": 100,
           "total_risk_pct": 8.0,
-          "cagr_pct": 5.41,
+          "cagr_pct": 5.62,
           "max_drawdown_pct": -21.6,
-          "sharpe": 0.66,
-          "trades": 2680
+          "sharpe": 0.68,
+          "trades": 2682
         },
         {
           "positions": 40,
           "total_risk_pct": 9.0,
-          "cagr_pct": 5.1,
+          "cagr_pct": 5.37,
           "max_drawdown_pct": -21.58,
-          "sharpe": 0.63,
+          "sharpe": 0.65,
           "trades": 1141
         },
         {
           "positions": 80,
           "total_risk_pct": 9.0,
-          "cagr_pct": 5.06,
+          "cagr_pct": 5.16,
           "max_drawdown_pct": -24.62,
-          "sharpe": 0.65,
-          "trades": 2146
+          "sharpe": 0.66,
+          "trades": 2147
         },
         {
           "positions": 100,
           "total_risk_pct": 7.0,
-          "cagr_pct": 4.6,
+          "cagr_pct": 4.78,
           "max_drawdown_pct": -19.47,
-          "sharpe": 0.62,
-          "trades": 2744
+          "sharpe": 0.64,
+          "trades": 2746
         },
         {
           "positions": 60,
           "total_risk_pct": 9.0,
-          "cagr_pct": 4.59,
+          "cagr_pct": 4.73,
           "max_drawdown_pct": -23.0,
-          "sharpe": 0.6,
-          "trades": 1647
+          "sharpe": 0.61,
+          "trades": 1648
         },
         {
           "positions": 70,
           "total_risk_pct": 8.0,
-          "cagr_pct": 4.41,
+          "cagr_pct": 4.52,
           "max_drawdown_pct": -23.17,
-          "sharpe": 0.61,
-          "trades": 1988
+          "sharpe": 0.62,
+          "trades": 1989
         },
         {
           "positions": 50,
           "total_risk_pct": 7.0,
-          "cagr_pct": 4.34,
+          "cagr_pct": 4.47,
           "max_drawdown_pct": -20.51,
-          "sharpe": 0.63,
-          "trades": 1509
+          "sharpe": 0.64,
+          "trades": 1510
         },
         {
           "positions": 100,
           "total_risk_pct": 5.0,
-          "cagr_pct": 4.33,
+          "cagr_pct": 4.45,
           "max_drawdown_pct": -15.31,
-          "sharpe": 0.7,
-          "trades": 2794
+          "sharpe": 0.72,
+          "trades": 2796
         },
         {
           "positions": 50,
           "total_risk_pct": 8.0,
-          "cagr_pct": 4.24,
+          "cagr_pct": 4.39,
           "max_drawdown_pct": -22.07,
-          "sharpe": 0.59,
-          "trades": 1465
-        },
-        {
-          "positions": 60,
-          "total_risk_pct": 7.0,
-          "cagr_pct": 4.1,
-          "max_drawdown_pct": -20.5,
-          "sharpe": 0.61,
-          "trades": 1777
-        },
-        {
-          "positions": 50,
-          "total_risk_pct": 6.0,
-          "cagr_pct": 4.0,
-          "max_drawdown_pct": -18.17,
-          "sharpe": 0.66,
-          "trades": 1508
+          "sharpe": 0.6,
+          "trades": 1466
         },
         {
           "positions": 80,
           "total_risk_pct": 8.0,
-          "cagr_pct": 3.98,
+          "cagr_pct": 4.26,
           "max_drawdown_pct": -23.98,
-          "sharpe": 0.57,
-          "trades": 2250
+          "sharpe": 0.59,
+          "trades": 2252
+        },
+        {
+          "positions": 60,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 4.21,
+          "max_drawdown_pct": -20.5,
+          "sharpe": 0.62,
+          "trades": 1778
+        },
+        {
+          "positions": 50,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 4.1,
+          "max_drawdown_pct": -18.17,
+          "sharpe": 0.67,
+          "trades": 1509
         },
         {
           "positions": 40,
           "total_risk_pct": 6.0,
-          "cagr_pct": 3.82,
+          "cagr_pct": 3.96,
           "max_drawdown_pct": -18.88,
-          "sharpe": 0.64,
-          "trades": 1235
+          "sharpe": 0.65,
+          "trades": 1236
         },
         {
           "positions": 50,
           "total_risk_pct": 9.0,
-          "cagr_pct": 3.68,
+          "cagr_pct": 3.84,
           "max_drawdown_pct": -22.72,
-          "sharpe": 0.54,
-          "trades": 1409
+          "sharpe": 0.55,
+          "trades": 1410
         },
         {
           "positions": 40,
           "total_risk_pct": 7.0,
-          "cagr_pct": 3.55,
+          "cagr_pct": 3.76,
           "max_drawdown_pct": -21.27,
-          "sharpe": 0.59,
+          "sharpe": 0.61,
           "trades": 1212
         },
         {
           "positions": 80,
           "total_risk_pct": 7.0,
-          "cagr_pct": 3.51,
+          "cagr_pct": 3.74,
           "max_drawdown_pct": -21.17,
-          "sharpe": 0.55,
-          "trades": 2295
+          "sharpe": 0.57,
+          "trades": 2297
         },
         {
           "positions": 60,
           "total_risk_pct": 6.0,
-          "cagr_pct": 3.42,
+          "cagr_pct": 3.51,
           "max_drawdown_pct": -17.59,
-          "sharpe": 0.59,
-          "trades": 1777
+          "sharpe": 0.6,
+          "trades": 1778
         },
         {
           "positions": 80,
           "total_risk_pct": 6.0,
-          "cagr_pct": 3.12,
+          "cagr_pct": 3.31,
           "max_drawdown_pct": -18.63,
-          "sharpe": 0.55,
-          "trades": 2323
+          "sharpe": 0.57,
+          "trades": 2325
+        },
+        {
+          "positions": 80,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 3.2,
+          "max_drawdown_pct": -15.62,
+          "sharpe": 0.6,
+          "trades": 2319
         },
         {
           "positions": 60,
           "total_risk_pct": 5.0,
-          "cagr_pct": 3.1,
+          "cagr_pct": 3.17,
           "max_drawdown_pct": -15.26,
-          "sharpe": 0.61,
-          "trades": 1786
+          "sharpe": 0.62,
+          "trades": 1787
         },
         {
           "positions": 40,
           "total_risk_pct": 5.0,
-          "cagr_pct": 3.05,
+          "cagr_pct": 3.16,
           "max_drawdown_pct": -16.17,
-          "sharpe": 0.63,
-          "trades": 1231
-        },
-        {
-          "positions": 80,
-          "total_risk_pct": 5.0,
-          "cagr_pct": 3.05,
-          "max_drawdown_pct": -15.62,
-          "sharpe": 0.58,
-          "trades": 2317
+          "sharpe": 0.64,
+          "trades": 1232
         },
         {
           "positions": 70,
           "total_risk_pct": 6.0,
-          "cagr_pct": 2.57,
+          "cagr_pct": 2.81,
           "max_drawdown_pct": -19.53,
-          "sharpe": 0.51,
-          "trades": 2060
+          "sharpe": 0.53,
+          "trades": 2061
         },
         {
           "positions": 70,
           "total_risk_pct": 7.0,
-          "cagr_pct": 2.52,
+          "cagr_pct": 2.81,
           "max_drawdown_pct": -21.84,
-          "sharpe": 0.49,
-          "trades": 2054
+          "sharpe": 0.51,
+          "trades": 2055
         },
         {
           "positions": 50,
           "total_risk_pct": 5.0,
-          "cagr_pct": 2.45,
+          "cagr_pct": 2.53,
           "max_drawdown_pct": -15.42,
-          "sharpe": 0.56,
-          "trades": 1522
+          "sharpe": 0.57,
+          "trades": 1523
         },
         {
           "positions": 40,
           "total_risk_pct": 8.0,
-          "cagr_pct": 2.03,
+          "cagr_pct": 2.21,
           "max_drawdown_pct": -21.35,
-          "sharpe": 0.46,
-          "trades": 1196
+          "sharpe": 0.47,
+          "trades": 1197
         },
         {
           "positions": 70,
           "total_risk_pct": 5.0,
-          "cagr_pct": 1.94,
+          "cagr_pct": 2.14,
           "max_drawdown_pct": -16.99,
-          "sharpe": 0.48,
-          "trades": 2067
+          "sharpe": 0.5,
+          "trades": 2068
         }
       ],
-      "median_cagr": 3.99,
-      "p25_cagr": 3.1,
-      "p75_cagr": 4.6,
-      "min_cagr": 1.94,
-      "max_cagr": 6.06,
+      "median_cagr": 4.15,
+      "p25_cagr": 3.23,
+      "p75_cagr": 4.77,
+      "min_cagr": 2.14,
+      "max_cagr": 6.18,
       "median_drawdown": -20.84,
       "share_beating_index": 0.0,
       "share_beating_fund_median": 0.0,
-      "selection_rank_correlation": -0.06,
+      "selection_rank_correlation": -0.05,
       "by_period": [
         {
           "period": "2022-12 to 2023-10",
@@ -17301,14 +17301,14 @@
         },
         {
           "period": "2025-10 to 2026-10",
-          "bot_median_cagr": -4.37,
-          "bot_p25_cagr": -6.1,
-          "bot_p75_cagr": -1.95,
+          "bot_median_cagr": -3.73,
+          "bot_p25_cagr": -5.81,
+          "bot_p75_cagr": -1.0,
           "index_cagr": -4.67,
-          "excess_vs_index": 0.3
+          "excess_vs_index": 0.94
         }
       ],
-      "note": "Returns are extremely lumpy: across 4 twelve-month periods the account ran from -21 to +10 points against the index. Any single window's CAGR is mostly a statement about which years it contains, so the period table below matters more than the headline. 30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 3.99% a year, 3.1% to 4.6% across the middle half. Pre-split ranking carried a rank correlation of -0.06 with held-out return, which is too weak to select on."
+      "note": "Returns are extremely lumpy: across 4 twelve-month periods the account ran from -21 to +10 points against the index. Any single window's CAGR is mostly a statement about which years it contains, so the period table below matters more than the headline. 30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 4.15% a year, 3.2% to 4.8% across the middle half. Pre-split ranking carried a rank correlation of -0.05 with held-out return, which is too weak to select on."
     },
     "regime_timing": {
       "available": true,
@@ -21997,7 +21997,7 @@
           }
         ]
       },
-      "fund_median_cagr": 10.68,
+      "fund_median_cagr": 10.45,
       "fund_median_drawdown": -27.5,
       "beats_buy_and_hold": true,
       "beats_fund_median": true,
@@ -22092,39 +22092,39 @@
         {
           "run": "playbook_held_out",
           "window_years": 3,
-          "bot_cagr_pct": 4.5,
-          "bot_max_drawdown_pct": -19.15,
+          "bot_cagr_pct": 4.6,
+          "bot_max_drawdown_pct": -19.14,
           "bot_sharpe": 0.68,
           "index_cagr_pct": 9.1,
           "funds_counted": 694,
-          "fund_median_cagr": 10.68,
-          "fund_p75_cagr": 14.26,
-          "fund_p90_cagr": 17.46,
-          "fund_best_cagr": 36.83,
+          "fund_median_cagr": 10.45,
+          "fund_p75_cagr": 13.95,
+          "fund_p90_cagr": 16.93,
+          "fund_best_cagr": 36.05,
           "percentile": 3.2,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -27.5,
           "drawdown_better_than_median": true,
-          "bot_return_per_drawdown": 0.235,
-          "fund_return_per_drawdown": 0.388,
+          "bot_return_per_drawdown": 0.24,
+          "fund_return_per_drawdown": 0.38,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.35,
-          "sharpe_percentile": 86.3,
+          "fund_median_sharpe": 0.33,
+          "sharpe_percentile": 87.3,
           "drawdown_percentile": 73.5,
           "funds_dominating": 181,
           "funds_dominating_pct": 26.1,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
-              "bot": "4.50%",
+              "bot": "4.60%",
               "reference": "9.10%",
               "verdict": false
             },
             {
               "dimension": "Return vs the median professional fund",
-              "bot": "4.50%",
-              "reference": "10.68%",
+              "bot": "4.60%",
+              "reference": "10.45%",
               "verdict": false
             },
             {
@@ -22135,14 +22135,14 @@
             },
             {
               "dimension": "Return per unit of drawdown",
-              "bot": "0.23",
-              "reference": "0.39",
+              "bot": "0.24",
+              "reference": "0.38",
               "verdict": false
             },
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.68",
-              "reference": "0.35",
+              "reference": "0.33",
               "verdict": true
             },
             {
@@ -22152,56 +22152,56 @@
               "verdict": true
             }
           ],
-          "verdict": "The account's 4.5% CAGR is below 97% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-19% against a fund median of -28%).",
+          "verdict": "The account's 4.6% CAGR is below 97% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-19% against a fund median of -28%).",
           "uncertainty": {
-            "trades": 1741,
-            "eligible_pool": 43089,
-            "point_estimate_cagr": 4.5,
-            "ci_low_cagr": 12.04,
-            "ci_high_cagr": 24.62,
-            "median_resample_cagr": 17.96,
+            "trades": 1742,
+            "eligible_pool": 43091,
+            "point_estimate_cagr": 4.6,
+            "ci_low_cagr": 12.11,
+            "ci_high_cagr": 24.4,
+            "median_resample_cagr": 17.95,
             "share_positive": 100.0,
             "share_beating_index": 99.4,
-            "share_beating_fund_median": 98.0,
-            "note": "1,741 trades drawn from 43,089 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 12.0% and 24.6% a year, with a median of 18.0% \u2014 against a realised 4.5%. The width is what 1,741 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
+            "share_beating_fund_median": 98.3,
+            "note": "1,742 trades drawn from 43,091 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 12.1% and 24.4% a year, with a median of 18.0% \u2014 against a realised 4.6%. The width is what 1,742 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
           }
         },
         {
           "run": "playbook_no_vol_adjust",
           "window_years": 3,
-          "bot_cagr_pct": 3.42,
+          "bot_cagr_pct": 3.51,
           "bot_max_drawdown_pct": -17.59,
-          "bot_sharpe": 0.59,
+          "bot_sharpe": 0.6,
           "index_cagr_pct": 9.1,
           "funds_counted": 694,
-          "fund_median_cagr": 10.68,
-          "fund_p75_cagr": 14.26,
-          "fund_p90_cagr": 17.46,
-          "fund_best_cagr": 36.83,
+          "fund_median_cagr": 10.45,
+          "fund_p75_cagr": 13.95,
+          "fund_p90_cagr": 16.93,
+          "fund_best_cagr": 36.05,
           "percentile": 1.2,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -27.5,
           "drawdown_better_than_median": true,
-          "bot_return_per_drawdown": 0.194,
-          "fund_return_per_drawdown": 0.388,
+          "bot_return_per_drawdown": 0.2,
+          "fund_return_per_drawdown": 0.38,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.35,
-          "sharpe_percentile": 80.8,
+          "fund_median_sharpe": 0.33,
+          "sharpe_percentile": 82.9,
           "drawdown_percentile": 79.8,
           "funds_dominating": 140,
           "funds_dominating_pct": 20.2,
           "scorecard": [
             {
               "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
-              "bot": "3.42%",
+              "bot": "3.51%",
               "reference": "9.10%",
               "verdict": false
             },
             {
               "dimension": "Return vs the median professional fund",
-              "bot": "3.42%",
-              "reference": "10.68%",
+              "bot": "3.51%",
+              "reference": "10.45%",
               "verdict": false
             },
             {
@@ -22212,14 +22212,14 @@
             },
             {
               "dimension": "Return per unit of drawdown",
-              "bot": "0.19",
-              "reference": "0.39",
+              "bot": "0.20",
+              "reference": "0.38",
               "verdict": false
             },
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
-              "bot": "0.59",
-              "reference": "0.35",
+              "bot": "0.60",
+              "reference": "0.33",
               "verdict": true
             },
             {
@@ -22229,7 +22229,7 @@
               "verdict": true
             }
           ],
-          "verdict": "The account's 3.4% CAGR is below 99% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-18% against a fund median of -28%)."
+          "verdict": "The account's 3.5% CAGR is below 99% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-18% against a fund median of -28%)."
         },
         {
           "run": "reactive_held_out",
@@ -22239,21 +22239,21 @@
           "bot_sharpe": 0.03,
           "index_cagr_pct": 9.1,
           "funds_counted": 694,
-          "fund_median_cagr": 10.68,
-          "fund_p75_cagr": 14.26,
-          "fund_p90_cagr": 17.46,
-          "fund_best_cagr": 36.83,
-          "percentile": 0.6,
+          "fund_median_cagr": 10.45,
+          "fund_p75_cagr": 13.95,
+          "fund_p90_cagr": 16.93,
+          "fund_best_cagr": 36.05,
+          "percentile": 0.3,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -27.5,
           "drawdown_better_than_median": false,
           "bot_return_per_drawdown": -0.091,
-          "fund_return_per_drawdown": 0.388,
+          "fund_return_per_drawdown": 0.38,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.35,
-          "sharpe_percentile": 12.4,
-          "drawdown_percentile": 44.8,
+          "fund_median_sharpe": 0.33,
+          "sharpe_percentile": 13.4,
+          "drawdown_percentile": 45.0,
           "funds_dominating": 381,
           "funds_dominating_pct": 54.9,
           "scorecard": [
@@ -22266,7 +22266,7 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "-2.78%",
-              "reference": "10.68%",
+              "reference": "10.45%",
               "verdict": false
             },
             {
@@ -22278,13 +22278,13 @@
             {
               "dimension": "Return per unit of drawdown",
               "bot": "-0.09",
-              "reference": "0.39",
+              "reference": "0.38",
               "verdict": false
             },
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.03",
-              "reference": "0.35",
+              "reference": "0.33",
               "verdict": false
             },
             {
@@ -22294,7 +22294,7 @@
               "verdict": false
             }
           ],
-          "verdict": "The account's -2.8% CAGR is below 99% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, but with a deeper worst drawdown (-31% against a fund median of -28%)."
+          "verdict": "The account's -2.8% CAGR is below 100% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, but with a deeper worst drawdown (-31% against a fund median of -28%)."
         },
         {
           "run": "no_gating",
@@ -22304,20 +22304,20 @@
           "bot_sharpe": 0.14,
           "index_cagr_pct": 9.64,
           "funds_counted": 329,
-          "fund_median_cagr": 12.53,
-          "fund_p75_cagr": 14.91,
-          "fund_p90_cagr": 16.74,
-          "fund_best_cagr": 20.89,
+          "fund_median_cagr": 12.45,
+          "fund_p75_cagr": 14.79,
+          "fund_p90_cagr": 16.61,
+          "fund_best_cagr": 20.75,
           "percentile": 0.0,
           "beats_median": false,
           "beats_index": false,
           "fund_median_drawdown": -35.97,
           "drawdown_better_than_median": false,
           "bot_return_per_drawdown": 0.023,
-          "fund_return_per_drawdown": 0.348,
+          "fund_return_per_drawdown": 0.346,
           "risk_adjusted_better": false,
-          "fund_median_sharpe": 0.31,
-          "sharpe_percentile": 22.5,
+          "fund_median_sharpe": 0.29,
+          "sharpe_percentile": 24.0,
           "drawdown_percentile": 11.9,
           "funds_dominating": 290,
           "funds_dominating_pct": 88.1,
@@ -22331,7 +22331,7 @@
             {
               "dimension": "Return vs the median professional fund",
               "bot": "1.01%",
-              "reference": "12.53%",
+              "reference": "12.45%",
               "verdict": false
             },
             {
@@ -22349,7 +22349,7 @@
             {
               "dimension": "Sharpe ratio (how professionals are measured)",
               "bot": "0.14",
-              "reference": "0.31",
+              "reference": "0.29",
               "verdict": false
             },
             {
@@ -22365,39 +22365,39 @@
       "headline": {
         "run": "playbook_held_out",
         "window_years": 3,
-        "bot_cagr_pct": 4.5,
-        "bot_max_drawdown_pct": -19.15,
+        "bot_cagr_pct": 4.6,
+        "bot_max_drawdown_pct": -19.14,
         "bot_sharpe": 0.68,
         "index_cagr_pct": 9.1,
         "funds_counted": 694,
-        "fund_median_cagr": 10.68,
-        "fund_p75_cagr": 14.26,
-        "fund_p90_cagr": 17.46,
-        "fund_best_cagr": 36.83,
+        "fund_median_cagr": 10.45,
+        "fund_p75_cagr": 13.95,
+        "fund_p90_cagr": 16.93,
+        "fund_best_cagr": 36.05,
         "percentile": 3.2,
         "beats_median": false,
         "beats_index": false,
         "fund_median_drawdown": -27.5,
         "drawdown_better_than_median": true,
-        "bot_return_per_drawdown": 0.235,
-        "fund_return_per_drawdown": 0.388,
+        "bot_return_per_drawdown": 0.24,
+        "fund_return_per_drawdown": 0.38,
         "risk_adjusted_better": false,
-        "fund_median_sharpe": 0.35,
-        "sharpe_percentile": 86.3,
+        "fund_median_sharpe": 0.33,
+        "sharpe_percentile": 87.3,
         "drawdown_percentile": 73.5,
         "funds_dominating": 181,
         "funds_dominating_pct": 26.1,
         "scorecard": [
           {
             "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
-            "bot": "4.50%",
+            "bot": "4.60%",
             "reference": "9.10%",
             "verdict": false
           },
           {
             "dimension": "Return vs the median professional fund",
-            "bot": "4.50%",
-            "reference": "10.68%",
+            "bot": "4.60%",
+            "reference": "10.45%",
             "verdict": false
           },
           {
@@ -22408,14 +22408,14 @@
           },
           {
             "dimension": "Return per unit of drawdown",
-            "bot": "0.23",
-            "reference": "0.39",
+            "bot": "0.24",
+            "reference": "0.38",
             "verdict": false
           },
           {
             "dimension": "Sharpe ratio (how professionals are measured)",
             "bot": "0.68",
-            "reference": "0.35",
+            "reference": "0.33",
             "verdict": true
           },
           {
@@ -22425,18 +22425,18 @@
             "verdict": true
           }
         ],
-        "verdict": "The account's 4.5% CAGR is below 97% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-19% against a fund median of -28%).",
+        "verdict": "The account's 4.6% CAGR is below 97% of 694 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-19% against a fund median of -28%).",
         "uncertainty": {
-          "trades": 1741,
-          "eligible_pool": 43089,
-          "point_estimate_cagr": 4.5,
-          "ci_low_cagr": 12.04,
-          "ci_high_cagr": 24.62,
-          "median_resample_cagr": 17.96,
+          "trades": 1742,
+          "eligible_pool": 43091,
+          "point_estimate_cagr": 4.6,
+          "ci_low_cagr": 12.11,
+          "ci_high_cagr": 24.4,
+          "median_resample_cagr": 17.95,
           "share_positive": 100.0,
           "share_beating_index": 99.4,
-          "share_beating_fund_median": 98.0,
-          "note": "1,741 trades drawn from 43,089 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 12.0% and 24.6% a year, with a median of 18.0% \u2014 against a realised 4.5%. The width is what 1,741 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
+          "share_beating_fund_median": 98.3,
+          "note": "1,742 trades drawn from 43,091 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 12.1% and 24.4% a year, with a median of 18.0% \u2014 against a realised 4.6%. The width is what 1,742 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
         }
       },
       "answer": {
@@ -22453,7 +22453,7 @@
           "Return vs the median professional fund",
           "Return per unit of drawdown"
         ],
-        "summary": "Measured over 3 years it never saw, against 694 real funds: better on 3 of 6 measures, worse on 3. Only 181 of them (26.1%) beat it on return and drawdown at the same time \u2014 the comparison with no axis left to pick. On Sharpe, which is how professional performance is actually judged, it sits at the 86th percentile. It earns less than the median fund in raw return, and does so taking roughly half the drawdown."
+        "summary": "Measured over 3 years it never saw, against 694 real funds: better on 3 of 6 measures, worse on 3. Only 181 of them (26.1%) beat it on return and drawdown at the same time \u2014 the comparison with no axis left to pick. On Sharpe, which is how professional performance is actually judged, it sits at the 87th percentile. It earns less than the median fund in raw return, and does so taking roughly half the drawdown."
       },
       "caveats": [
         "Fund returns are realised money; the bot's are simulated. A simulation never hesitates, never oversleeps, and never sizes down after three losses in a row.",
@@ -22490,12 +22490,12 @@
           },
           {
             "label": "3-4.5%",
-            "trades": 68328,
+            "trades": 68333,
             "win_rate": 28.8,
             "avg_r": 0.173,
             "payoff": 3.05,
-            "oos_trades": 28414,
-            "oos_avg_r": 0.184
+            "oos_trades": 28419,
+            "oos_avg_r": 0.185
           },
           {
             "label": "4.5-6%",
@@ -22547,26 +22547,26 @@
           },
           {
             "label": "5-8%",
-            "trades": 60563,
+            "trades": 60565,
             "win_rate": 28.4,
             "avg_r": 0.185,
             "payoff": 3.15,
-            "oos_trades": 24884,
-            "oos_avg_r": 0.211
+            "oos_trades": 24886,
+            "oos_avg_r": 0.212
           },
           {
             "label": "over 8%",
-            "trades": 68370,
+            "trades": 68373,
             "win_rate": 30.3,
             "avg_r": 0.128,
             "payoff": 2.72,
-            "oos_trades": 26035,
-            "oos_avg_r": 0.16
+            "oos_trades": 26038,
+            "oos_avg_r": 0.161
           }
         ],
         "monotone": true,
         "spread_r": 0.377,
-        "oos_spread_r": 0.471,
+        "oos_spread_r": 0.47,
         "verdict": "Monotone in-sample (spread 0.38R) and the direction holds out-of-sample (spread 0.47R). This is a real entry-time effect. Stop width is set as a multiple of ATR, so this is the same effect as the volatility study above, rescaled. Treat the two as one finding.",
         "duplicates": "atr_pct_at_entry"
       },
@@ -22586,12 +22586,12 @@
           },
           {
             "label": "8-15% off",
-            "trades": 21826,
+            "trades": 21831,
             "win_rate": 29.9,
-            "avg_r": 0.059,
-            "payoff": 2.53,
-            "oos_trades": 8790,
-            "oos_avg_r": -0.149
+            "avg_r": 0.06,
+            "payoff": 2.54,
+            "oos_trades": 8795,
+            "oos_avg_r": -0.147
           },
           {
             "label": "3-8% off",
@@ -22613,8 +22613,8 @@
           }
         ],
         "monotone": false,
-        "spread_r": 0.602,
-        "oos_spread_r": 1.355,
+        "spread_r": 0.601,
+        "oos_spread_r": 1.353,
         "verdict": "No consistent gradient across buckets (spread 0.60R). Any single cutoff here would be a cherry-pick.",
         "duplicates": null
       },
@@ -22643,12 +22643,12 @@
           },
           {
             "label": "45-60%",
-            "trades": 30650,
+            "trades": 30655,
             "win_rate": 24.8,
-            "avg_r": -0.047,
+            "avg_r": -0.046,
             "payoff": 2.85,
-            "oos_trades": 15556,
-            "oos_avg_r": -0.027
+            "oos_trades": 15561,
+            "oos_avg_r": -0.026
           },
           {
             "label": "60-75%",
@@ -22670,9 +22670,9 @@
           }
         ],
         "monotone": false,
-        "spread_r": 0.405,
-        "oos_spread_r": 0.414,
-        "verdict": "No consistent gradient across buckets (spread 0.41R). Any single cutoff here would be a cherry-pick.",
+        "spread_r": 0.404,
+        "oos_spread_r": 0.413,
+        "verdict": "No consistent gradient across buckets (spread 0.40R). Any single cutoff here would be a cherry-pick.",
         "duplicates": null
       },
       {
@@ -22682,38 +22682,38 @@
         "buckets": [
           {
             "label": "over 25% off high",
-            "trades": 9157,
+            "trades": 9156,
             "win_rate": 26.8,
             "avg_r": -0.05,
             "payoff": 2.55,
-            "oos_trades": 3648,
-            "oos_avg_r": -0.16
+            "oos_trades": 3647,
+            "oos_avg_r": -0.159
           },
           {
             "label": "12-25% off",
-            "trades": 39985,
+            "trades": 39987,
             "win_rate": 27.4,
-            "avg_r": 0.091,
+            "avg_r": 0.092,
             "payoff": 2.97,
-            "oos_trades": 16685,
+            "oos_trades": 16687,
             "oos_avg_r": 0.124
           },
           {
             "label": "5-12% off",
-            "trades": 46569,
+            "trades": 46570,
             "win_rate": 31.1,
             "avg_r": 0.25,
             "payoff": 3.01,
-            "oos_trades": 18268,
-            "oos_avg_r": 0.319
+            "oos_trades": 18269,
+            "oos_avg_r": 0.32
           },
           {
             "label": "1-5% off",
-            "trades": 36428,
+            "trades": 36429,
             "win_rate": 30.6,
             "avg_r": 0.198,
             "payoff": 2.9,
-            "oos_trades": 13871,
+            "oos_trades": 13872,
             "oos_avg_r": 0.266
           },
           {
@@ -22728,7 +22728,7 @@
         ],
         "monotone": false,
         "spread_r": 0.3,
-        "oos_spread_r": 0.546,
+        "oos_spread_r": 0.545,
         "verdict": "No consistent gradient across buckets (spread 0.30R). Any single cutoff here would be a cherry-pick.",
         "duplicates": null
       },
@@ -22748,38 +22748,38 @@
           },
           {
             "label": "0-10% above",
-            "trades": 32365,
+            "trades": 32364,
             "win_rate": 29.1,
             "avg_r": 0.162,
             "payoff": 2.98,
-            "oos_trades": 14223,
-            "oos_avg_r": 0.213
+            "oos_trades": 14222,
+            "oos_avg_r": 0.214
           },
           {
             "label": "10-25% above",
-            "trades": 49187,
+            "trades": 49189,
             "win_rate": 29.7,
             "avg_r": 0.173,
             "payoff": 2.93,
-            "oos_trades": 20720,
+            "oos_trades": 20722,
             "oos_avg_r": 0.259
           },
           {
             "label": "25-50% above",
-            "trades": 40573,
+            "trades": 40575,
             "win_rate": 30.0,
             "avg_r": 0.185,
             "payoff": 2.94,
-            "oos_trades": 15544,
+            "oos_trades": 15546,
             "oos_avg_r": 0.246
           },
           {
             "label": "over 50% above",
-            "trades": 19543,
+            "trades": 19545,
             "win_rate": 29.1,
             "avg_r": 0.184,
             "payoff": 3.06,
-            "oos_trades": 6025,
+            "oos_trades": 6027,
             "oos_avg_r": 0.114
           }
         ],
@@ -22796,21 +22796,21 @@
         "buckets": [
           {
             "label": "calm",
-            "trades": 61215,
+            "trades": 61219,
             "win_rate": 29.8,
             "avg_r": 0.247,
             "payoff": 3.16,
-            "oos_trades": 26355,
-            "oos_avg_r": 0.539
+            "oos_trades": 26359,
+            "oos_avg_r": 0.54
           },
           {
             "label": "normal",
-            "trades": 63917,
+            "trades": 63918,
             "win_rate": 28.2,
             "avg_r": 0.073,
             "payoff": 2.81,
-            "oos_trades": 22389,
-            "oos_avg_r": -0.122
+            "oos_trades": 22390,
+            "oos_avg_r": -0.121
           },
           {
             "label": "stressed",
@@ -22853,20 +22853,20 @@
           },
           {
             "label": "25-60%",
-            "trades": 39276,
+            "trades": 39277,
             "win_rate": 29.9,
             "avg_r": 0.191,
             "payoff": 2.97,
-            "oos_trades": 16398,
+            "oos_trades": 16399,
             "oos_avg_r": 0.347
           },
           {
             "label": "60-120%",
-            "trades": 33602,
+            "trades": 33605,
             "win_rate": 29.7,
             "avg_r": 0.19,
             "payoff": 3.0,
-            "oos_trades": 13274,
+            "oos_trades": 13277,
             "oos_avg_r": 0.247
           },
           {
@@ -22910,35 +22910,35 @@
           },
           {
             "label": "1.5-2.5x",
-            "trades": 35532,
+            "trades": 35531,
             "win_rate": 30.0,
             "avg_r": 0.177,
             "payoff": 2.91,
-            "oos_trades": 13279,
+            "oos_trades": 13278,
             "oos_avg_r": 0.226
           },
           {
             "label": "2.5-4x",
-            "trades": 22871,
+            "trades": 22874,
             "win_rate": 29.5,
             "avg_r": 0.186,
             "payoff": 3.01,
-            "oos_trades": 8560,
+            "oos_trades": 8563,
             "oos_avg_r": 0.288
           },
           {
             "label": "over 4x",
-            "trades": 26343,
+            "trades": 26346,
             "win_rate": 28.5,
-            "avg_r": 0.101,
+            "avg_r": 0.102,
             "payoff": 2.86,
-            "oos_trades": 12384,
-            "oos_avg_r": 0.159
+            "oos_trades": 12387,
+            "oos_avg_r": 0.16
           }
         ],
         "monotone": false,
-        "spread_r": 0.111,
-        "oos_spread_r": 0.129,
+        "spread_r": 0.11,
+        "oos_spread_r": 0.128,
         "verdict": "No consistent gradient across buckets (spread 0.11R). Any single cutoff here would be a cherry-pick.",
         "duplicates": null
       },
@@ -22958,29 +22958,29 @@
           },
           {
             "label": "0-10%",
-            "trades": 32721,
+            "trades": 32722,
             "win_rate": 30.1,
             "avg_r": 0.213,
             "payoff": 3.01,
-            "oos_trades": 13797,
+            "oos_trades": 13798,
             "oos_avg_r": 0.281
           },
           {
             "label": "10-25%",
-            "trades": 42929,
+            "trades": 42930,
             "win_rate": 30.3,
             "avg_r": 0.151,
             "payoff": 2.79,
-            "oos_trades": 17374,
+            "oos_trades": 17375,
             "oos_avg_r": 0.235
           },
           {
             "label": "25-50%",
-            "trades": 30498,
+            "trades": 30501,
             "win_rate": 30.4,
             "avg_r": 0.197,
             "payoff": 2.93,
-            "oos_trades": 11735,
+            "oos_trades": 11738,
             "oos_avg_r": 0.217
           },
           {
@@ -23006,20 +23006,20 @@
         "buckets": [
           {
             "label": "under Rs5cr",
-            "trades": 43254,
+            "trades": 43257,
             "win_rate": 28.4,
             "avg_r": 0.18,
             "payoff": 3.13,
-            "oos_trades": 12631,
-            "oos_avg_r": 0.223
+            "oos_trades": 12634,
+            "oos_avg_r": 0.224
           },
           {
             "label": "Rs5-15cr",
-            "trades": 36711,
+            "trades": 36713,
             "win_rate": 29.3,
             "avg_r": 0.165,
             "payoff": 2.96,
-            "oos_trades": 15170,
+            "oos_trades": 15172,
             "oos_avg_r": 0.2
           },
           {
@@ -23876,10 +23876,10 @@
         "to_status": "confirmed",
         "from_label": "Rejected",
         "to_label": "Confirmed",
-        "trades": 396,
-        "avg_r": 0.197,
-        "recent_avg_r": 0.272,
-        "note": "+0.20R across 396 trades, +0.27R on the last 229. Holding up."
+        "trades": 397,
+        "avg_r": 0.204,
+        "recent_avg_r": 0.284,
+        "note": "+0.20R across 397 trades, +0.28R on the last 230. Holding up."
       },
       {
         "as_of": "2026-10-01",
@@ -23902,10 +23902,10 @@
         "to_status": "confirmed",
         "from_label": "Rejected",
         "to_label": "Confirmed",
-        "trades": 3064,
-        "avg_r": 0.075,
-        "recent_avg_r": 0.001,
-        "note": "+0.08R across 3064 trades, +0.00R on the last 1346. Holding up."
+        "trades": 3065,
+        "avg_r": 0.077,
+        "recent_avg_r": 0.006,
+        "note": "+0.08R across 3065 trades, +0.01R on the last 1347. Holding up."
       },
       {
         "as_of": "2026-10-01",
@@ -23915,10 +23915,10 @@
         "to_status": "confirmed",
         "from_label": "Rejected",
         "to_label": "Confirmed",
-        "trades": 1845,
-        "avg_r": 0.012,
-        "recent_avg_r": 0.085,
-        "note": "+0.01R across 1845 trades, +0.09R on the last 1039. Holding up."
+        "trades": 1846,
+        "avg_r": 0.015,
+        "recent_avg_r": 0.09,
+        "note": "+0.01R across 1846 trades, +0.09R on the last 1040. Holding up."
       },
       {
         "as_of": "2026-10-01",
@@ -25757,6 +25757,19 @@
         "status_label": "Retired"
       },
       {
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "status": "confirmed",
+        "trades": 397,
+        "win_rate": 36.8,
+        "avg_r": 0.204,
+        "payoff": 2.28,
+        "recent_trades": 230,
+        "recent_avg_r": 0.284,
+        "note": "+0.20R across 397 trades, +0.28R on the last 230. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
         "strategy": "week52_breakout",
         "regime": "bull_strong",
         "status": "confirmed",
@@ -25767,19 +25780,6 @@
         "recent_trades": 801,
         "recent_avg_r": 0.316,
         "note": "+0.20R across 8181 trades, +0.32R on the last 801. Holding up.",
-        "status_label": "Confirmed"
-      },
-      {
-        "strategy": "gap_continuation",
-        "regime": "correction",
-        "status": "confirmed",
-        "trades": 396,
-        "win_rate": 36.6,
-        "avg_r": 0.197,
-        "payoff": 2.27,
-        "recent_trades": 229,
-        "recent_avg_r": 0.272,
-        "note": "+0.20R across 396 trades, +0.27R on the last 229. Holding up.",
         "status_label": "Confirmed"
       },
       {
@@ -25877,13 +25877,13 @@
         "strategy": "nr7_release",
         "regime": "correction",
         "status": "confirmed",
-        "trades": 3064,
+        "trades": 3065,
         "win_rate": 29.6,
-        "avg_r": 0.075,
-        "payoff": 2.62,
-        "recent_trades": 1346,
-        "recent_avg_r": 0.001,
-        "note": "+0.08R across 3064 trades, +0.00R on the last 1346. Holding up.",
+        "avg_r": 0.077,
+        "payoff": 2.63,
+        "recent_trades": 1347,
+        "recent_avg_r": 0.006,
+        "note": "+0.08R across 3065 trades, +0.01R on the last 1347. Holding up.",
         "status_label": "Confirmed"
       },
       {
@@ -25978,6 +25978,19 @@
         "status_label": "Retired"
       },
       {
+        "strategy": "momentum_burst",
+        "regime": "correction",
+        "status": "confirmed",
+        "trades": 1846,
+        "win_rate": 31.1,
+        "avg_r": 0.015,
+        "payoff": 2.26,
+        "recent_trades": 1040,
+        "recent_avg_r": 0.09,
+        "note": "+0.01R across 1846 trades, +0.09R on the last 1040. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
         "strategy": "pocket_pivot",
         "regime": "recovery",
         "status": "retired",
@@ -25989,19 +26002,6 @@
         "recent_avg_r": -0.477,
         "note": "+0.01R across 1477 trades overall, but -0.48R on the 671 most recent. The edge is not currently there.",
         "status_label": "Retired"
-      },
-      {
-        "strategy": "momentum_burst",
-        "regime": "correction",
-        "status": "confirmed",
-        "trades": 1845,
-        "win_rate": 31.1,
-        "avg_r": 0.012,
-        "payoff": 2.25,
-        "recent_trades": 1039,
-        "recent_avg_r": 0.085,
-        "note": "+0.01R across 1845 trades, +0.09R on the last 1039. Holding up.",
-        "status_label": "Confirmed"
       },
       {
         "strategy": "pullback_ema21",
@@ -26033,13 +26033,13 @@
         "strategy": "week52_breakout",
         "regime": "correction",
         "status": "rejected",
-        "trades": 893,
-        "win_rate": 27.0,
-        "avg_r": -0.06,
-        "payoff": 2.49,
-        "recent_trades": 405,
-        "recent_avg_r": -0.053,
-        "note": "-0.06R across 893 trades, -0.05R on the last 405. Holding up.",
+        "trades": 894,
+        "win_rate": 27.1,
+        "avg_r": -0.059,
+        "payoff": 2.48,
+        "recent_trades": 406,
+        "recent_avg_r": -0.05,
+        "note": "-0.06R across 894 trades, -0.05R on the last 406. Holding up.",
         "status_label": "Rejected"
       },
       {
@@ -26072,13 +26072,13 @@
         "strategy": "minervini_breakout",
         "regime": "correction",
         "status": "rejected",
-        "trades": 1288,
+        "trades": 1289,
         "win_rate": 23.4,
-        "avg_r": -0.109,
-        "payoff": 2.82,
-        "recent_trades": 545,
-        "recent_avg_r": -0.31,
-        "note": "-0.11R across 1288 trades, -0.31R on the last 545. Holding up.",
+        "avg_r": -0.108,
+        "payoff": 2.81,
+        "recent_trades": 546,
+        "recent_avg_r": -0.307,
+        "note": "-0.11R across 1289 trades, -0.31R on the last 546. Holding up.",
         "status_label": "Rejected"
       },
       {
@@ -43497,28 +43497,28 @@
     },
     {
       "strategy": "pocket_pivot",
-      "symbol": "CENTUM",
+      "symbol": "GULFOILLUB",
       "signal_day": "2025-05-23",
       "entry_day": "2025-05-26",
-      "exit_day": "2025-09-30",
-      "entry": 2299.78,
-      "stop": 2044.5,
-      "exit_price": 2654.37,
-      "exit_reason": "time",
-      "sessions_held": 90,
-      "r_multiple": 1.366,
-      "gross_pct": 15.42,
-      "net_pct": 15.17,
-      "mae_r": -0.92,
-      "mfe_r": 2.9,
-      "risk_pct": 11.1,
-      "atr_pct_at_entry": 5.52,
-      "ret_63_at_entry": 49.2,
-      "ret_252_at_entry": 25.78,
-      "dist_52w_high_at_entry": -5.88,
-      "rel_volume_at_entry": 9.32,
-      "turnover_crore_at_entry": 5.18,
-      "above_200dma_pct_at_entry": 35.18,
+      "exit_day": "2025-06-06",
+      "entry": 1167.47,
+      "stop": 1077.91,
+      "exit_price": 1073.6,
+      "exit_reason": "stop",
+      "sessions_held": 10,
+      "r_multiple": -1.078,
+      "gross_pct": -8.04,
+      "net_pct": -8.27,
+      "mae_r": -1.09,
+      "mfe_r": 0.07,
+      "risk_pct": 7.67,
+      "atr_pct_at_entry": 3.87,
+      "ret_63_at_entry": 12.86,
+      "ret_252_at_entry": 37.6,
+      "dist_52w_high_at_entry": -15.65,
+      "rel_volume_at_entry": 4.1,
+      "turnover_crore_at_entry": 10.81,
+      "above_200dma_pct_at_entry": 4.49,
       "regime": "choppy",
       "volatility_band": "stressed"
     },
@@ -60646,9 +60646,9 @@
       "signal_day": "2025-05-27",
       "entry_day": "2025-05-28",
       "exit_day": "2025-06-04",
-      "entry": 22.44,
-      "stop": 20.44,
-      "exit_price": 20.31,
+      "entry": 22.33,
+      "stop": 20.34,
+      "exit_price": 20.21,
       "exit_reason": "stop",
       "sessions_held": 6,
       "r_multiple": -1.092,
@@ -60662,7 +60662,7 @@
       "ret_252_at_entry": 65.32,
       "dist_52w_high_at_entry": -20.9,
       "rel_volume_at_entry": 5.64,
-      "turnover_crore_at_entry": 4.78,
+      "turnover_crore_at_entry": 4.76,
       "above_200dma_pct_at_entry": 15.7,
       "regime": "choppy",
       "volatility_band": "stressed"
