@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import embed, model, projection, render, rules, shape, similarity
+from . import embed, feedback, model, projection, render, rules, shape, similarity
 
 MIN_TURNOVER_CRORE = 2.0
 STALE_DAYS = 6
@@ -38,6 +38,7 @@ class Library:
     X_ref_scales: dict[str, dict[int, np.ndarray]] = field(default_factory=dict)
     F_ref: dict[str, np.ndarray] = field(default_factory=dict)
     head: object = None
+    feedback_weights: object = None  # per shape feature, learned from 👍/👎 (None = equal)
 
 
 def load_library(data_dir: Path) -> Library:
@@ -70,6 +71,7 @@ def load_library(data_dir: Path) -> Library:
         },
         F_ref={s: arrays[f"{s}__F_ref"] for s in styles if f"{s}__F_ref" in arrays},
         head=projection.load(data_dir),
+        feedback_weights=feedback.load_weights(library_dir(data_dir)),
     )
 
 
@@ -103,6 +105,7 @@ class Scored:
     F: np.ndarray | None = None          # measured shapes
     shape_d: dict[str, np.ndarray] = field(default_factory=dict)  # shape distance to each style's references
     head: object = None
+    feedback_weights: object = None
 
     def nearest(self, style: str, i: int, k: int) -> np.ndarray:
         """The closest references to stock `i`: all three similarity layers."""
@@ -117,7 +120,7 @@ class Scored:
         cos = similarity.blended_cosine(self.Xs, self.Xs, self.head)
         d = None
         if self.F is not None:
-            d = similarity.shape_distances(self.F, self.F, shape.robust_scale(self.F))
+            d = similarity.shape_distances(self.F, self.F, shape.robust_scale(self.F), weights=self.feedback_weights)
         return [similarity.ranked(cos[i], None if d is None else d[i], k, exclude=i) for i in range(len(cos))]
 
 
@@ -185,7 +188,7 @@ def score(universe, index, library: Library, as_of: date | None = None) -> Score
         pct[style] = model.percentile_against(lg, library.cal_logits[style])
         sims[style] = similarity.blended_cosine(Xs, library.X_ref_scales.get(style, {render.WINDOW: library.X_ref[style]}), library.head)
         if style in library.F_ref:
-            shape_d[style] = similarity.shape_distances(F, library.F_ref[style], F_scale)
+            shape_d[style] = similarity.shape_distances(F, library.F_ref[style], F_scale, weights=library.feedback_weights)
     return Scored(
         as_of=latest,
         symbols=[r[0] for r in rows],
@@ -203,6 +206,7 @@ def score(universe, index, library: Library, as_of: date | None = None) -> Score
         F=F,
         shape_d=shape_d,
         head=library.head,
+        feedback_weights=library.feedback_weights,
     )
 
 

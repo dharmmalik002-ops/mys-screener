@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Query
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,8 @@ PICKS_FILE = "lookalike_picks.json"
 REFS_FILE = "lookalike_refs.json"
 INDEX_FILE = "lookalike_index.json"
 DAYS_DIR = "lookalike_days"
-PUBLIC_FILES = (RESULT_FILE, PICKS_FILE, REFS_FILE, INDEX_FILE)
+VOTES_BACKUP_FILE = "lookalike_feedback_votes.json"
+PUBLIC_FILES = (RESULT_FILE, PICKS_FILE, REFS_FILE, INDEX_FILE, VOTES_BACKUP_FILE)
 
 # The evening job on the workstation commits both files with [skip ci], so no
 # deploy carries them to the Space — the same situation as breakout_stats.json
@@ -95,8 +96,14 @@ def _maybe_pull_in_background(data_dir: Path) -> None:
     threading.Thread(target=run, name="lookalike-pull", daemon=True).start()
 
 
-def build_lookalike_router(data_dir: Path) -> APIRouter:
+SHOW_NEAR, SHOW_PEERS = 5, 6
+
+
+def build_lookalike_router(data_dir: Path, database_url: str | None = None, state_dir: Path | None = None) -> APIRouter:
+    from app.services.lookalike import feedback as fb
+
     router = APIRouter(prefix="/api/lookalikes", tags=["lookalikes"])
+    votes_store = fb.FeedbackStore(database_url, state_dir, backup=data_dir / fb.BACKUP_FILE)
     cache: dict[str, Any] = {"mtime": None, "payload": None}
 
     @router.get("")
@@ -199,17 +206,35 @@ def build_lookalike_router(data_dir: Path) -> APIRouter:
             return {"available": False, "reason": "The similar-charts index has not been built yet."}
         sym = symbol.strip().upper()
         row = (index.get("symbols") or {}).get(sym)
+        try:
+            my_votes = votes_store.for_symbol(sym)
+        except Exception as exc:  # the votes store being down must not take the charts with it
+            logger.warning("look-alike votes unavailable: %s", exc)
+            my_votes = []
+        hidden = fb.hidden_for(my_votes, sym)
+        vote_of = {(v["kind"], v["target"]): v["vote"] for v in my_votes if v.get("session") == (row or {}).get("session")}
         if row is None:
             return {
                 "available": False,
                 "reason": f"{sym} was not in the last scan (it needs a year of history and at least ₹2 cr a day of turnover).",
                 "session": index.get("session"),
             }
-        keys = {k for st in row.get("styles", {}).values() for k, _ in st.get("near", [])}
+        styles = {}
+        for style, st in (row.get("styles") or {}).items():
+            near = [[k, sim] for k, sim in st.get("near", []) if ("ref", k) not in hidden][:SHOW_NEAR]
+            styles[style] = {**st, "near": near, "votes": {k: vote_of.get(("ref", k), 0) for k, _ in near}}
+        keys = {k for st in styles.values() for k, _ in st["near"]}
         peers = []
         for peer, sim in row.get("peers", []):
+            if ("peer", peer) in hidden:
+                continue
             other = index["symbols"].get(peer, {})
-            peers.append({"symbol": peer, "similarity": sim, "closes": other.get("closes"), "session": other.get("session")})
+            peers.append({
+                "symbol": peer, "similarity": sim, "closes": other.get("closes"),
+                "session": other.get("session"), "vote": vote_of.get(("peer", peer), 0),
+            })
+            if len(peers) == SHOW_PEERS:
+                break
         return {
             "available": True,
             "symbol": sym,
@@ -217,9 +242,32 @@ def build_lookalike_router(data_dir: Path) -> APIRouter:
             "index_session": index.get("session"),
             "template": row.get("template"),
             "closes": row.get("closes"),
-            "styles": row.get("styles"),
+            "styles": styles,
             "peers": peers,
             "refs": _refs(keys),
+            "feedback": index.get("feedback"),
+            "hidden": len(hidden),
         }
+
+    @router.post("/feedback")
+    def record_feedback(payload: dict = Body(...)) -> dict[str, Any]:
+        """👍 (1) / 👎 (-1) / undo (0) on one match for one stock and session."""
+        try:
+            saved = votes_store.record(
+                str(payload.get("query", "")), str(payload.get("session", "")), str(payload.get("kind", "")),
+                str(payload.get("target", "")), int(payload.get("vote", 0)), payload.get("style"),
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=400, detail=f"Bad vote: {exc}") from exc
+        except Exception as exc:
+            logger.warning("look-alike vote not saved: %s", exc)
+            raise HTTPException(status_code=503, detail="The vote could not be saved right now.") from exc
+        return {"ok": True, **saved, "counts": votes_store.counts()}
+
+    @router.get("/feedback")
+    def list_feedback(symbol: str | None = Query(default=None)) -> dict[str, Any]:
+        """Votes for one stock, or every vote (what the evening run learns from)."""
+        votes = votes_store.for_symbol(symbol) if symbol else votes_store.all()
+        return {"votes": votes, "counts": votes_store.counts()}
 
     return router

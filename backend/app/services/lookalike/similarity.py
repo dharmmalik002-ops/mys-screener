@@ -74,10 +74,10 @@ def ranked(cos_row: np.ndarray, shape_row: np.ndarray | None, k: int, exclude: i
     return pool[np.argsort(score, kind="stable")][:k]
 
 
-def shape_distances(FQ: np.ndarray, FR: np.ndarray, scale: np.ndarray, chunk: int = 256) -> np.ndarray:
+def shape_distances(FQ: np.ndarray, FR: np.ndarray, scale: np.ndarray, chunk: int = 256, weights=None) -> np.ndarray:
     out = np.empty((len(FQ), len(FR)))
     for s in range(0, len(FQ), chunk):
-        out[s : s + chunk] = shape.distance(FQ[s : s + chunk], FR, scale)
+        out[s : s + chunk] = shape.distance(FQ[s : s + chunk], FR, scale, weights)
     return out
 
 

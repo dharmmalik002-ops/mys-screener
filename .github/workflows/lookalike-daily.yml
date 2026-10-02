@@ -113,6 +113,37 @@ jobs:
         if: steps.due.outputs.run == 'true'
         run: python backend/scripts/build_deep_history.py
 
+      # The 👍/👎 votes live on the Space (Postgres or its disk). Copy them here
+      # so tonight's run can learn from them, and commit the copy so a Space
+      # restart without a database can restore them. A failed fetch keeps the
+      # last committed copy rather than wiping it.
+      - name: Fetch feedback votes
+        if: steps.due.outputs.run == 'true'
+        run: |
+          set -uo pipefail
+          OUT=backend/data/lookalike_feedback_votes.json
+          if curl -s -f --max-time 60 "https://dharmmalik-stock-scanner-backend.hf.space/api/lookalikes/feedback" -o /tmp/votes.json \
+             && python3 -c "import json; d=json.load(open('/tmp/votes.json')); assert isinstance(d.get('votes'), list)"; then
+            python3 - <<'PY'
+          import json
+          new = json.load(open("/tmp/votes.json"))
+          try:
+              old = json.load(open("backend/data/lookalike_feedback_votes.json"))
+          except Exception:
+              old = {"votes": []}
+          # Never shrink silently: keep committed votes the Space no longer has.
+          merged = {v["id"]: v for v in old.get("votes", []) if "id" in v}
+          merged.update({v["id"]: v for v in new["votes"] if "id" in v})
+          from datetime import datetime, timezone
+          json.dump({"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     "votes": sorted(merged.values(), key=lambda v: v["id"])},
+                    open("backend/data/lookalike_feedback_votes.json", "w"), indent=1)
+          print("votes:", len(merged))
+          PY
+          else
+            echo "could not fetch votes; keeping the committed copy"
+          fi
+
       - name: Review open picks, pick today, re-export
         if: steps.due.outputs.run == 'true'
         working-directory: backend
@@ -138,7 +169,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add backend/data/lookalikes.json backend/data/lookalike_picks.json backend/data/lookalike_refs.json \
-            backend/data/lookalike_index.json backend/data/lookalike_days backend/data/lookalike_state
+            backend/data/lookalike_index.json backend/data/lookalike_days backend/data/lookalike_state \
+            backend/data/lookalike_feedback_votes.json
           if git diff --cached --quiet; then
             echo "nothing new to publish"
             exit 0

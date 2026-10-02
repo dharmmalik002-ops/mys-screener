@@ -1,0 +1,23 @@
+{
+ "votes": {
+  "up": 0,
+  "down": 0
+ },
+ "in_use": false,
+ "weights": null,
+ "names": [
+  "below_high_pct",
+  "base_depth_pct",
+  "pullback_1_pct",
+  "pullback_2_pct",
+  "pullback_3_pct",
+  "tightness",
+  "volume_ratio",
+  "vs_sma50_pct",
+  "sma50_slope_pct",
+  "return_120_pct",
+  "return_250_pct"
+ ],
+ "status": "Learning from your feedback starts at 20 \ud83d\udc4d and 20 \ud83d\udc4e \u2014 so far 0 \ud83d\udc4d and 0 \ud83d\udc4e. Every \ud83d\udc4e already hides that match for that stock.",
+ "learned_at": "2026-10-02T03:12:29+00:00"
+}

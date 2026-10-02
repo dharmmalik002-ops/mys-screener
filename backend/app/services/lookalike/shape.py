@@ -103,11 +103,14 @@ def robust_scale(F: np.ndarray) -> np.ndarray:
     return np.where(np.isfinite(mad) & (mad > 0), mad, 1.0)
 
 
-def distance(A: np.ndarray, B: np.ndarray, scale: np.ndarray) -> np.ndarray:
+def distance(A: np.ndarray, B: np.ndarray, scale: np.ndarray, weights: np.ndarray | None = None) -> np.ndarray:
     """Mean scaled absolute difference between every row of A and every row of
     B, over the features both have, each capped at 3 so one wild feature cannot
-    decide a match. Shape (len(A), len(B))."""
+    decide a match. Shape (len(A), len(B)). `weights` (learned from 👍/👎,
+    feedback.py) make the features a user cares about count for more."""
     D = np.abs(A[:, None, :] - B[None, :, :]) / scale[None, None, :]
     D = np.minimum(D, 3.0)
     valid = np.isfinite(D)
-    return np.where(valid, D, 0.0).sum(axis=2) / np.maximum(valid.sum(axis=2), 1)
+    w = np.ones(A.shape[1]) if weights is None else np.asarray(weights, dtype=float)
+    W = np.where(valid, w[None, None, :], 0.0)
+    return (np.where(valid, D, 0.0) * W).sum(axis=2) / np.maximum(W.sum(axis=2), 1e-9)

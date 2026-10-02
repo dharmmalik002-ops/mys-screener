@@ -1055,7 +1055,14 @@ app.include_router(
 )
 # Chart look-alikes read one committed file written offline by
 # scripts/scan_lookalikes.py; the Space has neither torch nor the bar store.
-app.include_router(build_lookalike_router(Path(__file__).resolve().parents[1] / "data"))
+app.include_router(
+    build_lookalike_router(
+        Path(__file__).resolve().parents[1] / "data",
+        # 👍/👎 votes: Postgres when configured (durable), else APP_STATE_DIR
+        database_url=settings.database_url,
+        state_dir=settings.app_state_dir,
+    )
+)
 app.include_router(
     build_mutual_funds_router(
         MutualFundService(

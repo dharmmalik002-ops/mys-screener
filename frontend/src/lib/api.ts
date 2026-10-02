@@ -6177,10 +6177,29 @@ export type LookalikeSimilar =
       index_session: string;
       template: number | null;
       closes: number[] | null;
-      styles: Record<string, { percentile: number; near: Array<[string, number]> }>;
-      peers: Array<{ symbol: string; similarity: number; closes: number[] | null; session?: string }>;
+      styles: Record<string, { percentile: number; near: Array<[string, number]>; votes?: Record<string, number> }>;
+      peers: Array<{ symbol: string; similarity: number; closes: number[] | null; session?: string; vote?: number }>;
       refs: Record<string, LookalikeRefRow>;
+      feedback?: { status?: string; votes?: { up: number; down: number }; in_use?: boolean } | null;
+      hidden?: number;
     };
+
+export type LookalikeVote = {
+  query: string;
+  session: string;
+  kind: "ref" | "peer";
+  target: string;
+  vote: -1 | 0 | 1;
+  style?: string;
+};
+
+export function postLookalikeVote(vote: LookalikeVote) {
+  return request<{ ok: boolean; id: string; vote: number; counts: { up: number; down: number } }>(
+    "/api/lookalikes/feedback",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(vote) },
+    { timeoutMs: 20000 },
+  );
+}
 
 export function getLookalikeSimilar(symbol: string) {
   return whileWaking(

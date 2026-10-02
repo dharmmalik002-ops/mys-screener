@@ -309,6 +309,13 @@ function MatchCard({
             chart: reference.chart,
           }}
           onClose={() => setComparing(false)}
+          vote={{
+            query: match.symbol,
+            session: match.session,
+            kind: "ref",
+            target: `${reference.style}:${reference.ticker}@${reference.date}`,
+            style: reference.style,
+          }}
         />
       ) : null}
       {showRules ? <RuleChecklist flags={match.rules} labels={ruleLabels} /> : null}

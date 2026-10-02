@@ -29,7 +29,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.services.lookalike import picks, pipeline, scoring  # noqa: E402
+from app.services.lookalike import feedback, picks, pipeline, scoring  # noqa: E402
+from app.services.lookalike.pipeline import library_dir  # noqa: E402
 
 # The user chose to show every reference by name, including course examples.
 SHOW_REFERENCE_NAMES = True
@@ -56,6 +57,12 @@ def main() -> int:
     styles = ", ".join(f"{k} {v['references']}" for k, v in library.styles.items())
     print(f"library: {styles}; "
           f"universe {len(universe)} symbols through {latest} ({time.time() - t0:.0f}s)")
+
+    # 👍/👎: learn which shape details matter from the votes so far (a copy
+    # fetched from the Space by the workflow), before today is scored.
+    learned = feedback.learn_from_votes(args.data_dir, universe, library)
+    library.feedback_weights = feedback.load_weights(library_dir(args.data_dir))
+    print("feedback:", learned["status"])
 
     ledger = picks.load_ledger(args.data_dir)
     fps = picks.load_fingerprints(args.data_dir)
@@ -87,7 +94,7 @@ def main() -> int:
     baselines = picks.update_baselines(args.data_dir, ledger, universe, index)
     out = picks.export(args.data_dir, ledger, fb, library, baselines, universe=universe)
     picks.export_refs(args.data_dir, library)
-    picks.export_index(args.data_dir, today, library)
+    picks.export_index(args.data_dir, today, library, feedback_status=learned)
 
     s = out["summary"]
     print(f"\ntoday {today.as_of}: {len(made)} picks — " + ", ".join(p["symbol"] for p in made))

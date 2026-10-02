@@ -284,3 +284,17 @@
 .lookalike-modal-backdrop:has(.lookalike-modal.is-wide) { padding: 2vh 1vw; }
 .lookalike-modal.is-wide .lookalike-compare { gap: 20px; }
 .lookalike-similar-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+
+.lookalike-votes { display: inline-flex; align-items: center; gap: 4px; }
+.lookalike-vote {
+  border: 1px solid var(--line); background: var(--surface-strong, #fff); border-radius: var(--radius-pill);
+  padding: 2px 8px; font-size: 0.85rem; line-height: 1.2; cursor: pointer; filter: grayscale(0.6); opacity: 0.75;
+}
+.lookalike-vote:hover { opacity: 1; filter: none; }
+.lookalike-vote.is-up { background: color-mix(in srgb, var(--positive) 22%, transparent); border-color: var(--positive); filter: none; opacity: 1; }
+.lookalike-vote.is-down { background: color-mix(in srgb, var(--negative) 18%, transparent); border-color: var(--negative); filter: none; opacity: 1; }
+.lookalike-vote-error { font-size: var(--fs-tiny); color: var(--negative); }
+.lookalike-similar-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.lookalike-similar-card.is-rejected { opacity: 0.45; }
+.lookalike-similar-card a.lookalike-similar-meta { text-decoration: none; }
+.lookalike-feedback-status { margin-top: 4px; }

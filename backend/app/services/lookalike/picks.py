@@ -54,6 +54,9 @@ REFS_FILE = "lookalike_refs.json"     # under data/ (served): every reference wi
 INDEX_FILE = "lookalike_index.json"   # under data/ (served): per-stock similar charts, today
 DAYS_DIR = "lookalike_days"           # under data/ (served): one file per pick day
 PEERS = 6
+# The index keeps a few more than the page shows, so a match hidden by a 👎
+# is replaced by the next one rather than leaving a gap.
+INDEX_NEAR, INDEX_PEERS = 8, 10
 
 # The learner may reorder picks only after this much evidence, judged on picks
 # it did not learn from. Declared, not tuned.
@@ -534,18 +537,18 @@ def _pick_chart(p: dict, by_symbol: dict) -> dict | None:
     return render.extended(bars.open, bars.high, bars.low, bars.close, bars.volume, idx, bars.dates)
 
 
-def export_index(data_dir: Path, scored: Scored, library: Library) -> dict:
+def export_index(data_dir: Path, scored: Scored, library: Library, feedback_status: dict | None = None) -> dict:
     """For every stock scanned today: how much it looks like each style, its
     closest examples, and the Indian stocks whose charts look most like it.
     What the "Similar charts" button on the big chart reads — the Space has no
     image model, so this is computed here, once a day, for every stock."""
     peer_cos = similarity.blended_cosine(scored.Xs, scored.Xs, scored.head) if scored.Xs else scored.X @ scored.X.T
-    peer_lists = scored.peers(PEERS)
+    peer_lists = scored.peers(INDEX_PEERS)
     symbols = {}
     for i, sym in enumerate(scored.symbols):
         styles = {}
         for style in library.styles:
-            near = scored.nearest(style, i, 5)
+            near = scored.nearest(style, i, INDEX_NEAR)
             styles[style] = {
                 "percentile": round(float(scored.percentile[style][i]), 1),
                 "near": [[ref_key(library.refs[style][j]), round(scored.alike(style, i, j), 3)] for j in near],
@@ -561,7 +564,13 @@ def export_index(data_dir: Path, scored: Scored, library: Library) -> dict:
             # enough to ship ~1,500 of them every day
             "closes": [int(round(x * 999)) for x in w["c"]] if w else None,
         }
-    payload = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "session": scored.as_of.isoformat(), "symbols": symbols}
+    fb = feedback_status or {}
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "session": scored.as_of.isoformat(),
+        "feedback": {k: fb.get(k) for k in ("status", "votes", "in_use", "auc")},
+        "symbols": symbols,
+    }
     (data_dir / INDEX_FILE).write_text(json.dumps(payload, separators=(",", ":")))
     return payload
 

@@ -132,7 +132,20 @@ function PickCard({ pick, refs }: { pick: LookalikePick; refs: Record<string, Lo
         {pick.ranked_by === "learned_outcome" ? <span className="lookalike-tag">ranked by what has worked</span> : null}
       </div>
       {compare ? (
-        <CompareModal symbol={pick.symbol} chart={pick.chart} session={pick.session} reference={compare} onClose={() => setCompare(null)} />
+        <CompareModal
+          symbol={pick.symbol}
+          chart={pick.chart}
+          session={pick.session}
+          reference={compare}
+          onClose={() => setCompare(null)}
+          vote={{
+            query: pick.symbol,
+            session: pick.session,
+            kind: "ref",
+            target: `${compare.style}:${compare.ticker}@${compare.date}`,
+            style: compare.style,
+          }}
+        />
       ) : null}
     </article>
   );

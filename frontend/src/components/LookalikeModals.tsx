@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ExternalLink, X } from "lucide-react";
 
-import { getChart, getLookalikeSimilar, type ChartBar, type LookalikeRefRow, type LookalikeSimilar } from "../lib/api";
+import {
+  getChart,
+  getLookalikeSimilar,
+  postLookalikeVote,
+  type ChartBar,
+  type LookalikeRefRow,
+  type LookalikeSimilar,
+  type LookalikeVote,
+} from "../lib/api";
 import { fullChartUrl } from "../lib/chartLink";
 import { LookalikeChart, type LookalikeSeries } from "./LookalikeChart";
 
@@ -96,6 +104,58 @@ function useViewportHeight() {
   return h;
 }
 
+/** 👍 / 👎 on one match. Clicking the active one again undoes it. A 👎 hides
+    the match for this stock from now on; both teach the evening run which
+    shape details matter to you. */
+export function VoteButtons({
+  vote,
+  initial = 0,
+  onChange,
+}: {
+  vote: Omit<LookalikeVote, "vote">;
+  initial?: number;
+  onChange?: (v: number) => void;
+}) {
+  const [value, setValue] = useState<number>(initial);
+  const [error, setError] = useState(false);
+  useEffect(() => setValue(initial), [initial]);
+  const cast = (v: -1 | 1) => {
+    const next = (value === v ? 0 : v) as -1 | 0 | 1;
+    const before = value;
+    setValue(next);
+    setError(false);
+    onChange?.(next);
+    postLookalikeVote({ ...vote, vote: next }).catch(() => {
+      setValue(before);
+      onChange?.(before);
+      setError(true);
+    });
+  };
+  return (
+    <span className="lookalike-votes" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className={`lookalike-vote${value === 1 ? " is-up" : ""}`}
+        onClick={() => cast(1)}
+        aria-pressed={value === 1}
+        title="Similar — show me more like this"
+      >
+        👍
+      </button>
+      <button
+        type="button"
+        className={`lookalike-vote${value === -1 ? " is-down" : ""}`}
+        onClick={() => cast(-1)}
+        aria-pressed={value === -1}
+        title="Not similar — stop showing this match for this stock"
+      >
+        👎
+      </button>
+      {error ? <span className="lookalike-vote-error">not saved — try again</span> : null}
+    </span>
+  );
+}
+
 export function RefOutcome({ ref: r }: { ref: Pick<LookalikeRefRow, "label" | "max_gain_pct" | "max_loss_pct" | "days_to_result"> }) {
   const text =
     r.label === "worked"
@@ -146,12 +206,16 @@ export function CompareModal({
   session,
   reference,
   onClose,
+  vote,
+  initialVote = 0,
 }: {
   symbol: string;
   chart: LookalikeSeries | null | undefined;
   session?: string | null;
   reference: LookalikeRefRow;
   onClose: () => void;
+  vote?: Omit<LookalikeVote, "vote">;
+  initialVote?: number;
 }) {
   // A chart passed in may be closes only (from the daily index); then fetch
   // the stock's real bars so the left side is candles, not dots.
@@ -189,10 +253,18 @@ export function CompareModal({
           </a>
         </figure>
       </div>
-      <p className="lookalike-stat-sub">
-        Each chart is shown at the date it looked like this, over the 120 sessions before it. The shaded part after the
-        dashed line is what happened next, up to 40 sessions.
-      </p>
+      <div className="lookalike-toolbar">
+        <p className="lookalike-stat-sub" style={{ margin: 0, marginRight: "auto" }}>
+          Each chart is shown at the date it looked like this, over the 120 sessions before it. The shaded part after the
+          dashed line is what happened next, up to 40 sessions.
+        </p>
+        {vote ? (
+          <>
+            <span>Are these similar?</span>
+            <VoteButtons vote={vote} initial={initialVote} />
+          </>
+        ) : null}
+      </div>
     </Modal>
   );
 }
@@ -216,21 +288,45 @@ function chartHeightFor(cols: number, vh: number) {
   return 160;
 }
 
-function PeerCard({ symbol, similarity, height, labels }: { symbol: string; similarity: number; height: number; labels: boolean }) {
+function PeerCard({
+  symbol,
+  similarity,
+  height,
+  labels,
+  query,
+  session,
+  initialVote,
+  onVote,
+}: {
+  symbol: string;
+  similarity: number;
+  height: number;
+  labels: boolean;
+  query: string;
+  session: string;
+  initialVote: number;
+  onVote: (v: number) => void;
+}) {
   const { series, failed } = useIndianSeries(symbol);
   return (
-    <a className="lookalike-similar-card" href={fullChartUrl(symbol)} target="_blank" rel="noreferrer noopener" title="Open on my site in a new tab">
-      {series ? (
-        <LookalikeChart data={series} height={height} labels={labels} ariaLabel={`${symbol} last 120 sessions`} />
-      ) : (
-        <div className="lookalike-canvas lookalike-missing" style={{ height }}>
-          {failed ? "Chart unavailable" : "Loading…"}
-        </div>
-      )}
-      <span className="lookalike-similar-meta">
-        <strong>{symbol}</strong> · {(similarity * 100).toFixed(0)}% alike <ExternalLink size={11} />
+    <div className={`lookalike-similar-card${initialVote === -1 ? " is-rejected" : ""}`}>
+      <a className="lookalike-chart-button" href={fullChartUrl(symbol)} target="_blank" rel="noreferrer noopener" title="Open on my site in a new tab">
+        {series ? (
+          <LookalikeChart data={series} height={height} labels={labels} ariaLabel={`${symbol} last 120 sessions`} />
+        ) : (
+          <div className="lookalike-canvas lookalike-missing" style={{ height }}>
+            {failed ? "Chart unavailable" : "Loading…"}
+          </div>
+        )}
+      </a>
+      <span className="lookalike-similar-row">
+        <a className="lookalike-similar-meta" href={fullChartUrl(symbol)} target="_blank" rel="noreferrer noopener">
+          <strong>{symbol}</strong> · {(similarity * 100).toFixed(0)}% alike <ExternalLink size={11} />
+        </a>
+        <VoteButtons vote={{ query, session, kind: "peer", target: symbol }} initial={initialVote} onChange={onVote} />
       </span>
-    </a>
+      {initialVote === -1 ? <span className="lookalike-stat-sub">Won't be shown for {query} again · click 👎 to undo</span> : null}
+    </div>
   );
 }
 
@@ -239,7 +335,9 @@ function PeerCard({ symbol, similarity, height, labels }: { symbol: string; simi
 export function SimilarChartsModal({ symbol, onClose }: { symbol: string; onClose: () => void }) {
   const [data, setData] = useState<LookalikeSimilar | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [compare, setCompare] = useState<LookalikeRefRow | null>(null);
+  const [compare, setCompare] = useState<{ ref: LookalikeRefRow; key: string; style: string } | null>(null);
+  const [localVotes, setLocalVotes] = useState<Record<string, number>>({});
+  const voteKey = (kind: string, target: string) => `${kind}|${target}`;
   const [cols, setColsState] = useState<number>(readCols);
   const setCols = (n: number) => {
     setColsState(n);
@@ -303,14 +401,24 @@ export function SimilarChartsModal({ symbol, onClose }: { symbol: string; onClos
                 {st.near.map(([key, sim]) => {
                   const r = ok.refs?.[key];
                   if (!r) return null;
+                  const v = localVotes[voteKey("ref", key)] ?? st.votes?.[key] ?? 0;
                   return (
-                    <button key={key} type="button" className="lookalike-similar-card" onClick={() => setCompare(r)}>
-                      <LookalikeChart data={r.chart} height={chartH} labels={cols <= 2} ariaLabel={`${r.ticker} at ${r.date}`} />
-                      <span className="lookalike-similar-meta">
-                        <strong>{r.ticker}</strong> · {fmtDate(r.date)} · {(sim * 100).toFixed(0)}% alike
+                    <div key={key} className={`lookalike-similar-card${v === -1 ? " is-rejected" : ""}`}>
+                      <button type="button" className="lookalike-chart-button" onClick={() => setCompare({ ref: r, key, style })}>
+                        <LookalikeChart data={r.chart} height={chartH} labels={cols <= 2} ariaLabel={`${r.ticker} at ${r.date}`} />
+                      </button>
+                      <span className="lookalike-similar-row">
+                        <span className="lookalike-similar-meta">
+                          <strong>{r.ticker}</strong> · {fmtDate(r.date)} · {(sim * 100).toFixed(0)}% alike
+                        </span>
+                        <VoteButtons
+                          vote={{ query: symbol, session: ok.session, kind: "ref", target: key, style }}
+                          initial={v}
+                          onChange={(nv) => setLocalVotes((m) => ({ ...m, [voteKey("ref", key)]: nv }))}
+                        />
                       </span>
-                      <RefOutcome ref={r} />
-                    </button>
+                      {v === -1 ? <span className="lookalike-stat-sub">Won't be shown for {symbol} again · click 👎 to undo</span> : <RefOutcome ref={r} />}
+                    </div>
                   );
                 })}
               </div>
@@ -321,15 +429,40 @@ export function SimilarChartsModal({ symbol, onClose }: { symbol: string; onClos
               <h3>Indian stocks with the most similar charts today</h3>
               <div className="lookalike-similar-grid" style={gridStyle}>
                 {ok.peers.map((p) => (
-                  <PeerCard key={p.symbol} symbol={p.symbol} similarity={p.similarity} height={chartH} labels={cols <= 2} />
+                  <PeerCard
+                    key={p.symbol}
+                    symbol={p.symbol}
+                    similarity={p.similarity}
+                    height={chartH}
+                    labels={cols <= 2}
+                    query={symbol}
+                    session={ok.session}
+                    initialVote={localVotes[voteKey("peer", p.symbol)] ?? p.vote ?? 0}
+                    onVote={(nv) => setLocalVotes((m) => ({ ...m, [voteKey("peer", p.symbol)]: nv }))}
+                  />
                 ))}
               </div>
             </section>
           ) : null}
         </>
       ) : null}
+      {ok ? (
+        <p className="lookalike-stat-sub lookalike-feedback-status">
+          👍 / 👎 teach it what you call similar.{" "}
+          {ok.feedback?.status ?? "Learning from your feedback starts once there are enough votes."}
+          {ok.hidden ? ` ${ok.hidden} match${ok.hidden === 1 ? "" : "es"} you rejected ${ok.hidden === 1 ? "is" : "are"} hidden here.` : ""}
+        </p>
+      ) : null}
       {compare && ok ? (
-        <CompareModal symbol={symbol} chart={null} session={ok.session} reference={compare} onClose={() => setCompare(null)} />
+        <CompareModal
+          symbol={symbol}
+          chart={null}
+          session={ok.session}
+          reference={compare.ref}
+          onClose={() => setCompare(null)}
+          vote={{ query: symbol, session: ok.session, kind: "ref", target: compare.key, style: compare.style }}
+          initialVote={localVotes[voteKey("ref", compare.key)] ?? ok.styles?.[compare.style]?.votes?.[compare.key] ?? 0}
+        />
       ) : null}
     </Modal>
   );
