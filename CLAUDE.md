@@ -71,6 +71,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 
 ### Frontend (`frontend/src/`)
 - `App.tsx`: Core UI container, top navigation bar, main state management, and tab switcher.
+- `components/NavGroups.tsx`: the desktop header's page menu — the twelve pages as four groups (Market / Scan / Journal / Research), each a dropdown with icon + one-line blurb; a one-page group is a plain tab. Groups are declared in `App.tsx` (`NAV_GROUPS`) from `NAV_PAGES`, which the phone tab bar still renders flat. The panel portals to `<body>` (gotcha 17) and follows its trigger on scroll/resize.
 - `components/HomePanel.tsx`: Primary dashboard showing market indices, top movers, market health, and quick scanners.
 - `components/ScanTable.tsx`: Reusable data table for displaying stock scan results with sorting, filtering, and chart popups.
 - `components/ChartPanel.tsx` & `ChartGridModal.tsx`: Lightweight Charts integration, candlestick rendering, technical overlay markers, and chart grid multi-view.

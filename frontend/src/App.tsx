@@ -48,6 +48,7 @@ import { DEFAULT_POSITIVE_EARNINGS_FILTERS, type PositiveEarningsFilters } from 
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import { Panel } from "./components/Panel";
 import { CommandPalette } from "./components/CommandPalette";
+import { NavGroups, type NavGroup } from "./components/NavGroups";
 import {
   type ChartBar,
   getChart,
@@ -252,27 +253,47 @@ type NavPage = {
   page: AppPage;
   label: string;
   short: string;
+  /** One line under the label in the header's group menu. */
+  blurb: string;
   Icon: typeof House;
 };
 
 const NAV_PAGES: NavPage[] = [
   // First in the bar on purpose: the routine only works if it is what you
   // open before the screener, not something you find afterwards.
-  { page: "today", label: "Today", short: "Today", Icon: ListChecks },
-  { page: "home", label: "Home", short: "Home", Icon: House },
-  { page: "screener", label: "Screener", short: "Screen", Icon: Radar },
-  { page: "groups", label: "Groups", short: "Groups", Icon: Layers },
-  { page: "watchlists", label: "Watchlists", short: "Lists", Icon: Star },
-  { page: "markets", label: "Markets", short: "Markets", Icon: Globe },
-  { page: "funds", label: "Funds", short: "Funds", Icon: Landmark },
-  { page: "live", label: "Live", short: "Live", Icon: Zap },
-  { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
-  { page: "study", label: "Chart Gym", short: "Gym", Icon: GraduationCap },
-  { page: "lookalikes", label: "Look-alikes", short: "Alike", Icon: ScanSearch },
+  { page: "today", label: "Today", short: "Today", blurb: "Your routine before the screener", Icon: ListChecks },
+  { page: "home", label: "Home", short: "Home", blurb: "Breadth, XP score and leading groups", Icon: House },
+  { page: "screener", label: "Screener", short: "Screen", blurb: "Technical scanners and custom scans", Icon: Radar },
+  { page: "groups", label: "Groups", short: "Groups", blurb: "Industry group rankings and rotation", Icon: Layers },
+  { page: "watchlists", label: "Watchlists", short: "Lists", blurb: "Your saved lists", Icon: Star },
+  { page: "markets", label: "Markets", short: "Markets", blurb: "Exposure verdict and market regime", Icon: Globe },
+  { page: "funds", label: "Funds", short: "Funds", blurb: "Mutual fund screener and portfolio", Icon: Landmark },
+  { page: "live", label: "Live", short: "Live", blurb: "Streaming intraday watch", Icon: Zap },
+  { page: "journal", label: "Journal", short: "Journal", blurb: "Trade log, P&L and reviews", Icon: NotebookPen },
+  { page: "study", label: "Chart Gym", short: "Gym", blurb: "Practise reading historical setups", Icon: GraduationCap },
+  { page: "lookalikes", label: "Look-alikes", short: "Alike", blurb: "Charts that resemble reference setups", Icon: ScanSearch },
   // Last in the bar deliberately: the bot is a research surface built on a
   // backtest, not the daily routine. It should be reached on purpose.
-  { page: "bot", label: "Bot", short: "Bot", Icon: Bot },
+  { page: "bot", label: "Bot", short: "Bot", blurb: "Regime-timing research, not advice", Icon: Bot },
 ];
+
+/* The desktop header groups the twelve pages the way SaaS navigation does —
+   one tab per job rather than one per page — so the bar reads at a glance and
+   the search keeps its width. Phones keep the flat NAV_PAGES tab bar. */
+const NAV_GROUPS: { id: string; label: string; pages: AppPage[] }[] = [
+  { id: "market", label: "Market", pages: ["today", "home", "markets", "groups"] },
+  { id: "scan", label: "Scan", pages: ["screener", "watchlists", "live", "lookalikes"] },
+  { id: "journal", label: "Journal", pages: ["journal"] },
+  // Last deliberately, for the reason the bot sits last in NAV_PAGES.
+  { id: "research", label: "Research", pages: ["funds", "study", "bot"] },
+];
+
+const NAV_PAGE_BY_ID = new Map(NAV_PAGES.map((item) => [item.page, item]));
+const HEADER_NAV_GROUPS: NavGroup<AppPage>[] = NAV_GROUPS.map((group) => ({
+  id: group.id,
+  label: group.label,
+  items: group.pages.map((page) => NAV_PAGE_BY_ID.get(page)!),
+}));
 
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
@@ -6172,19 +6193,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
         <div className="nav-controls">
           <nav className="nav-rail" aria-label="Pages">
-            {NAV_PAGES.map(({ page, label }) => (
-              <button
-                key={page}
-                type="button"
-                className={activePage === page ? "nav-button primary" : "nav-button ghost"}
-                aria-current={activePage === page ? "page" : undefined}
-                onClick={() => handleNavigate(page)}
-                onMouseEnter={() => prefetchPageModules(page)}
-                onFocus={() => prefetchPageModules(page)}
-              >
-                {label}
-              </button>
-            ))}
+            <NavGroups
+              groups={HEADER_NAV_GROUPS}
+              activePage={activePage}
+              onNavigate={handleNavigate}
+              onPrefetch={prefetchPageModules}
+            />
           </nav>
 
           <form

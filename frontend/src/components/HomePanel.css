@@ -1435,15 +1435,18 @@ html:root .homepro-xp-tip .homepro-xp-tip-regime {
   box-shadow: var(--hp-shadow);
 }
 
-/* The headline: one editorial sentence, then the figures under it. */
+/* The headline: one editorial sentence, then the figures under it. Sized as
+   the page's hero (the Cedar Group / Condesa pattern: one large serif
+   statement carries the top of the page) — it is the one line on Home meant
+   to be read before anything else. */
 .homepro-briefing-headline {
-  margin: 10px 0 16px;
-  max-width: 34em;
+  margin: 14px 0 24px;
+  max-width: 22em;
   font-family: var(--font-editorial);
-  font-size: clamp(21px, 2.2vw, 29px);
+  font-size: clamp(26px, 3.2vw, 46px);
   font-weight: 400;
-  line-height: 1.22;
-  letter-spacing: -0.012em;
+  line-height: 1.1;
+  letter-spacing: -0.022em;
   color: var(--text);
   text-wrap: balance;
 }
@@ -1783,7 +1786,12 @@ html:root .homepro-xp-legend-item .homepro-legend-swatch {
 html:root .homepro-briefing {
   border-color: transparent;
   box-shadow: none;
-  padding: 22px 24px 18px;
+  padding: 30px 34px 22px;
+}
+@media (max-width: 760px) {
+  html:root .homepro-briefing {
+    padding: 20px 18px 16px;
+  }
 }
 html:root .homepro-briefing-link {
   color: var(--text);
