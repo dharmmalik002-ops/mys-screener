@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-01",
+ "as_of": "2026-10-02",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,24 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544537": {
-   "name": "Jain Resource Recycling Limited",
-   "symbol": "JAINREC",
-   "listing_date": "2025-10-01",
-   "issue_price": 232.0
-  },
-  "544540": {
-   "name": "Epack Prefab Technologies Limited",
-   "symbol": "EPACKPEB",
-   "listing_date": "2025-10-01",
-   "issue_price": 204.0
-  },
-  "544543": {
-   "name": "BMW VENTURES LIMITED",
-   "symbol": "BMWVENTLTD",
-   "listing_date": "2025-10-01",
-   "issue_price": 99.0
-  },
   "544545": {
    "name": "TRUALT BIOENERGY LIMITED",
    "symbol": "TRUALT",
@@ -1446,20 +1428,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "BMWVENTLTD": {
-   "listing_date": "2025-10-01",
-   "name": "BMW Ventures Limited",
-   "isin": "INE965W01036",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544543",
-   "sector": "Metals & Mining",
-   "sub_sector": "Trading - Metals",
-   "shares_crore": 8.671512,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 99.0
-  },
   "BNAGROCHEM": {
    "listing_date": "2026-04-20",
    "name": "BN Agrochem Limited",
@@ -2055,20 +2023,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "EPACKPEB": {
-   "listing_date": "2025-10-01",
-   "name": "EPack Prefab Technologies Limited",
-   "isin": "INE0MLS01022",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544540",
-   "sector": "Capital Goods",
-   "sub_sector": "Industrial Products",
-   "shares_crore": 10.063115,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 204.0
-  },
   "ESDS": {
    "listing_date": "2026-09-04",
    "name": "ESDS Software Solution Limited",
@@ -2128,16 +2082,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "506414",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "FINKURVE": {
-   "listing_date": "2025-10-01",
-   "name": "Finkurve Financial Services Limited",
-   "isin": "INE734I01027",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "508954",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -2660,20 +2604,6 @@
    "bse_code": "540954",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "JAINREC": {
-   "listing_date": "2025-10-01",
-   "name": "Jain Resource Recycling Limited",
-   "isin": "INE0YD401026",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544537",
-   "sector": "Metals & Mining",
-   "sub_sector": "Diversified Metals",
-   "shares_crore": 34.50858,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 232.0
   },
   "JAYKAY": {
    "listing_date": "2025-12-03",
