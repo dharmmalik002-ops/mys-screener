@@ -20,12 +20,15 @@ Each design has a light theme (default) and a dark theme (`data-theme`).
 
 1. **It is a tool, not a brochure.** People read tables and charts here for
    hours. Density beats spectacle; nothing animates for its own sake.
-2. **Flat.** White cards on an off-white page. No card borders, no drop
-   shadows on cards, no gradients behind content. Elevation is reserved for
-   things that float (menus, tooltips, the hover chart preview).
-3. **Size carries hierarchy, not weight.** Regular (400) almost everywhere;
-   500 for labels that must hold their own in a row. Bold is not part of the
-   system.
+2. **Flat.** White cards on a warm paper page. No card borders, no drop
+   shadows on cards, no gradients behind content — only a hairline ring
+   (`--ring`) so a white card on paper has an edge. Real elevation
+   (`--ring-raised`) is reserved for things that float (menus, tooltips, the
+   hover chart preview). A card inside a card gets no ring; tiles inside a
+   card are recessed wells (`--surface-soft`), not outlined boxes.
+3. **Size carries hierarchy, not weight.** Regular (400) for body and
+   figures; 500 for titles, buttons and labels that must hold their own in a
+   row. Bold is not part of the system.
 4. **Ink is for interaction, colour is for data.** Selected tabs, chips and
    the one primary button are inverse (black on light, light on dark). The
    vivid colours only ever paint charts, meters and fills — never body text,
@@ -47,14 +50,17 @@ use the variable, never the hex.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--bg` | `#f8f8f8` | `#111112` | Page canvas |
-| `--card-flat` | `#ffffff` | `#1a1a1c` | Cards |
+| `--bg` | `#f6f5f2` | `#0c0c0d` | Page canvas (warm paper in light) |
+| `--card-flat` | `#ffffff` | `#161617` | Cards |
+| `--surface-soft` | `#faf9f7` | `#1a1a1c` | Wells inside cards, row hover |
 | `--surface-raised` | `#ffffff` | `#26262a` | Floating panels (menus, previews) |
-| `--muted-bg` | `#f3f4f4` | `#222225` | Recessed wells, hover fills, icon tiles |
-| `--line` | `#ebebeb` | `#2a2a2d` | Hairlines and dividers |
-| `--text` | `#222222` | `#ededed` | Primary text |
-| `--text-muted` | `#767676` | `#8c8c8c` | Secondary text, captions |
-| `--inverse` / `--inverse-ink` | `#222` / `#fff` | `#ededed` / `#111112` | Selected tab, chip, primary button |
+| `--muted-bg` | `#f3f2ef` | `#1e1e20` | Selected list rows, icon tiles |
+| `--line` | `#e8e6e1` | `#262628` | Hairlines, control borders |
+| `--line-strong` | `#dcd9d2` | `#323235` | Hover borders |
+| `--text` | `#1c1b19` | `#ededec` | Primary text |
+| `--text-muted` | `#77736c` | `#8c8c89` | Secondary text, captions |
+| `--inverse` / `--inverse-ink` | `#1c1b19` / `#fff` | `#ededed` / `#111112` | Selected tab, chip, primary button |
+| `--ring` / `--ring-raised` / `--focus-ring` | | | Card edge / floating elevation / input focus |
 
 ### Meaning
 
@@ -80,14 +86,15 @@ Canvas charts cannot read CSS variables; their colours live in
 | `--font-editorial` | `ui-serif`, New York, Georgia | One-sentence headlines only (the Home briefing) |
 | `--font-caption` | `ui-monospace`, SF Mono | Small uppercase kickers ("MARKET BRIEFING · 01 OCT") |
 
-Sizes in practice: hero figures 30–46px (`clamp`), card values 22–28px, body
-14–15px, labels 13px, captions 11–12px. Letter-spacing tightens as size grows
+Sizes in practice: hero figures 30–46px (`clamp`), page titles 26px / 500,
+card titles 16px / 500, card values 22–32px, body 14–15px, buttons and labels
+13px / 500, table headers 11px / 500 uppercase (+0.05em), captions 11–12px. Letter-spacing tightens as size grows
 (−0.01em body, −0.02 to −0.03em heroes).
 
 ### Shape and motion
 
-- Radii: 6px (small controls), 8px (tabs, buttons, icon tiles), 12px (rail,
-  menus, chart canvases), `--radius-xl` (cards).
+- Radii: 8px (buttons, inputs, tabs, icon tiles), 10px (wells), 12px
+  (cards, rail, menus, chart canvases), 999px (chips and pills only).
 - Easing: `--ease-out-soft` `cubic-bezier(0.23, 1, 0.32, 1)` for anything
   entering or settling. 120–240ms. Respect `prefers-reduced-motion` — every
   animation in the app has a reduced-motion branch.
@@ -111,6 +118,23 @@ Sizes in practice: hero figures 30–46px (`clamp`), card values 22–28px, body
 | **Resizable splits** | `components/SplitResizer.tsx` | Drag seam between side-by-side panes; ratio per `storageKey`. |
 
 ---
+
+### Controls — one language
+
+| State | Look |
+|---|---|
+| Secondary button | White, 1px `--line`, 8px, 13px / 500 ink; hover `--muted-bg` + `--line-strong` |
+| Primary button | Inverse ink, one per view |
+| Selected tab / chip / toggle / armed tool | Inverse ink |
+| Selected row in a pick-list (scanners, watchlists) | `--muted-bg` well; icon tile and count flip to ink. No outline, no accent bar |
+| Selected scan row | `--muted-bg` well + 2px inset ink bar |
+| Input | White, 1px `--line`, 8px; focus `--text-muted` border + `--focus-ring` |
+| Rating badge (RS) | Flat 12–13% tint of the meaning colour, number in that colour |
+
+The "Finish layer" at the end of `premium.css` maps every component onto
+this table. **Never tint a selected state from `--accent`** — in Studio it is
+near-black, so a tinted selection reads as a muddy grey slab with a dark
+outline. Add the new component's selector to the finish layer instead.
 
 ## 4. Rules that bite
 

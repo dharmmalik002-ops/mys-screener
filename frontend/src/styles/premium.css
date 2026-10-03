@@ -1135,3 +1135,388 @@ html:root[data-design="studio"] .news-trigger-btn:hover {
   box-shadow: none;
   border-color: var(--text-muted);
 }
+
+/* ==========================================================================
+   Finish layer — one palette, one type scale, one control language
+   --------------------------------------------------------------------------
+   Every page had grown its own buttons, tabs, selected states and corner
+   radii, most of them tinted from --accent — which in Studio is near-black,
+   so "selected" read as a muddy grey slab with a dark outline. This layer
+   states the system once and maps every component onto it:
+
+     surfaces   warm paper page, white cards with a hairline ring
+     selected   tabs and chips are inverse ink; list items are a quiet well
+     secondary  white, hairline, 8px corners, 13px / 500
+     inputs     white, hairline, 8px corners, a soft focus ring
+     titles     page 26px / 500, card 16px / 500, tables 11px caps
+
+   It sits last in the file on purpose: everything above stays as the
+   per-component detail, this decides the family resemblance.
+   ========================================================================== */
+
+/* ---------- Palette ---------------------------------------------------------
+   Light: a warm paper page (stone, not grey) under pure white cards, and
+   near-black ink. The warmth is what makes the serif briefing and the white
+   chart paper read as one designed surface rather than a default grey app.
+   Dark: deeper charcoal with a touch more separation between page and card. */
+:root[data-design="studio"][data-theme="light"] {
+  --bg: #f6f5f2;
+  --card-flat: #ffffff;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-soft: #faf9f7;
+  --muted-bg: #f3f2ef;
+  --line: #e8e6e1;
+  --line-strong: #dcd9d2;
+  --chip-line: #e2dfd9;
+  --track: #e7e5e0;
+  --text: #1c1b19;
+  --text-soft: #55524d;
+  --text-muted: #77736c;
+  --inverse: #1c1b19;
+  --inverse-ink: #ffffff;
+  --nav-ink: #55524d;
+  --row-hover: #faf9f7;
+  --ring: 0 0 0 1px rgba(28, 27, 25, 0.045), 0 1px 2px rgba(28, 27, 25, 0.035);
+  --ring-raised: 0 0 0 1px rgba(28, 27, 25, 0.06), 0 12px 32px -8px rgba(28, 27, 25, 0.16);
+  --focus-ring: 0 0 0 3px rgba(28, 27, 25, 0.09);
+}
+
+:root[data-design="studio"]:not([data-theme="light"]) {
+  --bg: #0c0c0d;
+  --card-flat: #161617;
+  --surface: #161617;
+  --surface-strong: #161617;
+  --surface-soft: #1a1a1c;
+  --muted-bg: #1e1e20;
+  --line: #262628;
+  --line-strong: #323235;
+  --chip-line: #2e2e31;
+  --text: #ededec;
+  --text-soft: #b0b0ad;
+  --text-muted: #8c8c89;
+  --ring: 0 0 0 1px rgba(255, 255, 255, 0.045);
+  --ring-raised: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 16px 40px -8px rgba(0, 0, 0, 0.6);
+  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.12);
+}
+
+/* Legacy component palettes were warm-beige (#e8e5de borders on #fbfaf7);
+   point them at the house tokens so every hairline is the same hairline. */
+html:root[data-design="studio"] :is(.st-card, .wl-card) {
+  --st-bg: var(--surface-soft);
+  --st-surface: var(--card-flat);
+  --st-border: var(--line);
+  --st-primary: var(--inverse);
+}
+html:root[data-design="studio"] :is(.sd-root, .qb-root, .sh-root, .sf-root, .ss-shell) {
+  --sd-bg: var(--surface-soft);
+  --sd-surface: var(--card-flat);
+  --sd-border: var(--line);
+  --qb-bg: var(--surface-soft);
+  --qb-surface: var(--card-flat);
+  --qb-border: var(--line);
+  --sh-bg: var(--surface-soft);
+  --sh-surface: var(--card-flat);
+  --sh-border: var(--line);
+  --sf-bg: var(--surface-soft);
+  --sf-surface: var(--card-flat);
+  --sf-border: var(--line);
+  --ss-bg: var(--surface-soft);
+  --ss-surface: var(--card-flat);
+  --ss-border: var(--line);
+  --ss-primary: var(--inverse);
+  --ss-primary-soft: var(--muted-bg);
+}
+
+/* ---------- Surfaces -------------------------------------------------------- */
+
+/* Cards keep no border and no drop shadow — just a hairline ring the eye
+   reads as an edge, which a white card on paper needs to look finished. */
+html:root[data-design="studio"] :is(.panel, .homepro-kpi, .homepro-card, .screener-sidebar-panel, .tj-kpi, .news-card) {
+  box-shadow: var(--ring);
+}
+
+/* A card inside a card does not need a second edge. */
+html:root[data-design="studio"] :is(.panel, .homepro-card) :is(.panel, .homepro-card) {
+  box-shadow: none;
+}
+
+/* Floating things get real elevation: menus, popovers, the hover preview. */
+html:root[data-design="studio"] :is(.nav-groups-menu, .nav-group-panel, .chart-hover-preview, .command-palette, [role="menu"], [role="listbox"]) {
+  box-shadow: var(--ring-raised);
+}
+
+/* Journal stat tiles: cards like every other card — no outline, no lift on
+   hover, no coloured left bar (the value already carries the colour). */
+html:root[data-design="studio"] .tj-kpi {
+  background: var(--card-flat);
+  border: 0;
+  border-radius: 12px;
+}
+html:root[data-design="studio"] .tj-kpi:hover {
+  transform: none;
+  box-shadow: var(--ring);
+}
+html:root[data-design="studio"] :is(.tj-kpi.pos, .tj-kpi.neg) {
+  border-left: 0;
+}
+
+/* Markets: the page card holds sections that are cards themselves, which
+   drew a box in a box in a box. The tiles become recessed wells instead. */
+html:root[data-design="studio"] .markets-panel :is(.mkx, .mcx, .mk-disclosure) {
+  border-color: var(--line);
+  box-shadow: none;
+}
+html:root[data-design="studio"] .markets-panel :is(.mkc-item, .mkx-arith > div) {
+  background: var(--surface-soft);
+  border-color: transparent;
+  border-radius: 10px;
+}
+
+/* ---------- Type ------------------------------------------------------------ */
+
+/* Page titles: one size everywhere, and 500 so a title holds its own above
+   a dense table without needing bold. */
+html:root[data-design="studio"] :is(
+  main > .panel > .panel-header h2,
+  .workspace > .panel > .panel-header h2,
+  .panel.markets-panel > .panel-header h2,
+  .mfp-head-title h2,
+  .tj-brand-name,
+  .study-head-left h2,
+  .sh-title,
+  .ss-title,
+  .gp-title
+) {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.026em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+/* Every other panel title and every card title: 16px / 500. */
+html:root[data-design="studio"] :is(.homepro-card h3, .homepro-kpi-label, .panel .panel .panel-header h2) {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+
+html:root[data-design="studio"] .panel-kicker {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* Big figures: tighter tracking reads more deliberate at size. */
+html:root[data-design="studio"] :is(.homepro-kpi-value, .mkx-number strong, .mkc-item strong:not(.mkc-word), .tj-kpi-value) {
+  letter-spacing: -0.03em;
+}
+
+/* Table headers: small caps-height labels, one treatment in every table. */
+html:root[data-design="studio"] :is(table thead th, .st-card .st-head, .sortable-th-btn) {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---------- Secondary buttons ----------------------------------------------
+   One quiet button: white, hairline, 8px corners, 13px / 500 ink. */
+html:root[data-design="studio"] :is(
+  .nav-button.ghost:not(.top-nav .nav-button),
+  .tj-btn, .st-btn, .qb-action, .qb-action.qb-action-primary, .ss-new-btn,
+  .study-lib-toggle, .study-undo, .study-pass,
+  .mcx-refresh, .mcx-evidence-toggle, .pyg-nav, .tj-cal-nav, .tj-cal-today,
+  .news-trigger-btn, .news-btn-close, .sdist-toggle, .mfp-toggle,
+  .st-expand-btn, .st-watch-btn, .wl-move-btn, .sh-icon-btn,
+  .universe-filter-trigger
+) {
+  background: var(--card-flat);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: 0 1px 1px rgba(28, 27, 25, 0.03);
+  transition: background 150ms var(--ease-out-soft), border-color 150ms var(--ease-out-soft), color 150ms var(--ease-out-soft);
+}
+
+html:root[data-design="studio"] :is(
+  .nav-button.ghost:not(.top-nav .nav-button),
+  .tj-btn, .st-btn, .qb-action, .ss-new-btn,
+  .study-lib-toggle, .study-undo, .study-pass,
+  .mcx-refresh, .mcx-evidence-toggle, .pyg-nav, .tj-cal-nav, .tj-cal-today,
+  .news-trigger-btn, .news-btn-close, .sdist-toggle, .mfp-toggle,
+  .st-expand-btn, .st-watch-btn, .wl-move-btn, .sh-icon-btn,
+  .universe-filter-trigger
+):hover:not(:disabled) {
+  background: var(--muted-bg);
+  border-color: var(--line-strong);
+  color: var(--text);
+  transform: none;
+}
+
+/* Icon-only and inline helpers stay muted until hovered. */
+html:root[data-design="studio"] :is(.st-expand-btn, .st-watch-btn, .wl-move-btn, .mcx-refresh, .pyg-nav) {
+  color: var(--text-soft);
+  box-shadow: none;
+}
+
+/* Labels never wrap inside a button ("Apply Filters" broke onto two lines). */
+html:root[data-design="studio"] main :is(button, .nav-button) {
+  white-space: nowrap;
+}
+
+/* ---------- Selected state ---------------------------------------------------
+   Tabs, toggles and chips: inverse ink. Same rule as the existing list
+   above, extended to the components that had invented their own. */
+html:root[data-design="studio"] :is(
+  .bot-view-tab.is-active,
+  .mfp-pill.active,
+  .live-sort button.active,
+  .live-chip.active,
+  .sh-icon-btn.is-on,
+  .gsw-layout-toggle.active,
+  .lookalike-near-tab.active,
+  .fdm-tab.active,
+  .sdist-toggle.active,
+  .mfp-toggle.active,
+  .mcx-evidence-toggle.is-open
+) {
+  background: var(--inverse) !important;
+  color: var(--inverse-ink) !important;
+  border-color: var(--inverse) !important;
+  box-shadow: none !important;
+}
+
+/* Lists you pick from (scanners, watchlists): the chosen row is a quiet
+   recessed well — no outline, no accent bar, no lift. The icon tile and the
+   count flip to ink, which is enough to find it at a glance. */
+html:root[data-design="studio"] :is(.ss-nav-item, .wl-nav-row, .screener-nav-button) {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html:root[data-design="studio"] :is(.ss-nav-item, .wl-nav-row, .screener-nav-button):hover {
+  background: var(--surface-soft) !important;
+}
+html:root[data-design="studio"] :is(.ss-nav-item.is-active, .wl-nav-row.is-active, .screener-nav-button.active) {
+  background: var(--muted-bg) !important;
+  border-left: 1px solid transparent !important;
+}
+html:root[data-design="studio"] .ss-nav-icon {
+  background: var(--muted-bg);
+  border-color: transparent;
+  color: var(--text);
+}
+html:root[data-design="studio"] .ss-nav-item.is-active .ss-nav-icon,
+html:root[data-design="studio"] .ss-nav-item.is-active .ss-nav-count {
+  background: var(--inverse);
+  border-color: var(--inverse);
+  color: var(--inverse-ink);
+}
+html:root[data-design="studio"] .ss-nav-count {
+  background: transparent;
+  border-color: var(--line);
+}
+
+/* Scan rows: a list, not a stack of outlined boxes. Hover is a fill; the
+   chosen row is a well with a 2px ink bar. */
+html:root[data-design="studio"] :is(.scan-row, .st-card .scan-row.st-row) {
+  border: 1px solid transparent;
+  border-left-width: 1px;
+  background: transparent;
+  box-shadow: none;
+}
+html:root[data-design="studio"] :is(.scan-row, .st-card .scan-row.st-row):hover {
+  background: var(--surface-soft);
+  border-color: transparent;
+}
+html:root[data-design="studio"] :is(.scan-row.active, .st-card .scan-row.st-row.active) {
+  background: var(--muted-bg) !important;
+  border-color: transparent !important;
+  border-left: 1px solid transparent !important;
+  box-shadow: inset 2px 0 0 var(--inverse) !important;
+}
+
+/* ---------- Inputs ------------------------------------------------------------
+   Low specificity on purpose (:where), so a component that styles its own
+   field still wins; this only replaces the old glass default (12px corners,
+   a white inset sheen and a blur behind a form field). */
+:where(html[data-design="studio"]) :is(.scanner-field, .range-inputs, .nav-select) :is(input, select),
+:where(html[data-design="studio"]) :is(.tj-equity-input, .mfp-select) {
+  background: var(--card-flat);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: border-color 150ms var(--ease-out-soft), box-shadow 150ms var(--ease-out-soft);
+}
+
+html:root[data-design="studio"] main :is(input[type="text"], input[type="search"], input[type="number"], input[type="date"], select, textarea):hover:not(:focus):not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+html:root[data-design="studio"] main :is(input[type="text"], input[type="search"], input[type="number"], input[type="date"], select, textarea):focus {
+  border-color: var(--text-muted);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+/* Keyboard focus: one visible ring on every control. */
+html:root[data-design="studio"] :is(button, a, [role="tab"], summary):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* ---------- Small marks -------------------------------------------------------- */
+
+/* Chips and pills share one shape. */
+html:root[data-design="studio"] :is(.mfp-chip, .live-chip, .wl-stage-chip, .mk-chip, .homepro-chip, .tj-chip) {
+  border-radius: 999px;
+}
+
+/* Scrollbars: thin, warm, out of the way. */
+html[data-design="studio"] {
+  scrollbar-color: var(--line-strong) transparent;
+}
+html[data-design="studio"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html[data-design="studio"] ::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+html[data-design="studio"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* RS rating: a flat tinted disc, not a glossy gradient with a glow. The
+   number carries the colour; the fill only hints at the band. */
+html:root[data-design="studio"] .st-rs-badge {
+  box-shadow: none;
+  font-weight: 500;
+}
+html:root[data-design="studio"] .st-rs-hi {
+  background: color-mix(in srgb, var(--positive) 13%, transparent);
+  color: var(--positive);
+}
+html:root[data-design="studio"] .st-rs-mid {
+  background: color-mix(in srgb, var(--viz-orange) 13%, transparent);
+  color: color-mix(in srgb, var(--viz-orange) 80%, var(--text));
+}
+html:root[data-design="studio"] .st-rs-lo {
+  background: color-mix(in srgb, var(--negative) 12%, transparent);
+  color: var(--negative);
+}
+
+/* Chart drawing tools: the armed tool is ink, like every other selection. */
+html:root[data-design="studio"] .chart-tool-rail-button.active {
+  background: var(--inverse);
+  border-color: var(--inverse);
+  color: var(--inverse-ink);
+}
