@@ -6,6 +6,8 @@ import { Maximize2 } from "lucide-react";
 import type { ChartBar, ChartGridTimeframe, ChartLinePoint } from "../lib/api";
 import { fullChartUrl } from "../lib/chartLink";
 import { computeAutoLevels, type AutoLevels } from "../lib/levels";
+import { CANDLE_DOWN, CANDLE_UP } from "../lib/marketColors";
+import { computeCandleWeights } from "../lib/weightedCandleSeries";
 import { useMinWidth } from "../lib/virtualRows";
 
 const AUTO_LEVELS_STORAGE_KEY = "stockScanner.chartLevels.v1";
@@ -18,6 +20,85 @@ function readAutoLevelsEnabled(): boolean {
   }
 }
 const EMPTY_LEVELS: AutoLevels = { srLevels: [], zones: [], trendlines: [] };
+
+// Grid chart look: canvas theme, volume colouring, volume-weighted candle
+// widths and the candle colours. Mirrors the big chart's Display settings
+// (Ivory palette, mono volume, weighted width) so a card reads the same way.
+export type GridChartTheme = "ivory" | "white" | "dark";
+type GridVolumeMode = "mono" | "color";
+type GridChartLook = {
+  theme: GridChartTheme;
+  volume: GridVolumeMode;
+  weighted: boolean;
+  /** null = follow the theme's own candle colours. */
+  candleUp: string | null;
+  candleDown: string | null;
+};
+const GRID_LOOK_STORAGE_KEY = "stockScanner.gridChartLook.v1";
+const DEFAULT_GRID_LOOK: GridChartLook = { theme: "ivory", volume: "mono", weighted: true, candleUp: null, candleDown: null };
+const GRID_THEMES: Array<{ value: GridChartTheme; label: string }> = [
+  { value: "ivory", label: "Ivory" },
+  { value: "white", label: "White" },
+  { value: "dark", label: "Dark" },
+];
+const THEME_CANDLES: Record<GridChartTheme, { up: string; down: string }> = {
+  ivory: { up: "#1d7a63", down: "#c2453d" },
+  white: { up: CANDLE_UP, down: "#e23645" },
+  dark: { up: "#2962ff", down: CANDLE_DOWN },
+};
+const CANDLE_PRESETS: Array<{ value: string; label: string; up: string; down: string }> = [
+  { value: "teal-red", label: "Teal / Red", up: "#22ab94", down: "#f7525f" },
+  { value: "green-red", label: "Green / Red", up: "#16a34a", down: "#dc2626" },
+  { value: "blue-red", label: "Blue / Red", up: "#2962ff", down: "#ef4444" },
+  { value: "blue-orange", label: "Blue / Orange", up: "#2563eb", down: "#f97316" },
+  { value: "black-grey", label: "Black / Grey", up: "#111827", down: "#9ca3af" },
+];
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+function readGridLook(): GridChartLook {
+  if (typeof window === "undefined") return DEFAULT_GRID_LOOK;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(GRID_LOOK_STORAGE_KEY) ?? "null") as Partial<GridChartLook> | null;
+    if (!raw || typeof raw !== "object") return DEFAULT_GRID_LOOK;
+    return {
+      theme: raw.theme === "white" || raw.theme === "dark" ? raw.theme : "ivory",
+      volume: raw.volume === "color" ? "color" : "mono",
+      weighted: raw.weighted !== false,
+      candleUp: typeof raw.candleUp === "string" && HEX_COLOR.test(raw.candleUp) ? raw.candleUp : null,
+      candleDown: typeof raw.candleDown === "string" && HEX_COLOR.test(raw.candleDown) ? raw.candleDown : null,
+    };
+  } catch {
+    return DEFAULT_GRID_LOOK;
+  }
+}
+
+type CandlePaint = { up: string; down: string; monoVolume: boolean; weighted: boolean };
+type BarStat = { avgVol: number; changePct: number };
+
+/** Trailing-20 average volume and day change per bar — same definition as ChartPanel's perBarStats. */
+function computeBarStats(bars: ChartBar[]): BarStat[] {
+  return bars.map((bar, i) => {
+    const prevClose = i > 0 ? bars[i - 1].close : bar.open;
+    const changePct = prevClose > 0 ? (bar.close / prevClose - 1) * 100 : 0;
+    const start = Math.max(0, i - 20);
+    let volSum = 0;
+    for (let j = start; j < i; j += 1) volSum += bars[j].volume || 0;
+    return { avgVol: i > start ? volSum / (i - start) : 0, changePct };
+  });
+}
+
+/** Mono volume colours by meaning: heavy (>=2x avg) up = accumulation blue, heavy down = distribution red, dry-up dim, the rest grey. */
+function monoVolumeFill(volume: number, stat: BarStat | undefined): string {
+  const avg = stat?.avgVol ?? 0;
+  if (avg > 0 && volume < avg * 0.5) return "rgba(148, 163, 184, 0.28)";
+  if (avg > 0 && volume >= avg * 2) return (stat?.changePct ?? 0) >= 0 ? "rgba(41, 98, 255, 0.62)" : "rgba(239, 68, 68, 0.58)";
+  return "rgba(120, 128, 140, 0.42)";
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  if (!HEX_COLOR.test(hex)) return hex;
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
 
 type GridTone = "positive" | "negative" | "neutral";
 
@@ -584,6 +665,9 @@ function OhlcChart({
   showVolume = true,
   light = false,
   levels,
+  paint,
+  stats,
+  weights,
 }: {
   bars: ChartBar[];
   chartStyle: ChartGridChartStyle;
@@ -591,6 +675,11 @@ function OhlcChart({
   showVolume?: boolean;
   light?: boolean;
   levels?: AutoLevels;
+  paint: CandlePaint;
+  /** Aligned with `bars`. */
+  stats?: BarStat[];
+  /** Aligned with `bars`; 0..1 loudness for weighted candle widths. */
+  weights?: number[] | null;
 }) {
   const { ref, size } = useMeasuredSize();
   const { w, h } = size;
@@ -624,32 +713,43 @@ function OhlcChart({
       volumeBars = bars.map((bar, index) => {
         const vol = bar.volume ?? 0;
         const barH = Math.max((vol / maxVol) * volH, vol > 0 ? 0.6 : 0);
-        const tone = bar.close >= bar.open ? "positive" : "negative";
+        // Inline fill: beats the theme stylesheet's tone classes.
+        const fill = paint.monoVolume
+          ? monoVolumeFill(vol, stats?.[index])
+          : hexToRgba(bar.close >= bar.open ? paint.up : paint.down, 0.4);
         return (
           <rect
             key={`v${bar.time}:${index}`}
-            className={`chart-grid-vol ${tone}`}
+            className="chart-grid-vol"
             x={x(index) - volWidth / 2}
             y={volTop + volH - barH}
             width={volWidth}
             height={barH}
+            style={{ fill }}
           />
         );
       });
     }
     if (chartStyle === "candles") {
-      const bodyWidth = Math.min(Math.max(slot * 0.65, 1.5), 13);
+      const evenWidth = Math.min(Math.max(slot * 0.65, 1.5), 13);
+      const useWeights = paint.weighted && weights && weights.length === bars.length;
       body = bars.map((bar, index) => {
         const cx = x(index);
         const openY = y(bar.open);
         const closeY = y(bar.close);
         const top = Math.min(openY, closeY);
         const height = Math.max(Math.abs(closeY - openY), 1);
-        const tone = bar.close >= bar.open ? "positive" : "negative";
+        // Weighted: a quiet bar keeps ~15% of its slot, the loudest takes almost
+        // all of it (same spread as ChartPanel's WeightedCandleSeries).
+        const weight = useWeights ? Math.max(0, Math.min(1, weights[index] ?? 0.35)) : 0;
+        const bodyWidth = useWeights ? Math.min(Math.max(slot * (0.15 + 0.8 * weight), 1), 18) : evenWidth;
+        const color = bar.close >= bar.open ? paint.up : paint.down;
+        // No tone class on purpose: the theme stylesheets paint .positive /
+        // .negative with !important, which would override the chosen colours.
         return (
-          <g key={`${bar.time}:${index}`} className={`chart-grid-candle ${tone}`}>
-            <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
-            <rect x={cx - bodyWidth / 2} y={top} width={bodyWidth} height={height} rx={bodyWidth > 4 ? 0.8 : 0} />
+          <g key={`${bar.time}:${index}`} className="chart-grid-candle">
+            <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} style={{ stroke: color, strokeWidth: 1.2 }} />
+            <rect x={cx - bodyWidth / 2} y={top} width={bodyWidth} height={height} rx={bodyWidth > 4 ? 0.8 : 0} style={{ fill: color, stroke: "none" }} />
           </g>
         );
       });
@@ -657,12 +757,12 @@ function OhlcChart({
       const tick = Math.min(Math.max(slot * 0.36, 2), 9);
       body = bars.map((bar, index) => {
         const cx = x(index);
-        const tone = bar.close >= bar.open ? "positive" : "negative";
+        const stroke = { stroke: bar.close >= bar.open ? paint.up : paint.down, strokeWidth: 1.4 };
         return (
-          <g key={`${bar.time}:${index}`} className={`chart-grid-bar ${tone}`}>
-            <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
-            <line x1={cx - tick} y1={y(bar.open)} x2={cx} y2={y(bar.open)} />
-            <line x1={cx} y1={y(bar.close)} x2={cx + tick} y2={y(bar.close)} />
+          <g key={`${bar.time}:${index}`} className="chart-grid-bar">
+            <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} style={stroke} />
+            <line x1={cx - tick} y1={y(bar.open)} x2={cx} y2={y(bar.open)} style={stroke} />
+            <line x1={cx} y1={y(bar.close)} x2={cx + tick} y2={y(bar.close)} style={stroke} />
           </g>
         );
       });
@@ -739,6 +839,7 @@ function GridCard({
   globalPosition,
   hiddenMas,
   light,
+  paint,
   showLevels,
   sortBy,
   onAddToWatchlist,
@@ -752,6 +853,7 @@ function GridCard({
   globalPosition: number;
   hiddenMas: ReadonlySet<string>;
   light: boolean;
+  paint: CandlePaint;
   showLevels: boolean;
   sortBy: ChartGridSortBy;
   onAddToWatchlist?: (symbol: string) => void;
@@ -775,6 +877,14 @@ function GridCard({
   const autoLevels = useMemo<AutoLevels>(
     () => (showLevels && fullBars.length > 1 ? computeAutoLevels(fullBars) : EMPTY_LEVELS),
     [showLevels, fullBars],
+  );
+
+  // Stats + weights from the full series so a bar's width doesn't change as
+  // the lookback slider moves; sliced to the visible window below.
+  const barStatsFull = useMemo(() => computeBarStats(fullBars), [fullBars]);
+  const weightsFull = useMemo(
+    () => (paint.weighted && fullBars.length > 1 ? computeCandleWeights(fullBars, barStatsFull) : null),
+    [paint.weighted, fullBars, barStatsFull],
   );
 
   const hasBars = fullBars.length > 0;
@@ -841,7 +951,16 @@ function GridCard({
 
         <div className={`chart-grid-card-chart ${displayMode}`}>
           {hasBars ? (
-            <OhlcChart bars={bars} chartStyle={chartStyle} overlays={overlays} light={light} levels={autoLevels} />
+            <OhlcChart
+              bars={bars}
+              chartStyle={chartStyle}
+              overlays={overlays}
+              light={light}
+              levels={autoLevels}
+              paint={paint}
+              stats={barStatsFull.slice(-windowSize)}
+              weights={weightsFull ? weightsFull.slice(-windowSize) : null}
+            />
           ) : (
             <Sparkline points={scopedPoints} />
           )}
@@ -941,7 +1060,30 @@ export function ChartGridModal({
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
   const [cleanMode, setCleanMode] = useState(false);
-  const [lightMode, setLightMode] = useState(true);
+  const [look, setLook] = useState<GridChartLook>(() => readGridLook());
+  const updateLook = useCallback((patch: Partial<GridChartLook>) => {
+    setLook((current) => {
+      const next = { ...current, ...patch };
+      try {
+        window.localStorage.setItem(GRID_LOOK_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // best-effort persistence
+      }
+      return next;
+    });
+  }, []);
+  const lightMode = look.theme !== "dark";
+  const themeCandles = THEME_CANDLES[look.theme];
+  const candleUp = look.candleUp ?? themeCandles.up;
+  const candleDown = look.candleDown ?? themeCandles.down;
+  const paint = useMemo<CandlePaint>(
+    () => ({ up: candleUp, down: candleDown, monoVolume: look.volume === "mono", weighted: look.weighted }),
+    [candleUp, candleDown, look.volume, look.weighted],
+  );
+  const candlePreset =
+    look.candleUp === null && look.candleDown === null
+      ? "theme"
+      : CANDLE_PRESETS.find((preset) => preset.up === look.candleUp && preset.down === look.candleDown)?.value ?? "custom";
   const [levelsOn, setLevelsOn] = useState<boolean>(() => readAutoLevelsEnabled());
   const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
@@ -1313,7 +1455,7 @@ export function ChartGridModal({
     >
       <div
         ref={modalRef}
-        className={`chart-grid-modal${cleanMode ? " chart-grid-clean" : ""}${lightMode ? " chart-grid-light" : ""}`}
+        className={`chart-grid-modal${cleanMode ? " chart-grid-clean" : ""}${lightMode ? " chart-grid-light" : ""}${look.theme === "ivory" ? " chart-grid-ivory" : ""}`}
         onClick={(event) => event.stopPropagation()}
         onScroll={handleScroll}
       >
@@ -1416,6 +1558,80 @@ export function ChartGridModal({
               </label>
 
               <label className="nav-select chart-grid-select">
+                <span>Theme</span>
+                <select value={look.theme} onChange={(event) => updateLook({ theme: event.target.value as GridChartTheme })}>
+                  {GRID_THEMES.map((option) => (
+                    <option key={`grid-theme-${option.value}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="nav-select chart-grid-select chart-grid-look">
+                <span>Candles</span>
+                <div className="chart-grid-look-row">
+                <select
+                  aria-label="Candle colours"
+                  value={candlePreset}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === "theme") {
+                      updateLook({ candleUp: null, candleDown: null });
+                      return;
+                    }
+                    const preset = CANDLE_PRESETS.find((option) => option.value === value);
+                    if (preset) updateLook({ candleUp: preset.up, candleDown: preset.down });
+                  }}
+                >
+                  <option value="theme">Theme</option>
+                  {CANDLE_PRESETS.map((option) => (
+                    <option key={`grid-candle-${option.value}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                  {candlePreset === "custom" ? <option value="custom">Custom</option> : null}
+                </select>
+                <input
+                  type="color"
+                  aria-label="Up candle colour"
+                  title="Up candle colour"
+                  value={candleUp}
+                  onChange={(event) => updateLook({ candleUp: event.target.value, candleDown })}
+                />
+                <input
+                  type="color"
+                  aria-label="Down candle colour"
+                  title="Down candle colour"
+                  value={candleDown}
+                  onChange={(event) => updateLook({ candleUp, candleDown: event.target.value })}
+                />
+                </div>
+              </div>
+
+              <div className="nav-select chart-grid-select chart-grid-look">
+                <span>Volume</span>
+                <div className="chart-grid-look-row">
+                  <button
+                    type="button"
+                    className={look.volume === "mono" ? "tool-pill active" : "tool-pill"}
+                    onClick={() => updateLook({ volume: look.volume === "mono" ? "color" : "mono" })}
+                    title="Mono volume: grey bars, heavy up days blue, heavy down days red, dry-ups dimmed"
+                  >
+                    Mono
+                  </button>
+                  <button
+                    type="button"
+                    className={look.weighted ? "tool-pill active" : "tool-pill"}
+                    onClick={() => updateLook({ weighted: !look.weighted })}
+                    title="Weighted width: candles drawn wider on heavy volume / wide range"
+                  >
+                    Weighted width
+                  </button>
+                </div>
+              </div>
+
+              <label className="nav-select chart-grid-select">
                 <span>Sort</span>
                 <select value={effectiveSortBy} onChange={(event) => onSortByChange(event.target.value as ChartGridSortBy)}>
                   {availableSortOptions.map((option) => (
@@ -1436,15 +1652,6 @@ export function ChartGridModal({
                   style={{ marginRight: 8 }}
                 >
                   ⛶ Clean
-                </button>
-                <button
-                  type="button"
-                  className={lightMode ? "tool-pill active" : "tool-pill"}
-                  onClick={() => setLightMode((current) => !current)}
-                  title="White chart background"
-                  style={{ marginRight: 8 }}
-                >
-                  ☀ White
                 </button>
                 <button
                   type="button"
@@ -1623,6 +1830,7 @@ export function ChartGridModal({
                       globalPosition={rangePosition}
                       hiddenMas={hiddenMas}
                       light={lightMode}
+                      paint={paint}
                       showLevels={levelsOn}
                       sortBy={effectiveSortBy}
                       onAddToWatchlist={onAddToWatchlist}
@@ -1644,6 +1852,7 @@ export function ChartGridModal({
                   globalPosition={rangePosition}
                   hiddenMas={hiddenMas}
                   light={lightMode}
+                  paint={paint}
                   showLevels={levelsOn}
                   sortBy={effectiveSortBy}
                   onAddToWatchlist={onAddToWatchlist}

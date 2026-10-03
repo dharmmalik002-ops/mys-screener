@@ -10107,3 +10107,33 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* ---------- Ivory theme for grid charts (paper, like the big chart's Ivory palette) ---------- */
+.chart-grid-modal.chart-grid-light.chart-grid-ivory .chart-grid-card {
+  background: #fbfaf7;
+  border-color: rgba(40, 33, 20, 0.14);
+}
+.chart-grid-modal.chart-grid-light.chart-grid-ivory .chart-grid-price-scale text,
+.chart-grid-modal.chart-grid-light.chart-grid-ivory .chart-grid-month-axis text {
+  fill: #57534a;
+}
+.chart-grid-look-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chart-grid-look-row select {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.chart-grid-look input[type="color"] {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.chart-grid-look input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+.chart-grid-look input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
