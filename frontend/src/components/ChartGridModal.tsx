@@ -1103,7 +1103,12 @@ export function ChartGridModal({
     setRangePosition(100);
   }, [timeframe]);
 
-  // ESC closes the grid; a/s/d/f switch the timeframe of EVERY chart at once.
+  // Read inside the key listener so it isn't re-bound on every style change.
+  const chartStyleRef = useRef(chartStyle);
+  chartStyleRef.current = chartStyle;
+
+  // ESC closes the grid; a/s/d/f switch the timeframe of EVERY chart at once;
+  // l toggles candles <-> bars.
   useEffect(() => {
     const TIMEFRAME_KEYS: Record<string, ChartGridTimeframe> = {
       a: "3M",
@@ -1122,7 +1127,14 @@ export function ChartGridModal({
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) return;
-      const tf = TIMEFRAME_KEYS[event.key.toLowerCase()];
+      const key = event.key.toLowerCase();
+      // l: flip every chart between candlesticks and bars.
+      if (key === "l") {
+        event.preventDefault();
+        onChartStyleChange(chartStyleRef.current === "candles" ? "bars" : "candles");
+        return;
+      }
+      const tf = TIMEFRAME_KEYS[key];
       if (tf) {
         event.preventDefault();
         onTimeframeChange(tf);
@@ -1130,7 +1142,7 @@ export function ChartGridModal({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, onTimeframeChange]);
+  }, [onClose, onTimeframeChange, onChartStyleChange]);
 
   useEffect(() => {
     modalRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -1548,7 +1560,7 @@ export function ChartGridModal({
 
               <label className="nav-select chart-grid-select">
                 <span>Style</span>
-                <select value={chartStyle} onChange={(event) => onChartStyleChange(event.target.value as ChartGridChartStyle)}>
+                <select title="Shortcut: l toggles candles / bars" value={chartStyle} onChange={(event) => onChartStyleChange(event.target.value as ChartGridChartStyle)}>
                   {GRID_STYLES.map((option) => (
                     <option key={`grid-style-${option.value}`} value={option.value}>
                       {option.label}

@@ -2250,6 +2250,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
     setActivePage(page);
   };
+  const handleNavigateRef = useRef(handleNavigate);
+  handleNavigateRef.current = handleNavigate;
 
   // The chart surface is the heaviest code in the app (ChartPanel + the
   // charting library, ~560 KB) and was fetched only on a nav-link hover — so
@@ -4513,6 +4515,30 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
+  // 1-4 jump between the main pages. Ignored while typing, with modifiers
+  // held, on Chart Gym (its own 1-6 tool keys) and while any overlay is open
+  // (chart popup, chart grid, dialogs) so a number never navigates behind it.
+  const pageShortcutStateRef = useRef({ activePage, chartOpen, commandPaletteOpen });
+  pageShortcutStateRef.current = { activePage, chartOpen, commandPaletteOpen };
+  useEffect(() => {
+    const PAGE_KEYS: Record<string, AppPage> = { "1": "home", "2": "screener", "3": "watchlists", "4": "journal" };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
+      const page = PAGE_KEYS[event.key];
+      if (!page) return;
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName ?? "";
+      if (tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT" || target?.isContentEditable) return;
+      const state = pageShortcutStateRef.current;
+      if (state.activePage === "study" || state.chartOpen || state.commandPaletteOpen) return;
+      if (document.querySelector('.chart-grid-modal, [role="dialog"], [aria-modal="true"]')) return;
+      event.preventDefault();
+      handleNavigateRef.current(page);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -4780,6 +4806,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       const target = event.target as HTMLElement | null;
       const tagName = target?.tagName ?? "";
       if (tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT" || target?.isContentEditable) {
+        return;
+      }
+      // The chart grid owns "l" while it is open (candles <-> bars there).
+      if (document.querySelector(".chart-grid-modal")) {
         return;
       }
       event.preventDefault();
