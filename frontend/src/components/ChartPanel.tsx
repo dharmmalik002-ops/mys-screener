@@ -2252,6 +2252,9 @@ export function ChartPanel({
   // it leaked between instances and put the page's chart panel into full
   // screen behind the modal at the same time.
   const shortViewport = useMediaQuery("(max-height: 520px)");
+  // On a phone the stage labels (OHLC, RS Rating) wrap across the top of the
+  // chart and sit on the newest candles, so price starts ~20% lower there.
+  const phoneViewport = useMediaQuery("(max-width: 768px)");
   const [localFullscreen, setLocalFullscreen] = useState(false);
   const chartFullscreen = fullscreen ?? localFullscreen;
   const setChartFullscreen = useCallback(
@@ -3643,15 +3646,16 @@ export function ChartPanel({
     // height, so ~230px of a 390px screen before the time axis and any
     // overlay. Full screen on a short viewport hands price 76% instead.
     const tightPanes = chartFullscreen && shortViewport;
+    const priceTop = phoneViewport ? 0.2 : tightPanes ? 0.02 : 0.04;
 
     mainSeries.priceScale().applyOptions({
       scaleMargins: safeRsLine.length
         ? tightPanes
-          ? { top: 0.02, bottom: 0.22 }
-          : { top: 0.04, bottom: 0.32 }
+          ? { top: priceTop, bottom: 0.22 }
+          : { top: priceTop, bottom: 0.32 }
         : tightPanes
-          ? { top: 0.02, bottom: 0.1 }
-          : { top: 0.04, bottom: 0.18 },
+          ? { top: priceTop, bottom: 0.1 }
+          : { top: priceTop, bottom: 0.18 },
     });
     volumeSeries.priceScale().applyOptions({
       scaleMargins: {
@@ -3726,7 +3730,7 @@ export function ChartPanel({
       }
       benchmarkSeriesRef.current = null;
     }
-  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize, chartFullscreen, shortViewport]);
+  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize, chartFullscreen, shortViewport, phoneViewport]);
 
   // ── E6: main-series markers (pips, trades, circuit locks, tightness) ─────
   useEffect(() => {
