@@ -1804,3 +1804,59 @@ html:root .homepro-briefing-link {
 html:root .homepro-briefing-link:hover {
   text-decoration-color: var(--text);
 }
+
+
+/* =========================================================
+   Bento: the XP score as the large tile, the three counts beside it
+   ========================================================= */
+.homepro-kpis.is-bento {
+  grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+}
+.homepro-kpis.is-bento > .homepro-xp-hero {
+  grid-row: 1 / span 2;
+}
+/* Market session runs under Advancing and Declining. */
+.homepro-kpis.is-bento > :last-child {
+  grid-column: 2 / span 2;
+}
+
+.homepro-xp-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+.homepro-xp-hero-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.homepro-xp-hero .homepro-xp-gauge {
+  width: min(100%, 340px);
+  margin: auto;
+}
+.homepro-xp-hero-foot {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .homepro-kpis.is-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .homepro-kpis.is-bento > .homepro-xp-hero {
+    grid-row: auto;
+    grid-column: 1 / -1;
+  }
+  .homepro-kpis.is-bento > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 760px) {
+  .homepro-kpis.is-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -3467,11 +3467,29 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       {/* ── Tab 0: Dashboard ── */}
       {activeTab === 0 && (
         <div className="tj-page tj-page-dashboard tj-lite">
-          <div className="tj-kpis">
-            <div className={`tj-kpi ${totalPnl >= 0 ? "pos" : "neg"}`}>
+          <div className="tj-kpis tj-kpis-hero">
+            {/* The one number the page is about, sized as its hero (the
+                wallet-dashboard pattern): realized P&L large on a tinted card,
+                with what it means for the account underneath it. */}
+            <div className={`tj-kpi tj-kpi-hero ${totalPnl >= 0 ? "pos" : "neg"}`}>
               <div className="tj-kpi-label">Total Realized P&L</div>
               <div className="tj-kpi-value">{fmtPnl(totalPnl)}</div>
-              <div className="tj-kpi-sub">{closedTrades.length} closed trades</div>
+              <dl className="tj-kpi-hero-stats">
+                <div>
+                  <dt>On starting equity</dt>
+                  <dd className={totalPnl >= 0 ? "pos" : "neg"}>
+                    {startEquity > 0 ? `${totalPnl >= 0 ? "+" : "−"}${Math.abs((totalPnl / startEquity) * 100).toFixed(2)}%` : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>With open positions</dt>
+                  <dd className={totalPnl + totalUnrealized >= 0 ? "pos" : "neg"}>{fmtPnl(totalPnl + totalUnrealized)}</dd>
+                </div>
+                <div>
+                  <dt>Closed trades</dt>
+                  <dd>{closedTrades.length}</dd>
+                </div>
+              </dl>
             </div>
             <div className="tj-kpi">
               <div className="tj-kpi-label">Win Rate</div>

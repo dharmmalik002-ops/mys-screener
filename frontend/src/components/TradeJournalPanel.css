@@ -3315,3 +3315,79 @@
 .tj-grade-chart:hover { color: var(--text); border-color: var(--text-muted); }
 
 .tj-grade-hint { margin: 9px 0 0; font-size: 11px; color: var(--text-muted); }
+
+/* ─── Dashboard hero: realized P&L as the page's one large number ───────── */
+.tj-root .tj-page-dashboard .tj-kpis.tj-kpis-hero {
+  grid-template-columns: minmax(0, 1.9fr) repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.tj-root .tj-page-dashboard .tj-kpi {
+  display: flex;
+  flex-direction: column;
+}
+
+.tj-root .tj-page-dashboard.tj-lite .tj-kpi.tj-kpi-hero {
+  padding: 18px 22px 16px;
+  border-radius: var(--radius-xl);
+  border-left-width: 1px;
+  border-color: transparent;
+}
+
+.tj-root .tj-kpi.tj-kpi-hero.pos {
+  background: color-mix(in srgb, var(--tj-pos, var(--positive)) 9%, var(--surface));
+}
+.tj-root .tj-kpi.tj-kpi-hero.neg {
+  background: color-mix(in srgb, var(--tj-neg, var(--negative)) 8%, var(--surface));
+}
+.tj-root .tj-kpi.tj-kpi-hero::before {
+  display: none;
+}
+.tj-root .tj-kpi.tj-kpi-hero:hover {
+  transform: none;
+}
+
+.tj-root .tj-page-dashboard.tj-lite .tj-kpi-hero .tj-kpi-value {
+  margin: 6px 0 14px;
+  font-size: clamp(30px, 3.2vw, 44px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.tj-root .tj-kpi-hero.pos .tj-kpi-value { color: var(--tj-pos, var(--positive)); }
+.tj-root .tj-kpi-hero.neg .tj-kpi-value { color: var(--tj-neg, var(--negative)); }
+
+.tj-kpi-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: auto 0 0;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+.tj-kpi-hero-stats dt {
+  font-size: var(--fs-micro, 11px);
+  color: var(--text-muted);
+}
+.tj-kpi-hero-stats dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.tj-kpi-hero-stats dd.pos { color: var(--tj-pos, var(--positive)); }
+.tj-kpi-hero-stats dd.neg { color: var(--tj-neg, var(--negative)); }
+
+@media (max-width: 1100px) {
+  .tj-root .tj-page-dashboard .tj-kpis.tj-kpis-hero {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .tj-root .tj-kpis.tj-kpis-hero .tj-kpi-hero {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .tj-root .tj-page-dashboard .tj-kpis.tj-kpis-hero {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

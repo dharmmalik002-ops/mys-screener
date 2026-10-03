@@ -997,6 +997,42 @@ function MoverRow({
 /** The session card owns its own clock. The tick used to live in HomePanel,
     which re-rendered the whole Home page — charts, tables, every card — once a
     second for a countdown that only this card shows. */
+/* The bento's large tile: the XP score is the headline figure on Home, so it
+   gets the dial at full size, the session's change and how long the current
+   condition has held — the three things the four equal cards used to make
+   you assemble from a meter card and the chart header below it. */
+function XpHeroTile({ xp }: { xp: XpBreadthScore }) {
+  const h = xp.history;
+  const prev = h.length >= 2 ? h[h.length - 2].xp_score : null;
+  const delta = prev == null ? null : xp.xp_score - prev;
+  const deltaCls = delta == null ? null : Math.abs(delta) < 0.05 ? "flat" : delta > 0 ? "up" : "down";
+  let held: string | null = null;
+  if (h.length) {
+    let i = h.length - 1;
+    while (i > 0 && h[i - 1].regime === h[h.length - 1].regime) i -= 1;
+    const since = new Date(h[i].date);
+    const sinceLabel = isNaN(since.getTime())
+      ? h[i].date
+      : since.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const n = h.length - i;
+    held = `${xp.regime} since ${sinceLabel} · ${n} session${n === 1 ? "" : "s"}`;
+  }
+  return (
+    <div className="homepro-kpi homepro-xp-hero">
+      <div className="homepro-xp-hero-head">
+        <div className="homepro-kpi-label">XP breadth score</div>
+        {delta != null && deltaCls ? (
+          <span className={`homepro-xp-delta ${deltaCls}`} title="Change vs previous session">
+            {deltaCls === "flat" ? "▬" : deltaCls === "up" ? "▲" : "▼"} {Math.abs(delta).toFixed(2)}
+          </span>
+        ) : null}
+      </div>
+      <XpGauge xp={xp} />
+      {held ? <div className="homepro-xp-hero-foot">{held}</div> : null}
+    </div>
+  );
+}
+
 function SessionMeterCard({ marketOpen, universeCount }: { marketOpen: boolean; universeCount: number }) {
   // Ticks every second while the session is open so the countdown counts
   // down; once a minute otherwise, when nothing on the card moves faster.
@@ -1284,7 +1320,8 @@ export function HomePanel({
       {/* ============ ROW 1 — KPIs + SNAPSHOT ============ */}
       <div className="homepro-row-top">
         {/* KPI cards */}
-        <div className="homepro-kpis">
+        <div className={`homepro-kpis${xpBreadth ? " is-bento" : ""}`}>
+          {xpBreadth ? <XpHeroTile xp={xpBreadth} /> : null}
           <MeterCard
             title="Advancing"
             value={advances.toLocaleString("en-IN")}
@@ -1301,14 +1338,18 @@ export function HomePanel({
             pct={breadthTotal > 0 ? (declines / breadthTotal) * 100 : 0}
             color="var(--viz-pink)"
           />
-          <MeterCard
-            title="Breadth score"
-            value={xpBreadth ? xpBreadth.xp_score.toFixed(1) : "—"}
-            footLeft={xpBreadth?.regime ?? "Not computed yet"}
-            footRight="of 30"
-            pct={xpBreadth ? ((xpBreadth.xp_score - 5) / 25) * 100 : 0}
-            color="var(--viz-purple)"
-          />
+          {/* Without an XP payload there is no hero tile, so the plain meter
+              card keeps the four-up row whole. */}
+          {xpBreadth ? null : (
+            <MeterCard
+              title="Breadth score"
+              value="—"
+              footLeft="Not computed yet"
+              footRight="of 30"
+              pct={0}
+              color="var(--viz-purple)"
+            />
+          )}
           <SessionMeterCard marketOpen={marketOpen} universeCount={universeCount} />
         </div>
 
@@ -1341,22 +1382,6 @@ export function HomePanel({
                   </span>
                 );
               })()}
-            </div>
-            <div className="homepro-xp-badge-wrap">
-              {(() => {
-                const h = xpBreadth.history;
-                const prev = h.length >= 2 ? h[h.length - 2].xp_score : null;
-                const delta = prev == null ? null : xpBreadth.xp_score - prev;
-                if (delta == null) return null;
-                const cls = Math.abs(delta) < 0.05 ? "flat" : delta > 0 ? "up" : "down";
-                const arrow = cls === "flat" ? "▬" : cls === "up" ? "▲" : "▼";
-                return (
-                  <span className={`homepro-xp-delta ${cls}`} title="Change vs previous session">
-                    {arrow} {Math.abs(delta).toFixed(2)}
-                  </span>
-                );
-              })()}
-              <XpGauge xp={xpBreadth} />
             </div>
           </div>
           <XpBreadthChart xp={xpBreadth} />
