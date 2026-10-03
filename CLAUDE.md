@@ -71,6 +71,10 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 
 ### Frontend (`frontend/src/`)
 - `App.tsx`: Core UI container, top navigation bar, main state management, and tab switcher.
+- **`DESIGN.md` (repo root) is the visual system** — principles, tokens, components and the rules that bite. Read it before any UI change.
+- `components/ChartHoverPreview.tsx`: resting on a scan-table row for 450ms shows an SVG glance at the daily chart (90 candles, 50-DMA, volume). Bars come from `App.loadChartPreviewBars`, which reads the shared chart cache and otherwise joins `fetchChartShared` — never a second request.
+- `components/HoldToConfirmButton.tsx`: press-and-hold (800ms) confirmation for destructive actions; the Journal's trade delete uses it instead of `window.confirm()`.
+- `components/GlidePill.tsx`: slides the active tab's pill between tabs by copying the active tab's own computed fill onto a ghost — no colours of its own, so it works in both designs and themes. Used in the header rail and the Journal's tabs and toggles.
 - `components/NavGroups.tsx`: the desktop header's page menu — the twelve pages as four groups (Market / Scan / Journal / Research), each a dropdown with icon + one-line blurb; a one-page group is a plain tab. Groups are declared in `App.tsx` (`NAV_GROUPS`) from `NAV_PAGES`, which the phone tab bar still renders flat. The panel portals to `<body>` (gotcha 17) and follows its trigger on scroll/resize.
 - `components/HomePanel.tsx`: Primary dashboard showing market indices, top movers, market health, and quick scanners.
 - `components/ScanTable.tsx`: Reusable data table for displaying stock scan results with sorting, filtering, and chart popups.

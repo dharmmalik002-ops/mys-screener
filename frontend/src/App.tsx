@@ -118,6 +118,7 @@ import {
   normalizeUniverseFilter,
   type UniverseFilter,
 } from "./lib/universeFilter";
+import { GlidePill } from "./components/GlidePill";
 
 const TodayPanel = lazy(() => import("./components/TodayPanel").then((module) => ({ default: module.TodayPanel })));
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
@@ -5167,6 +5168,19 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     );
   }, []);
 
+  // Daily bars for the scan table's hover preview. Reads the same cache the
+  // hover prefetch fills (a stale copy is fine for a glance) and otherwise
+  // joins or starts the shared fetch, so a preview never doubles a request.
+  const loadChartPreviewBars = async (symbol: string) => {
+    const cached = readStaleCachedChart(activeMarket, symbol, "1D");
+    if (cached?.bars?.length) return cached.bars;
+    const payload = await fetchChartShared(symbol, "1D", activeMarket);
+    if (payload.symbol === symbol && payload.timeframe === "1D") {
+      storeCachedChart(activeMarket, symbol, "1D", payload);
+    }
+    return payload.bars ?? null;
+  };
+
   const handlePrefetchSymbol = (symbol: string) => {
     if (!symbol || symbol === selectedSymbolRef.current) {
       return;
@@ -6192,7 +6206,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         </div>
 
         <div className="nav-controls">
-          <nav className="nav-rail" aria-label="Pages">
+          <nav className="nav-rail has-glide-pill" aria-label="Pages">
+            <GlidePill activeSelector=".nav-button.primary" watch={activePage} />
             <NavGroups
               groups={HEADER_NAV_GROUPS}
               activePage={activePage}
@@ -6941,6 +6956,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                         sectorSummaries={scanSectorSummaries}
                         onPickSymbol={handlePickSymbol}
                         onPrefetchSymbol={handlePrefetchSymbol}
+                        onLoadChartPreview={loadChartPreviewBars}
                         onRequestAddToWatchlist={setWatchlistPickerSymbol}
                         selectedSymbol={selectedSymbol}
                         sortMode={resultSortMode}

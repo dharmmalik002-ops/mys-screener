@@ -49,6 +49,8 @@ import { NewsModal } from "./NewsModal";
 import { PnlYearGrid } from "./PnlYearGrid";
 import { PositionSizer } from "./PositionSizer";
 import "./TradeJournalPanel.css";
+import { HoldToConfirmButton } from "./HoldToConfirmButton";
+import { GlidePill } from "./GlidePill";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -2804,8 +2806,9 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   }
 
   // ── Delete trade ─────────────────────────────────────────────────────────
+  // Confirmation is the press-and-hold on the button (HoldToConfirmButton):
+  // the journal is the user's only copy of their trade history.
   function deleteTrade(idx: number) {
-    if (!confirm("Delete this trade?")) return;
     saveTrades(trades.filter((_, i) => i !== idx));
   }
 
@@ -3442,7 +3445,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       </div>
 
       {/* ── Tabs ── */}
-      <div className="tj-tabbar">
+      <div className="tj-tabbar has-glide-pill">
+        <GlidePill activeSelector=".tj-tabbtn.active" watch={activeTab} />
         {["Dashboard", "Trade Log", "Open Positions", "Smart Entry", "Insights", "Position Sizer", "Learnings"].map((t, i) => (
           <button
             key={t}
@@ -3517,11 +3521,13 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           </div>
 
           <div className="tj-dashboard-controlbar">
-            <div className="tj-toggle-group" role="tablist" aria-label="Dashboard metric mode">
+            <div className="tj-toggle-group has-glide-pill" role="tablist" aria-label="Dashboard metric mode">
+              <GlidePill activeSelector=".tj-toggle-btn.active" watch={dashboardMetric} />
               <button type="button" className={`tj-toggle-btn ${dashboardMetric === "combined" ? "active" : ""}`} onClick={() => setDashboardMetric("combined")}>Combined P&L</button>
               <button type="button" className={`tj-toggle-btn ${dashboardMetric === "realized" ? "active" : ""}`} onClick={() => setDashboardMetric("realized")}>Realized P&L</button>
             </div>
-            <div className="tj-toggle-group" role="tablist" aria-label="Dashboard symbol focus">
+            <div className="tj-toggle-group has-glide-pill" role="tablist" aria-label="Dashboard symbol focus">
+              <GlidePill activeSelector=".tj-toggle-btn.active" watch={dashboardFocus} />
               <button type="button" className={`tj-toggle-btn ${dashboardFocus === "all" ? "active" : ""}`} onClick={() => setDashboardFocus("all")}>All</button>
               <button type="button" className={`tj-toggle-btn ${dashboardFocus === "winners" ? "active" : ""}`} onClick={() => setDashboardFocus("winners")}>Winners</button>
               <button type="button" className={`tj-toggle-btn ${dashboardFocus === "losers" ? "active" : ""}`} onClick={() => setDashboardFocus("losers")}>Losers</button>
@@ -3883,7 +3889,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                       <td>{(t.tags || []).slice(0, 3).map(tag => <span key={tag} className="tj-chip xs">{tag}</span>)}</td>
                       <td className="tj-action-cell">
                         <button className="tj-action-btn ghost" onClick={() => openEditClosedModal(t.sellIndex, t.buyIndices)}>Edit</button>
-                        <button className="tj-action-btn danger" onClick={() => deleteTrade(t.sellIndex)}>×</button>
+                        <HoldToConfirmButton className="tj-action-btn danger" label={`Delete the ${t.symbol} trade`} onConfirm={() => deleteTrade(t.sellIndex)}>×</HoldToConfirmButton>
                       </td>
                     </tr>
                   ))}

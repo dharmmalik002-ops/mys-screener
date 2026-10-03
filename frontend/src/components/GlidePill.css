@@ -1,0 +1,17 @@
+/* GlidePill.tsx — the travelling ghost of the active tab. It sits under the
+   tabs' text (z-index -1 inside an isolated container) and is invisible except
+   while a switch is animating. */
+.glide-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.has-glide-pill {
+  isolation: isolate;
+}

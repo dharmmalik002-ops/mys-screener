@@ -1,0 +1,60 @@
+/* HoldToConfirmButton: the fill sweeps left to right over --hold-ms, and snaps
+   back if the press ends early. */
+.hold-confirm {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hold-confirm-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--negative, #dc2626) 28%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 160ms ease-out;
+  pointer-events: none;
+}
+
+.hold-confirm.is-holding .hold-confirm-fill {
+  transform: scaleX(1);
+  transition: transform var(--hold-ms, 800ms) linear;
+}
+
+.hold-confirm-label {
+  position: relative;
+}
+
+.hold-confirm-hint {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--inverse, #222);
+  color: var(--inverse-ink, #fff);
+  font-size: 11.5px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  pointer-events: none;
+}
+
+.hold-confirm.show-hint .hold-confirm-hint {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hold-confirm.is-holding .hold-confirm-fill {
+    transition: none;
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+}

@@ -50,6 +50,7 @@ import { EmptyState } from "./EmptyState";
 import { Panel } from "./Panel";
 import { SortableHeader } from "./SortableTh";
 import { Sparkline } from "./Sparkline";
+import { ChartHoverPreview, type ChartPreviewAnchor } from "./ChartHoverPreview";
 
 import "./ScanTable.css";
 
@@ -458,6 +459,8 @@ function scanEntryHeight(entry: ScanTableEntry, expandedKey: string | null) {
   return entry.key === expandedKey ? SCAN_ROW_SLOT_HEIGHT + SCAN_ROW_DETAIL_HEIGHT : SCAN_ROW_SLOT_HEIGHT;
 }
 
+const PREVIEW_DELAY_MS = 450;
+
 type ArrangementMode = "flat" | "sector" | "group";
 
 type ScanTableProps = {
@@ -470,6 +473,8 @@ type ScanTableProps = {
   onPickSymbol: (symbol: string) => void;
   // Optional best-effort chart prewarm on row hover (no-op if omitted).
   onPrefetchSymbol?: (symbol: string) => void;
+  // Daily bars for the hover chart preview; no preview when omitted.
+  onLoadChartPreview?: (symbol: string) => Promise<ChartBar[] | null>;
   onRequestAddToWatchlist: (symbol: string) => void;
   selectedSymbol: string | null;
   sortMode: "change" | "rs";
@@ -500,6 +505,8 @@ type ScanRowProps = {
   registerRow?: (symbol: string, element: HTMLDivElement | null) => void;
   onPick: (symbol: string) => void;
   onPrefetch?: (symbol: string) => void;
+  onPreviewStart?: (symbol: string, element: HTMLElement) => void;
+  onPreviewEnd?: () => void;
   onToggleExpand: (entryKey: string) => void;
   onAddToWatchlist: (symbol: string) => void;
 };
@@ -521,6 +528,8 @@ const ScanRow = memo(function ScanRow({
   registerRow,
   onPick,
   onPrefetch,
+  onPreviewStart,
+  onPreviewEnd,
   onToggleExpand,
   onAddToWatchlist,
 }: ScanRowProps) {
@@ -565,9 +574,16 @@ const ScanRow = memo(function ScanRow({
       <button
         type="button"
         className="scan-row-main st-row-main"
-        onMouseEnter={onPrefetch ? () => onPrefetch(item.symbol) : undefined}
+        onMouseEnter={(event) => {
+          onPrefetch?.(item.symbol);
+          onPreviewStart?.(item.symbol, event.currentTarget);
+        }}
+        onMouseLeave={onPreviewEnd}
         onFocus={onPrefetch ? () => onPrefetch(item.symbol) : undefined}
-        onClick={() => onPick(item.symbol)}
+        onClick={() => {
+          onPreviewEnd?.();
+          onPick(item.symbol);
+        }}
       >
         <span className="st-logo">
           {logoUrl ? (
@@ -815,6 +831,7 @@ export function ScanTable({
   sectorSummaries,
   onPickSymbol,
   onPrefetchSymbol,
+  onLoadChartPreview,
   onRequestAddToWatchlist,
   selectedSymbol,
   sortMode,
@@ -1324,11 +1341,56 @@ export function ScanTable({
   // Row callbacks read the latest props through a ref so their identity never
   // changes — the parent recreates its handlers on every render, which would
   // otherwise defeat ScanRow's memo.
-  const rowCallbacksRef = useRef({ onPickSymbol, onPrefetchSymbol, onRequestAddToWatchlist });
-  rowCallbacksRef.current = { onPickSymbol, onPrefetchSymbol, onRequestAddToWatchlist };
+  const rowCallbacksRef = useRef({ onPickSymbol, onPrefetchSymbol, onRequestAddToWatchlist, onLoadChartPreview });
+  rowCallbacksRef.current = { onPickSymbol, onPrefetchSymbol, onRequestAddToWatchlist, onLoadChartPreview };
   const handlePickRow = useCallback((symbol: string) => rowCallbacksRef.current.onPickSymbol(symbol), []);
   const handlePrefetchRow = useCallback((symbol: string) => rowCallbacksRef.current.onPrefetchSymbol?.(symbol), []);
   const handleAddRow = useCallback((symbol: string) => rowCallbacksRef.current.onRequestAddToWatchlist(symbol), []);
+  // Hover chart preview. Resting on a row opens it after PREVIEW_DELAY_MS, so
+  // sweeping the pointer down the table opens nothing; leaving, clicking or
+  // scrolling closes it. Touch screens have no hover and never see it.
+  const [previewAnchor, setPreviewAnchor] = useState<ChartPreviewAnchor | null>(null);
+  const previewTimerRef = useRef<number | null>(null);
+  const selectedSymbolRef = useRef(selectedSymbol);
+  selectedSymbolRef.current = selectedSymbol;
+  const previewEnabled = Boolean(onLoadChartPreview);
+  const handlePreviewEnd = useCallback(() => {
+    if (previewTimerRef.current !== null) {
+      window.clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+    setPreviewAnchor(null);
+  }, []);
+  const handlePreviewStart = useCallback((symbol: string, element: HTMLElement) => {
+    if (previewTimerRef.current !== null) window.clearTimeout(previewTimerRef.current);
+    // The selected stock's chart is already on screen.
+    if (symbol === selectedSymbolRef.current) {
+      setPreviewAnchor(null);
+      return;
+    }
+    if (typeof window.matchMedia === "function" && !window.matchMedia("(hover: hover)").matches) return;
+    previewTimerRef.current = window.setTimeout(() => {
+      previewTimerRef.current = null;
+      if (!element.isConnected) return;
+      setPreviewAnchor({ symbol, rect: element.getBoundingClientRect() });
+    }, PREVIEW_DELAY_MS);
+  }, []);
+  const loadPreviewBars = useCallback(
+    (symbol: string) => rowCallbacksRef.current.onLoadChartPreview?.(symbol) ?? Promise.resolve(null),
+    [],
+  );
+  useEffect(() => {
+    if (!previewAnchor) return;
+    const close = () => handlePreviewEnd();
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [previewAnchor, handlePreviewEnd]);
+  useEffect(() => handlePreviewEnd, [handlePreviewEnd]);
+
   const handleToggleRow = useCallback(
     (entryKey: string) => setExpandedRowKey((current) => (current === entryKey ? null : entryKey)),
     [],
@@ -1421,6 +1483,8 @@ export function ScanTable({
         registerRow={shouldVirtualize ? undefined : registerRow}
         onPick={handlePickRow}
         onPrefetch={onPrefetchSymbol ? handlePrefetchRow : undefined}
+        onPreviewStart={previewEnabled ? handlePreviewStart : undefined}
+        onPreviewEnd={previewEnabled ? handlePreviewEnd : undefined}
         onToggleExpand={handleToggleRow}
         onAddToWatchlist={handleAddRow}
       />
@@ -1810,6 +1874,7 @@ export function ScanTable({
           />
         </Suspense>
       ) : null}
+      {previewEnabled ? <ChartHoverPreview anchor={previewAnchor} loadBars={loadPreviewBars} /> : null}
     </Panel>
   );
 }
