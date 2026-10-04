@@ -6035,6 +6035,8 @@ export type LookalikeLibrary = {
   evaluation: {
     method: "chronological" | "grouped_by_ticker";
     setup_vs_random_auc: number | null;
+    scored_by?: string;
+    straight_line_auc?: number | null;
     outcome_auc: number | null;
     worked: number;
     failed: number;
@@ -6266,6 +6268,15 @@ export function getGalleryIndianHistory(style: string, page: number, size: numbe
   const q = `page=${page}&size=${size}&outcome=${outcome}`;
   return request<GalleryPage<GalleryHistoryRow>>(`/api/lookalikes/gallery/${encodeURIComponent(style)}/india?${q}`, undefined, {
     timeoutMs: 30000,
+  });
+}
+
+export type LookalikeAiReview = { verdict: "yes" | "partly" | "no"; score: number; why: string; look_for: string; model?: string };
+
+export function getLookalikeAiReview(style: string, symbol: string, date?: string) {
+  const q = `style=${encodeURIComponent(style)}&symbol=${encodeURIComponent(symbol)}${date ? `&date=${date}` : ""}`;
+  return request<{ available: boolean; review?: LookalikeAiReview | null; reason?: string }>(`/api/lookalikes/ai-review?${q}`, undefined, {
+    timeoutMs: 60000,
   });
 }
 

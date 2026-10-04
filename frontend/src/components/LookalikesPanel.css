@@ -350,3 +350,32 @@
   .setup-gallery-grid,
   .lookalike-grid { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
 }
+
+/* Shared trader / setup picker */
+.setup-picker { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
+.setup-picker-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.setup-picker-trader {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 6px 14px; border-radius: 10px; border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  background: transparent; color: inherit; font: inherit; cursor: pointer;
+}
+.setup-picker-trader span { font-size: 11px; color: var(--text-muted); }
+.setup-picker-trader.is-active { background: var(--text, #111); color: var(--surface, #fff); border-color: transparent; }
+.setup-picker-trader.is-active span { color: inherit; opacity: 0.75; }
+.setup-picker-count { opacity: 0.6; font-size: 0.9em; }
+.setup-gallery-sub { display: inline-flex; gap: 6px; margin-left: 8px; }
+
+/* Today's one-line summary, details folded away */
+.lookalike-strip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px;
+  padding: 10px 14px; margin: 8px 0; border-radius: 10px; background: var(--surface-soft, #f4f4f4); font-size: 13px;
+}
+.lookalike-strip .lookalike-link { margin-left: auto; }
+.lookalike-details { display: flex; flex-direction: column; gap: 10px; }
+
+/* AI second opinion */
+.ai-review-button { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; }
+.ai-review { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; font-size: 13px; background: var(--surface-soft, #f4f4f4); }
+.ai-review strong { display: inline-flex; align-items: center; gap: 4px; }
+.ai-review.is-yes { background: color-mix(in srgb, var(--positive, #1a7f37) 12%, transparent); }
+.ai-review.is-no { background: color-mix(in srgb, var(--negative, #cf222e) 10%, transparent); }

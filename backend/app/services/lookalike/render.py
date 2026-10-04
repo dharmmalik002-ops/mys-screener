@@ -97,8 +97,17 @@ def normalised(arrs: dict[str, np.ndarray]) -> dict[str, list[float]]:
 
 
 def draw(arrs: dict[str, np.ndarray]) -> Image.Image:
+    """The model's picture: 224 x 224, drawn at twice the size and shrunk."""
+    return _paint(arrs, SIZE * _SCALE, SIZE * _SCALE).resize((SIZE, SIZE), Image.LANCZOS)
+
+
+def draw_large(arrs: dict[str, np.ndarray], width: int = 960, height: int = 600) -> Image.Image:
+    """The same chart at a size a person (or a vision model) can read."""
+    return _paint({k: np.asarray(v, dtype=float) for k, v in arrs.items() if k in ("o", "h", "l", "c", "v", "sma")}, width, height)
+
+
+def _paint(arrs: dict[str, np.ndarray], W: int, H: int) -> Image.Image:
     n = len(arrs["c"])
-    W = H = SIZE * _SCALE
     img = Image.new("RGB", (W, H), _BG)
     g = ImageDraw.Draw(img)
     norm = normalised(arrs)
@@ -128,7 +137,7 @@ def draw(arrs: dict[str, np.ndarray]) -> Image.Image:
 
     pts = [((i + 0.5) * step, y(norm["sma"][i])) for i in range(n)]
     g.line(pts, fill=_SMA, width=2)
-    return img.resize((SIZE, SIZE), Image.LANCZOS)
+    return img
 
 
 def picture(o, h, l, c, v, end: int, window: int = WINDOW) -> tuple[Image.Image, dict[str, list[float]]] | None:

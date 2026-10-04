@@ -43,6 +43,8 @@ class Library:
     # (pipeline.save_library); a reference row carries its position as "_i"
     packed_charts: object = None
     chart_lengths: object = None
+    # the image model retrained on his setup names, for the setups it wins (setup_net.py)
+    setup_net: object = None
 
     def chart(self, ref: dict) -> dict | None:
         """The reference's window plus what followed, as render.extended made it."""
@@ -83,6 +85,25 @@ def shown(library: "Library") -> list[str]:
     return out
 
 
+def _load_setup_net(lib_dir: Path, styles: dict):
+    """The retrained image model, if it wins any setup — and those setups'
+    recognition figure becomes the net's, so the page reports what scores them."""
+    from . import setup_net
+
+    net = setup_net.load(lib_dir)
+    if net is None:
+        return None
+    for setup in net.use:
+        summary = styles.get(f"zanger_{setup}")
+        if summary:
+            ev = dict(summary.get("evaluation") or {})
+            ev["straight_line_auc"] = ev.get("setup_vs_random_auc")
+            ev["setup_vs_random_auc"] = round(float(net.auc[setup]), 3)
+            ev["scored_by"] = "image model trained on his setup names"
+            summary["evaluation"] = ev
+    return net
+
+
 def load_library(data_dir: Path) -> Library:
     from .pipeline import library_dir
     from .references import sources_root
@@ -118,6 +139,7 @@ def load_library(data_dir: Path) -> Library:
             feedback_weights=feedback.load_weights(library_dir(data_dir)),
             packed_charts=arrays["refs__chart"],
             chart_lengths=arrays["refs__chart_len"],
+            setup_net=_load_setup_net(lib_dir, styles),
         )
     return Library(
         styles=styles,
@@ -243,10 +265,17 @@ def score(universe, index, library: Library, as_of: date | None = None) -> Score
     F = np.array([r[7] if r[7] is not None else np.full(len(shape.NAMES), np.nan) for r in rows])
     F_scale = shape.robust_scale(F)
     logits, pct, sims, shape_d = {}, {}, {}, {}
+    net_lo = library.setup_net.log_odds(images) if library.setup_net is not None else {}
     for style in library.styles:
-        lg = library.clf[style].logit(X)
-        logits[style] = lg
-        pct[style] = model.percentile_against(lg, library.cal_logits[style])
+        setup = style.partition("_")[2]
+        if setup in net_lo:
+            lg = net_lo[setup]
+            logits[style] = lg
+            pct[style] = model.percentile_against(lg, library.setup_net.cal[setup])
+        else:
+            lg = library.clf[style].logit(X)
+            logits[style] = lg
+            pct[style] = model.percentile_against(lg, library.cal_logits[style])
         sims[style] = similarity.blended_cosine(Xs, library.X_ref_scales.get(style, {render.WINDOW: library.X_ref[style]}), library.head)
         if style in library.F_ref:
             shape_d[style] = similarity.shape_distances(F, library.F_ref[style], F_scale, weights=library.feedback_weights)

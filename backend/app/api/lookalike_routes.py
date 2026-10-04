@@ -102,7 +102,9 @@ def _maybe_pull_in_background(data_dir: Path) -> None:
 SHOW_NEAR, SHOW_PEERS = 5, 6
 
 
-def build_lookalike_router(data_dir: Path, database_url: str | None = None, state_dir: Path | None = None) -> APIRouter:
+def build_lookalike_router(
+    data_dir: Path, database_url: str | None = None, state_dir: Path | None = None, gemini_api_key: str | None = None
+) -> APIRouter:
     from app.services.lookalike import feedback as fb
 
     router = APIRouter(prefix="/api/lookalikes", tags=["lookalikes"])
@@ -351,6 +353,45 @@ def build_lookalike_router(data_dir: Path, database_url: str | None = None, stat
                 months[month] = (_checked_file(f"{HISTORY_DIR}/{key}.json.gz", stamps.get(key)) or {}).get("charts", {})
             out.append({**r, "chart": months[month].get(f"{r['symbol']}@{r['date']}")})
         return {"style": style, "total": len(rows), "page": page, "size": size, "rows": out}
+
+    from app.services.lookalike.ai_review import Reviewer, describe_setup
+    from app.services.lookalike.references import style_name
+
+    reviewer = Reviewer(gemini_api_key, state_dir)
+
+    @router.get("/ai-review")
+    def ai_review(style: str, symbol: str, date: str | None = None, cached_only: bool = False) -> dict[str, Any]:
+        """An AI second opinion on whether one Indian chart shows this setup:
+        today's match (no date) or a gallery history chart (its date)."""
+        sym = symbol.strip().upper()
+        today = _load(RESULT_FILE) or {}
+        chart, when = None, date
+        if not date or date == today.get("session"):
+            when = today.get("session")
+            for m in ((today.get("styles") or {}).get(style) or {}).get("matches", []):
+                if m.get("symbol") == sym:
+                    chart = m.get("window")
+                    break
+        else:
+            hist = _load(HISTORY_FILE) or {}
+            key = f"{style}/{date[:7]}"
+            month = (_checked_file(f"{HISTORY_DIR}/{key}.json.gz", (hist.get("files") or {}).get(key)) or {}).get("charts", {})
+            chart = month.get(f"{sym}@{date}")
+        cache_key = f"{style}|{sym}|{when}"
+        hit = reviewer.cached(cache_key)
+        if hit or cached_only:
+            return {"available": bool(hit), "review": hit}
+        if chart is None:
+            raise HTTPException(status_code=404, detail="That chart is not in today's matches or the gallery history.")
+        if not reviewer.available:
+            return {"available": False, "reason": "The AI second opinion needs the server's AI key."}
+        about = ((_load(REFS_FILE) or {}).get("about") or {}).get(style) or {}
+        label = style_name(style).split(" · ")[-1].lower() if "_" in style else f"{style_name(style)}'s setups"
+        try:
+            review = reviewer.review(cache_key, chart, label, describe_setup(style, about.get("notes"), label))
+        except RuntimeError as exc:
+            return {"available": False, "reason": str(exc)}
+        return {"available": True, "review": review}
 
     @router.post("/feedback")
     def record_feedback(payload: dict = Body(...)) -> dict[str, Any]:

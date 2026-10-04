@@ -10,6 +10,8 @@ import {
   type LookalikeLibrary,
   type LookalikeWindow,
   type Lookalikes,
+  getLookalikeGallery,
+  type GalleryIndex,
 } from "../lib/api";
 import { CANDLE_DOWN, CANDLE_UP } from "../lib/marketColors";
 import { Panel } from "./Panel";
@@ -18,8 +20,9 @@ import { CompareModal } from "./LookalikeModals";
 import { fullChartUrl } from "../lib/chartLink";
 
 import "./LookalikesPanel.css";
-import { styleName } from "../lib/lookalikeStyles";
+import { TRADER_NAMES, joinStyle, setupName, splitStyle } from "../lib/lookalikeStyles";
 import { SetupGallery, StyleNotes } from "./SetupGallery";
+import { AiReview, SetupPicker } from "./SetupPicker";
 import { ChartsPerRow, useChartHeight, useChartsPerRow } from "./ChartsPerRow";
 
 /* Chart look-alikes.
@@ -218,12 +221,14 @@ function MatchCard({
   ruleLabels,
   onOpen,
   chartHeight,
+  style,
 }: {
   match: LookalikeMatch;
   references: Record<string, LookalikeReference>;
   ruleLabels: Record<string, string>;
   onOpen?: (symbol: string) => void;
   chartHeight?: number;
+  style: string;
 }) {
   const [showRules, setShowRules] = useState(false);
   const [comparing, setComparing] = useState(false);
@@ -281,7 +286,13 @@ function MatchCard({
           </figcaption>
         </figure>
       </div>
-      {match.reason ? <p className="lookalike-reason">{match.reason}</p> : null}
+      {match.reason ? (
+        <details className="lookalike-why">
+          <summary>Why it matched</summary>
+          <p className="lookalike-reason">{match.reason}</p>
+        </details>
+      ) : null}
+      <AiReview style={style} symbol={match.symbol} />
       <div className="lookalike-links">
         <a className="lookalike-link" href={fullChartUrl(match.symbol)} target="_blank" rel="noreferrer noopener">
           Open {match.symbol} on my site <ExternalLink size={12} />
@@ -343,19 +354,42 @@ function MatchCard({
   );
 }
 
+const PICK_KEY = "mr-malik-lookalike-pick:v1";
+
+function readPick(): [string, string] {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(PICK_KEY) ?? "null");
+    if (Array.isArray(v) && typeof v[0] === "string" && typeof v[1] === "string") return [v[0], v[1]];
+  } catch {
+    /* fall through */
+  }
+  return ["zanger", "flag"];
+}
+
 export function LookalikesPanel({ onOpenSymbolChart }: Props) {
   const [data, setData] = useState<Lookalikes | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<OutcomeFilter>("any");
-  const [style, setStyle] = useState<string | null>(null);
   const [view, setView] = useState<PageView>("today");
+  const [[trader, setup], setPick] = useState<[string, string]>(readPick);
+  const [showDetails, setShowDetails] = useState(false);
   // each card holds the match and its closest example side by side
   const [perRow, setPerRow] = useChartsPerRow("mr-malik-lookalike-today-cols:v1", 2);
   const pairHeight = useChartHeight(perRow, 2);
   const [picks, setPicks] = useState<LookalikePicksSummary | null>(null);
   const [picksError, setPicksError] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<GalleryIndex | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const choose = (t: string, s: string) => {
+    setPick([t, s]);
+    try {
+      window.localStorage.setItem(PICK_KEY, JSON.stringify([t, s]));
+    } catch {
+      /* per-viewer convenience only */
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -378,19 +412,40 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
       .catch((err) => {
         if (!cancelled) setPicksError(err instanceof Error ? err.message : "Could not load the pick history.");
       });
+    getLookalikeGallery()
+      .then((payload) => {
+        if (!cancelled) setGallery(payload);
+      })
+      .catch(() => {
+        /* the picker falls back to today's styles */
+      });
     return () => {
       cancelled = true;
     };
   }, [reloadKey]);
 
   const available = data && data.available ? data : null;
-  const styleKeys = useMemo(() => {
-    const styles = available?.styles ?? {};
-    // Largest library first: it is the one whose numbers mean the most.
-    return Object.keys(styles).sort((a, b) => (styles[b]?.library?.references ?? 0) - (styles[a]?.library?.references ?? 0));
-  }, [available]);
-  const activeStyle = style && styleKeys.includes(style) ? style : styleKeys[0] ?? null;
-  const block = activeStyle ? available?.styles?.[activeStyle] : undefined;
+
+  // the trader's own chart count per style, for the picker
+  const counts = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(gallery?.styles ?? {})) out[k] = v.trader_charts;
+    for (const [k, v] of Object.entries(available?.styles ?? {})) out[k] ??= v.library?.references ?? 0;
+    return out;
+  }, [gallery, available]);
+
+  const style = joinStyle(trader, setup);
+  const block = available?.styles?.[style];
+
+  // a remembered pick that no longer exists falls back to the trader's whole style
+  useEffect(() => {
+    const keys = Object.keys(counts);
+    if (keys.length && !(style in counts)) {
+      const fallback = trader in counts ? trader : keys[0];
+      choose(...splitStyle(fallback));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [counts, style]);
 
   const matches = useMemo(() => {
     if (!available || !block) return [];
@@ -414,33 +469,33 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
     );
   }
 
-  if (error || !available || !block) {
+  if (error || !available) {
     return (
       <Panel title="Chart Look-alikes" subtitle="Setups that resemble your reference library" actions={refresh}>
-        <p className="lookalike-empty">
-          {error ?? (data && !data.available ? data.reason : "No scan available.")}
-        </p>
+        <p className="lookalike-empty">{error ?? (data && !data.available ? data.reason : "No scan available.")}</p>
       </Panel>
     );
   }
 
-  const lib = block.library;
+  const lib = block?.library;
   const ev = lib?.evaluation;
   const auc = ev?.setup_vs_random_auc;
+  const kind = setup ? `${setupName(setup).toLowerCase()} charts` : "charts";
+  const traderName = TRADER_NAMES[trader] ?? trader;
 
   return (
     <Panel
       title="Chart Look-alikes"
-      subtitle={`Indian charts on ${formatDate(available.session)} that resemble your reference setups`}
+      subtitle={`Indian charts on ${formatDate(available.session)} that look like great traders' setups · ${available.scanned.toLocaleString("en-IN")} charts scanned`}
       actions={refresh}
     >
       <div className="lookalike-views" role="tablist" aria-label="Look-alike views">
         {(
           [
-            ["today", "Today"],
+            ["today", "Today's matches"],
             ["gallery", "Setup gallery"],
-            ["calendar", "Calendar"],
-            ["reviews", "Reviews & learning"],
+            ["calendar", "Pick calendar"],
+            ["reviews", "How the picks did"],
           ] as Array<[PageView, string]>
         ).map(([key, label]) => (
           <button
@@ -456,7 +511,9 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
         ))}
       </div>
 
-      {view === "gallery" ? <SetupGallery today={available} /> : null}
+      {view === "today" || view === "gallery" ? <SetupPicker counts={counts} trader={trader} setup={setup} onChange={choose} /> : null}
+
+      {view === "gallery" ? <SetupGallery index={gallery} today={available} trader={trader} setup={setup} /> : null}
 
       {view === "calendar" || view === "reviews" ? (
         picks && picks.available ? (
@@ -472,143 +529,150 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
         )
       ) : null}
 
-      {view === "today" && styleKeys.length > 1 ? (
-        <div className="lookalike-styles" role="tablist" aria-label="Whose setups">
-          {styleKeys.map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={key === activeStyle}
-              className={`lookalike-filter${key === activeStyle ? " is-active" : ""}`}
-              onClick={() => setStyle(key)}
-            >
-              {styleName(key)} style · {available.styles[key]?.library?.references ?? 0} charts
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {view === "today" ? (
-      <>
-      <section className="lookalike-summary">
-        <div className="lookalike-stat">
-          <span className="lookalike-stat-label">Reference charts</span>
-          <strong>
-            {lib?.references ?? 0}
-            {lib?.submitted && lib.submitted > lib.references ? (
-              <span className="lookalike-stat-vs"> of {lib.submitted}</span>
-            ) : null}
-          </strong>
-          <span className="lookalike-stat-sub">
-            {formatDate(lib?.first_date)}
-            {lib?.first_date !== lib?.last_date ? ` – ${formatDate(lib?.last_date)}` : ""}
-          </span>
-        </div>
-        <div className="lookalike-stat">
-          <span className="lookalike-stat-label">How often the setups worked</span>
-          <strong>
-            {lib?.worked_rate_pct?.setups == null ? "—" : `${lib.worked_rate_pct.setups.toFixed(0)}%`}
-            <span className="lookalike-stat-vs">
-              {" "}vs {lib?.worked_rate_pct?.ordinary_days == null ? "—" : `${lib.worked_rate_pct.ordinary_days.toFixed(0)}%`} on ordinary days
-            </span>
-          </strong>
-          <span className="lookalike-stat-sub">
-            {lib?.outcomes?.worked ?? 0} worked · {lib?.outcomes?.failed ?? 0} failed · {lib?.outcomes?.pending ?? 0} still running · +
-            {lib?.outcome_rule?.target_pct}% before −{lib?.outcome_rule?.stop_pct}% within {lib?.outcome_rule?.horizon_sessions} sessions
-          </span>
-        </div>
-        <div className="lookalike-stat">
-          <span className="lookalike-stat-label">Tells setups from ordinary days</span>
-          <strong>{auc == null ? "—" : `${(auc * 100).toFixed(0)}%`}</strong>
-          <span className="lookalike-stat-sub">50% is a coin flip · tested on charts it did not learn from</span>
-        </div>
-        <div className="lookalike-stat">
-          <span className="lookalike-stat-label">Picks the winners among the setups</span>
-          <strong>
-            {ev?.outcome_auc == null || Math.min(ev.worked ?? 0, ev.failed ?? 0) < 20 ? "—" : `${(ev.outcome_auc * 100).toFixed(0)}%`}
-          </strong>
-          <span className="lookalike-stat-sub">
-            {ev?.outcome_auc == null || Math.min(ev.worked ?? 0, ev.failed ?? 0) < 20
-              ? "not enough finished setups to measure"
-              : ev.outcome_auc < 0.55
-                ? "no better than a coin flip — looking more like the style does not mean more likely to work"
-                : `50% is a coin flip · ${ev.worked} worked vs ${ev.failed} failed, unseen`}
-          </span>
-        </div>
-        <div className="lookalike-stat">
-          <span className="lookalike-stat-label">Indian charts scanned</span>
-          <strong>{available.scanned.toLocaleString("en-IN")}</strong>
-          <span className="lookalike-stat-sub">turnover ≥ ₹{available.filters?.min_turnover_crore} cr/day</span>
-        </div>
-      </section>
-
-      <StyleNotes notes={block.notes} />
-
-      <section className="lookalike-curve-wrap">
-        <h3>Learning curve</h3>
-        <p className="lookalike-stat-sub">
-          How well it tells this style's setups from ordinary days, by number of charts learned from — tested on the newest
-          30% of charts, which it never saw. 50% is a coin flip.
+      {view === "today" && !block ? (
+        <p className="lookalike-empty">
+          No Indian charts are matched to {traderName}'s {kind}: the model cannot yet tell them from ordinary charts reliably. His own
+          charts are in the Setup gallery.
         </p>
-        <LearningCurve curve={ev?.learning_curve ?? []} />
-      </section>
-
-      {lib?.rules?.length ? (
-        <section className="lookalike-curve-wrap">
-          <h3>His rules, tested on his own charts</h3>
-          <p className="lookalike-stat-sub">
-            A rule describes his style if his setups pass it far more often than ordinary days do. It picks winners only
-            if setups that passed it worked more often than setups that failed it.
-          </p>
-          <RulesTable rows={lib.rules} />
-        </section>
       ) : null}
 
-      {ev?.warnings?.length ? (
-        <div className="lookalike-warning" role="note">
-          <AlertTriangle size={16} />
-          <ul>
-            {ev.warnings.map((w) => (
-              <li key={w}>{w}</li>
+      {view === "today" && block ? (
+        <>
+          <div className="lookalike-strip">
+            <span>
+              Recognises his {kind} <strong>{auc == null ? "—" : `${(auc * 100).toFixed(0)}%`}</strong> of the time
+              {ev?.scored_by ? <span className="lookalike-tag">trained image model</span> : null}
+            </span>
+            <span>
+              His {kind} worked{" "}
+              <strong>{lib?.worked_rate_pct?.setups == null ? "—" : `${lib.worked_rate_pct.setups.toFixed(0)}%`}</strong> vs{" "}
+              {lib?.worked_rate_pct?.ordinary_days == null ? "—" : `${lib.worked_rate_pct.ordinary_days.toFixed(0)}%`} for ordinary days
+            </span>
+            <span>
+              <strong>{(block.matches ?? []).length}</strong> matches today
+            </span>
+            <button type="button" className="lookalike-link" onClick={() => setShowDetails((v) => !v)} aria-expanded={showDetails}>
+              {showDetails ? "Hide details" : "How reliable is this?"}
+            </button>
+          </div>
+
+          {showDetails ? (
+            <div className="lookalike-details">
+              <section className="lookalike-summary">
+                <div className="lookalike-stat">
+                  <span className="lookalike-stat-label">Reference charts</span>
+                  <strong>
+                    {lib?.references ?? 0}
+                    {lib?.submitted && lib.submitted > lib.references ? <span className="lookalike-stat-vs"> of {lib.submitted}</span> : null}
+                  </strong>
+                  <span className="lookalike-stat-sub">
+                    {formatDate(lib?.first_date)}
+                    {lib?.first_date !== lib?.last_date ? ` – ${formatDate(lib?.last_date)}` : ""}
+                  </span>
+                </div>
+                <div className="lookalike-stat">
+                  <span className="lookalike-stat-label">How often the setups worked</span>
+                  <strong>
+                    {lib?.worked_rate_pct?.setups == null ? "—" : `${lib.worked_rate_pct.setups.toFixed(0)}%`}
+                    <span className="lookalike-stat-vs">
+                      {" "}vs {lib?.worked_rate_pct?.ordinary_days == null ? "—" : `${lib.worked_rate_pct.ordinary_days.toFixed(0)}%`} on ordinary days
+                    </span>
+                  </strong>
+                  <span className="lookalike-stat-sub">
+                    {lib?.outcomes?.worked ?? 0} worked · {lib?.outcomes?.failed ?? 0} failed · +{lib?.outcome_rule?.target_pct}% before −
+                    {lib?.outcome_rule?.stop_pct}% within {lib?.outcome_rule?.horizon_sessions} sessions
+                  </span>
+                </div>
+                <div className="lookalike-stat">
+                  <span className="lookalike-stat-label">Tells setups from ordinary days</span>
+                  <strong>{auc == null ? "—" : `${(auc * 100).toFixed(0)}%`}</strong>
+                  <span className="lookalike-stat-sub">
+                    50% is a coin flip · tested on charts it did not learn from
+                    {ev?.scored_by
+                      ? ` · scored by the ${ev.scored_by}${ev.straight_line_auc != null ? ` (the plain model managed ${(ev.straight_line_auc * 100).toFixed(0)}%)` : ""}`
+                      : ""}
+                  </span>
+                </div>
+                <div className="lookalike-stat">
+                  <span className="lookalike-stat-label">Picks the winners among the setups</span>
+                  <strong>
+                    {ev?.outcome_auc == null || Math.min(ev.worked ?? 0, ev.failed ?? 0) < 20 ? "—" : `${(ev.outcome_auc * 100).toFixed(0)}%`}
+                  </strong>
+                  <span className="lookalike-stat-sub">
+                    {ev?.outcome_auc == null || Math.min(ev.worked ?? 0, ev.failed ?? 0) < 20
+                      ? "not enough finished setups to measure"
+                      : ev.outcome_auc < 0.55
+                        ? "no better than a coin flip — looking more like the style does not mean more likely to work"
+                        : `50% is a coin flip · ${ev.worked} worked vs ${ev.failed} failed, unseen`}
+                  </span>
+                </div>
+              </section>
+              <section className="lookalike-curve-wrap">
+                <h3>Learning curve</h3>
+                <p className="lookalike-stat-sub">
+                  How well it tells these setups from ordinary days, by number of charts learned from — tested on the newest 30% of charts,
+                  which it never saw. 50% is a coin flip.
+                </p>
+                <LearningCurve curve={ev?.learning_curve ?? []} />
+              </section>
+              {lib?.rules?.length ? (
+                <section className="lookalike-curve-wrap">
+                  <h3>Trend Template rules, tested on these charts</h3>
+                  <p className="lookalike-stat-sub">
+                    A rule describes the style if the setups pass it far more often than ordinary days do. It picks winners only if setups
+                    that passed it worked more often than setups that failed it.
+                  </p>
+                  <RulesTable rows={lib.rules} />
+                </section>
+              ) : null}
+              {ev?.warnings?.length ? (
+                <div className="lookalike-warning" role="note">
+                  <AlertTriangle size={16} />
+                  <ul>
+                    {ev.warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <StyleNotes notes={block.notes} open={false} />
+
+          <div className="lookalike-toolbar">
+            {(["any", "worked", "template"] as OutcomeFilter[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={`lookalike-filter${filter === option ? " is-active" : ""}`}
+                onClick={() => setFilter(option)}
+              >
+                {option === "any" ? "All matches" : option === "worked" ? "Closest example worked" : "Passes all 8 Trend Template rules"}
+              </button>
             ))}
-          </ul>
-        </div>
-      ) : null}
+            <span className="lookalike-count">{matches.length} shown</span>
+            <ChartsPerRow value={perRow} onChange={setPerRow} />
+          </div>
 
-      <div className="lookalike-toolbar">
-        <span>Show:</span>
-        {(["any", "worked", "template"] as OutcomeFilter[]).map((option) => (
-          <button
-            key={option}
-            type="button"
-            className={`lookalike-filter${filter === option ? " is-active" : ""}`}
-            onClick={() => setFilter(option)}
-          >
-            {option === "any" ? "Any match" : option === "worked" ? "Closest setup worked" : "Passes all 8 Trend Template rules"}
-          </button>
-        ))}
-        <span className="lookalike-count">{matches.length} shown</span>
-        <ChartsPerRow value={perRow} onChange={setPerRow} />
-      </div>
-
-      {matches.length ? (
-        <div className="lookalike-grid" style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}>
-          {matches.map((match) => (
-            <MatchCard
-              key={match.symbol}
-              match={match}
-              references={available.references ?? {}}
-              ruleLabels={available.rule_labels ?? {}}
-              onOpen={onOpenSymbolChart}
-              chartHeight={pairHeight}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="lookalike-empty">No matches for this filter.</p>
-      )}
-      </>
+          {matches.length ? (
+            <div className="lookalike-grid" style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}>
+              {matches.map((match) => (
+                <MatchCard
+                  key={match.symbol}
+                  match={match}
+                  references={available.references ?? {}}
+                  ruleLabels={available.rule_labels ?? {}}
+                  onOpen={onOpenSymbolChart}
+                  chartHeight={pairHeight}
+                  style={style}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="lookalike-empty">No matches for this filter.</p>
+          )}
+        </>
       ) : null}
     </Panel>
   );

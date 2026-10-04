@@ -1,0 +1,85 @@
+{
+ "trained_at": "2026-10-04T11:17:08+00:00",
+ "cut": "2018-10-19",
+ "train": 13052,
+ "test": 10116,
+ "epochs": 3,
+ "train_blocks": 2,
+ "setups": {
+  "base": {
+   "test_setups": 226,
+   "net_auc": 0.72,
+   "straight_line_auc": 0.754,
+   "use_net": false
+  },
+  "channel": {
+   "test_setups": 335,
+   "net_auc": 0.527,
+   "straight_line_auc": 0.724,
+   "use_net": false
+  },
+  "cup_handle": {
+   "test_setups": 137,
+   "net_auc": 0.846,
+   "straight_line_auc": 0.762,
+   "use_net": true
+  },
+  "double_bottom": {
+   "test_setups": 25,
+   "net_auc": 0.754,
+   "straight_line_auc": 0.715,
+   "use_net": true
+  },
+  "flag": {
+   "test_setups": 215,
+   "net_auc": 0.78,
+   "straight_line_auc": 0.768,
+   "use_net": false
+  },
+  "gap": {
+   "test_setups": 492,
+   "net_auc": 0.761,
+   "straight_line_auc": 0.753,
+   "use_net": false
+  },
+  "head_shoulders": {
+   "test_setups": 22,
+   "net_auc": 0.596,
+   "straight_line_auc": 0.699,
+   "use_net": false
+  },
+  "trendline": {
+   "test_setups": 236,
+   "net_auc": 0.677,
+   "straight_line_auc": 0.684,
+   "use_net": false
+  },
+  "triangle": {
+   "test_setups": 32,
+   "net_auc": 0.569,
+   "straight_line_auc": 0.644,
+   "use_net": false
+  },
+  "wedge": {
+   "test_setups": 19,
+   "net_auc": 0.431,
+   "straight_line_auc": 0.594,
+   "use_net": false
+  }
+ },
+ "names_the_setup_pct": 17.3,
+ "guessing_the_commonest_pct": 28.3,
+ "classes": [
+  "base",
+  "channel",
+  "cup_handle",
+  "double_bottom",
+  "flag",
+  "gap",
+  "head_shoulders",
+  "trendline",
+  "triangle",
+  "wedge",
+  "ordinary"
+ ]
+}

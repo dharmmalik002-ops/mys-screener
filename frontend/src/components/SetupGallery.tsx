@@ -4,7 +4,6 @@ import { ExternalLink } from "lucide-react";
 import {
   getGalleryIndianHistory,
   getGalleryTraderCharts,
-  getLookalikeGallery,
   type GalleryHistoryRow,
   type GalleryIndex,
   type GalleryOutcome,
@@ -15,6 +14,8 @@ import {
 } from "../lib/api";
 import { fullChartUrl } from "../lib/chartLink";
 import { ChartsPerRow, useChartHeight, useChartsPerRow } from "./ChartsPerRow";
+import { AiReview } from "./SetupPicker";
+import { TRADER_NAMES, joinStyle, setupName } from "../lib/lookalikeStyles";
 import { LookalikeChart, type LookalikeSeries } from "./LookalikeChart";
 
 /* The setup gallery: every chart of one kind in one place, to train the eye.
@@ -27,21 +28,6 @@ import { LookalikeChart, type LookalikeSeries } from "./LookalikeChart";
    "Hide what happened next" turns any page into a quiz: each card shows the
    chart up to its date and reveals the rest on a click. */
 
-const SETUP_ORDER = ["", "flag", "cup_handle", "base", "channel", "triangle", "double_bottom", "gap", "trendline", "wedge", "head_shoulders"];
-const SETUP_LABEL: Record<string, string> = {
-  "": "All his charts",
-  flag: "Flag & pennant",
-  cup_handle: "Cup & handle",
-  base: "Base",
-  channel: "Channel",
-  triangle: "Triangle",
-  double_bottom: "Double bottom",
-  gap: "Gap",
-  trendline: "Trendline break",
-  wedge: "Wedge",
-  head_shoulders: "Head & shoulders",
-};
-const TRADER_LABEL: Record<string, string> = { zanger: "Dan Zanger", minervini: "Mark Minervini" };
 const PAGE = 24;
 const COLS_KEY = "mr-malik-setup-gallery-cols:v2";
 const TODAY_MIN_PCT = 95;
@@ -121,7 +107,7 @@ function TraderCard({ row, height, hideAfter }: { row: LookalikeRefRow; height: 
   );
 }
 
-function IndianHistoryCard({ row, height, hideAfter }: { row: GalleryHistoryRow; height: number; hideAfter: boolean }) {
+function IndianHistoryCard({ row, height, hideAfter, style }: { row: GalleryHistoryRow; height: number; hideAfter: boolean; style: string }) {
   const { hidden, reveal } = useReveal(hideAfter);
   return (
     <article className="setup-gallery-card">
@@ -145,11 +131,12 @@ function IndianHistoryCard({ row, height, hideAfter }: { row: GalleryHistoryRow;
         <span className="lookalike-stat-sub">beat {row.pct.toFixed(0)}% of ordinary charts</span>
         {hidden ? null : <Outcome label={row.label} gain={row.gain} loss={row.loss} days={row.days} />}
       </div>
+      <AiReview style={style} symbol={row.symbol} date={row.date} />
     </article>
   );
 }
 
-function TodayCard({ match, height }: { match: LookalikeMatch; height: number }) {
+function TodayCard({ match, height, style }: { match: LookalikeMatch; height: number; style: string }) {
   return (
     <article className="setup-gallery-card">
       <a className="lookalike-chart-button" href={fullChartUrl(match.symbol)} target="_blank" rel="noreferrer noopener" title="Open on my site in a new tab">
@@ -163,6 +150,7 @@ function TodayCard({ match, height }: { match: LookalikeMatch; height: number })
           beats {match.percentile.toFixed(0)}% of ordinary charts · ₹{match.turnover_crore.toFixed(0)} cr/day
         </span>
       </div>
+      <AiReview style={style} symbol={match.symbol} />
       {match.reason ? (
         <details className="lookalike-why">
           <summary>Why</summary>
@@ -278,7 +266,7 @@ function IndiaHistoryGrid({ style, outcome, cols, height, hideAfter }: { style: 
   return (
     <Grid count={rows.length} total={total} loading={loading} error={error} more={more} cols={cols}>
       {rows.map((r) => (
-        <IndianHistoryCard key={`${r.symbol}@${r.date}`} row={r} height={height} hideAfter={hideAfter} />
+        <IndianHistoryCard key={`${r.symbol}@${r.date}`} row={r} height={height} hideAfter={hideAfter} style={style} />
       ))}
     </Grid>
   );
@@ -319,88 +307,43 @@ function Grid({
   );
 }
 
-export function SetupGallery({ today }: { today: Lookalikes | null }) {
-  const [index, setIndex] = useState<GalleryIndex | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [trader, setTrader] = useState("zanger");
-  const [setup, setSetup] = useState("flag");
+export function SetupGallery({
+  index,
+  today,
+  trader,
+  setup,
+}: {
+  index: GalleryIndex | null;
+  today: Lookalikes | null;
+  trader: string;
+  setup: string;
+}) {
   const [branch, setBranch] = useState<Branch>("trader");
   const [indiaView, setIndiaView] = useState<IndiaView>("history");
   const [outcome, setOutcome] = useState<GalleryOutcome>("all");
   const [hideAfter, setHideAfter] = useState(false);
   const [cols, setCols] = useChartsPerRow(COLS_KEY, 3);
   const height = useChartHeight(cols);
-  useEffect(() => {
-    getLookalikeGallery()
-      .then(setIndex)
-      .catch((e) => setError(e instanceof Error ? e.message : "Could not load the setup gallery."));
-  }, []);
 
-  const traders = useMemo(() => {
-    const out: Record<string, string[]> = {};
-    for (const style of Object.keys(index?.styles ?? {})) {
-      const [t, ...rest] = style.split("_");
-      (out[t] ??= []).push(rest.join("_"));
-    }
-    for (const t of Object.keys(out)) out[t].sort((a, b) => SETUP_ORDER.indexOf(a) - SETUP_ORDER.indexOf(b));
-    return out;
-  }, [index]);
-
-  const setups = traders[trader] ?? [];
-  const activeSetup = setups.includes(setup) ? setup : setups[0] ?? "";
-  const style = activeSetup ? `${trader}_${activeSetup}` : trader;
+  const style = joinStyle(trader, setup);
   const info = index?.styles?.[style];
   const todayMatches = useMemo(() => {
     if (!today || !today.available) return [];
     return (today.styles?.[style]?.matches ?? []).filter((m) => m.percentile >= TODAY_MIN_PCT);
   }, [today, style]);
 
-  if (error) return <p className="lookalike-empty">{error}</p>;
   if (!index) return <p className="lookalike-empty">Loading the setup gallery…</p>;
-  if (!index.available) return <p className="lookalike-empty">The setup gallery is built with the next evening run.</p>;
+  if (!index.available || !info) return <p className="lookalike-empty">The setup gallery is built with the next evening run.</p>;
 
-  const traderName = TRADER_LABEL[trader] ?? trader;
-  const setupName = SETUP_LABEL[activeSetup] ?? activeSetup.replace(/_/g, " ");
+  const traderName = TRADER_NAMES[trader] ?? trader;
+  const setupLabel = setupName(setup, trader);
   // "flag & pennant charts", or plain "charts" for a trader's whole style
-  const kind = activeSetup ? `${setupName.toLowerCase()} charts` : "charts";
+  const kind = setup ? `${setupLabel.toLowerCase()} charts` : "charts";
   const rule = index.history_rule;
+  const quiz = !(branch === "india" && indiaView === "today");
 
   return (
     <div className="setup-gallery">
-      <div className="lookalike-styles" role="tablist" aria-label="Whose setups">
-        {Object.keys(traders).map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={t === trader}
-            className={`bot-view-tab${t === trader ? " is-active" : ""}`}
-            onClick={() => setTrader(t)}
-          >
-            {TRADER_LABEL[t] ?? t}
-          </button>
-        ))}
-      </div>
-
-      <div className="lookalike-styles" role="tablist" aria-label="Setup">
-        {setups.map((s) => {
-          const key = s ? `${trader}_${s}` : trader;
-          const n = index.styles[key]?.trader_charts ?? 0;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={s === activeSetup}
-              className={`lookalike-filter${s === activeSetup ? " is-active" : ""}`}
-              onClick={() => setSetup(s)}
-            >
-              {trader === "minervini" && !s ? "His setups" : SETUP_LABEL[s] ?? s} · {n.toLocaleString("en-IN")}
-            </button>
-          );
-        })}
-      </div>
-
       <div className="lookalike-views" role="tablist" aria-label="Whose charts">
         <button
           type="button"
@@ -409,7 +352,7 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
           className={`bot-view-tab${branch === "trader" ? " is-active" : ""}`}
           onClick={() => setBranch("trader")}
         >
-          {traderName}'s charts · {(info?.trader_charts ?? 0).toLocaleString("en-IN")}
+          {traderName}'s charts · {info.trader_charts.toLocaleString("en-IN")}
         </button>
         <button
           type="button"
@@ -420,33 +363,28 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
         >
           Indian charts
         </button>
+        {branch === "india" ? (
+          <span className="setup-gallery-sub">
+            <button
+              type="button"
+              className={`lookalike-filter${indiaView === "history" ? " is-active" : ""}`}
+              onClick={() => setIndiaView("history")}
+            >
+              History · {info.india_history.toLocaleString("en-IN")}
+            </button>
+            <button
+              type="button"
+              className={`lookalike-filter${indiaView === "today" ? " is-active" : ""}`}
+              onClick={() => setIndiaView("today")}
+            >
+              Tradable today · {todayMatches.length}
+            </button>
+          </span>
+        ) : null}
       </div>
 
-      {branch === "india" ? (
-        <div className="lookalike-views" role="tablist" aria-label="When">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={indiaView === "history"}
-            className={`lookalike-filter${indiaView === "history" ? " is-active" : ""}`}
-            onClick={() => setIndiaView("history")}
-          >
-            History · {(info?.india_history ?? 0).toLocaleString("en-IN")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={indiaView === "today"}
-            className={`lookalike-filter${indiaView === "today" ? " is-active" : ""}`}
-            onClick={() => setIndiaView("today")}
-          >
-            Tradable today · {todayMatches.length}
-          </button>
-        </div>
-      ) : null}
-
       <div className="setup-gallery-controls">
-        {!(branch === "india" && indiaView === "today") ? (
+        {quiz ? (
           <label>
             Result{" "}
             <select value={outcome} onChange={(e) => setOutcome(e.target.value as GalleryOutcome)}>
@@ -457,7 +395,7 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
             </select>
           </label>
         ) : null}
-        {!(branch === "india" && indiaView === "today") ? (
+        {quiz ? (
           <label className="setup-gallery-toggle">
             <input type="checkbox" checked={hideAfter} onChange={(e) => setHideAfter(e.target.checked)} /> Practice: hide what happened next
           </label>
@@ -465,45 +403,45 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
         <ChartsPerRow value={cols} onChange={setCols} />
       </div>
 
-      <StyleNotes notes={info?.notes} open={false} />
+      <StyleNotes notes={info.notes} open={false} />
 
       {branch === "trader" ? (
         <>
           <p className="lookalike-stat-sub">
-            Every {activeSetup ? `${setupName.toLowerCase()} chart` : "chart"} {traderName} showed, redrawn from prices at its own date; the shaded part is
-            what followed. Worked = rose {rule?.target_pct ?? 20}% before falling {rule?.stop_pct ?? 8}% within{" "}
+            Every {setup ? `${setupLabel.toLowerCase()} chart` : "chart"} {traderName} showed, drawn at its own date; the shaded part
+            is what followed. Worked = rose {rule?.target_pct ?? 20}% before falling {rule?.stop_pct ?? 8}% within{" "}
             {rule?.horizon_sessions ?? 40} sessions.
-            {info?.worked_rate_pct?.setups != null && info.worked_rate_pct.ordinary_days != null
+            {info.worked_rate_pct?.setups != null && info.worked_rate_pct.ordinary_days != null
               ? ` His ${kind} worked ${info.worked_rate_pct.setups.toFixed(0)}% of the time, against ${info.worked_rate_pct.ordinary_days.toFixed(0)}% for ordinary days in the same stocks.`
               : ""}
           </p>
           <TraderGrid style={style} outcome={outcome} cols={cols} height={height} hideAfter={hideAfter} />
         </>
-      ) : !info?.shown ? (
+      ) : !info.shown ? (
         <p className="lookalike-empty">
           The model cannot yet tell {traderName}'s {kind} from ordinary charts reliably (
-          {info?.recognition != null ? `${(info.recognition * 100).toFixed(0)}%` : "—"}, where 50% is a coin flip), so no Indian
+          {info.recognition != null ? `${(info.recognition * 100).toFixed(0)}%` : "—"}, where 50% is a coin flip), so no Indian
           charts are matched to it. His own charts are still worth studying.
         </p>
       ) : indiaView === "history" ? (
         <>
           <p className="lookalike-stat-sub">
-            Each Friday since {rule?.from ? rule.from.slice(0, 4) : "2001"}, the {rule?.top_per_day ?? 3} Indian charts that looked most like {traderName}'s {kind} (beating {rule?.min_percentile ?? 97}% of ordinary charts), each stock at most once in 8
-            weeks. These are look-alikes for study, not past picks — the library includes his later charts, and only companies
-            listed today are included (few before 2003).
+            Each Friday since {rule?.from ? rule.from.slice(0, 4) : "2001"}, the {rule?.top_per_day ?? 3} Indian charts that looked most
+            like {traderName}'s {kind}, each stock at most once in 8 weeks. Look-alikes to study, not past picks — only companies listed
+            today are included (few before 2003).
           </p>
           <IndiaHistoryGrid style={style} outcome={outcome} cols={cols} height={height} hideAfter={hideAfter} />
         </>
       ) : (
         <>
           <p className="lookalike-stat-sub">
-            Today's Indian charts that look like {traderName}'s {kind} more than {TODAY_MIN_PCT}% of ordinary
-            charts do, with at least ₹2 cr a day of turnover. A resemblance, not a buy signal.
+            Today's Indian charts that look like {traderName}'s {kind} more than {TODAY_MIN_PCT}% of ordinary charts do, with at least
+            ₹2 cr a day of turnover. A resemblance, not a buy signal.
           </p>
           {todayMatches.length ? (
             <div className="setup-gallery-grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
               {todayMatches.map((m) => (
-                <TodayCard key={m.symbol} match={m} height={height} />
+                <TodayCard key={m.symbol} match={m} height={height} style={style} />
               ))}
             </div>
           ) : (

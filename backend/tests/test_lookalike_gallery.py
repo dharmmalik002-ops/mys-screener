@@ -122,3 +122,45 @@ class GalleryRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AiReviewRouteTests(unittest.TestCase):
+    def test_reviews_a_match_once_and_caches_it(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from app.api.lookalike_routes import build_lookalike_router
+        from app.services.lookalike import ai_review
+
+        window = {k: list(np.linspace(0.1, 0.9, 120)) for k in ("o", "h", "l", "c", "sma", "v")}
+        calls = []
+
+        def fake_review(self, key, chart, label, description):
+            calls.append((key, label))
+            out = {"verdict": "yes", "score": 4, "why": "tight flag", "look_for": "last two weeks"}
+            self._load()[key] = out
+            return out
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp)
+            (data / "lookalikes.json").write_text(json.dumps({
+                "generated_at": "x", "session": "2026-10-02",
+                "styles": {"zanger_flag": {"matches": [{"symbol": "ABC", "window": window}]}},
+            }))
+            app = FastAPI()
+            app.include_router(build_lookalike_router(data, None, data / "state", gemini_api_key="test-key"))
+            with mock.patch.dict(os.environ, {"LOOKALIKE_SELF_UPDATE": "0"}), mock.patch.object(ai_review.Reviewer, "review", fake_review):
+                c = TestClient(app)
+                r = c.get("/api/lookalikes/ai-review?style=zanger_flag&symbol=abc").json()
+                self.assertEqual(r["review"]["verdict"], "yes")
+                self.assertEqual(calls, [("zanger_flag|ABC|2026-10-02", "flag & pennant")])
+                c.get("/api/lookalikes/ai-review?style=zanger_flag&symbol=ABC")
+                self.assertEqual(len(calls), 1)  # served from the cache
+                self.assertEqual(c.get("/api/lookalikes/ai-review?style=zanger_flag&symbol=XYZ").status_code, 404)
+
+    def test_the_prompt_forbids_advice(self):
+        from app.services.lookalike import ai_review
+
+        text = ai_review.prompt("flag & pennant", "a short pause after a strong move")
+        self.assertIn("Do not give buy or sell advice", text)
+        self.assertIn("flag & pennant", text)

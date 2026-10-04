@@ -1061,6 +1061,8 @@ app.include_router(
         # 👍/👎 votes: Postgres when configured (durable), else APP_STATE_DIR
         database_url=settings.database_url,
         state_dir=settings.app_state_dir,
+        # the AI second opinion on a chart (lookalike/ai_review.py)
+        gemini_api_key=settings.gemini_api_key,
     )
 )
 app.include_router(
