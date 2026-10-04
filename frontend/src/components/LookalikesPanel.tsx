@@ -20,6 +20,7 @@ import { fullChartUrl } from "../lib/chartLink";
 import "./LookalikesPanel.css";
 import { styleName } from "../lib/lookalikeStyles";
 import { SetupGallery, StyleNotes } from "./SetupGallery";
+import { ChartsPerRow, useChartHeight, useChartsPerRow } from "./ChartsPerRow";
 
 /* Chart look-alikes.
 
@@ -53,7 +54,7 @@ const LABEL_TEXT: Record<LookalikeReference["label"], string> = {
 const SMA_COLOUR = "#5a78c8";
 const VOLUME_COLOUR = "rgba(128, 128, 128, 0.35)";
 
-function MiniChart({ window: w, label }: { window: LookalikeWindow; label: string }) {
+function MiniChart({ window: w, label, height }: { window: LookalikeWindow; label: string; height?: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -105,9 +106,9 @@ function MiniChart({ window: w, label }: { window: LookalikeWindow; label: strin
       else g.lineTo(x, y(value));
     });
     g.stroke();
-  }, [w]);
+  }, [w, height]);
 
-  return <canvas ref={ref} className="lookalike-canvas" role="img" aria-label={label} />;
+  return <canvas ref={ref} className="lookalike-canvas" role="img" aria-label={label} style={height ? { height } : undefined} />;
 }
 
 function formatDate(iso: string | undefined) {
@@ -216,11 +217,13 @@ function MatchCard({
   references,
   ruleLabels,
   onOpen,
+  chartHeight,
 }: {
   match: LookalikeMatch;
   references: Record<string, LookalikeReference>;
   ruleLabels: Record<string, string>;
   onOpen?: (symbol: string) => void;
+  chartHeight?: number;
 }) {
   const [showRules, setShowRules] = useState(false);
   const [comparing, setComparing] = useState(false);
@@ -255,14 +258,14 @@ function MatchCard({
       </header>
       <div className="lookalike-pair">
         <figure>
-          <MiniChart window={match.window} label={`${match.symbol}, last 120 sessions`} />
+          <MiniChart window={match.window} label={`${match.symbol}, last 120 sessions`} height={chartHeight} />
           <figcaption>
             {match.symbol} today · {formatDate(match.session)}
           </figcaption>
         </figure>
         <figure>
           {reference ? (
-            <MiniChart window={reference.window} label={`${reference.name}, 120 sessions before the setup`} />
+            <MiniChart window={reference.window} label={`${reference.name}, 120 sessions before the setup`} height={chartHeight} />
           ) : (
             <div className="lookalike-canvas lookalike-missing">Reference unavailable</div>
           )}
@@ -347,6 +350,9 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
   const [filter, setFilter] = useState<OutcomeFilter>("any");
   const [style, setStyle] = useState<string | null>(null);
   const [view, setView] = useState<PageView>("today");
+  // each card holds the match and its closest example side by side
+  const [perRow, setPerRow] = useChartsPerRow("mr-malik-lookalike-today-cols:v1", 2);
+  const pairHeight = useChartHeight(perRow, 2);
   const [picks, setPicks] = useState<LookalikePicksSummary | null>(null);
   const [picksError, setPicksError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -583,10 +589,11 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
           </button>
         ))}
         <span className="lookalike-count">{matches.length} shown</span>
+        <ChartsPerRow value={perRow} onChange={setPerRow} />
       </div>
 
       {matches.length ? (
-        <div className="lookalike-grid">
+        <div className="lookalike-grid" style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}>
           {matches.map((match) => (
             <MatchCard
               key={match.symbol}
@@ -594,6 +601,7 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
               references={available.references ?? {}}
               ruleLabels={available.rule_labels ?? {}}
               onOpen={onOpenSymbolChart}
+              chartHeight={pairHeight}
             />
           ))}
         </div>

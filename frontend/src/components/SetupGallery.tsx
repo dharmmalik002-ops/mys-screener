@@ -14,6 +14,7 @@ import {
   type Lookalikes,
 } from "../lib/api";
 import { fullChartUrl } from "../lib/chartLink";
+import { ChartsPerRow, useChartHeight, useChartsPerRow } from "./ChartsPerRow";
 import { LookalikeChart, type LookalikeSeries } from "./LookalikeChart";
 
 /* The setup gallery: every chart of one kind in one place, to train the eye.
@@ -42,7 +43,7 @@ const SETUP_LABEL: Record<string, string> = {
 };
 const TRADER_LABEL: Record<string, string> = { zanger: "Dan Zanger", minervini: "Mark Minervini" };
 const PAGE = 24;
-const COLS_KEY = "mr-malik-setup-gallery-cols:v1";
+const COLS_KEY = "mr-malik-setup-gallery-cols:v2";
 const TODAY_MIN_PCT = 95;
 
 type Branch = "trader" | "india";
@@ -52,19 +53,6 @@ function fmtDate(iso?: string | null) {
   if (!iso) return "—";
   const d = new Date(`${iso}T00:00:00`);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function readCols(): number {
-  try {
-    const v = Number(window.localStorage.getItem(COLS_KEY));
-    return v >= 1 && v <= 6 ? v : 3;
-  } catch {
-    return 3;
-  }
-}
-
-function heightFor(cols: number) {
-  return cols <= 1 ? 420 : cols === 2 ? 320 : cols === 3 ? 240 : cols === 4 ? 200 : 170;
 }
 
 function Outcome({ label, gain, loss, days }: { label?: string; gain?: number | null; loss?: number | null; days?: number | null }) {
@@ -274,23 +262,23 @@ function usePaged<T>(load: (page: number) => Promise<{ total: number; rows: T[] 
   return { rows, total, loading, error, more: () => setPage((p) => p + 1) };
 }
 
-function TraderGrid({ style, outcome, cols, hideAfter }: { style: string; outcome: GalleryOutcome; cols: number; hideAfter: boolean }) {
+function TraderGrid({ style, outcome, cols, height, hideAfter }: { style: string; outcome: GalleryOutcome; cols: number; height: number; hideAfter: boolean }) {
   const { rows, total, loading, error, more } = usePaged((page) => getGalleryTraderCharts(style, page, PAGE, outcome), [style, outcome]);
   return (
     <Grid count={rows.length} total={total} loading={loading} error={error} more={more} cols={cols}>
       {rows.map((r) => (
-        <TraderCard key={`${r.ticker}@${r.date}`} row={r} height={heightFor(cols)} hideAfter={hideAfter} />
+        <TraderCard key={`${r.ticker}@${r.date}`} row={r} height={height} hideAfter={hideAfter} />
       ))}
     </Grid>
   );
 }
 
-function IndiaHistoryGrid({ style, outcome, cols, hideAfter }: { style: string; outcome: GalleryOutcome; cols: number; hideAfter: boolean }) {
+function IndiaHistoryGrid({ style, outcome, cols, height, hideAfter }: { style: string; outcome: GalleryOutcome; cols: number; height: number; hideAfter: boolean }) {
   const { rows, total, loading, error, more } = usePaged((page) => getGalleryIndianHistory(style, page, PAGE, outcome), [style, outcome]);
   return (
     <Grid count={rows.length} total={total} loading={loading} error={error} more={more} cols={cols}>
       {rows.map((r) => (
-        <IndianHistoryCard key={`${r.symbol}@${r.date}`} row={r} height={heightFor(cols)} hideAfter={hideAfter} />
+        <IndianHistoryCard key={`${r.symbol}@${r.date}`} row={r} height={height} hideAfter={hideAfter} />
       ))}
     </Grid>
   );
@@ -340,16 +328,8 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
   const [indiaView, setIndiaView] = useState<IndiaView>("history");
   const [outcome, setOutcome] = useState<GalleryOutcome>("all");
   const [hideAfter, setHideAfter] = useState(false);
-  const [cols, setColsState] = useState<number>(readCols);
-  const setCols = (n: number) => {
-    setColsState(n);
-    try {
-      window.localStorage.setItem(COLS_KEY, String(n));
-    } catch {
-      /* per-viewer convenience only */
-    }
-  };
-
+  const [cols, setCols] = useChartsPerRow(COLS_KEY, 3);
+  const height = useChartHeight(cols);
   useEffect(() => {
     getLookalikeGallery()
       .then(setIndex)
@@ -482,14 +462,7 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
             <input type="checkbox" checked={hideAfter} onChange={(e) => setHideAfter(e.target.checked)} /> Practice: hide what happened next
           </label>
         ) : null}
-        <span className="setup-gallery-cols">
-          Charts per row{" "}
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <button key={n} type="button" className={`lookalike-filter${cols === n ? " is-active" : ""}`} onClick={() => setCols(n)}>
-              {n}
-            </button>
-          ))}
-        </span>
+        <ChartsPerRow value={cols} onChange={setCols} />
       </div>
 
       <StyleNotes notes={info?.notes} open={false} />
@@ -504,7 +477,7 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
               ? ` His ${kind} worked ${info.worked_rate_pct.setups.toFixed(0)}% of the time, against ${info.worked_rate_pct.ordinary_days.toFixed(0)}% for ordinary days in the same stocks.`
               : ""}
           </p>
-          <TraderGrid style={style} outcome={outcome} cols={cols} hideAfter={hideAfter} />
+          <TraderGrid style={style} outcome={outcome} cols={cols} height={height} hideAfter={hideAfter} />
         </>
       ) : !info?.shown ? (
         <p className="lookalike-empty">
@@ -519,7 +492,7 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
             weeks. These are look-alikes for study, not past picks — the library includes his later charts, and only companies
             listed today are included (few before 2003).
           </p>
-          <IndiaHistoryGrid style={style} outcome={outcome} cols={cols} hideAfter={hideAfter} />
+          <IndiaHistoryGrid style={style} outcome={outcome} cols={cols} height={height} hideAfter={hideAfter} />
         </>
       ) : (
         <>
@@ -530,7 +503,7 @@ export function SetupGallery({ today }: { today: Lookalikes | null }) {
           {todayMatches.length ? (
             <div className="setup-gallery-grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
               {todayMatches.map((m) => (
-                <TodayCard key={m.symbol} match={m} height={heightFor(cols)} />
+                <TodayCard key={m.symbol} match={m} height={height} />
               ))}
             </div>
           ) : (
