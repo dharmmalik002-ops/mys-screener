@@ -17,6 +17,7 @@ import { LookalikeChart, type LookalikeSeries } from "./LookalikeChart";
 // The modals open from the big chart as well as from the Look-alikes page, and
 // that page's stylesheet only loads with it.
 import "./LookalikesPanel.css";
+import { styleName } from "../lib/lookalikeStyles";
 
 /* Pop-up views for the look-alikes.
 
@@ -244,7 +245,7 @@ export function CompareModal({
         </figure>
         <figure>
           <figcaption>
-            <strong>{reference.ticker}</strong> on {fmtDate(reference.date)} · {reference.style} example ·{" "}
+            <strong>{reference.ticker}</strong> on {fmtDate(reference.date)} · {styleName(reference.style)} example ·{" "}
             <RefOutcome ref={reference} />
           </figcaption>
           <LookalikeChart data={reference.chart} height={height} labels ariaLabel={`${reference.ticker} at ${reference.date}`} />

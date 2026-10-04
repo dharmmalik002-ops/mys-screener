@@ -1,0 +1,448 @@
+{
+ "zanger": {
+  "base": {
+   "setup": "base",
+   "summary": "A base is a stretch of sideways or tightening price action after a move, where the stock rests and volume dries up before the next run. Zanger wants the base to be tight and long enough, ideally with strong earnings behind the stock, and he buys when price leaves the top of it on good volume.",
+   "what_it_looks_like": [
+    "Horizontal or gently sloping price action over several weeks; he talks about 4-week and 5-week bases, 6 to 8 weeks as good, 10 weeks as preferable after a big run, and multi-month (4 to 6 month) bases for big names.",
+    "Tight range with volume drying up as the stock goes sideways; very tight bases are called a strong positive.",
+    "A high-level base sits near the highs after a prior advance and is a favourite of his; he says a few weeks of tight work near highs can lead to the biggest moves.",
+    "A low-level base (stock far below highs) is mentioned too and can break out, but it is less emphasised.",
+    "A V-shaped base, or one that is wide and loose, is judged weak; in later years he also talks about long bases, IPO bases and bases built after a big earnings gap."
+   ],
+   "buy_point": [
+    "Buy when the stock clears the upper trendline or the horizontal top of the base on heavy volume; he often gives an exact price or a narrow zone of a few points above the line.",
+    "A new high out of a high-level base is a buy point too, and he sometimes adds on new highs.",
+    "After a breakout he usually prefers a short rest or pullback before another entry; he warns against chasing after a big gap or a huge run.",
+    "Earnings often set the timing: he may wait for the earnings reaction before buying, since earnings are a driver of the breakout."
+   ],
+   "volume": [
+    "Volume should dry up inside the base (many comments praise this) and expand strongly as the stock breaks out; he cites near-record volume as a sign of conviction.",
+    "On the breakout day he sometimes gives a rough volume target for the day. Light-volume breaks get doubt, and a follow-through day after a breakout is looked for as confirmation."
+   ],
+   "stops_and_exits": [
+    "A stock that falls back below the breakout point or trendline is treated as a failed breakout and he says it should be sold; stops are set a little below the buy area.",
+    "He likes taking profits into strength, for example selling a part of the position while keeping a smaller core, and says to reduce before earnings in recent years.",
+    "In the 2000s he notes that a stock that breaks out and returns to the base needs more time, and that NYSE stocks often retest the breakout area."
+   ],
+   "what_makes_it_fail": [
+    "Too short a base, a base that is too tight in time, or a base after a huge run: he asks for more weeks of sideways work before buying.",
+    "A wide, loose or sloppy base, or a V-shaped one, is seen as lower quality (though he admits some of these still take off).",
+    "Breakouts that happen too early, on light volume or in a weak market tend to fail; he says breakouts in a bad market do not hold, and false breakouts that drop back into the base appear repeatedly.",
+    "Buying an extended stock right after a gap or parabolic move, instead of waiting for a new base."
+   ],
+   "changes_over_time": "In 1998-2000 he mostly names stocks leaving 4 to 7 week bases during strong markets. After 2003 he emphasises tight bases, drying volume and high-level bases tied to earnings, and from about 2013 he labels exact trigger levels (TBA) and from 2018 gives max stop levels and profit-taking advice.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "1998-2026"
+   }
+  },
+  "channel": {
+   "setup": "channel",
+   "summary": "For Zanger, a channel is a price range drawn between two trendlines (rising, falling or flat) in which a stock rests or drifts, and the exit from that range is the trade. He treats the direction of the slope as a clue to which way the exit will go, but he waits for the actual break of a line, with volume, before acting.",
+   "what_it_looks_like": [
+    "Two roughly parallel trendlines that hold the daily price action; the slope can be up (ascending/rising), down (descending) or sideways (flat or horizontal).",
+    "Tight, narrow channels get more praise than wide, loose ones; he calls wide or sloppy channels suspect and a sign of distribution.",
+    "Volume tends to shrink while the stock moves inside the channel, then expands on the break; shrinking volume inside is read as healthy.",
+    "A flat channel that lasts several weeks to months works as a base. He also names a corkscrew channel, which he calls rare but powerful in the past, and a frozen-rope channel, a long steady climb that hugs a rising line.",
+    "In strong markets he often draws a small channel after a big run, as a rest before the next leg; later years also stack channel on top of channel."
+   ],
+   "buy_point": [
+    "Buy on a break above the upper line of the channel (for a falling channel, the upper falling line), on strong or heavy volume; he often gives an exact price and a narrow buy zone above it. In later years he calls this his technical buy area (TBA) and says volume must be strong.",
+    "Descending (falling) channels are usually treated as bullish, with the break up through the upper line as the entry. This is the pattern he mentions most often.",
+    "For a flat channel, the entry is the break of the top horizontal line; he also watches for earnings dates and sometimes waits for the earnings reaction before buying.",
+    "He sometimes adds more as the stock clears a higher line or new highs, and often says a stock that already ran should rest a week or so before the next entry."
+   ],
+   "volume": [
+    "Volume drying up inside the channel, including on pullbacks to the lower line, is described as good; a surge on the break above is the confirmation.",
+    "A break on light volume is treated as doubtful; several times he passes on a breakout because volume was not there, or says he wants to see volume pick up before trusting it.",
+    "For short sales, a break of the lower line on heavy volume confirms it; on light volume he says to skip the short."
+   ],
+   "stops_and_exits": [
+    "Stops are kept close, usually just below the breakout line or a few points under the buy price. If a stock falls back inside the channel after a breakout, he treats that as a failed breakout and tells readers to sell.",
+    "Winners inside a rising channel are managed by trimming near the top line and reducing or exiting when the stock breaks the lower line of the rising channel (or loses the short moving average).",
+    "In recent years he gives a maximum stop level, raises it as the gain grows, and talks about selling part of the position into strength.",
+    "He says to keep stops in place at all times, and in ugly markets he may sell half or more before stops are hit."
+   ],
+   "what_makes_it_fail": [
+    "Breaking back into the channel after a breakout; he says this should not happen and the stock should then be avoided.",
+    "Ascending (rising) channels are mostly viewed as bearish: a break of the lower rising line is a short entry, and he calls them reliable for predicting lower prices. He does say some are fine, and a steep rising channel with falling volume is a warning that needs sideways work to fix.",
+    "A weak market, which makes channel breakouts stall or fail; he notes this more than once, especially around 2001 and in choppy periods.",
+    "Wide channels, thin volume on breaks, and stocks sitting under heavy resistance such as long moving averages."
+   ],
+   "changes_over_time": "In 2000-2008 the comments are short and focus on trendline breaks with exact prices, and often cover shorts as well as longs. From about 2013 he uses his TBA label, adds moving-average context (21, 50, 200 day) and gives stop levels, and from 2018 on the notes talk more about gains from earlier buys, reducing positions and named patterns like flat channel base, frozen rope and corkscrew.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "2000-2026"
+   }
+  },
+  "cup_handle": {
+   "setup": "cup_handle",
+   "summary": "In his eyes a cup and handle is a base where a stock pulls back, rounds out and recovers to near its old high, then rests briefly (the handle) before breaking out to new highs. He draws it on charts by joining the highs of the up-moves for the cup and drawing small downward-sloping lines for the handle. He treats it as a sign that higher prices are likely, but only if volume and the market cooperate.",
+   "what_it_looks_like": [
+    "A rounded, bowl-like pullback and recovery back toward the prior high. He says a rounded bottom is stronger than a sharp V-shaped one.",
+    "Depth varies. He calls some cups of proper depth and time, accepts deep ones (a few of his examples were called deep or very deep), and also notes shallow ones.",
+    "Time varies a lot: he once said about 6 weeks is a good amount for a base, and he also shows bases of 4 months, very long bases, and in 2025 a 2-year cup on a weekly chart.",
+    "The handle is a short rest on the right side, usually a few days to about two weeks, drawn as one or two small descending lines or a small sideways channel. He wants it to hold up and show some horizontal work, and often asks for a few more days of rest if it looks incomplete.",
+    "A saucer and handle is the same idea with a longer, flatter bottom. He also describes cups that look sloppy, choppy or loose and calls those lower quality.",
+    "In later years he often notes whether the handle is holding above the 21-day or 50-day moving average line."
+   ],
+   "buy_point": [
+    "His main trigger is a move above the upper line of the handle (the descending trend line or top of the little channel), at a specific price he writes next to the stock.",
+    "When the cup is nearly done and the stock is already near its high, he sometimes makes the trigger a fresh new high instead, and he often lists a first, second and third trigger as the stock keeps climbing.",
+    "He wants strong volume on the breakout. In the early years he gave volume targets for the day or per hour; later he simply says heavy or good volume, and some days he skips a stock when the price touches the trigger on light volume.",
+    "If the stock gaps up through the trigger he finds it harder to buy; in 2020 he mentioned staying within a 5% buy range of the trigger, and often prefers waiting for a small pullback instead of chasing."
+   ],
+   "volume": [
+    "Volume should dry up inside the handle; he calls this a good sign.",
+    "Volume should expand sharply on the breakout (he cited about 2 times average in 2000). A breakout on weak volume is treated as suspect and is a reason to pass or to exit quickly.",
+    "He often tells readers to wait for earnings first, because earnings volume can make or break the move; he said some of his earlier cup breakouts were helped a lot by earnings."
+   ],
+   "stops_and_exits": [
+    "Early on he put stops just below the handle trend lines, roughly 5% down, and later wrote exact stop prices, usually a few dollars below the buy, or called them max stops once he had a gain.",
+    "He raises stops as the stock rises, often to the buy price or just above, so a pullback to the trigger can mean an exit with no loss.",
+    "He takes part off the table on big moves (for example 20-30% in one note) and reduces or sells before earnings; he said not hitting the trigger and gapping lower is why he cuts down or sells out before a report.",
+    "Dropping back through the handle or breakout area on heavy volume is an exit; he logged many stop-outs, including notes that a stock fell back into the base."
+   ],
+   "what_makes_it_fail": [
+    "A weak or falling market. He repeatedly said that in a hostile tape breakouts to new highs did not get rewarded, and several of his stops hit in such weeks.",
+    "No volume at the breakout, or breakouts that stall, give back gains and fall back into the base (false breakouts); he said these happen in this business.",
+    "Poor quality: choppy, sloppy or very loose cups, no real handle (he treated a rising channel instead of a handle as failure-prone), or a cup with a double-top look.",
+    "A stock that is already extended, a late mover from a tired group, or one that depends on earnings or news that go the wrong way (gaps down on a miss, sell-the-news days)."
+   ],
+   "changes_over_time": "In 1998-2008 he explained the pattern in detail (connect the arrows for the cup, lines for the handle) and gave exact volume targets; by about 2012 he used the shorthand TBA for his trigger and, in the late 2010s and 2020s, wrote it as Cup & Handle or Cup with Handle, tracking his gains from each trigger, using max stops, reducing before earnings and showing weekly charts and multi-year bases. The core idea, break above the handle on volume, stayed the same.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "1998-2026"
+   }
+  },
+  "double_bottom": {
+   "setup": "double_bottom",
+   "summary": "Zanger sees the double bottom as a washout-and-retest shape: price drops, bounces, then comes back down to about the same low and holds it. He treats it as an early sign that selling may be done, but usually not as a complete base, and he wants a trendline or resistance break on volume before he buys.",
+   "what_it_looks_like": [
+    "Two lows at roughly the same price level, often marked on the chart with a pair of arrows; the second test holds or slightly undercuts the first.",
+    "Very often appears after a sharp drop, in a descending channel, or beneath a falling trendline; the second low frequently lands on the 50-day, 100-day or 200-day average.",
+    "Sometimes it is tiny and short-term ('small' or 'minor'), sometimes a big multi-month shape; he uses 'potential' or 'could be' a lot while it is still forming.",
+    "He also finds it on indexes (Nasdaq, S&P 500, Dow, the OTC index), gold and silver funds, and once on his own short-term market oscillator.",
+    "A double top is mentioned as its mirror, once as the pattern that ended a stock's earlier run."
+   ],
+   "buy_point": [
+    "The usual trigger is a break above the falling trendline or the horizontal line over the recent highs, ideally on strong volume; he states the exact price.",
+    "Other triggers named: a move over the 21-day, 50-day or 200-day average, often with a requirement for good volume.",
+    "For aggressive traders, a speculative buy near the second low is allowed ('bottom fishing' style) with a very close stop, and he says to be quick because it can turn south.",
+    "He often adds that a double bottom alone is not enough: more sideways work is needed first to form a tighter base."
+   ],
+   "volume": [
+    "He likes volume drying up near the second low, then heavy volume on days it moves up from the low.",
+    "Weak or shrinking volume as price rallies, or heavy volume on the way down after the bounce, is a reason he gives to avoid.",
+    "A lift off the double bottom is only good in his eyes if volume confirms it, and he sometimes says the stock needs a serious boost in volume to get going."
+   ],
+   "stops_and_exits": [
+    "Stops are tight and set a few dollars under the entry or just under the recent low; a number is typically given, for example a stop under the buy zone.",
+    "If the double-bottom lows are undercut on heavy volume he treats it as a sell signal; in 2018 he even used a break of a double bottom as a short-sell trigger.",
+    "He often sells into the first bounce or gap-up, calls it good for the active trader, and says a bounce may only reach the next moving average, which is resistance.",
+    "If the stock gaps down to the buy area on news he sells rather than hoping."
+   ],
+   "what_makes_it_fail": [
+    "Price slicing through the second low on heavy volume, or the stock not holding the lows after the market turns down.",
+    "Running into resistance at the 50-day or 200-day average right after the bounce, so the move stalls; this comes up many times.",
+    "No base yet: he repeatedly says more time or more horizontal work is needed, so it is only a bounce trade, not a new advance.",
+    "A weak overall market: in 2022 he notes the index double bottom could bounce but keeps stressing holding cash; a falling market tends to run through these lows."
+   ],
+   "changes_over_time": "1999-2003 comments treat it mostly as a buy setup out of a trendline break, often in tech and homebuilders. Through 2007-2014 it is mostly labelled 'potential' with comments that more work is needed. From about 2018 notes are framed as short-term tradable bounces for active speculators with a stated buy trigger and max stop, and the pattern is often found on market indexes as well as single stocks.",
+   "evidence": {
+    "comments_read": 210,
+    "years": "1999-2025"
+   }
+  },
+  "flag": {
+   "setup": "flag",
+   "summary": "In his eyes a flag is a short pause after a strong move up (the pole), where the stock drifts or goes sideways in a tight channel before continuing higher; a pennant is a tiny triangular version of the same thing. He also marks the mirror image, a bear flag, after a sharp drop, as a sign that lower prices are likely. It is one of the patterns he uses most often, especially on stocks already near highs.",
+   "what_it_looks_like": [
+    "A sharp advance (the pole) followed by a short rest, drawn between two trend lines that are flat or slope slightly down. A pennant is the same rest squeezed into a small triangle.",
+    "Closes should be tight, and the stock should hold near the high of the run. He calls flags near the top of a big move high-level flags.",
+    "He gave a rough length once, about 5 to 12 days, and noted a flag that is only a few days old may need more time. Many comments simply ask for a few more days or a week of rest.",
+    "Bear flags are the mirror: a sharp drop, then a weak sideways or rising channel that he expects to break lower. He also notes that an up-sloping channel that rests too long can turn bearish.",
+    "He sometimes shows flags on weekly charts, and in 2026 called a very sharp run followed by a tight rest a high tight flag."
+   ],
+   "buy_point": [
+    "Buy as the stock moves above the upper line of the flag or channel, at a price he writes next to the stock; for flags near highs the trigger is often a new high.",
+    "He wants the move to come on heavy or above-average volume and often adds a ceiling on what to pay (a small amount above the trigger), plus a stop price right away.",
+    "He often lists a lower and a higher trigger, or says to add on a later move out of a second flag; in late years he adds only if volume is strong.",
+    "For bear flags, the short-sale trigger is a break below the lower line on strong volume; in 2022-2023 he said to short only when the market itself is falling."
+   ],
+   "volume": [
+    "Volume should dry up while the flag forms and then pick up strongly as price leaves the pattern.",
+    "He often says he wants better volume to confirm; a move out of the flag on light volume is flagged as a concern, and he sometimes recommends waiting or avoiding."
+   ],
+   "stops_and_exits": [
+    "Stops are placed just under the flag, written as a price a few dollars or about a point below the trigger; in later years he calls them max stops and raises them as the stock moves up.",
+    "A close back below the trigger or the flag lines is treated as a sell; he said falling back under the pattern is a sell signal under his golden rules, and in 2001 said a drop of a point under the line is a sell.",
+    "He reduces after a quick run, sells some into spikes, and trims or sells before earnings; he also notes a gap up then gap down after earnings as a sign to cut.",
+    "For stocks that are very extended, he often says to take profits and wait for a new flag."
+   ],
+   "what_makes_it_fail": [
+    "A weak market or sector: breaks of the pattern on a market sell-off, downgrades or bad news are the commonest reason he gives for a failed flag.",
+    "Flags in big, slow stocks do not work well in his view (he said so about NYSE large caps in 2006 and 2015), and he calls AMEX-listed stocks a red flag.",
+    "Flags that are too short, sloppy, or on stocks far above their moving averages often fail or stall; he asks for more rest.",
+    "A bull flag that drifts into a rising channel may turn bearish, and a flag broken to the downside on heavy volume is a negative signal."
+   ],
+   "changes_over_time": "In the early 2000s he talked about flag-on-a-pole, pennants and many bear flags and shorts, with exact prices and volume targets for the day. From about 2012 he writes buy points as TBA, in the 2020s he uses Bull Flag and Bear Flag with max stops, tracked gains and notes like shorting only if the market is plunging, and in 2026 he adds high tight flag.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "2000-2026"
+   }
+  },
+  "gap": {
+   "setup": "gap",
+   "summary": "A gap is a hole in the chart where a stock opens well away from the prior close, usually on earnings or news. He reads it as a sign of institutional buying or selling, and it matters most when it is large, on very heavy volume, and not filled afterwards. The key habit is to avoid chasing the gap itself and wait for a rest or a proper entry.",
+   "what_it_looks_like": [
+    "A large break-away gap up on earnings or news, with several times normal volume, usually from a base or a tight pattern.",
+    "An unfilled gap that the stock keeps holding as support; holding the gap area is a sign of strength.",
+    "A gap down, especially on heavy volume after a long run, treated as an exit signal or a short setup.",
+    "Exhaustion or island-style gaps near the end of a move: a gap up into highs that stalls, or two opposite gaps leaving an island.",
+    "Small gaps of a few percent that leave room to enter, versus very large ones that cannot be bought sensibly."
+   ],
+   "buy_point": [
+    "He generally does not buy the gap day itself when the gap is big; he prefers a few days to weeks of sideways rest after it, then a buy on a move to new highs or over a nearby line on strong volume.",
+    "A gap smaller than roughly five percent is acceptable for entry on strong names, sometimes using the opening range; bigger gaps are described as too hard to chase.",
+    "A stock gapping up and closing near its low, or falling back to the gap area and holding, can be a buy; a pullback after the gap is often a better entry than the open.",
+    "Many recent notes quote a technical buy area price and say the stock gapped past it, which makes it harder to buy and means a higher cost and a wider stop."
+   ],
+   "volume": [
+    "Very heavy volume on the gap day, often several times the normal level, is what makes a break-away gap meaningful.",
+    "Volume that dries up during the rest period after a gap is read as healthy.",
+    "A gap down on heavy volume is read as big holders leaving, and is called a warning to exit quickly."
+   ],
+   "stops_and_exits": [
+    "A gap down through the entry or stop level is a sell signal; with a gap through the stop he accepts the exit near the open instead of waiting.",
+    "Filling a gap that was holding is seen as weakness, and a stock that falls back into its gap area on a bad market is exited.",
+    "He advises cutting size sharply or going to cash before earnings, because a gap down on results can ruin a position; he rebuys after the report if the stock is still good.",
+    "After a stock gaps higher he often says to lock in some profit and keep a stop near the buy area or the gap low."
+   ],
+   "what_makes_it_fail": [
+    "Chasing a very large gap up, especially after a big run; he calls these one-day wonders or blow-off tops and says they often reverse.",
+    "A stock that was already up strongly into earnings tends to gap down or do less on the news.",
+    "A gap up that sells off the same day, or opens high and closes weak, is bearish.",
+    "A weak market, where even good gaps get sold and stops are hit."
+   ],
+   "changes_over_time": "In the 1999-2008 notes he talks about break-away, exhaustion and island gaps and whether a gap will be filled, with most comments on earnings gaps. From about 2012 he stresses the gap-and-go idea, small versus large gaps, and, in the 2020s, how a gap past a stated buy area affects entries and stops.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "1999-2026"
+   }
+  },
+  "general": {
+   "setup": "general",
+   "summary": "He is a chart-based momentum trader who buys strong, well-known growth stocks at a pre-planned price just as they break out of a rest period, and he wants the move to be confirmed by heavy volume. He keeps stops very close, takes part of the profit quickly, and raises the stop as the stock climbs. Over 28 years the method stays the same whether the stocks are dot-com names, commodities, Chinese internet stocks or today's AI and chip leaders.",
+   "what_he_buys": [
+    "Market leaders in a group that is moving together (telecom, chips, housing, energy, shipping, solar, and later cloud and AI names); he often points out that a stock is strong inside a strong group.",
+    "Companies with very strong recent earnings and sales growth. He repeatedly says big earnings are the reason a stock keeps rising, and he likes thinly traded, fast-growing names.",
+    "Stocks that have already made a big run and are now resting sideways ('horizontal work') on quieter volume, ideally for a few weeks, which he sees as building a better launch pad.",
+    "Stocks sitting close to or at new highs, or holding up well at their 21-day or 50-day average line while the market is weak.",
+    "Evidence of big-fund buying: very heavy volume or a big percent volume jump on up days, and volume drying up on rest days.",
+    "He avoids stocks with no earnings story, weak earnings reactions, or choppy, sloppy behaviour, and says so openly."
+   ],
+   "entry_rules": [
+    "He publishes a trigger buy area (TBA) in advance, usually a price just above a resistance line, a prior high, or a new high. The stock must trade through that price, not merely approach it.",
+    "Volume must be strong or heavy on the breakout. A move on light volume is treated as suspect and may be skipped, and he warns that a breakout without volume is often false.",
+    "If a stock pops above the TBA and then falls back below it the next day, he treats it as a failed breakout and an automatic exit.",
+    "He is careful with earnings: many comments say to wait until results are out and then buy if the stock moves up on good volume, and to avoid holding a big position through the report.",
+    "He allows adding more shares at a higher TBA or on a pullback to the 50-day average when the first buy is already in profit, but he says to buy only a few shares (a small starter) at the first signal."
+   ],
+   "risk_rules": [
+    "A stop goes in at the moment of purchase, usually only a few dollars or roughly 2-4% below the buy price. Many comments state it as a fixed distance below the entry.",
+    "Once the stock is ahead, he raises the stop to the entry price or above ('max stops'), so a winner is not allowed to turn into a loser. Over time the stop moves up to lock in a set amount of gain.",
+    "He references a personal list of ten Golden Rules about position size, stops and earnings, and says to buy a few shares, not a big block, especially in thin or volatile stocks.",
+    "He tells readers to reduce ahead of earnings, and to cut a position when a stock is extended or has run sharply (for example after a sudden 20-30% jump).",
+    "In rough markets he tends to stay out, avoid new buys, or keep stops very tight; a dropped stock can always be bought back later (a comment from 2005)."
+   ],
+   "selling_rules": [
+    "Sell part (often about 30-50%) after a quick, sizeable gain to lock in profit, then hold the rest with a raised stop. This is mentioned many times from 2004 onward.",
+    "Sell when the stop is hit, without arguing. He keeps this rule even if the stock bounces back afterwards.",
+    "Sell into spikes: a very large volume day with a sharp reversal downward, a bearish reversal bar, or a blow-off run is a signal to get out.",
+    "Exit when a stock breaks its 21-day or 50-day line (or the 200-day on big stocks) after being supported there, and when a breakout opens below the buy point.",
+    "Downgrades or bad news that push a stock below its trend line mean selling at the open the next morning rather than hoping."
+   ],
+   "market_timing": [
+    "He reads the Nasdaq (OTC exchange) and the S&P 500 for trend, support lines and trading bands. A weak or plunging index means few or no buys, and in a few comments he says cash is the best position.",
+    "In a market where most breakouts are failing, he tells readers to be very selective and use close stops. He prefers stocks that hold up well on weak market days.",
+    "After a market correction he looks for the leaders that recover first and buys those, since leaders lead the new rally.",
+    "He sometimes uses an oscillator, oversold and overbought readings, and Fibonacci pullback levels to judge whether the index is likely to bounce. Evidence for how much weight he gives these is thin in this file."
+   ],
+   "his_vocabulary": {
+    "TBA": "Trigger buy area: the pre-announced price level where he would start buying if volume agrees.",
+    "Max stops": "A stop set at or above the entry price so the trade can no longer lose money; it is raised as the stock rises.",
+    "Horizontal work": "Sideways trading for days or weeks on lower volume that he likes to see before the next advance.",
+    "Reduce": "Sell a portion of the position to lock in gains while keeping some shares.",
+    "10 Golden Rules": "His own list of trading rules on this site covering position size, stops and earnings; the comments only refer to it, never spell it out.",
+    "Chat room / CM": "His live group for active traders; the chat moderator (CM) calls out buy areas there.",
+    "Checked out": "Exited the stock, either by stop or by selling for a gain.",
+    "Prior buy area": "An earlier trigger price, shown on the chart with arrows or yellow marks, used to judge how far the stock has run.",
+    "Blow-off / parabolic": "A fast, near-vertical run that often ends in a sharp spike down on heavy volume, which he treats as a sell signal.",
+    "Bearish reversal bar": "A day that rises and then closes near the low on large volume, used as a get-out signal."
+   },
+   "changes_over_time": "Early comments (1998-2003) are mostly lists of tickers with buy prices and talk of hot groups and chart lines. From about 2004 the comments become more mechanical, with exact stops, partial profit-taking and earnings cautions. After 2013 and especially after 2018 almost every note repeats a short template: TBA price, gain so far, and a stop that has been raised.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "1998-2026"
+   }
+  },
+  "head_shoulders": {
+   "setup": "head_shoulders",
+   "summary": "Zanger treats the head and shoulders as a reversal shape: three peaks (or three troughs when upside down) with the middle one the most extreme, and a neckline joining the two pullback points. In this sample he uses the top version mainly to find shorts or reasons to avoid a stock, and the inverted version as a bottoming pattern that can lead to a buy once the line above is cleared.",
+   "what_it_looks_like": [
+    "Three swings: a left shoulder, a head that goes further, and a right shoulder; the right shoulder is often lower than the left on the bearish top, which he calls typical.",
+    "The neckline can be flat, or a small rising line under the lows (bearish top), or a flat or falling line across the highs (inverted version). He notes that a rising or falling neckline moves every day, so the trigger price moves with it.",
+    "He often labels it loosely: 'mini', 'small', 'large', 'rounded' or 'like' a head and shoulders; many comments say 'potential' or 'in the making' before it is complete.",
+    "The inverted version is sometimes described as three bottoms, or a triple bottom that doubles as an inverse head and shoulders.",
+    "He also applies it to indexes, sector funds, gold and silver funds, the commodity index and even interest-rate futures, not just single stocks.",
+    "It frequently appears together with other shapes such as a bear flag, rising channel, wedge or descending channel; he sometimes says one of these can override the other."
+   ],
+   "buy_point": [
+    "Inverted version: buy when price breaks above the line across the right-shoulder highs (horizontal or falling), ideally on strong volume; he gives exact trigger prices in most of these notes.",
+    "Other inverted-version triggers he names: a move over the 50-day or 200-day average, or over the prior day's high for a faster, riskier entry.",
+    "Top version (short side): the trigger is a break below the neckline or the small rising line under the right shoulder, ideally on heavy volume. He often prefers shorting a bounce back toward the broken neckline, the 50-day or the 200-day rather than chasing the first drop.",
+    "After a big drop through the neckline he says to wait for a snapback of a few points before shorting."
+   ],
+   "volume": [
+    "Heavy volume on the breakdown through the neckline is what he wants for a short; a surge as price undercuts the line makes it a better candidate.",
+    "For the inverted version he points to heavy volume for weeks, especially on the right side of the right shoulder, as a sign of accumulation, and heavy volume on the breakout.",
+    "Light volume on a rally into the right shoulder is mentioned as a warning sign for the bulls; light volume on a pullback is called healthy."
+   ],
+   "stops_and_exits": [
+    "He repeatedly stresses tight stops, giving a specific max-stop price a few dollars from entry, because he says a pattern does not guarantee the move.",
+    "Shorts are covered when the stock climbs back above the neckline, or into an oversold bounce; examples show him taking a modest gain quickly rather than waiting for the full target.",
+    "He sometimes quotes a measured target equal to the height of the pattern projected from the neckline (for example, a 20-point-high pattern giving a 20-point drop), but in 2004 he says he almost never gives price targets because stocks often ignore them.",
+    "For the inverted version he suggests letting the stock rest a week or two after the first move and buying again on a clear of the next high; he exits if the right shoulder low fails."
+   ],
+   "what_makes_it_fail": [
+    "Strong stocks and strong markets ignore the bearish version: several times he notes a leader (earnings strength, a market that is oversold) refusing to break down, and a bounce back above the 50-day cancels the setup.",
+    "An earnings report can override the pattern in either direction; he often says he is avoiding the stock until after earnings, and a gap can leave a short too late or run it over.",
+    "The inverted version is called prone to failure in the 2008-09 bear market, and a failed right shoulder (price falling back under its low) means the pattern is dropped.",
+    "A stock sitting above its broken trendline can hint the head and shoulders is not working; in 2000 he noted one failed and said it might be time to go the other way. Precious-metal inverse patterns were said to take a long time and whipsaw."
+   ],
+   "changes_over_time": "2000-2003 is mostly the bearish top, used on Nasdaq leaders and sector groups with the trendline as the neckline. 2004-2012 has a lot of inverted examples, including housing stocks, gold and silver. From about 2015 notes show moving averages on the charts, say 'avoiding for now' around earnings, and in the 2020s mention shorts and buys called in his chat room with a stated trigger and a max stop.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "2000-2024"
+   }
+  },
+  "trendline": {
+   "setup": "trendline",
+   "summary": "In his eyes a trendline is a line drawn across a stock's price highs, either sloping down, flat, or small and local. A close above it is a technical entry signal, but only when volume is heavy and the broad market cooperates. He re-draws the line every night, so the entry price can change from day to day.",
+   "what_it_looks_like": [
+    "A downward-sloping line joining lower highs after a fall; the stock is coiling under it and a move over the line is the entry trigger.",
+    "A flat resistance line across prior highs, often a second hurdle after the first sloping line has been cleared.",
+    "A short, minor line in a tight pattern, sometimes inside a rising wedge, sitting just under the real breakout level.",
+    "Rising lines drawn under a strong uptrend; a break of these is treated as a warning or exit signal, not an entry.",
+    "Long-term lines on the big index charts, where a break of a steep rising line marks the end of a run and a move to higher cash."
+   ],
+   "buy_point": [
+    "The buy is the moment price crosses the upper line on strong volume; he usually writes the exact price level next to the line.",
+    "A sloping line falls each day, so the trigger price falls with it and has to be re-read daily.",
+    "In his early years he said not to pay more than about two points past the trigger. In recent years he says a gap far past the level makes the stock hard to buy.",
+    "He often waits for earnings to be out first, then buys the line break afterwards, and likes the stock to have rested a few days in a tight range just under the line."
+   ],
+   "volume": [
+    "Heavy volume on the break is called essential in nearly every era; light volume on a cross is called suspect or not enough.",
+    "Expanding volume with a clean clear of the line is the confirmation; a break on weak volume is a reason to wait or avoid.",
+    "For small, thin stocks he sometimes states the share volume he wants to see on breakout day."
+   ],
+   "stops_and_exits": [
+    "Stops sit close below the entry, often a few dollars or just under the line; some notes place the stop right at the trendline.",
+    "A break back under the line after a breakout is treated as a failed breakout and a sell signal, sometimes by as little as ten cents.",
+    "Rising trendline breaks are used as a signal to cut position size, take profits, or in some cases go short, especially for extended leaders.",
+    "After a break out he often expects a retest of the line; holding the line on the retest is good, losing it is bad. Later notes also mention trimming part of a winner and raising the stop."
+   ],
+   "what_makes_it_fail": [
+    "Volume that does not come in, or a first attempt that reverses the next day (false breakout).",
+    "A weak or falling overall market; he repeatedly says breakouts are hard to trust in a bear tape and stays in cash.",
+    "An earnings report just after the break can reverse it, so he often waits for the report first.",
+    "Chasing: a stock that has already run well beyond the line, or is far extended, tends to stall or pull back."
+   ],
+   "changes_over_time": "In 1998-2003 the notes are short and say buy as it breaks a named line, with a strict rule against chasing. From the 2010s he uses the technical buy area abbreviation, adds explicit stops and profit-reducing steps, often links the line to the 50-day and 200-day averages and earnings dates, and in the 2020s describes full trades with gains from each buy area.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "1998-2026"
+   }
+  },
+  "triangle": {
+   "setup": "triangle",
+   "summary": "For Zanger a triangle is a consolidation where the price swings squeeze between two converging trendlines, usually after a run-up or after earnings. He treats it as a coiled spring that gets resolved near the tip, and the direction depends on the type: a flat-topped (ascending) one is mostly bullish, a flat-bottomed (descending) one is mostly bearish, and a symmetrical one can go either way but usually follows the trend before it. Over 26 years he mostly uses it as a breakout setup with a specific trigger price.",
+   "what_it_looks_like": [
+    "Two trendlines that close in on each other, with price bouncing between them and the swings getting smaller as the tip (apex) nears.",
+    "Ascending type: a flat upper line with higher lows underneath. He calls it bullish and often says it usually leads to higher prices.",
+    "Symmetrical type: a falling upper line and a rising lower line. He says it can be resolved either way, but often leans up for leaders with strong earnings, and treats it as a continuation pattern in an uptrend or downtrend.",
+    "Descending type: a flat lower line with lower highs on top. Normally bearish and common on weak indexes and weak sectors, such as chip stocks, the Nasdaq in 2002, 2004 and 2008, and Goldman in 2008.",
+    "Size varies a lot: tiny few-day triangles, high-level ones sitting near new highs, and big multi-week or weekly-chart ones. He also reads triangles on indexes (Nasdaq, Dow, QQQ) and calls out a rare expanding (widening) type a couple of times, with no clear rule for it."
+   ],
+   "buy_point": [
+    "Buy when price pushes through the upper line, on a surge of volume. For a sloping upper line the buy price drops a little every day, so he re-states the number as the line falls.",
+    "In later years he gives an exact trigger price (his trigger buy area) and wants strong volume at that price, often with a stop a few dollars below. The idea is to buy the clear break, not to guess inside the pattern.",
+    "Active traders sometimes get in a little early near the top line, or on a small pullback after the break, using tight stops, and he adds more only once the line is cleared.",
+    "He often pairs it with earnings: either wait for the report and buy the breakout on good results, or avoid the stock until the report passes. He also wants the overall market to be positive before buying."
+   ],
+   "volume": [
+    "Volume should shrink while the triangle tightens, and then jump on the breakout. Dried-up volume at the apex is his hint that a move is near.",
+    "Breakouts on light volume are treated as weak. He wants heavy volume at the trigger, and in the early years also wanted a good second day after the break.",
+    "For a short, he wants volume to pick up as price slices below the lower line, otherwise the breakdown is not trusted."
+   ],
+   "stops_and_exits": [
+    "Early years: keep the stop tight, about 2 to 3 points under the breakout. Later years: a fixed dollar amount below entry or just under the trendline, then raise the stop as price climbs.",
+    "If a breakout falls back through the line it just cleared, that is a sell signal. He gives examples of stocks being stopped out right at the trigger level.",
+    "He suggests selling or reducing when a stock returns to its breakout point, on a bearish reversal bar, or after a big spike in volume, and he takes partial gains along the way.",
+    "For shorts, the stop goes just above the entry or just above the broken line. He warns that shorting needs fast reactions, and that oversold markets can snap back through the line quickly."
+   ],
+   "what_makes_it_fail": [
+    "A breakout with no follow-through the next day, or one that quickly slips back into the pattern. He calls the lack of follow-through a warning and says to keep stops firm.",
+    "A weak market or weak group. Several times he held back from a breakout because the market was falling or the sector was resting.",
+    "Late-stage, extended or very volatile stocks, and descending triangles in a very strong market where the stock refuses to fall. A very late-stage descending one on a big winner was avoided because it was prone to failure.",
+    "Big gaps that skip the trigger price, and too much money in a single stock. He once admitted breaking his own sizing rules on a biotech name and being hit hard when its drug news failed."
+   ],
+   "changes_over_time": "In 2000 to 2008 he wrote long explanations, talked about volume drying up and shorted many descending triangles on weak indexes. From the 2010s he mostly gives short notes with an exact trigger price, a stop distance and a record of gains from earlier triggers, and he leans on ascending and symmetrical triangles on leading names. His view that descending triangles are bearish stays, but later he is more willing to buy them when they break upward.",
+   "evidence": {
+    "comments_read": 350,
+    "years": "2000-2026"
+   }
+  },
+  "wedge": {
+   "setup": "wedge",
+   "summary": "In Zanger's eyes a wedge is a narrowing consolidation inside two sloping trendlines. The slope matters: a rising wedge is usually bearish and a falling (descending) wedge is usually bullish, but he repeatedly says the market backdrop can override the pattern. In the early 2000s he also used the word wedge loosely for any small tightening base, and bought or shorted it by the line that broke.",
+   "what_it_looks_like": [
+    "Rising wedge: price drifts up inside two upward-sloping lines that converge. He calls it bearish most of the time, often seen near tops and on indexes in a bear market, and he says it looks brutal for people holding long.",
+    "Falling wedge: price drifts down between two converging downward-sloping lines. He says these are often resolved to the upside and are worth watching for a turn, often after a sharp pullback or a failed late-stage base.",
+    "A wedge inside a larger channel, or at the end of a long tight channel, is a common version. Small, tight wedges on drying volume are described as constructive.",
+    "He sometimes compares a wedge to a flag or pennant that follows a sharp move, with the sharp move as the pole.",
+    "The two lines are unequal: in one note he says the longer, more established line is the stronger one, so a break of it counts most."
+   ],
+   "buy_point": [
+    "Falling or flat-topped wedges: buy when price crosses above the upper descending line (or a nearby horizontal line), with a price stated for the day. The buy price drops daily because the line slopes down.",
+    "Rising wedges in a strong bull market can still be bought. A few notes say they predict higher prices when the market is strong, and in 2003 he said a rising wedge would lead higher because it was a bull market, not a bear market.",
+    "Later years (2017 onward): a stated trigger buy price on strong volume, such as just past the upper line, often with a small pullback entry for active traders.",
+    "Bearish rising wedge: short when price breaks the lower rising line, or sometimes earlier near the upper line. He reminds readers that this line rises every day so the short price rises too."
+   ],
+   "volume": [
+    "Volume drying up while the wedge tightens is read as a good sign. For a breakout he wants a clear pick-up, and in 2001 he wrote that volume should hit at least 50% above its daily average by the end of the break day.",
+    "Light volume on the breakout (or no volume when a stock nudges above the line) is treated as a red flag, and he says a move needs volume to last.",
+    "For a rising wedge breakdown, he wants volume to pick up as the stock falls. Heavy volume with little price progress inside a rising wedge is read as selling into strength."
+   ],
+   "stops_and_exits": [
+    "Long stops are tight: usually a dollar or two below the entry, or just under the trendline, and raised once the stock moves. In the 2020s he calls the stop the maximum stop and lifts it as price rises.",
+    "Shorts: stop at the broken line or a hair above it, or about a dollar above entry. Later he says rising wedge and rising channel breaks give the best and safest short opportunities.",
+    "After a breakout he often expects a retest of the line just cleared, and a drop back through it means the setup failed and stops are hit. He also locks in gains on high-volume reversals."
+   ],
+   "what_makes_it_fail": [
+    "The market. A falling wedge in a market that is breaking down, or a rising wedge when the market is strong, can both fail. In September 2008 he said big falling wedges needed the market selloff to pass first.",
+    "Falling wedges are not guaranteed to go up and rising wedges do not always work. He says so directly in 2009 and 2012, and one rising wedge was negated when price popped back above its lower line.",
+    "Breakouts without volume, or a gap or news pop after a break below the line that snaps price back up to retest the upper line.",
+    "Extended stocks and weak groups: he would not short a stock already far down, and kept away from falling wedges on laggards unless the volume showed up."
+   ],
+   "changes_over_time": "In 2000 to 2005 he leaned bearish, with a lot of attention on rising wedges and shorting, plus some bullish falling wedges. From 2008 on, falling wedges are mostly bought breakouts with exact prices. From 2017 notes become short and framed around a trigger buy price on strong volume, and by the 2020s rising wedges are sometimes ridden for gains with the stop raised to the line.",
+   "evidence": {
+    "comments_read": 314,
+    "years": "2000-2025"
+   }
+  }
+ }
+}

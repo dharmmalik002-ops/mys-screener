@@ -121,7 +121,9 @@ def draw(arrs: dict[str, np.ndarray]) -> Image.Image:
         g.line([(x, top), (x, bot)], fill=colour, width=1)
         y0, y1 = sorted((y(norm["o"][i]), y(norm["c"][i])))
         g.rectangle([x - body / 2, y0, x + body / 2, max(y1, y0 + 1)], fill=colour)
-        vh = norm["v"][i] * vol_h
+        # a volume read off a newsletter chart can come out negative or missing
+        vh = float(np.nan_to_num(norm["v"][i])) * vol_h
+        vh = min(max(vh, 0.0), vol_h)
         g.rectangle([x - body / 2, H - vh, x + body / 2, H], fill=_VOL)
 
     pts = [((i + 0.5) * step, y(norm["sma"][i])) for i in range(n)]

@@ -6043,7 +6043,26 @@ export type LookalikeLibrary = {
   };
 };
 
-export type LookalikeStyle = { library: LookalikeLibrary; matches: LookalikeMatch[] };
+/* A trader's setup described in our own words, from his chart comments. */
+export type LookalikeStyleNotes = {
+  setup: string;
+  summary?: string;
+  what_it_looks_like?: string[];
+  buy_point?: string[];
+  volume?: string[];
+  stops_and_exits?: string[];
+  what_makes_it_fail?: string[];
+  what_he_buys?: string[];
+  entry_rules?: string[];
+  risk_rules?: string[];
+  selling_rules?: string[];
+  market_timing?: string[];
+  his_vocabulary?: Record<string, string>;
+  changes_over_time?: string;
+  evidence?: { comments_read?: number; years?: string };
+};
+
+export type LookalikeStyle = { library: LookalikeLibrary; matches: LookalikeMatch[]; notes?: LookalikeStyleNotes | null };
 
 export type Lookalikes =
   | { available: false; reason: string }

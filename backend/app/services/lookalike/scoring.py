@@ -39,6 +39,48 @@ class Library:
     F_ref: dict[str, np.ndarray] = field(default_factory=dict)
     head: object = None
     feedback_weights: object = None  # per shape feature, learned from 👍/👎 (None = equal)
+    # version-2 storage: every reference's before-and-after chart, packed
+    # (pipeline.save_library); a reference row carries its position as "_i"
+    packed_charts: object = None
+    chart_lengths: object = None
+
+    def chart(self, ref: dict) -> dict | None:
+        """The reference's window plus what followed, as render.extended made it."""
+        if "chart" in ref or self.packed_charts is None:
+            return ref.get("chart")
+        i = ref.get("_i")
+        meta = ref.get("chart_meta")
+        if i is None or meta is None:
+            return None
+        n = int(self.chart_lengths[i])
+        from .pipeline import CHART_SERIES
+
+        out = {name: [round(float(x), 3) for x in self.packed_charts[i, j, :n]] for j, name in enumerate(CHART_SERIES)}
+        return {**out, **meta}
+
+    def window(self, ref: dict) -> dict | None:
+        """The 120 sessions the model saw, normalised 0..1 — the chart's head."""
+        if "window" in ref:
+            return ref["window"]
+        ch = self.chart(ref)
+        if ch is None:
+            return None
+        return {name: ch[name][: render.WINDOW] for name in ("o", "h", "l", "c", "sma", "v")}
+
+
+# A style whose model cannot tell its setups from ordinary days much better
+# than a coin flip produces matches that mean nothing; it is built and kept,
+# but not shown (Zanger's wedges, 52%, and head-and-shoulders, 59%, 2026-10-04).
+MIN_STYLE_AUC = 0.6
+
+
+def shown(library: "Library") -> list[str]:
+    out = []
+    for style, summary in library.styles.items():
+        auc = (summary.get("evaluation") or {}).get("setup_vs_random_auc")
+        if auc is None or auc >= MIN_STYLE_AUC:
+            out.append(style)
+    return out
 
 
 def load_library(data_dir: Path) -> Library:
@@ -49,7 +91,7 @@ def load_library(data_dir: Path) -> Library:
     meta = json.loads((lib_dir / "library.json").read_text())
     arrays = np.load(lib_dir / "library.npz")
     styles = meta["styles"]
-    refs = {s: [r for r in meta["references"] if r["style"] == s] for s in styles}
+    refs = {s: [r for r in meta["references"] if r.get("style") == s] for s in styles}
     sources: dict[str, str] = {}
     root = sources_root(data_dir)
     if root.exists():
@@ -58,6 +100,25 @@ def load_library(data_dir: Path) -> Library:
                 if "," in line:
                     t, d = line.strip().split(",", 1)
                     sources.setdefault(f"{t}@{d}", path.stem)
+    if meta.get("version", 1) >= 2:
+        base = meta["references"]
+        idx = {s: arrays[f"{s}__idx"] for s in styles}
+        xs = {sc: np.load(lib_dir / f"library_x{sc}.npz")["X"] for sc in render.SCALES}
+        F_all = arrays["refs__F"]
+        return Library(
+            styles=styles,
+            refs={s: [dict(base[i], style=s, _i=int(i)) for i in idx[s]] for s in styles},
+            clf={s: model.Logistic(arrays[f"{s}__w"], float(arrays[f"{s}__b"][0]), arrays[f"{s}__mean"]) for s in styles},
+            X_ref={s: xs[render.WINDOW][idx[s]].astype(np.float32) for s in styles},
+            cal_logits={s: arrays[f"{s}__cal_logits"] for s in styles},
+            sources=sources,
+            X_ref_scales={s: {sc: xs[sc][idx[s]].astype(np.float32) for sc in render.SCALES} for s in styles},
+            F_ref={s: F_all[idx[s]].astype(np.float64) for s in styles},
+            head=projection.load(data_dir),
+            feedback_weights=feedback.load_weights(library_dir(data_dir)),
+            packed_charts=arrays["refs__chart"],
+            chart_lengths=arrays["refs__chart_len"],
+        )
     return Library(
         styles=styles,
         refs=refs,

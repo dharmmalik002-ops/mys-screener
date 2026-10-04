@@ -168,7 +168,7 @@ jobs:
           set -euo pipefail
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add backend/data/lookalikes.json backend/data/lookalike_picks.json backend/data/lookalike_refs.json \
+          git add backend/data/lookalikes.json backend/data/lookalike_picks.json backend/data/lookalike_refs.json backend/data/lookalike_refs \
             backend/data/lookalike_index.json backend/data/lookalike_days backend/data/lookalike_state \
             backend/data/lookalike_feedback_votes.json
           if git diff --cached --quiet; then

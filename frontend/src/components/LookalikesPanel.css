@@ -298,3 +298,30 @@
 .lookalike-similar-card.is-rejected { opacity: 0.45; }
 .lookalike-similar-card a.lookalike-similar-meta { text-decoration: none; }
 .lookalike-feedback-status { margin-top: 4px; }
+
+.lookalike-notes > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lookalike-notes > summary::-webkit-details-marker {
+  display: none;
+}
+.lookalike-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 20px;
+  margin: 8px 0;
+}
+.lookalike-notes-grid h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+.lookalike-notes-grid ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+}

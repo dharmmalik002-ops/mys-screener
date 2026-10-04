@@ -35,7 +35,8 @@ from pathlib import Path
 import numpy as np
 
 from . import model, outcome, rules, similarity
-from .scoring import Library, Scored, tradingview_india, tradingview_us
+from .references import SETUP_NAMES, style_name
+from .scoring import Library, Scored, shown, tradingview_india, tradingview_us
 
 PICK_STYLES = ("minervini",)
 MAX_PICKS = 10
@@ -134,24 +135,26 @@ def _ref_public(ref: dict) -> dict:
         "max_loss_pct": ref["max_loss_pct"],
         "days_to_result": ref["days_to_result"],
         "link": tradingview_us(ref["ticker"]),
+        **({"prices": ref["prices"]} if ref.get("prices") else {}),
     }
 
 
 def describe(style: str, pct: float, m: dict, f: dict, nearest: list[dict]) -> str:
     """A pick's reason, from measured numbers only."""
-    name = style.title()
-    parts = [f"Its last 120 sessions look more like {name}'s setups than {pct:.0f}% of ordinary charts."]
+    trader, _, setup = style.partition("_")
+    whose = f"{trader.title()}'s {SETUP_NAMES.get(setup, setup).lower()} charts" if setup else f"{style_name(style)}'s setups"
+    parts = [f"Its last 120 sessions look more like {whose} than {pct:.0f}% of ordinary charts."]
     tmpl = rules.template_score(f) or 0
     rel = None if m.get("index_return_6m_pct") is None else m["return_6m_pct"] - m["index_return_6m_pct"]
     rel_txt = f", and it beat the Nifty 500 by {rel:.0f} points over 6 months" if rel is not None else ""
     parts.append(
-        f"It passes {tmpl} of his 8 Trend Template rules: above its 50, 150 and 200-day averages with the 200-day rising, "
+        f"It passes {tmpl} of {'his' if trader == 'minervini' else 'Minervini\'s'} 8 Trend Template rules: above its 50, 150 and 200-day averages with the 200-day rising, "
         f"{m['above_low_pct']:.0f}% above its 52-week low and {m['below_high_pct']:.1f}% below its high{rel_txt}."
     )
     if f.get("tightening"):
         parts.append(
             f"The last two weeks' range ({m['range_2w_pct']:.1f}%) is tighter than its base average "
-            f"({m['range_base_pct']:.1f}%) — the contraction his VCP looks for."
+            f"({m['range_base_pct']:.1f}%) — " + ("the contraction his VCP looks for." if trader == "minervini" else "a tightening base.")
         )
     else:
         parts.append(
@@ -170,6 +173,8 @@ def describe(style: str, pct: float, m: dict, f: dict, nearest: list[dict]) -> s
             what = f"went on to rise {outcome.TARGET_PCT:.0f}%+ (best +{n0['max_gain_pct']:.0f}%)"
         elif n0["label"] == outcome.FAILED:
             what = f"failed (fell {abs(n0['max_loss_pct']):.0f}% before rising {outcome.TARGET_PCT:.0f}%)"
+        elif n0.get("prices") == "chart":
+            what = "is priced from his own chart (no longer listed under that symbol), so what happened next is not on record"
         else:
             what = "has not finished yet"
         parts.append(f"Closest example: {n0['name']} ({n0['similarity'] * 100:.0f}% alike), which {what}.")
@@ -507,20 +512,45 @@ def ref_key(ref: dict) -> str:
     return f"{ref['style']}:{ref['ticker']}@{ref['date']}"
 
 
+REFS_DIR = "lookalike_refs"
+
+
 def export_refs(data_dir: Path, library: Library) -> dict:
-    """Every reference with its before-and-after chart. Changes only when the
+    """Every reference with its before-and-after chart, spread over
+    `lookalike_refs/<shard>.json` (references.ref_shard). `lookalike_refs.json`
+    is the manifest: each shard's checksum, so the Space can tell a stale copy
+    and fetch the current one when it is first asked for. Changes only when the
     library is rebuilt."""
-    rows = {}
+    import zlib
+
+    from .references import ref_shard
+
+    # One row per reference however many styles cite it (a cup and handle is
+    # also in the all-charts style); the route puts the style back.
+    shards: dict[str, dict] = defaultdict(dict)
     for style, refs in library.refs.items():
         for r in refs:
-            rows[ref_key(r)] = {
+            base = r["key"]
+            if base in shards[ref_shard(base)]:
+                continue
+            shards[ref_shard(base)][base] = {
                 **_ref_public(r),
-                "style": style,
                 "source": library.sources.get(r["key"]),
-                "chart": r.get("chart"),
+                "chart": library.chart(r),
             }
+    folder = data_dir / REFS_DIR
+    folder.mkdir(parents=True, exist_ok=True)
+    stamps = {}
+    for shard, rows in sorted(shards.items()):
+        path = folder / f"{shard}.json"
+        _write_if_changed(path, {"refs": rows})
+        stamps[shard] = f"{zlib.crc32(path.read_bytes()):08x}"
+    for stale in folder.glob("*.json"):
+        if stale.stem not in stamps:
+            stale.unlink()
     built = {s: v.get("built_at") for s, v in library.styles.items()}
-    payload = {"generated_at": max((b for b in built.values() if b), default=""), "library_built": built, "refs": rows}
+    payload = {"generated_at": max((b for b in built.values() if b), default=""), "library_built": built,
+               "version": 3, "refs_count": sum(len(v) for v in shards.values()), "shards": stamps}
     _write_if_changed(data_dir / REFS_FILE, payload)
     return payload
 
@@ -547,7 +577,7 @@ def export_index(data_dir: Path, scored: Scored, library: Library, feedback_stat
     symbols = {}
     for i, sym in enumerate(scored.symbols):
         styles = {}
-        for style in library.styles:
+        for style in shown(library):
             near = scored.nearest(style, i, INDEX_NEAR)
             styles[style] = {
                 "percentile": round(float(scored.percentile[style][i]), 1),

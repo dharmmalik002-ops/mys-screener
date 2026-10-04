@@ -26,6 +26,7 @@ PICKS_FILE = "lookalike_picks.json"
 REFS_FILE = "lookalike_refs.json"
 INDEX_FILE = "lookalike_index.json"
 DAYS_DIR = "lookalike_days"
+REFS_DIR = "lookalike_refs"
 VOTES_BACKUP_FILE = "lookalike_feedback_votes.json"
 PUBLIC_FILES = (RESULT_FILE, PICKS_FILE, REFS_FILE, INDEX_FILE, VOTES_BACKUP_FILE)
 
@@ -140,36 +141,66 @@ def build_lookalike_router(data_dir: Path, database_url: str | None = None, stat
                 return None
         return file_cache[name]["payload"]
 
-    def _refs(keys) -> dict[str, Any]:
-        refs = (_load(REFS_FILE) or {}).get("refs", {})
-        return {k: refs[k] for k in keys if k in refs}
+    shard_cache: dict[str, tuple[str, dict]] = {}
 
-    def _day_file(day: str, stamp: str | None) -> dict[str, Any] | None:
-        """A day's picks. Thousands of day files cannot all be pulled hourly,
-        so a stale one is fetched from the repository the first time it is
-        asked for — the calendar carries each file's checksum, which is how
-        a stale copy is recognised."""
+    def _refs(keys) -> dict[str, Any]:
+        from app.services.lookalike.references import ref_shard
+
+        manifest = _load(REFS_FILE) or {}
+        if "refs" in manifest:  # a library exported before the refs were sharded
+            refs = manifest["refs"]
+            return {k: refs[k] for k in keys if k in refs}
+        stamps = manifest.get("shards") or {}
+        out: dict[str, Any] = {}
+        # keys are "style:TICKER@date"; shards hold each reference once,
+        # keyed by "TICKER@date" (picks.export_refs)
+        by_shard: dict[str, list[str]] = {}
+        for k in keys:
+            by_shard.setdefault(ref_shard(k.split(":", 1)[-1]), []).append(k)
+        for shard, ks in by_shard.items():
+            stamp = stamps.get(shard)
+            hit = shard_cache.get(shard)
+            if hit is None or hit[0] != stamp:
+                data = _checked_file(f"{REFS_DIR}/{shard}.json", stamp)
+                hit = (stamp, (data or {}).get("refs", {}))
+                if data is not None:
+                    shard_cache[shard] = hit
+            for k in ks:
+                style, _, base = k.rpartition(":")
+                row = hit[1].get(base)
+                if row is not None:
+                    out[k] = {**row, "style": style or row.get("style")}
+        return out
+
+    def _checked_file(rel: str, stamp: str | None) -> dict[str, Any] | None:
+        """A committed file too numerous to pull hourly (day files, reference
+        shards): a stale copy is fetched from the repository the first time it
+        is asked for — its index carries each file's checksum, which is how a
+        stale copy is recognised."""
         import zlib
 
-        path = data_dir / DAYS_DIR / f"{day}.json"
+        path = data_dir / rel
         local = path.read_bytes() if path.exists() else None
         if stamp and (local is None or f"{zlib.crc32(local):08x}" != stamp) and os.environ.get("LOOKALIKE_SELF_UPDATE", "1") != "0":
             try:
                 import requests
 
-                resp = requests.get(f"{RAW_BASE}{DAYS_DIR}/{day}.json", timeout=10)
+                resp = requests.get(f"{RAW_BASE}{rel}", timeout=10)
                 if resp.status_code == 200 and f"{zlib.crc32(resp.content):08x}" == stamp:
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(resp.content)
                     local = resp.content
             except Exception as exc:  # serve what we have
-                logger.info("look-alike day %s fetch skipped: %s", day, exc)
+                logger.info("look-alike %s fetch skipped: %s", rel, exc)
         if local is None:
             return None
         try:
             return json.loads(local)
         except ValueError:
             return None
+
+    def _day_file(day: str, stamp: str | None) -> dict[str, Any] | None:
+        return _checked_file(f"{DAYS_DIR}/{day}.json", stamp)
 
     @router.get("/picks")
     def picks_summary() -> dict[str, Any]:

@@ -126,6 +126,32 @@ def from_html_text(text: str, source: str) -> list[Reference]:
     return sorted(out.values(), key=lambda r: (r.day, r.ticker))
 
 
+SETUP_NAMES = {
+    "cup_handle": "Cup & handle", "flag": "Flag & pennant", "triangle": "Triangle", "wedge": "Wedge",
+    "channel": "Channel", "head_shoulders": "Head & shoulders", "double_bottom": "Double bottom",
+    "base": "Base", "trendline": "Trendline break", "gap": "Gap",
+}
+
+
+def style_name(style: str) -> str:
+    """`zanger_cup_handle` -> "Zanger · Cup & handle"; `minervini` -> "Minervini"."""
+    trader, _, setup = style.partition("_")
+    name = trader.title()
+    return f"{name} · {SETUP_NAMES.get(setup, setup.replace('_', ' ').capitalize())}" if setup else name
+
+
+REF_SHARDS = 64
+
+
+def ref_shard(key: str) -> str:
+    """Which `lookalike_refs/<shard>.json` holds a public reference row. Tens of
+    thousands of before-and-after charts are too many for one file the Space
+    reloads on every change, so they are spread over a fixed set of files."""
+    import zlib
+
+    return f"{zlib.crc32(key.encode()) % REF_SHARDS:02x}"
+
+
 SOURCES_DIR = "sources"
 
 

@@ -62,7 +62,7 @@ def main() -> int:
     universe, index = scoring.load_universe(data_dir)
     s = scoring.score(universe, index, library)
     refs = library.refs[STYLE]
-    ref_curves = [r["window"]["c"] for r in refs]
+    ref_curves = [library.window(r)["c"] for r in refs]
     raw_ref = library.X_ref[STYLE]
     F_ref = library.F_ref.get(STYLE)
     scale = shape.robust_scale(s.F)

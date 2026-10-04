@@ -44,3 +44,9 @@ backend/data/news_cache
 # starts empty each day. The Space only reads the two public JSON files, and
 # the fingerprints here are binary .npy files its pre-receive hook rejects.
 backend/data/lookalike_state
+
+# The reference shards (before-and-after charts of every library example) are
+# fetched by the Space one shard at a time when first asked for, checked
+# against the manifest's checksums (lookalike_routes._checked_file). Shipping
+# all of them in every deploy would only bloat the image.
+backend/data/lookalike_refs
