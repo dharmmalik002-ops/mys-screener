@@ -541,16 +541,40 @@ def export_refs(data_dir: Path, library: Library) -> dict:
     folder = data_dir / REFS_DIR
     folder.mkdir(parents=True, exist_ok=True)
     stamps = {}
+    import gzip
+
     for shard, rows in sorted(shards.items()):
-        path = folder / f"{shard}.json"
-        _write_if_changed(path, {"refs": rows})
-        stamps[shard] = f"{zlib.crc32(path.read_bytes()):08x}"
-    for stale in folder.glob("*.json"):
-        if stale.stem not in stamps:
+        # gzipped (~4x smaller); mtime=0 so an unchanged shard keeps its bytes
+        path = folder / f"{shard}.json.gz"
+        data = gzip.compress(json.dumps({"refs": rows}, separators=(",", ":"), sort_keys=True).encode(), mtime=0)
+        if not path.exists() or path.read_bytes() != data:
+            path.write_bytes(data)
+        stamps[shard] = f"{zlib.crc32(data):08x}"
+    for stale in list(folder.glob("*.json")) + list(folder.glob("*.json.gz")):
+        if stale.name.split(".")[0] not in stamps or stale.suffix == ".json":
             stale.unlink()
+    # every style's references, newest first, for the setup gallery
+    lists = {
+        style: [[r["ticker"], r["date"], r["label"]] for r in sorted(refs, key=lambda r: r["date"], reverse=True)]
+        for style, refs in library.refs.items()
+    }
+    from .pipeline import notes_for, style_notes
+
+    notes = style_notes(data_dir)
+    shown_styles = set(shown(library))
+    about = {
+        style: {
+            "notes": notes_for(notes, style),
+            "recognition": (summary.get("evaluation") or {}).get("setup_vs_random_auc"),
+            "worked_rate_pct": summary.get("worked_rate_pct"),
+            "shown": style in shown_styles,
+        }
+        for style, summary in library.styles.items()
+    }
     built = {s: v.get("built_at") for s, v in library.styles.items()}
-    payload = {"generated_at": max((b for b in built.values() if b), default=""), "library_built": built,
-               "version": 3, "refs_count": sum(len(v) for v in shards.values()), "shards": stamps}
+    payload = {"generated_at": max((b for b in built.values() if b), default=""), "library_built": built, "styles": lists,
+               "about": about,
+               "version": 4, "refs_count": sum(len(v) for v in shards.values()), "shards": stamps}
     _write_if_changed(data_dir / REFS_FILE, payload)
     return payload
 

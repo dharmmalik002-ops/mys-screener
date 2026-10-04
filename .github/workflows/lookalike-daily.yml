@@ -170,7 +170,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git add backend/data/lookalikes.json backend/data/lookalike_picks.json backend/data/lookalike_refs.json backend/data/lookalike_refs \
             backend/data/lookalike_index.json backend/data/lookalike_days backend/data/lookalike_state \
-            backend/data/lookalike_feedback_votes.json
+            backend/data/lookalike_feedback_votes.json backend/data/lookalike_history.json backend/data/lookalike_history
           if git diff --cached --quiet; then
             echo "nothing new to publish"
             exit 0

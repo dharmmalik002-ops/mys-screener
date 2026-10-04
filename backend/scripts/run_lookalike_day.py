@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.services.lookalike import feedback, picks, pipeline, scoring  # noqa: E402
+from app.services.lookalike import feedback, history, picks, pipeline, scoring  # noqa: E402
 from app.services.lookalike.pipeline import library_dir  # noqa: E402
 
 # The user chose to show every reference by name, including course examples.
@@ -95,6 +95,15 @@ def main() -> int:
     out = picks.export(args.data_dir, ledger, fb, library, baselines, universe=universe)
     picks.export_refs(args.data_dir, library)
     picks.export_index(args.data_dir, today, library, feedback_status=learned)
+
+    # the setup gallery's Indian history: today's strongest match per setup,
+    # and every earlier one graded once its 40 sessions have run
+    hist = history.load(args.data_dir)
+    by_symbol = {b.symbol: b for b in universe}
+    history.add_day(args.data_dir, hist, today.as_of, today.symbols, today.closes, today.logits, today.percentile,
+                    scoring.shown(library), by_symbol)
+    history.regrade(args.data_dir, hist, by_symbol)
+    history.save(args.data_dir, hist)
 
     s = out["summary"]
     print(f"\ntoday {today.as_of}: {len(made)} picks — " + ", ".join(p["symbol"] for p in made))

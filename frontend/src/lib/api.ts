@@ -6211,7 +6211,63 @@ export type LookalikeRefRow = {
   link: string;
   source?: string | null;
   chart?: LookalikeChartSeries | null;
+  prices?: "chart";
 };
+
+/* The setup gallery: one kind of chart in one place, for training the eye. */
+export type GalleryStyleInfo = {
+  trader_charts: number;
+  india_history: number;
+  india_today: number;
+  shown: boolean;
+  notes?: LookalikeStyleNotes | null;
+  recognition?: number | null;
+  worked_rate_pct?: { setups: number | null; ordinary_days: number | null } | null;
+};
+
+export type GalleryIndex = {
+  available: boolean;
+  styles: Record<string, GalleryStyleInfo>;
+  session?: string;
+  history_rule?: { from?: string; top_per_day: number; min_percentile: number; target_pct: number; stop_pct: number; horizon_sessions: number } | null;
+};
+
+export type GalleryOutcome = "all" | "worked" | "failed" | "pending";
+
+export type GalleryHistoryRow = {
+  symbol: string;
+  date: string;
+  pct: number;
+  close: number;
+  label: "worked" | "failed" | "pending";
+  gain?: number;
+  loss?: number;
+  days?: number | null;
+  session?: string;
+  chart?: LookalikeChartSeries | null;
+};
+
+export type GalleryPage<T> = { style: string; total: number; page: number; size: number; rows: T[] };
+
+export function getLookalikeGallery() {
+  return whileWaking(() => request<GalleryIndex>("/api/lookalikes/gallery", undefined, { timeoutMs: 30000 }), {
+    label: "setup gallery",
+  });
+}
+
+export function getGalleryTraderCharts(style: string, page: number, size: number, outcome: GalleryOutcome) {
+  const q = `page=${page}&size=${size}&outcome=${outcome}`;
+  return request<GalleryPage<LookalikeRefRow>>(`/api/lookalikes/gallery/${encodeURIComponent(style)}/trader?${q}`, undefined, {
+    timeoutMs: 45000,
+  });
+}
+
+export function getGalleryIndianHistory(style: string, page: number, size: number, outcome: GalleryOutcome) {
+  const q = `page=${page}&size=${size}&outcome=${outcome}`;
+  return request<GalleryPage<GalleryHistoryRow>>(`/api/lookalikes/gallery/${encodeURIComponent(style)}/india?${q}`, undefined, {
+    timeoutMs: 30000,
+  });
+}
 
 export type LookalikeSimilar =
   | { available: false; reason: string; session?: string }

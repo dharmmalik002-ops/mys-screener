@@ -27,8 +27,10 @@ REFS_FILE = "lookalike_refs.json"
 INDEX_FILE = "lookalike_index.json"
 DAYS_DIR = "lookalike_days"
 REFS_DIR = "lookalike_refs"
+HISTORY_DIR = "lookalike_history"
 VOTES_BACKUP_FILE = "lookalike_feedback_votes.json"
-PUBLIC_FILES = (RESULT_FILE, PICKS_FILE, REFS_FILE, INDEX_FILE, VOTES_BACKUP_FILE)
+HISTORY_FILE = "lookalike_history.json"
+PUBLIC_FILES = (RESULT_FILE, PICKS_FILE, REFS_FILE, INDEX_FILE, VOTES_BACKUP_FILE, HISTORY_FILE)
 
 # The evening job on the workstation commits both files with [skip ci], so no
 # deploy carries them to the Space — the same situation as breakout_stats.json
@@ -161,7 +163,8 @@ def build_lookalike_router(data_dir: Path, database_url: str | None = None, stat
             stamp = stamps.get(shard)
             hit = shard_cache.get(shard)
             if hit is None or hit[0] != stamp:
-                data = _checked_file(f"{REFS_DIR}/{shard}.json", stamp)
+                gz = (manifest.get("version") or 0) >= 4
+                data = _checked_file(f"{REFS_DIR}/{shard}.json{'.gz' if gz else ''}", stamp)
                 hit = (stamp, (data or {}).get("refs", {}))
                 if data is not None:
                     shard_cache[shard] = hit
@@ -195,8 +198,12 @@ def build_lookalike_router(data_dir: Path, database_url: str | None = None, stat
         if local is None:
             return None
         try:
+            if rel.endswith(".gz"):
+                import gzip
+
+                local = gzip.decompress(local)
             return json.loads(local)
-        except ValueError:
+        except (ValueError, OSError):
             return None
 
     def _day_file(day: str, stamp: str | None) -> dict[str, Any] | None:
@@ -279,6 +286,71 @@ def build_lookalike_router(data_dir: Path, database_url: str | None = None, stat
             "feedback": index.get("feedback"),
             "hidden": len(hidden),
         }
+
+    # ── Setup gallery: every chart of one kind in one place ────────────────
+    GALLERY_PAGE_MAX = 60
+
+    def _outcome_ok(label: str | None, want: str) -> bool:
+        return want == "all" or (label or "pending") == want
+
+    @router.get("/gallery")
+    def gallery_index() -> dict[str, Any]:
+        """Which setups exist, per trader, with how many of his charts, how many
+        Indian charts in history and how many today — and the setup guide."""
+        _maybe_pull_in_background(data_dir)
+        manifest = _load(REFS_FILE) or {}
+        lists = manifest.get("styles") or {}
+        hist = (_load(HISTORY_FILE) or {}).get("styles") or {}
+        today = (_load(RESULT_FILE) or {}).get("styles") or {}
+        out = {}
+        about = manifest.get("about") or {}
+        for style, rows in lists.items():
+            block = today.get(style) or {}
+            info = about.get(style) or {}
+            out[style] = {
+                "trader_charts": len(rows),
+                "india_history": len(hist.get(style) or []),
+                "india_today": len(block.get("matches") or []),
+                # an Indian side only where the model tells this setup apart
+                # (scoring.MIN_STYLE_AUC); the trader's own charts are always shown
+                "shown": info.get("shown", style in today),
+                "notes": info.get("notes") or block.get("notes"),
+                "recognition": info.get("recognition"),
+                "worked_rate_pct": info.get("worked_rate_pct"),
+            }
+        return {"available": bool(out), "styles": out, "session": (_load(RESULT_FILE) or {}).get("session"),
+                "history_rule": (_load(HISTORY_FILE) or {}).get("rule")}
+
+    @router.get("/gallery/{style}/trader")
+    def gallery_trader(style: str, page: int = Query(0, ge=0), size: int = Query(24, ge=1), outcome: str = "all") -> dict[str, Any]:
+        """The trader's own charts for one setup, newest first, with the chart
+        at its date and what followed."""
+        rows = [r for r in ((_load(REFS_FILE) or {}).get("styles") or {}).get(style, []) if _outcome_ok(r[2], outcome)]
+        size = min(size, GALLERY_PAGE_MAX)
+        chunk = rows[page * size:(page + 1) * size]
+        keys = [f"{style}:{t}@{d}" for t, d, _ in chunk]
+        refs = _refs(keys)
+        return {"style": style, "total": len(rows), "page": page, "size": size,
+                "rows": [refs[k] for k in keys if k in refs]}
+
+    @router.get("/gallery/{style}/india")
+    def gallery_india(style: str, page: int = Query(0, ge=0), size: int = Query(24, ge=1), outcome: str = "all") -> dict[str, Any]:
+        """Indian charts in history that looked like this setup, newest first.
+        No prices — the page draws each from the site's own chart API."""
+        hist = _load(HISTORY_FILE) or {}
+        rows = [r for r in (hist.get("styles") or {}).get(style, []) if _outcome_ok(r.get("label"), outcome)]
+        size = min(size, GALLERY_PAGE_MAX)
+        chunk = rows[page * size:(page + 1) * size]
+        stamps = hist.get("files") or {}
+        months: dict[str, dict] = {}
+        out = []
+        for r in chunk:
+            month = r["date"][:7]
+            if month not in months:
+                key = f"{style}/{month}"
+                months[month] = (_checked_file(f"{HISTORY_DIR}/{key}.json.gz", stamps.get(key)) or {}).get("charts", {})
+            out.append({**r, "chart": months[month].get(f"{r['symbol']}@{r['date']}")})
+        return {"style": style, "total": len(rows), "page": page, "size": size, "rows": out}
 
     @router.post("/feedback")
     def record_feedback(payload: dict = Body(...)) -> dict[str, Any]:

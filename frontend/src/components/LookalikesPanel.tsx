@@ -10,7 +10,6 @@ import {
   type LookalikeLibrary,
   type LookalikeWindow,
   type Lookalikes,
-  type LookalikeStyleNotes,
 } from "../lib/api";
 import { CANDLE_DOWN, CANDLE_UP } from "../lib/marketColors";
 import { Panel } from "./Panel";
@@ -20,6 +19,7 @@ import { fullChartUrl } from "../lib/chartLink";
 
 import "./LookalikesPanel.css";
 import { styleName } from "../lib/lookalikeStyles";
+import { SetupGallery, StyleNotes } from "./SetupGallery";
 
 /* Chart look-alikes.
 
@@ -37,7 +37,7 @@ type Props = {
 };
 
 type OutcomeFilter = "any" | "worked" | "template";
-type PageView = "today" | "calendar" | "reviews";
+type PageView = "today" | "gallery" | "calendar" | "reviews";
 
 // Fewer than this many decided setups on either side of a rule and its
 // worked-rate comparison is noise; the table shows a dash instead.
@@ -127,65 +127,6 @@ function ReferenceOutcome({ reference }: { reference: LookalikeReference }) {
       <span className={`lookalike-chip is-${reference.label}`}>{LABEL_TEXT[reference.label]}</span>
       <span className="lookalike-outcome-detail">{detail}</span>
     </span>
-  );
-}
-
-const NOTE_SECTIONS: Array<[keyof LookalikeStyleNotes, string]> = [
-  ["what_it_looks_like", "What it looks like"],
-  ["buy_point", "Where he buys"],
-  ["volume", "Volume"],
-  ["stops_and_exits", "Stops and selling"],
-  ["what_makes_it_fail", "What makes it fail"],
-  ["what_he_buys", "What he buys"],
-  ["entry_rules", "Entry"],
-  ["risk_rules", "Risk"],
-  ["selling_rules", "Selling"],
-  ["market_timing", "The market"],
-];
-
-/* How the trader describes this setup — our summary of his comments, never his words. */
-function StyleNotes({ notes }: { notes?: LookalikeStyleNotes | null }) {
-  if (!notes?.summary) return null;
-  const vocab = Object.entries(notes.his_vocabulary ?? {});
-  return (
-    <details className="lookalike-curve-wrap lookalike-notes" open>
-      <summary>
-        <h3>How he describes it</h3>
-        <span className="lookalike-stat-sub">
-          Our summary of {notes.evidence?.comments_read?.toLocaleString("en-IN") ?? "his"} chart comments
-          {notes.evidence?.years ? `, ${notes.evidence.years}` : ""} — in our words, not his
-        </span>
-      </summary>
-      <p>{notes.summary}</p>
-      <div className="lookalike-notes-grid">
-        {NOTE_SECTIONS.map(([key, label]) => {
-          const items = notes[key];
-          return Array.isArray(items) && items.length ? (
-            <div key={key}>
-              <h4>{label}</h4>
-              <ul>
-                {items.map((t, i) => (
-                  <li key={i}>{t}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null;
-        })}
-        {vocab.length ? (
-          <div>
-            <h4>His terms</h4>
-            <ul>
-              {vocab.map(([term, meaning]) => (
-                <li key={term}>
-                  <strong>{term}</strong> — {meaning}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-      {notes.changes_over_time ? <p className="lookalike-stat-sub">{notes.changes_over_time}</p> : null}
-    </details>
   );
 }
 
@@ -491,6 +432,7 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
         {(
           [
             ["today", "Today"],
+            ["gallery", "Setup gallery"],
             ["calendar", "Calendar"],
             ["reviews", "Reviews & learning"],
           ] as Array<[PageView, string]>
@@ -508,7 +450,9 @@ export function LookalikesPanel({ onOpenSymbolChart }: Props) {
         ))}
       </div>
 
-      {view !== "today" ? (
+      {view === "gallery" ? <SetupGallery today={available} /> : null}
+
+      {view === "calendar" || view === "reviews" ? (
         picks && picks.available ? (
           view === "calendar" ? (
             <CalendarView summary={picks} onOpen={onOpenSymbolChart} />
