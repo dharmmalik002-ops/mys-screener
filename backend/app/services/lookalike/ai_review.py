@@ -24,7 +24,7 @@ from . import render
 logger = logging.getLogger(__name__)
 
 CACHE_FILE = "lookalike_ai_reviews.json"
-MODELS = ("gemini-2.5-flash", "gemini-2.0-flash")
+PREFERRED = ("gemini-2.5-flash", "gemini-2.0-flash")  # used only if the model list cannot be read
 VERDICTS = ("yes", "partly", "no")
 _lock = threading.Lock()
 
@@ -65,6 +65,35 @@ class Reviewer:
         self._cache: dict | None = None
         self._client = None
 
+    def _models(self) -> list[str]:
+        """The newest general "flash" models this key can use, newest first.
+        Google retires model names (gemini-2.0-flash was gone by 2026-10), so
+        the list is read from the API rather than written down here."""
+        if getattr(self, "_model_names", None):
+            return self._model_names
+        import re
+
+        names = []
+        try:
+            for m in self._client.models.list():
+                name = (getattr(m, "name", "") or "").split("/")[-1]
+                actions = getattr(m, "supported_actions", None) or []
+                if not re.fullmatch(r"gemini-\d+(\.\d+)?-flash(-latest)?", name):
+                    continue
+                if actions and "generateContent" not in actions:
+                    continue
+                names.append(name)
+        except Exception as exc:
+            logger.info("gemini model list unavailable: %s", exc)
+
+        def version(n: str) -> float:
+            m = re.search(r"gemini-(\d+(?:\.\d+)?)", n)
+            return float(m.group(1)) if m else 0.0
+
+        names.sort(key=version, reverse=True)
+        self._model_names = names[:3] or list(PREFERRED)
+        return self._model_names
+
     @property
     def available(self) -> bool:
         return bool(self.api_key)
@@ -94,14 +123,15 @@ class Reviewer:
         if self._client is None:
             self._client = genai.Client(api_key=self.api_key)
         last_error = None
-        for model_name in MODELS:
+        for model_name in self._models():
             try:
                 resp = self._client.models.generate_content(
                     model=model_name,
                     contents=[genai.types.Part.from_bytes(data=buf.getvalue(), mime_type="image/png"), prompt(setup_label, description)],
-                    config=genai.types.GenerateContentConfig(temperature=0.2, max_output_tokens=400, response_mime_type="application/json"),
+                    # room for the model's own reasoning before the short JSON answer
+                    config=genai.types.GenerateContentConfig(temperature=0.2, max_output_tokens=4096, response_mime_type="application/json"),
                 )
-                raw = json.loads(resp.text)
+                raw = json.loads(resp.text or "")
                 out = {
                     "verdict": raw.get("verdict") if raw.get("verdict") in VERDICTS else "partly",
                     "score": max(1, min(5, int(raw.get("score") or 3))),
