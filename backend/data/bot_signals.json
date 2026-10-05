@@ -27,11 +27,11 @@
         "family": "momentum",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.062,
-        "out_sample_r": 0.3,
-        "out_sample_trades": 237,
-        "win_rate": 39.2,
+        "out_sample_r": 0.294,
+        "out_sample_trades": 238,
+        "win_rate": 39.1,
         "risk_per_trade_pct": 0.06,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.30R)."
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.29R)."
       },
       {
         "strategy": "nr7_release",
@@ -78,7 +78,7 @@
       "risk_pct": 11.63,
       "atr_pct": 4.65,
       "turnover_crore": 131.7,
-      "expected_r": 0.3,
+      "expected_r": 0.294,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -90,10 +90,10 @@
         "pct_of_equity": 0.2,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.3,
+      "cell_expectancy_r": 0.294,
       "volatility_adjustment_r": -0.049,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.251
+      "edge_score_r": 0.245
     },
     {
       "symbol": "HFCL",
@@ -299,6 +299,6 @@
   },
   "calibration": null,
   "message": "8 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
-  "generated_at": "2026-10-02T19:31:18.105125+00:00",
+  "generated_at": "2026-10-05T21:38:35.371751+00:00",
   "source": "offline"
 }
