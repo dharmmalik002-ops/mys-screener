@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-02",
+ "as_of": "2026-10-05",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,18 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544545": {
-   "name": "TRUALT BIOENERGY LIMITED",
-   "symbol": "TRUALT",
-   "listing_date": "2025-10-03",
-   "issue_price": 496.0
-  },
-  "544547": {
-   "name": "Jinkushal Industries Limited",
-   "symbol": "JKIPL",
-   "listing_date": "2025-10-03",
-   "issue_price": 121.0
-  },
   "544550": {
    "name": "Pace Digitek Limited",
    "symbol": "PACEDIGITK",
@@ -772,6 +760,20 @@
    "bse_code": "531161",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "ACEVECTOR": {
+   "listing_date": "2026-10-05",
+   "name": "AceVector Limited",
+   "isin": "INE580P01029",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "544962",
+   "checked_session": "2026-10-01",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "ACGL": {
    "listing_date": "2026-08-17",
@@ -1727,16 +1729,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "CRSL": {
-   "listing_date": "2026-08-17",
-   "name": "Cressanda Railway Solutions Limited",
-   "isin": "INE716D01033",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "512379",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "CSM": {
    "listing_date": "2026-07-02",
    "name": "CSM Technologies Limited",
@@ -2146,6 +2138,20 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 79.0
+  },
+  "GERMAN": {
+   "listing_date": "2026-10-05",
+   "name": "German Green Steel and Power Limited",
+   "isin": "INE0D4501011",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "544957",
+   "checked_session": "2026-10-01",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "GICL": {
    "listing_date": "2026-02-18",
@@ -2624,20 +2630,6 @@
    "bse_code": "524731",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "JKIPL": {
-   "listing_date": "2025-10-03",
-   "name": "Jinkushal Industries Limited",
-   "isin": "INE1FF001016",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544547",
-   "sector": "Capital Goods",
-   "sub_sector": "Dealers-Commercial Vehicles, Tractors, Construction Vehicles",
-   "shares_crore": 3.838611,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 121.0
   },
   "JNPR": {
    "listing_date": "2026-08-06",
@@ -3690,7 +3682,7 @@
    "listing_date": "2025-10-08",
    "name": "Om Freight Forwarders Limited",
    "isin": "INE1BZC01019",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544564",
    "sector": "Services",
@@ -3757,6 +3749,20 @@
    "bse_code": "531254",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "ORIENTCABL": {
+   "listing_date": "2026-10-05",
+   "name": "Orient Cables (India) Limited",
+   "isin": "INE0J1N01028",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "544960",
+   "checked_session": "2026-10-01",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "ORIRAIL": {
    "listing_date": "2026-08-17",
@@ -4016,7 +4022,7 @@
    "listing_date": "2026-04-20",
    "name": "Pradeep Metals Limited",
    "isin": "INE770A01010",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "513532",
    "ipo": false,
@@ -4237,7 +4243,7 @@
    "listing_date": "2026-08-17",
    "name": "RTS Power Corporation Limited",
    "isin": "INE005C01017",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "531215",
    "ipo": false,
@@ -4266,6 +4272,20 @@
    "bse_code": "539226",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "RUNWALENTR": {
+   "listing_date": "2026-10-05",
+   "name": "Runwal Enterprises Limited",
+   "isin": "INE804W01029",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "544959",
+   "checked_session": "2026-10-01",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "SAB": {
    "listing_date": "2026-08-17",
@@ -4718,6 +4738,16 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538943",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "SPELS": {
+   "listing_date": "2026-08-17",
+   "name": "SPEL Semiconductor Limited",
+   "isin": "INE252A01019",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "517166",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -5178,20 +5208,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "TRUALT": {
-   "listing_date": "2025-10-03",
-   "name": "TruAlt Bioenergy Limited",
-   "isin": "INE0MWH01014",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544545",
-   "sector": "Fast Moving Consumer Goods",
-   "sub_sector": "Other Agricultural Products",
-   "shares_crore": 8.575261,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 496.0
-  },
   "TURTLEMINT": {
    "listing_date": "2026-06-29",
    "name": "Turtlemint Fintech Solutions Limited",
@@ -5334,7 +5350,7 @@
    "listing_date": "2026-09-18",
    "name": "Veegaland Developers Limited",
    "isin": "INE1JTV01015",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544923",
    "sector": "Realty",
@@ -5523,16 +5539,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 195.0
-  },
-  "WARDINMOBI": {
-   "listing_date": "2026-08-17",
-   "name": "Wardwizard Innovations & Mobility Limited",
-   "isin": "INE945P01024",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "538970",
-   "ipo": false,
-   "basis": "bse_ipo_list"
   },
   "WATERBASE": {
    "listing_date": "2026-08-17",
