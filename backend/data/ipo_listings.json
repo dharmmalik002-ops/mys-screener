@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-05",
+ "as_of": "2026-10-06",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -3204,7 +3204,7 @@
    "listing_date": "2026-09-21",
    "name": "Manika Plastech Limited",
    "isin": "INE0KWF01020",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544929",
    "sector": "Capital Goods",
@@ -4469,6 +4469,20 @@
    "basis": "bse_ipo_list",
    "issue_price": 124.0
   },
+  "SHAHINVEST": {
+   "listing_date": "2026-10-06",
+   "name": "Shah Investor's Home Limited",
+   "isin": "INE029N01014",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544963",
+   "checked_session": "2026-10-05",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "SHANKESH": {
    "listing_date": "2026-08-25",
    "name": "Shankesh Jewellers Limited",
@@ -4741,16 +4755,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "SPELS": {
-   "listing_date": "2026-08-17",
-   "name": "SPEL Semiconductor Limited",
-   "isin": "INE252A01019",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "517166",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
    "name": "Sri KPR Industries Limited",
@@ -4760,6 +4764,20 @@
    "bse_code": "514442",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "SRIT": {
+   "listing_date": "2026-10-06",
+   "name": "SRIT India Limited",
+   "isin": "INE307K01028",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544965",
+   "checked_session": "2026-10-05",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "SRTL": {
    "listing_date": "2026-03-02",
