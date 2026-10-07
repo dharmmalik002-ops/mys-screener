@@ -1,11 +1,11 @@
 {
   "summary": {
     "started": "2026-09-18",
-    "last_session": "2026-10-05",
-    "sessions": 10,
+    "last_session": "2026-10-06",
+    "sessions": 11,
     "starting_equity": 1000000.0,
-    "equity": 976930.77,
-    "return_pct": -2.31,
+    "equity": 977000.87,
+    "return_pct": -2.3,
     "max_drawdown_pct": -2.36,
     "open_positions": 0,
     "closed_trades": 0,
@@ -16,23 +16,23 @@
     "declined_recent": 0
   },
   "holdings": {
-    "as_of": "2026-10-05",
+    "as_of": "2026-10-06",
     "regime": "correction",
     "cash": 0.0,
     "stocks": 0.0,
-    "sleeve": 976930.77,
+    "sleeve": 977000.87,
     "sleeve_mix": [
       {
         "asset": "gold",
         "name": "Gold (GOLDBEES)",
         "weight": 0.5,
-        "value": 488465.39
+        "value": 488500.44
       },
       {
         "asset": "cash",
         "name": "Liquid fund (HDFC Liquid)",
         "weight": 0.5,
-        "value": 488465.39
+        "value": 488500.44
       }
     ]
   },
@@ -108,6 +108,13 @@
       "open": 0,
       "cash": 0.0,
       "sleeve": 976930.77
+    },
+    {
+      "day": "2026-10-06",
+      "equity": 977000.87,
+      "open": 0,
+      "cash": 0.0,
+      "sleeve": 977000.87
     }
   ]
 }
