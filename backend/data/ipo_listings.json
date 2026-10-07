@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-06",
+ "as_of": "2026-10-07",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,12 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544550": {
-   "name": "Pace Digitek Limited",
-   "symbol": "PACEDIGITK",
-   "listing_date": "2025-10-06",
-   "issue_price": 219.0
-  },
   "544557": {
    "name": "Glottis Limited",
    "symbol": "GLOTTIS",
@@ -3788,20 +3782,6 @@
    "basis": "bse_ipo_list",
    "issue_price": 730.0
   },
-  "PACEDIGITK": {
-   "listing_date": "2025-10-06",
-   "name": "Pace Digitek Limited",
-   "isin": "INE0S3G01027",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544550",
-   "sector": "Telecommunication",
-   "sub_sector": "Telecom - Infrastructure",
-   "shares_crore": 21.585121,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 219.0
-  },
   "PACIFICI": {
    "listing_date": "2026-08-17",
    "name": "Pacific Industries Limited",
@@ -5000,16 +4980,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 988.0
-  },
-  "SYSTMTXC": {
-   "listing_date": "2025-10-06",
-   "name": "Systematix Corporate Services Limited",
-   "isin": "INE356B01024",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "526506",
-   "ipo": false,
-   "basis": "bse_ipo_list"
   },
   "TAALTECH": {
    "listing_date": "2026-04-20",
