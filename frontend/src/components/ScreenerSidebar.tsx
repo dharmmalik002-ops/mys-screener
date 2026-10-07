@@ -86,7 +86,7 @@ type SidebarItem = {
 // Full catalog. Which of these actually SHOW in the sidebar is a user
 // preference (persisted in localStorage) — the default is the curated
 // low-volatility set below; everything else is one toggle away.
-const ALL_ITEMS: SidebarItem[] = [
+export const ALL_ITEMS: SidebarItem[] = [
   { mode: "vcp", title: "VCP", hint: "Volatility contraction pattern", Icon: Layers },
   { mode: "power-base", title: "Power Base", hint: "30%+ first leg, now consolidating", Icon: Flame },
   { mode: "tight-closes", title: "3 Tight Closes", hint: "Pre-breakout coil", Icon: Crosshair },

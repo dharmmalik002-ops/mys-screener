@@ -32,6 +32,8 @@ import type {
 import type { GroupsView } from "./components/GroupsPanel";
 import type { GroupStocksContext } from "./components/GroupStocksModal";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
+import "./components/ResearchStockList.css";
+import { ScreenerLayoutToggle } from "./components/ScreenerLayoutToggle";
 import { ToastProvider, useToast } from "./components/Toast";
 import {
   collectLeafModes,
@@ -149,6 +151,8 @@ const ScanFooter = lazy(() => import("./components/ScanFooter").then((module) =>
 const ScanDistribution = lazy(() => import("./components/ScanDistribution").then((module) => ({ default: module.ScanDistribution })));
 const ScannerHeader = lazy(() => import("./components/ScannerHeader").then((module) => ({ default: module.ScannerHeader })));
 const QueryBuilder = lazy(() => import("./components/QueryBuilder").then((module) => ({ default: module.QueryBuilder })));
+const ResearchFundamentals = lazy(() => import("./components/ResearchFundamentals").then((module) => ({ default: module.ResearchFundamentals })));
+const ResearchStockList = lazy(() => import("./components/ResearchStockList").then((module) => ({ default: module.ResearchStockList })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
 const LivePanel = lazy(() => import("./components/LivePanel").then((module) => ({ default: module.LivePanel })));
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
@@ -297,6 +301,7 @@ const HEADER_NAV_GROUPS: NavGroup<AppPage>[] = NAV_GROUPS.map((group) => ({
 }));
 
 type ResultSortMode = "change" | "rs";
+const SCREENER_LAYOUT_KEY = "mr-malik-screener-layout:v1";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
 type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "momentum-burst">;
@@ -2034,6 +2039,17 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [fundamentalsError, setFundamentalsError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<AppPage>("home");
   const [activeScanner, setActiveScanner] = useState<ScreenerMode>("custom-scan");
+  // Screener layout: "research" is list | chart | fundamentals side by side;
+  // "classic" is the filters + results table + chart page.
+  const [screenerLayout, setScreenerLayout] = useState<"research" | "classic">(() => {
+    try {
+      return window.localStorage.getItem(SCREENER_LAYOUT_KEY) === "classic" ? "classic" : "research";
+    } catch {
+      return "research";
+    }
+  });
+  const [researchFundPane, setResearchFundPane] = useState<HTMLDivElement | null>(null);
+  const researchLayout = activePage === "screener" && screenerLayout === "research";
   const [resultSortMode, setResultSortMode] = useState<ResultSortMode>("rs");
   const [customFilters, setCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.customFilters);
   const [appliedCustomFilters, setAppliedCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.appliedCustomFilters);
@@ -3372,7 +3388,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   useEffect(() => {
     if (
       !selectedSymbol ||
-      chartPanelTab !== "fundamentals" ||
+      (chartPanelTab !== "fundamentals" && !researchLayout) ||
       (activePage === "home" && !chartOpen) ||
       (activePage === "journal" && !chartOpen)
     ) {
@@ -3418,7 +3434,15 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     return () => {
       active = false;
     };
-  }, [activeMarket, activePage, chartOpen, chartPanelTab, fundamentalsBySymbol, selectedSymbol]);
+  }, [activeMarket, activePage, chartOpen, chartPanelTab, fundamentalsBySymbol, researchLayout, selectedSymbol]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SCREENER_LAYOUT_KEY, screenerLayout);
+    } catch {
+      // storage blocked: the layout just isn't remembered
+    }
+  }, [screenerLayout]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -3785,7 +3809,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // navigation follows what the user sees. Momentum Burst / Improving RS render
   // their own flat lists, so they keep the flat order.
   const screenerNavSymbols =
-    activeScanner === "momentum-burst"
+    activeScanner === "momentum-burst" || screenerLayout === "research"
       ? visibleScanItems.map((item) => item.symbol)
       : scanVisibleOrder.length > 0
         ? scanVisibleOrder
@@ -5187,6 +5211,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const handlePickSymbol = (symbol: string) => {
     chartNavigationSymbolsRef.current = null;
     setSelectedSymbol(symbol);
+    // The research layout already shows the chart and fundamentals in place.
+    if (researchLayout && !chartOpen) return;
     setChartOpen(true);
   };
 
@@ -5895,6 +5921,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
 
     setNavSearchQuery("");
+    // A searched stock opens in the research layout (screener list | chart |
+    // fundamentals) unless the user chose the classic screener.
+    if (screenerLayout === "research" && !chartOpen) {
+      chartNavigationSymbolsRef.current = null;
+      setSelectedSymbol(match.symbol);
+      setActivePage("screener");
+      return;
+    }
     handlePickSymbol(match.symbol);
   };
 
@@ -6506,7 +6540,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "lookalikes" && activePage !== "bot" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
-            <section className="page-metrics-strip">
+            {researchLayout ? null : <section className="page-metrics-strip">
               {activePage === "screener" ? (
                 <>
                   <div className="metric-card">
@@ -6531,6 +6565,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                 </>
               )}
               {activePage === "screener" ? (
+                <div className="metric-card screener-layout-card">
+                  <span>Layout</span>
+                  <ScreenerLayoutToggle value={screenerLayout} onChange={setScreenerLayout} />
+                </div>
+              ) : null}
+              {activePage === "screener" ? (
                 <UniverseFilterCard
                   filter={universeFilter}
                   onChange={setUniverseFilter}
@@ -6550,11 +6590,13 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                 <span>Published</span>
                 <strong>{snapshotTimeLabel}</strong>
               </div>
-            </section>
+            </section>}
 
             <section
               className={
-                activePage === "screener"
+                researchLayout
+                  ? "screener-research-grid"
+                  : activePage === "screener"
                   ? "screener-page-grid"
                   : activePage === "watchlists"
                     ? "workspace-grid workspace-grid-sector workspace-grid-watchlists"
@@ -6565,7 +6607,65 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                       : "workspace-grid"
               }
             >
-              {activePage === "screener" ? (
+              {researchLayout ? (
+                <>
+                  <ResearchStockList
+                    activeMode={activeScanner}
+                    onModeChange={handleScannerModeChange}
+                    savedScanners={savedScanners.map((preset) => ({
+                      id: preset.id,
+                      name: preset.name,
+                      mode: preset.mode,
+                      lastMatchCount: preset.lastMatchCount,
+                    }))}
+                    activeSavedScannerId={activeSavedScannerId}
+                    onLoadSavedScanner={handleLoadSavedScannerById}
+                    rows={
+                      activeScanner === "improving-rs"
+                        ? (improvingRsData?.items ?? []).map((item) => ({
+                            symbol: item.symbol,
+                            name: item.name,
+                            last: item.last_price ?? null,
+                            changePct: item.change_pct ?? null,
+                            rvol: null,
+                          }))
+                        : visibleScanItems.map((item) => ({
+                            symbol: item.symbol,
+                            name: item.name,
+                            last: item.current_price ?? item.last_price ?? null,
+                            changePct: item.current_change_pct ?? item.change_pct ?? null,
+                            rvol: item.relative_volume ?? null,
+                          }))
+                    }
+                    loading={activeScanner === "improving-rs" ? !improvingRsData : scanLoading}
+                    selectedSymbol={selectedSymbol}
+                    onSelect={handlePickSymbol}
+                    onPrefetch={handlePrefetchSymbol}
+                    onLayoutChange={setScreenerLayout}
+                    sessionLabel={snapshotDateLabel}
+                  />
+                  {freezeBehindChartModal("screener-research", (
+                    <ChartPanel
+                      key={activeChartKey ?? "empty-chart"}
+                      {...pageChartPanelProps}
+                      {...fullscreenPane("screener")}
+                      splitFundamentals
+                      fundamentalsTarget={researchFundPane}
+                      expanded
+                    />
+                  ))}
+                  <div className="research-fund-pane" aria-label="Fundamentals">
+                    <ResearchFundamentals
+                      symbol={selectedSymbol}
+                      fundamentals={activeFundamentals}
+                      loading={fundamentalsLoading}
+                      error={fundamentalsError}
+                      summary={displayedChart?.summary ?? null}
+                      onDetailsMount={setResearchFundPane}
+                    />
+                  </div>
+                </>
+              ) : activePage === "screener" ? (
                 <>
                   <ScreenerSidebar
                     activeMode={activeScanner}
@@ -7122,14 +7222,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               ) : null}
               <SplitResizer
                 storageKey={
-                  activePage === "groups" ? `groups-${groupsView}` : activePage
+                  researchLayout ? "screener-research" : activePage === "groups" ? `groups-${groupsView}` : activePage
                 }
                 boundary={activePage === "screener" ? 1 : 0}
-                minPx={320}
+                minPx={researchLayout ? 300 : 320}
                 // The results table's row template is fixed-pixel (~524px); the
                 // stylesheet floors that column at 560px and so does the drag.
-                minBefore={activePage === "screener" ? 560 : undefined}
-                label={activePage === "screener" ? "Resize results and chart" : "Resize list and chart"}
+                minBefore={activePage === "screener" && !researchLayout ? 560 : undefined}
+                label={researchLayout ? "Resize chart and fundamentals" : activePage === "screener" ? "Resize results and chart" : "Resize list and chart"}
               />
             </section>
             </>

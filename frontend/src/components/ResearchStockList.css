@@ -1,0 +1,258 @@
+/* Screener research layout: stock list | chart | fundamentals.
+   The page fills the viewport below the header and each pane scrolls on its
+   own, so walking the list never scrolls the chart away. */
+
+.screener-research-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 12px;
+  height: calc(100dvh - 120px);
+  min-height: 560px;
+}
+
+.screener-research-grid > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+.screener-research-grid > .chart-panel {
+  height: 100%;
+  overflow: hidden;
+}
+
+.research-fund-pane {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface-strong);
+  border-radius: var(--radius-md, 10px);
+}
+
+.research-fund-pane .fundamentals-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.research-fund-empty {
+  padding: 24px 16px;
+  color: var(--text-muted);
+  font-size: var(--fs-small, 13px);
+}
+
+/* ---- Left rail ---------------------------------------------------------- */
+
+.research-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-strong);
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+}
+
+.research-list-head {
+  display: flex;
+  gap: 6px;
+  padding: 10px 10px 8px;
+}
+
+.research-list-select {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-strong);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-small, 13px);
+}
+
+.research-list-layout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.research-list-layout:hover {
+  color: var(--text);
+}
+
+.research-list-cols,
+.research-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.6fr);
+  gap: 6px;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.research-list-cols {
+  height: 26px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+}
+
+.research-list-cols span:not(:first-child),
+.research-list-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.research-list-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.research-list-row {
+  width: 100%;
+  height: 30px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-small, 13px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.research-list-row:hover {
+  background: var(--surface-soft);
+}
+
+.research-list-row.active {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.research-list-sym {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.research-list-row.active .research-list-sym {
+  color: var(--accent);
+}
+
+.research-list-num.up {
+  color: var(--positive);
+}
+
+.research-list-num.down {
+  color: var(--negative);
+}
+
+.research-list-num.muted {
+  color: var(--text-soft);
+}
+
+.research-list-empty {
+  padding: 20px 12px;
+  color: var(--text-muted);
+  font-size: var(--fs-small, 13px);
+}
+
+.research-list-foot {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+}
+
+/* Narrower desktops: fundamentals drop below the chart. */
+@media (max-width: 1280px) {
+  .screener-research-grid {
+    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: auto;
+  }
+
+  .screener-research-grid > .chart-panel {
+    height: calc(100dvh - 120px);
+  }
+
+  .screener-research-grid > .research-list {
+    grid-row: 1 / span 2;
+    height: calc(100dvh - 120px);
+    position: sticky;
+    top: 72px;
+  }
+
+  .research-fund-pane {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+/* Phones: one column — list (short), chart, fundamentals. */
+@media (max-width: 760px) {
+  .screener-research-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screener-research-grid > .research-list {
+    grid-row: auto;
+    position: static;
+    height: 300px;
+  }
+
+  .screener-research-grid > .chart-panel {
+    height: min(70dvh, 560px);
+  }
+}
+
+/* Research / Classic switch — shown in both layouts. */
+.screener-layout-switch {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.screener-layout-switch button {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-small, 13px);
+  cursor: pointer;
+}
+
+.screener-layout-switch button.active {
+  background: var(--text);
+  color: var(--surface-strong);
+}
+
+.research-list-switch {
+  padding: 0 10px 8px;
+}
+
+.research-list-switch .screener-layout-switch {
+  display: flex;
+}
+
+.research-list-switch .screener-layout-switch button {
+  flex: 1;
+}
+
+.screener-layout-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

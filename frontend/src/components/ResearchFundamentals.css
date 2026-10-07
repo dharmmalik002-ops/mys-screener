@@ -1,0 +1,239 @@
+/* Research layout fundamentals: Screener.in-style tabs over statement tables. */
+
+.rf {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.rf-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--surface-strong);
+  border-bottom: 1px solid var(--line);
+}
+
+.rf-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.rf-tab {
+  flex: none;
+  padding: 8px 10px 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-small, 13px);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rf-tab:hover {
+  color: var(--text);
+}
+
+.rf-tab.active {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
+.rf-body {
+  padding: 14px 16px 20px;
+}
+
+.rf-section + .rf-section {
+  margin-top: 20px;
+}
+
+.rf-crumb {
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+}
+
+.rf-h {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.rf-h-note {
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+  font-weight: 400;
+}
+
+.rf-about {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
+  color: var(--text);
+  font-size: var(--fs-small, 13px);
+  line-height: 1.6;
+}
+
+.rf-about.open {
+  display: block;
+}
+
+.rf-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--fs-small, 13px);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rf-link:hover {
+  text-decoration: underline;
+}
+
+.rf-keys {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px 18px;
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.rf-keys > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--fs-small, 13px);
+}
+
+.rf-keys dt {
+  color: var(--text-soft);
+}
+
+.rf-keys dd {
+  margin: 0;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.rf-goodbad {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.rf-goodbad h4 {
+  margin: 0 0 6px;
+  font-size: var(--fs-tiny, 11px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rf-goodbad ul,
+.rf-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-small, 13px);
+  line-height: 1.6;
+}
+
+.rf-good,
+.rf-up {
+  color: var(--positive);
+}
+
+.rf-bad,
+.rf-down {
+  color: var(--negative);
+}
+
+.rf-muted {
+  color: var(--text-muted);
+  font-size: var(--fs-small, 13px);
+}
+
+.rf-note {
+  margin: 8px 0;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+}
+
+.rf-empty {
+  padding: 18px 0;
+  color: var(--text-muted);
+  font-size: var(--fs-small, 13px);
+}
+
+.rf-table-wrap {
+  overflow-x: auto;
+}
+
+.rf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small, 13px);
+  font-variant-numeric: tabular-nums;
+}
+
+.rf-table th,
+.rf-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.rf-table thead th {
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.rf-table tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--surface-strong);
+  color: var(--text);
+  font-weight: 400;
+  text-align: left;
+}
+
+.rf-table tr.strong th,
+.rf-table tr.strong td {
+  font-weight: 600;
+}
+
+.rf-table tr.sub th,
+.rf-table tr.sub td {
+  padding-top: 2px;
+  font-size: var(--fs-tiny, 11px);
+}
+
+.rf-table tr.sub th {
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+/* The original fundamentals cards inside the Details tab. */
+.rf-body .chart-fund-pane .fundamentals-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
