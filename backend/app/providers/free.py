@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+import threading
 import time
 import uuid
 from datetime import date, datetime, timedelta, timezone
@@ -73,6 +74,8 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 10
+FUNDAMENTALS_REFRESH_COOLDOWN_S = 30 * 60
+SCREENER_BACKOFF_S = 60 * 60
 SNAPSHOT_CACHE_VERSION = 15
 CHART_CACHE_VERSION = 5  # bumped to invalidate any wickless caches written by the
 # brief regression where _chart_bars_from_snapshot_points seeded the cache with
@@ -308,6 +311,16 @@ class FreeMarketDataProvider:
         self._close_refresh_retry_after: dict[float, float] = {}
         self._live_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._fundamentals_memory_cache: dict[str, CompanyFundamentals] = {}
+        # Background full builds: one per symbol at a time, two at once, and
+        # never more often than FUNDAMENTALS_REFRESH_COOLDOWN_S per symbol.
+        self._fundamentals_refresh_tasks: dict[str, asyncio.Task[None]] = {}
+        self._fundamentals_refresh_after: dict[str, float] = {}
+        self._fundamentals_refresh_slots: asyncio.Semaphore | None = None
+        self._fundamentals_file_lock = threading.Lock()
+        self._company_profiles_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
+        # Screener refuses the Space outright; after a failure skip it for a
+        # while instead of paying for the refusal on every build.
+        self._screener_blocked_until = 0.0
         self._chart_symbol_scale_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
         self._holiday_date_cache: dict[tuple[int, ...], set[date]] = {}
         self._seed_snapshot_cache_restored_at: float | None = None
@@ -1852,15 +1865,39 @@ class FreeMarketDataProvider:
         ]
 
     async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None) -> CompanyFundamentals:
+        """Answer at once and refresh behind the request.
+
+        A full build costs ~20 s on the Space (Screener refusal, Yahoo, the AI
+        enrichment), and the freshness rule rejects any payload carrying a
+        "could not be refreshed" warning — which on the Space is every payload —
+        so every open used to rebuild from scratch. Now: any cached payload is
+        served immediately (stale-while-revalidate); with nothing cached a quick
+        payload is built from local data (snapshot, BSE quarters, company
+        profile) and marked ``partial`` while the full build runs.
+        """
         normalized_symbol = symbol.upper()
         cached = self._fundamentals_memory_cache.get(normalized_symbol)
-        if cached and self._fundamentals_payload_fresh(cached.model_dump(mode="json"), max_age_hours=6):
-            return cached
+        if cached is None:
+            cached = await asyncio.to_thread(self._read_cached_fundamentals, normalized_symbol)
+            if cached is not None:
+                self._fundamentals_memory_cache[normalized_symbol] = cached
+        if cached is not None:
+            if not self._fundamentals_payload_fresh(cached.model_dump(mode="json"), max_age_hours=6):
+                self._schedule_fundamentals_refresh(normalized_symbol, snapshot)
+            return self._apply_company_profile(cached)
+
+        try:
+            quick = await asyncio.to_thread(self._quick_fundamentals, normalized_symbol, snapshot)
+        except Exception:  # noqa: BLE001 - fall through to the blocking build
+            quick = None
+        if quick is not None:
+            self._schedule_fundamentals_refresh(normalized_symbol, snapshot)
+            return quick
 
         try:
             payload = await asyncio.to_thread(self._load_or_refresh_fundamentals, normalized_symbol, snapshot)
             self._fundamentals_memory_cache[normalized_symbol] = payload
-            return payload
+            return self._apply_company_profile(payload)
         except Exception as exc:
             import logging, traceback
             logging.getLogger(__name__).error("Fundamentals failed for %s: %s\n%s", normalized_symbol, exc, traceback.format_exc())
@@ -1868,6 +1905,205 @@ class FreeMarketDataProvider:
             fallback.data_warnings.append("Live fundamentals could not be refreshed, so fallback content is being shown.")
             self._fundamentals_memory_cache[normalized_symbol] = fallback
             return fallback
+
+    def _schedule_fundamentals_refresh(self, symbol: str, snapshot: StockSnapshot | None) -> None:
+        if symbol in self._fundamentals_refresh_tasks:
+            return
+        now = time.monotonic()
+        if now < self._fundamentals_refresh_after.get(symbol, 0.0):
+            return
+        self._fundamentals_refresh_after[symbol] = now + FUNDAMENTALS_REFRESH_COOLDOWN_S
+        if self._fundamentals_refresh_slots is None:
+            self._fundamentals_refresh_slots = asyncio.Semaphore(2)
+        slots = self._fundamentals_refresh_slots
+
+        async def run() -> None:
+            try:
+                async with slots:
+                    payload = await asyncio.to_thread(self._rebuild_fundamentals, symbol, snapshot)
+                self._fundamentals_memory_cache[symbol] = payload
+            except Exception as exc:  # noqa: BLE001 - a failed refresh keeps the old payload
+                import logging
+                logging.getLogger(__name__).warning("Background fundamentals refresh failed for %s: %s", symbol, exc)
+            finally:
+                self._fundamentals_refresh_tasks.pop(symbol, None)
+
+        self._fundamentals_refresh_tasks[symbol] = asyncio.create_task(run())
+
+    def _read_cached_fundamentals(self, symbol: str) -> CompanyFundamentals | None:
+        payload = self._load_json_file(self.fundamentals_cache_path).get(symbol)
+        if not isinstance(payload, dict):
+            return None
+        if int(payload.get("cache_version", 0) or 0) != FUNDAMENTALS_CACHE_VERSION:
+            return None
+        try:
+            return CompanyFundamentals.model_validate(payload)
+        except Exception:
+            return None
+
+    def _rebuild_fundamentals(self, symbol: str, snapshot: StockSnapshot | None) -> CompanyFundamentals:
+        fundamentals = self._build_company_fundamentals(symbol, snapshot)
+        self._store_fundamentals(symbol, fundamentals)
+        return fundamentals
+
+    def _store_fundamentals(self, symbol: str, fundamentals: CompanyFundamentals) -> None:
+        with self._fundamentals_file_lock:
+            cache = self._load_json_file(self.fundamentals_cache_path)
+            cache[symbol] = {
+                **fundamentals.model_dump(mode="json"),
+                "cache_version": FUNDAMENTALS_CACHE_VERSION,
+            }
+            tmp = self.fundamentals_cache_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(cache), encoding="utf-8")
+            tmp.replace(self.fundamentals_cache_path)
+
+    def _company_profiles(self) -> dict[str, dict[str, Any]]:
+        path = self.backend_root / "data" / "company_profiles.json"
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            return {}
+        cached = self._company_profiles_cache
+        if cached and cached[0] == mtime:
+            return cached[1]
+        profiles = {symbol: self._sane_profile(row) for symbol, row in self._load_json_file(path).items() if isinstance(row, dict)}
+        self._company_profiles_cache = (mtime, profiles)
+        return profiles
+
+    @staticmethod
+    def _sane_profile(row: dict[str, Any]) -> dict[str, Any]:
+        """Drop Yahoo ratios that cannot be right.
+
+        Yahoo carries stale or mis-scaled EPS for some restructured companies
+        (MBECL: EPS 1,118 on a ₹484 share, P/E 0.4). A P/E outside 1-1000 says
+        the earnings figure is wrong, so EPS goes with it.
+        """
+        clean = dict(row)
+        pe = clean.get("pe")
+        if isinstance(pe, (int, float)) and not 1 <= pe <= 1000:
+            clean.pop("pe", None)
+            clean.pop("eps_ttm", None)
+        pb = clean.get("price_to_book")
+        if isinstance(pb, (int, float)) and not 0 < pb <= 500:
+            clean.pop("price_to_book", None)
+            clean.pop("book_value", None)
+        return clean
+
+    def _apply_company_profile(self, fundamentals: CompanyFundamentals) -> CompanyFundamentals:
+        """Fill description, website and ratios from the committed profile."""
+        profile = self._company_profiles().get(fundamentals.symbol.upper())
+        if not profile:
+            return fundamentals
+        updates: dict[str, Any] = {}
+        if not fundamentals.about and profile.get("about"):
+            updates["about"] = profile["about"]
+        if not fundamentals.company_website and profile.get("website"):
+            updates["company_website"] = profile["website"]
+        metrics = {
+            key: value
+            for key, value in profile.items()
+            if key not in {"about", "website", "fetched_at"} and value is not None
+        }
+        metrics["profile_as_of"] = str(profile.get("fetched_at") or "")[:10] or None
+        updates["key_metrics"] = {**metrics, **(fundamentals.key_metrics or {})}
+        valuation = fundamentals.valuation
+        if valuation is not None:
+            updates["valuation"] = valuation.model_copy(
+                update={
+                    "pe_ratio": valuation.pe_ratio if valuation.pe_ratio is not None else profile.get("pe"),
+                    "roe_pct": valuation.roe_pct if valuation.roe_pct is not None else profile.get("roe_pct"),
+                    "dividend_yield_pct": valuation.dividend_yield_pct
+                    if valuation.dividend_yield_pct is not None
+                    else profile.get("dividend_yield_pct"),
+                }
+            )
+        return fundamentals.model_copy(update=updates)
+
+    def _quick_fundamentals(self, symbol: str, snapshot: StockSnapshot | None) -> CompanyFundamentals | None:
+        """Everything that is local: snapshot, BSE quarters, company profile."""
+        snapshot = snapshot or self._load_snapshot_from_cache(symbol)
+        quarterly_results = self._bse_quarterly_results(symbol)
+        profile = self._company_profiles().get(symbol)
+        if snapshot is None and not quarterly_results and not profile:
+            return None
+        growth = self._build_growth_snapshot(quarterly_results)
+        valuation = self._build_valuation_snapshot(
+            snapshot=snapshot,
+            screener_payload={},
+            yahoo_payload={},
+            growth=growth,
+            profit_loss=[],
+        )
+        fundamentals = CompanyFundamentals(
+            symbol=symbol,
+            name=(snapshot.name if snapshot else None) or symbol,
+            exchange=snapshot.exchange if snapshot else self._default_exchange(),
+            sector=snapshot.sector if snapshot else None,
+            sub_sector=snapshot.sub_sector if snapshot else None,
+            quarterly_results=quarterly_results[:12],
+            growth=growth,
+            valuation=valuation,
+            partial=True,
+        )
+        return self._apply_company_profile(fundamentals)
+
+    def peer_metrics(self, symbols: list[str]) -> list[dict[str, Any]]:
+        """Fundamental columns for a peer table, from local data only."""
+        from app.services import bse_quarterly
+
+        profiles = self._company_profiles()
+        rows: list[dict[str, Any]] = []
+        for raw in symbols[:60]:
+            symbol = raw.strip().upper()
+            if not symbol:
+                continue
+            profile = profiles.get(symbol) or {}
+            quarters = sorted(
+                bse_quarterly.results_for(symbol),
+                key=lambda row: self._quarter_sort_value(str(row.get("period") or "")),
+                reverse=True,
+            )
+            latest = quarters[0] if quarters else {}
+            year_ago = quarters[4] if len(quarters) > 4 else {}
+
+            def growth(key: str) -> float | None:
+                now, then = latest.get(key), year_ago.get(key)
+                if not isinstance(now, (int, float)) or not isinstance(then, (int, float)) or then == 0:
+                    return None
+                return round((now - then) / abs(then) * 100, 1)
+
+            ttm_profit = None
+            if len(quarters) >= 4 and all(isinstance(q.get("net_profit_crore"), (int, float)) for q in quarters[:4]):
+                ttm_profit = round(sum(q["net_profit_crore"] for q in quarters[:4]), 2)
+            rows.append(
+                {
+                    "symbol": symbol,
+                    "pe": profile.get("pe"),
+                    "price_to_book": profile.get("price_to_book"),
+                    "roe_pct": profile.get("roe_pct"),
+                    "debt_to_equity": profile.get("debt_to_equity"),
+                    "dividend_yield_pct": profile.get("dividend_yield_pct"),
+                    "operating_margin_pct": latest.get("operating_margin_pct"),
+                    "latest_quarter": latest.get("period"),
+                    "sales_crore": latest.get("sales_crore"),
+                    "net_profit_crore": latest.get("net_profit_crore"),
+                    "ttm_net_profit_crore": ttm_profit,
+                    "sales_yoy_pct": growth("sales_crore"),
+                    "profit_yoy_pct": growth("net_profit_crore"),
+                }
+            )
+        return rows
+
+    @staticmethod
+    def _quarter_sort_value(period: str) -> int:
+        months = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+        match = re.search(r"([A-Za-z]{3})[a-z]*[\s'-]*(\d{2,4})", period)
+        if not match:
+            return 0
+        year = int(match.group(2))
+        if year < 100:
+            year += 2000
+        return year * 12 + months.get(match.group(1).lower(), 0)
 
     async def get_fundamentals_cached(
         self,
@@ -1912,11 +2148,7 @@ class FreeMarketDataProvider:
                 pass
 
         fundamentals = self._build_company_fundamentals(symbol, snapshot)
-        cache[symbol] = {
-            **fundamentals.model_dump(mode="json"),
-            "cache_version": FUNDAMENTALS_CACHE_VERSION,
-        }
-        self.fundamentals_cache_path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+        self._store_fundamentals(symbol, fundamentals)
         return fundamentals
 
     def _build_company_fundamentals(self, symbol: str, snapshot: StockSnapshot | None) -> CompanyFundamentals:
@@ -1925,11 +2157,15 @@ class FreeMarketDataProvider:
         screener_payload: dict[str, Any] = {}
         yahoo_payload: dict[str, Any] = {}
 
-        try:
-            screener_html = self._fetch_screener_company_page(symbol)
-            screener_payload = self._parse_screener_company_page(symbol, screener_html)
-        except Exception:
+        if time.monotonic() < self._screener_blocked_until:
             warnings.append("Quarterly tables and shareholding pattern could not be refreshed from the company page right now.")
+        else:
+            try:
+                screener_html = self._fetch_screener_company_page(symbol)
+                screener_payload = self._parse_screener_company_page(symbol, screener_html)
+            except Exception:
+                self._screener_blocked_until = time.monotonic() + SCREENER_BACKOFF_S
+                warnings.append("Quarterly tables and shareholding pattern could not be refreshed from the company page right now.")
 
         try:
             yahoo_payload = self._fetch_yfinance_fundamentals(symbol)
@@ -2014,7 +2250,7 @@ class FreeMarketDataProvider:
             ),
             company_website=yahoo_payload.get("company_website"),
             headquarters=yahoo_payload.get("headquarters"),
-            quarterly_results=quarterly_results[:8],
+            quarterly_results=quarterly_results[:12],
             profit_loss=profit_loss[-8:] if len(profit_loss) > 8 else profit_loss,
             balance_sheet=balance_sheet,
             cash_flow=cash_flow,

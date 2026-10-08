@@ -482,6 +482,10 @@ export type CompanyFundamentals = {
   last_news_update: string | null;
   latest_earnings_key_metrics: Record<string, number | string>;
   upcoming_events: Array<{ date: string; event: string; impact?: string }>;
+  /** Ratios from the committed company profile; `profile_as_of` dates them. */
+  key_metrics: Record<string, number | string | null>;
+  /** Instant local answer; the full build is running and a refetch returns it. */
+  partial: boolean;
 };
 
 export type BalanceSheetItem = {
@@ -1744,6 +1748,15 @@ function normalizeCompanyFundamentals(value: unknown): CompanyFundamentals {
     sector: readNullableString(raw.sector),
     sub_sector: readNullableString(raw.sub_sector),
     fetched_at: readString(raw.fetched_at),
+    key_metrics: isRecord(raw.key_metrics)
+      ? Object.fromEntries(
+          Object.entries(raw.key_metrics).filter(
+            (entry): entry is [string, number | string | null] =>
+              entry[1] === null || typeof entry[1] === "string" || (typeof entry[1] === "number" && Number.isFinite(entry[1])),
+          ),
+        )
+      : {},
+    partial: raw.partial === true,
     about: readNullableString(raw.about),
     business_summary: readNullableString(raw.business_summary),
     company_website: readNullableString(raw.company_website),
@@ -3326,6 +3339,30 @@ export function getFundamentals(symbol: string, market: MarketKey) {
     undefined,
     undefined,
     normalizeCompanyFundamentals,
+  );
+}
+
+export type PeerMetricsItem = {
+  symbol: string;
+  pe: number | null;
+  price_to_book: number | null;
+  roe_pct: number | null;
+  debt_to_equity: number | null;
+  dividend_yield_pct: number | null;
+  operating_margin_pct: number | null;
+  latest_quarter: string | null;
+  sales_crore: number | null;
+  net_profit_crore: number | null;
+  ttm_net_profit_crore: number | null;
+  sales_yoy_pct: number | null;
+  profit_yoy_pct: number | null;
+};
+
+export function getPeerMetrics(symbols: string[], market: MarketKey) {
+  return request<{ items: PeerMetricsItem[] }>(
+    `/api/peer-metrics?symbols=${encodeURIComponent(symbols.join(","))}&market=${market}`,
+    undefined,
+    { timeoutMs: 15000 },
   );
 }
 

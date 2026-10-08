@@ -657,6 +657,16 @@ def build_router(service):
     async def fundamentals(symbol: str, market: str = Query(default="india")):
         return await resolve_service(market).get_fundamentals(symbol=symbol.upper())
 
+    @router.get("/peer-metrics")
+    async def peer_metrics(symbols: str = Query(..., min_length=1), market: str = Query(default="india")):
+        """P/E, ROE, margins and growth for a peer table — local data only, so it is instant."""
+        provider = resolve_service(market).provider
+        if not hasattr(provider, "peer_metrics"):
+            return {"items": []}
+        requested = [item for item in symbols.split(",") if item.strip()]
+        items = await asyncio.to_thread(provider.peer_metrics, requested)
+        return {"items": items}
+
     @router.get("/earnings/{symbol}")
     async def earnings(symbol: str, market: str = Query(default="india")):
         return await resolve_service(market).get_earnings_summary(symbol=symbol.upper())

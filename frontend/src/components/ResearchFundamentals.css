@@ -237,3 +237,68 @@
 .rf-body .chart-fund-pane .fundamentals-layout {
   grid-template-columns: minmax(0, 1fr) !important;
 }
+
+/* Company header above the tabs. */
+.rf-head {
+  padding: 12px 16px 6px;
+  background: var(--surface-strong);
+}
+
+.rf-head-name {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.rf-head-sub {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+}
+
+.rf-head-live {
+  color: var(--accent);
+}
+
+/* Peers table. */
+.rf-sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rf-sort.active {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rf-peers .rf-peer-name {
+  max-width: 170px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.rf-peers tbody .rf-peer-name .rf-link {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rf-peers tr.rf-peer-self th,
+.rf-peers tr.rf-peer-self td {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong));
+}
+
+.rf-peers tr.rf-peer-self .rf-link {
+  color: var(--accent);
+  font-weight: 600;
+}

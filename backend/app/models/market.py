@@ -620,7 +620,14 @@ class CompanyFundamentals(BaseModel):
     # Recent Performance & Catalysts
     latest_earnings_key_metrics: dict[str, float | str] = Field(default_factory=dict)
     upcoming_events: list[dict[str, str]] = Field(default_factory=list)  # [{date, event, impact}]
-    
+
+    # Ratios from the committed company profile (Yahoo, refreshed offline) —
+    # see scripts/build_company_profiles.py. "profile_as_of" dates them.
+    key_metrics: dict[str, float | str | None] = Field(default_factory=dict)
+    # True when this is the instant answer built from local data only; the
+    # full build is running in the background and a refetch will return it.
+    partial: bool = False
+
     data_warnings: list[str] = Field(default_factory=list)
 
 

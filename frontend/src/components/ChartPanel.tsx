@@ -3654,7 +3654,9 @@ export function ChartPanel({
     // height, so ~230px of a 390px screen before the time axis and any
     // overlay. Full screen on a short viewport hands price 76% instead.
     const tightPanes = chartFullscreen && shortViewport;
-    const priceTop = phoneViewport ? 0.2 : tightPanes ? 0.02 : 0.04;
+    // The newest candle used to sit in the top-right corner under the price
+    // labels; start price ~22% down so it reads clearly (tight panes excepted).
+    const priceTop = tightPanes && !phoneViewport ? 0.04 : 0.22;
 
     mainSeries.priceScale().applyOptions({
       scaleMargins: safeRsLine.length

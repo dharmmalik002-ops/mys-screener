@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import type { CompanyFundamentals, QuarterlyResultItem, StockOverview } from "../lib/api";
+import {
+  getPeerMetrics,
+  type CompanyFundamentals,
+  type IndustryGroupStockItem,
+  type MarketKey,
+  type PeerMetricsItem,
+  type QuarterlyResultItem,
+  type StockOverview,
+} from "../lib/api";
 
 import "./ResearchFundamentals.css";
 
@@ -14,7 +22,7 @@ import "./ResearchFundamentals.css";
  * summed from four filed quarters, and says so.
  */
 
-type TabKey = "about" | "quarters" | "pnl" | "balance" | "cashflow" | "ratios" | "shareholding" | "updates" | "details";
+type TabKey = "about" | "quarters" | "pnl" | "peers" | "balance" | "cashflow" | "ratios" | "shareholding" | "updates" | "details";
 
 type ResearchFundamentalsProps = {
   symbol: string | null;
@@ -22,6 +30,10 @@ type ResearchFundamentalsProps = {
   loading: boolean;
   error: string | null;
   summary: StockOverview | null;
+  market: MarketKey;
+  /** The stock's industry group, from the groups payload. */
+  peers: { groupName: string; members: IndustryGroupStockItem[] } | "unavailable" | null;
+  onSelectSymbol?: (symbol: string) => void;
   /** The full card view (management, triggers, insider trades…) mounts here. */
   onDetailsMount?: (node: HTMLDivElement | null) => void;
 };
@@ -199,7 +211,17 @@ function Empty({ children }: { children: ReactNode }) {
   return <div className="rf-empty">{children}</div>;
 }
 
-export function ResearchFundamentals({ symbol, fundamentals, loading, error, summary, onDetailsMount }: ResearchFundamentalsProps) {
+export function ResearchFundamentals({
+  symbol,
+  fundamentals,
+  loading,
+  error,
+  summary,
+  market,
+  peers,
+  onSelectSymbol,
+  onDetailsMount,
+}: ResearchFundamentalsProps) {
   const [tab, setTab] = useState<TabKey>(readTab);
   const [aboutOpen, setAboutOpen] = useState(false);
 
@@ -234,6 +256,7 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
     { key: "about", label: "About" },
     { key: "quarters", label: "Quarters" },
     { key: "pnl", label: "Profit & Loss" },
+    { key: "peers", label: "Peers" },
     ...(balance.length ? [{ key: "balance" as const, label: "Balance Sheet" }] : []),
     ...(cashflow.length ? [{ key: "cashflow" as const, label: "Cash Flow" }] : []),
     ...(ratios.length ? [{ key: "ratios" as const, label: "Ratios" }] : []),
@@ -280,6 +303,49 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
     else if (roce < 10) bad.push(`Low return on capital: ROCE ${roce.toFixed(0)}%`);
   }
 
+  const km = data?.key_metrics ?? {};
+  const kmNum = (key: string) => (typeof km[key] === "number" ? (km[key] as number) : null);
+  const profileAsOf = typeof km.profile_as_of === "string" ? km.profile_as_of : null;
+  const ttmSales = quarters.length >= 4 && quarters[quarters.length - 1].key - quarters[quarters.length - 4].key === 9
+    ? sum(quarters.slice(-4).map((q) => q.sales_crore))
+    : null;
+  const ownSummary = summary?.symbol === symbol ? summary : null;
+  const keyRows: Array<[string, string, string?]> = [
+    ["Market Cap", num(marketCap) ? `₹${fmtNumber(marketCap)} Cr` : "—"],
+    ["Current Price", num(price) ? `₹${fmtNumber(price, 2)}` : "—"],
+    ["52W High / Low", num(high52) && num(low52) ? `₹${fmtNumber(high52)} / ${fmtNumber(low52)}` : "—"],
+    [
+      derivedPe != null ? "Stock P/E (TTM)" : "Stock P/E*",
+      fmtNumber(valuation?.pe_ratio ?? derivedPe, 1),
+      derivedPe != null ? "Market cap over the last four quarters' standalone net profit" : undefined,
+    ],
+    ["Price / Book*", fmtNumber(kmNum("price_to_book"), 2)],
+    ["Book Value*", num(kmNum("book_value")) ? `₹${fmtNumber(kmNum("book_value"), 1)}` : "—"],
+    ["EPS (TTM)*", fmtNumber(kmNum("eps_ttm"), 2)],
+    ["ROE", fmtPct(valuation?.roe_pct ?? kmNum("roe_pct"))],
+    ["ROCE", fmtPct(valuation?.roce_pct)],
+    ["ROA*", fmtPct(kmNum("roa_pct"))],
+    ["OPM", fmtPct(valuation?.operating_margin_pct)],
+    ["Net Margin", fmtPct(valuation?.net_margin_pct)],
+    ["Debt / Equity*", num(kmNum("debt_to_equity")) ? fmtNumber(kmNum("debt_to_equity")! / 100, 2) : "—"],
+    ["Current Ratio*", fmtNumber(kmNum("current_ratio"), 2)],
+    ["Dividend Yield", fmtPct(valuation?.dividend_yield_pct ?? kmNum("dividend_yield_pct"), 2)],
+    ["EV / EBITDA*", fmtNumber(kmNum("ev_to_ebitda"), 1)],
+    ["Sales (TTM)", num(ttmSales) ? `₹${fmtCrore(ttmSales)} Cr` : "—"],
+    ["Net Profit (TTM)", num(ttmProfit) ? `₹${fmtCrore(ttmProfit)} Cr` : "—"],
+    ["Sales Growth YoY", fmtSignedPct(latest?.sales_yoy_pct) || "—"],
+    ["Profit Growth YoY", fmtSignedPct(latest?.net_profit_yoy_pct) || "—"],
+    ["Total Debt*", num(kmNum("total_debt")) ? `₹${fmtCrore(kmNum("total_debt"))} Cr` : "—"],
+    ["Cash*", num(kmNum("total_cash")) ? `₹${fmtCrore(kmNum("total_cash"))} Cr` : "—"],
+    ["Insider Holding*", fmtPct(kmNum("promoter_holding_pct"))],
+    ["Institutional Holding*", fmtPct(kmNum("institution_holding_pct"))],
+    ["Beta*", fmtNumber(kmNum("beta"), 2)],
+    ["RS Rating", num(ownSummary?.rs_rating) ? fmtNumber(ownSummary!.rs_rating, 0) : "—"],
+    ["1Y Return", num(ownSummary?.stock_return_12m) ? fmtSignedPct(ownSummary!.stock_return_12m) : "—"],
+    ["Avg Turnover (30D)", num(ownSummary?.avg_rupee_volume_30d_crore) ? `₹${fmtCrore(ownSummary!.avg_rupee_volume_30d_crore)} Cr` : "—"],
+    ["Employees*", num(kmNum("employees")) ? fmtNumber(kmNum("employees")) : "—"],
+  ];
+
   const about = data?.about ?? data?.business_summary ?? null;
   const breadcrumb = [data?.sector ?? summary?.sector, data?.sub_sector ?? summary?.sub_sector].filter(Boolean).join(" › ");
 
@@ -318,21 +384,17 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
       ) : null}
 
       <dl className="rf-keys">
-        <div><dt>Market Cap</dt><dd>{num(marketCap) ? `₹${fmtNumber(marketCap)} Cr` : "—"}</dd></div>
-        <div><dt>Current Price</dt><dd>{num(price) ? `₹${fmtNumber(price, 2)}` : "—"}</dd></div>
-        <div><dt>High / Low</dt><dd>{num(high52) && num(low52) ? `₹${fmtNumber(high52)} / ${fmtNumber(low52)}` : "—"}</dd></div>
-        <div>
-          <dt title={derivedPe != null ? "Market cap over the last four quarters' standalone net profit" : undefined}>
-            Stock P/E{derivedPe != null ? " (TTM)" : ""}
-          </dt>
-          <dd>{fmtNumber(valuation?.pe_ratio ?? derivedPe, 1)}</dd>
-        </div>
-        <div><dt>ROCE</dt><dd>{fmtPct(valuation?.roce_pct)}</dd></div>
-        <div><dt>ROE</dt><dd>{fmtPct(valuation?.roe_pct)}</dd></div>
-        <div><dt>OPM</dt><dd>{fmtPct(valuation?.operating_margin_pct)}</dd></div>
-        <div><dt>Net Margin</dt><dd>{fmtPct(valuation?.net_margin_pct)}</dd></div>
-        <div><dt>Dividend Yield</dt><dd>{fmtPct(valuation?.dividend_yield_pct, 2)}</dd></div>
+        {keyRows.map(([label, value, title]) => (
+          <div key={label} title={title}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
       </dl>
+      <p className="rf-note">
+        Quarterly figures are standalone, from BSE filings.
+        {profileAsOf ? ` Ratios marked * are from Yahoo Finance (consolidated), as of ${profileAsOf}.` : ""}
+      </p>
 
       {good.length || bad.length ? (
         <div className="rf-goodbad">
@@ -351,9 +413,9 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
   ) : activeTab === "quarters" ? (
     quarters.length ? (
       <div className="rf-section">
-        <h3 className="rf-h">Quarterly Results <span className="rf-h-note">Standalone · ₹ Crores</span></h3>
+        <h3 className="rf-h">Quarterly Results <span className="rf-h-note">Latest first · Standalone · ₹ Crores</span></h3>
         <StatementTable
-          items={quarters.slice(-8)}
+          items={quarters.slice(-8).reverse()}
           rows={[
             { label: "Sales", value: (q) => fmtCrore(q.sales_crore) },
             { label: "YoY", sub: true, value: (q) => <Growth value={q.sales_yoy_pct} /> },
@@ -386,10 +448,10 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
       <div className="rf-section">
         <h3 className="rf-h">Profit &amp; Loss <span className="rf-h-note">₹ Crores</span></h3>
         {annualFiled.length ? null : (
-          <p className="rf-note">Fiscal years summed from four filed standalone quarters; TTM is the last four quarters.</p>
+          <p className="rf-note">Latest first. Fiscal years summed from four filed standalone quarters; TTM is the last four quarters.</p>
         )}
         <StatementTable<AnnualRow>
-          items={annual}
+          items={[...annual].reverse()}
           rows={[
             { label: "Sales", value: (r) => fmtCrore(r.sales_crore) },
             ...(annualFiled.length ? [] : [{ label: "Expenses", value: (r: AnnualRow) => fmtCrore(r.expenses_crore) }]),
@@ -404,6 +466,8 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
     ) : (
       <Empty>No annual figures yet — fewer than four quarters of a fiscal year are on file.</Empty>
     )
+  ) : activeTab === "peers" ? (
+    <PeersTable symbol={symbol} market={market} peers={peers} onSelectSymbol={onSelectSymbol} />
   ) : activeTab === "balance" ? (
     <div className="rf-section">
       <h3 className="rf-h">Balance Sheet <span className="rf-h-note">₹ Crores</span></h3>
@@ -497,6 +561,16 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
 
   return (
     <div className="rf">
+      {symbol ? (
+        <div className="rf-head">
+          <div className="rf-head-name">{data?.name || ownSummary?.name || symbol}</div>
+          <div className="rf-head-sub">
+            {symbol}
+            {breadcrumb ? ` · ${breadcrumb}` : ""}
+            {data?.partial ? <span className="rf-head-live"> · loading full data…</span> : null}
+          </div>
+        </div>
+      ) : null}
       <div className="rf-tabs" role="tablist" aria-label="Fundamentals sections">
         {tabs.map((t) => (
           <button
@@ -517,6 +591,142 @@ export function ResearchFundamentals({ symbol, fundamentals, loading, error, sum
             stays mounted (and costs nothing extra) while another tab shows. */}
         <div ref={onDetailsMount} hidden={activeTab !== "details"} />
       </div>
+    </div>
+  );
+}
+
+type PeerSortKey = "market_cap" | "pe" | "roe" | "opm" | "sales_yoy" | "profit_yoy" | "return_1y" | "rs";
+
+function PeersTable({
+  symbol,
+  market,
+  peers,
+  onSelectSymbol,
+}: {
+  symbol: string;
+  market: MarketKey;
+  peers: { groupName: string; members: IndustryGroupStockItem[] } | "unavailable" | null;
+  onSelectSymbol?: (symbol: string) => void;
+}) {
+  const [metrics, setMetrics] = useState<Record<string, PeerMetricsItem>>({});
+  const [failed, setFailed] = useState(false);
+  const [sortKey, setSortKey] = useState<PeerSortKey>("market_cap");
+
+  const members = useMemo(() => {
+    const all = [...(peers && peers !== "unavailable" ? peers.members : [])].sort(
+      (a, b) => (b.market_cap_cr ?? 0) - (a.market_cap_cr ?? 0),
+    );
+    const top = all.slice(0, 40);
+    // A small company must still appear in its own peer table.
+    const self = all.find((m) => m.symbol === symbol);
+    return self && !top.includes(self) ? [...top, self] : top;
+  }, [peers, symbol]);
+  const memberKey = members.map((m) => m.symbol).join(",");
+
+  useEffect(() => {
+    if (!memberKey) return;
+    let active = true;
+    setFailed(false);
+    getPeerMetrics(memberKey.split(","), market)
+      .then((payload) => {
+        if (!active) return;
+        setMetrics(Object.fromEntries((payload?.items ?? []).map((item) => [item.symbol, item])));
+      })
+      .catch(() => active && setFailed(true));
+    return () => {
+      active = false;
+    };
+  }, [memberKey, market]);
+
+  if (peers === "unavailable") return <Empty>Industry group data is not available for this stock right now.</Empty>;
+  if (!peers) return <Empty>Loading the industry group…</Empty>;
+  if (members.length <= 1) return <Empty>No other listed companies in {peers.groupName}.</Empty>;
+
+  const value = (m: IndustryGroupStockItem, key: PeerSortKey): number | null => {
+    const x = metrics[m.symbol];
+    switch (key) {
+      case "market_cap": return m.market_cap_cr ?? null;
+      case "pe": return x?.pe ?? null;
+      case "roe": return x?.roe_pct ?? null;
+      case "opm": return x?.operating_margin_pct ?? null;
+      case "sales_yoy": return x?.sales_yoy_pct ?? null;
+      case "profit_yoy": return x?.profit_yoy_pct ?? null;
+      case "return_1y": return m.return_1y ?? null;
+      case "rs": return m.rs_rating ?? null;
+    }
+  };
+  const ascending = sortKey === "pe";
+  const rows = [...members].sort((a, b) => {
+    const va = value(a, sortKey);
+    const vb = value(b, sortKey);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return ascending ? va - vb : vb - va;
+  });
+  const median = (key: PeerSortKey) => {
+    const values = members.map((m) => value(m, key)).filter(num).sort((a, b) => a - b);
+    if (!values.length) return null;
+    const mid = Math.floor(values.length / 2);
+    return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+  };
+  const cols: Array<{ key: PeerSortKey; label: string; render: (m: IndustryGroupStockItem) => ReactNode; med: (v: number | null) => string }> = [
+    { key: "market_cap", label: "Mcap ₹Cr", render: (m) => fmtNumber(m.market_cap_cr), med: (v) => fmtNumber(v) },
+    { key: "pe", label: "P/E", render: (m) => fmtNumber(metrics[m.symbol]?.pe, 1), med: (v) => fmtNumber(v, 1) },
+    { key: "roe", label: "ROE %", render: (m) => fmtPct(metrics[m.symbol]?.roe_pct, 0), med: (v) => fmtPct(v, 0) },
+    { key: "opm", label: "OPM %", render: (m) => fmtPct(metrics[m.symbol]?.operating_margin_pct, 0), med: (v) => fmtPct(v, 0) },
+    { key: "sales_yoy", label: "Sales YoY", render: (m) => <Growth value={metrics[m.symbol]?.sales_yoy_pct} />, med: (v) => fmtSignedPct(v) || "—" },
+    { key: "profit_yoy", label: "Profit YoY", render: (m) => <Growth value={metrics[m.symbol]?.profit_yoy_pct} />, med: (v) => fmtSignedPct(v) || "—" },
+    { key: "return_1y", label: "1Y", render: (m) => <Growth value={m.return_1y} />, med: (v) => fmtSignedPct(v) || "—" },
+    { key: "rs", label: "RS", render: (m) => fmtNumber(m.rs_rating, 0), med: (v) => fmtNumber(v, 0) },
+  ];
+
+  return (
+    <div className="rf-section">
+      <h3 className="rf-h">
+        Peers <span className="rf-h-note">{peers.groupName} · {members.length} companies · click a column to sort</span>
+      </h3>
+      {failed ? <p className="rf-note">Ratios could not be loaded; price data is shown.</p> : null}
+      <div className="rf-table-wrap">
+        <table className="rf-table rf-peers">
+          <thead>
+            <tr>
+              <th className="rf-peer-name">Company</th>
+              <th>CMP</th>
+              {cols.map((c) => (
+                <th key={c.key}>
+                  <button type="button" className={sortKey === c.key ? "rf-sort active" : "rf-sort"} onClick={() => setSortKey(c.key)}>
+                    {c.label}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((m) => (
+              <tr key={m.symbol} className={m.symbol === symbol ? "rf-peer-self" : undefined}>
+                <th scope="row" className="rf-peer-name">
+                  <button type="button" className="rf-link" onClick={() => onSelectSymbol?.(m.symbol)} title={m.symbol}>
+                    {m.company_name || m.symbol}
+                  </button>
+                </th>
+                <td>{fmtNumber(m.last_price, m.last_price < 100 ? 2 : 1)}</td>
+                {cols.map((c) => (
+                  <td key={c.key}>{c.render(m)}</td>
+                ))}
+              </tr>
+            ))}
+            <tr className="strong">
+              <th scope="row" className="rf-peer-name">Median</th>
+              <td />
+              {cols.map((c) => (
+                <td key={c.key}>{c.med(median(c.key))}</td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="rf-note">P/E and ROE from Yahoo Finance; OPM and growth from the latest standalone BSE quarter.</p>
     </div>
   );
 }

@@ -140,7 +140,10 @@ export function ResearchStockList({
                 onClick={() => onSelect(row.symbol)}
                 onMouseEnter={onPrefetch ? () => onPrefetch(row.symbol) : undefined}
               >
-                <span className="research-list-sym">{row.symbol}</span>
+                <span className="research-list-sym">
+                  {row.symbol}
+                  {row.name ? <span className="research-list-name">{row.name}</span> : null}
+                </span>
                 <span className="research-list-num">{formatPrice(row.last)}</span>
                 <span className={`research-list-num${tone}`}>{formatChange(row.changePct)}</span>
                 <span className="research-list-num muted">{formatRvol(row.rvol)}</span>

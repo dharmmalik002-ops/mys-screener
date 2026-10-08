@@ -6184,6 +6184,74 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     return node;
   };
 
+  // Research layout: the quick answer is marked `partial` while the server
+  // builds the full payload behind it; pick the full one up when it lands.
+  const fundamentalsRetryRef = useRef<Record<string, number>>({});
+  const selectedFundamentalsPartial = Boolean(selectedSymbol && fundamentalsBySymbol[selectedSymbol]?.partial);
+  useEffect(() => {
+    if (!selectedSymbol || !selectedFundamentalsPartial) return;
+    const symbol = selectedSymbol;
+    const attempts = fundamentalsRetryRef.current[symbol] ?? 0;
+    if (attempts >= 4) return;
+    const timer = window.setTimeout(() => {
+      fundamentalsRetryRef.current[symbol] = attempts + 1;
+      void getFundamentals(symbol, activeMarket)
+        .then((payload) => {
+          if (payload.symbol !== symbol) return;
+          setFundamentalsBySymbol((current) => ({ ...current, [symbol]: payload }));
+        })
+        .catch(() => undefined);
+    }, 15000 + attempts * 10000);
+    return () => window.clearTimeout(timer);
+  }, [activeMarket, selectedFundamentalsPartial, selectedSymbol, fundamentalsBySymbol]);
+
+  // Like the chart prewarm: fetch the neighbours' fundamentals so stepping
+  // through the list finds them already there (and starts their full builds).
+  const fundamentalsPrefetchedRef = useRef<Set<string>>(new Set());
+  const screenerNavKey = screenerNavSymbols.join(",");
+  useEffect(() => {
+    if (!researchLayout || !selectedSymbol) return;
+    const order = screenerNavKey ? screenerNavKey.split(",") : [];
+    const index = order.indexOf(selectedSymbol);
+    if (index < 0) return;
+    const neighbours = [order[index + 1], order[index + 2], order[index - 1]].filter(
+      (symbol): symbol is string => Boolean(symbol) && !fundamentalsBySymbol[symbol] && !fundamentalsPrefetchedRef.current.has(symbol),
+    );
+    if (neighbours.length === 0) return;
+    const timer = window.setTimeout(() => {
+      for (const symbol of neighbours) {
+        fundamentalsPrefetchedRef.current.add(symbol);
+        void getFundamentals(symbol, activeMarket)
+          .then((payload) => {
+            if (payload.symbol !== symbol) return;
+            setFundamentalsBySymbol((current) => (current[symbol] ? current : { ...current, [symbol]: payload }));
+          })
+          .catch(() => fundamentalsPrefetchedRef.current.delete(symbol));
+      }
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [activeMarket, fundamentalsBySymbol, researchLayout, screenerNavKey, selectedSymbol]);
+
+  // The Peers tab reads group membership from the groups payload.
+  const [researchGroupsFailed, setResearchGroupsFailed] = useState(false);
+  useEffect(() => {
+    if (researchLayout && !groupsData) {
+      setResearchGroupsFailed(false);
+      void ensureGroupsDataLoaded().catch(() => setResearchGroupsFailed(true));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [researchLayout, groupsData]);
+
+  const researchPeers = useMemo(() => {
+    if (researchGroupsFailed && !groupsData) return "unavailable" as const;
+    if (!groupsData) return null;
+    if (!activeChartGroupContext) return "unavailable" as const;
+    return {
+      groupName: activeChartGroupContext.groupName,
+      members: groupsData.stocks.filter((item) => item.final_group_id === activeChartGroupContext.groupId),
+    };
+  }, [activeChartGroupContext, groupsData, researchGroupsFailed]);
+
   const pageChartPanelProps = {
     market: activeMarket,
     symbol: selectedSymbol,
@@ -6661,6 +6729,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                       loading={fundamentalsLoading}
                       error={fundamentalsError}
                       summary={displayedChart?.summary ?? null}
+                      market={activeMarket}
+                      peers={researchPeers}
+                      onSelectSymbol={handlePickSymbol}
                       onDetailsMount={setResearchFundPane}
                     />
                   </div>
