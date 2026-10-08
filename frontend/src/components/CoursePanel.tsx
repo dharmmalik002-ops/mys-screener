@@ -6,11 +6,12 @@ import "./CoursePanel.css";
 
 /* The Course page: @iManasArora's approach, distilled from his 2021-2026 posts.
    Data is a static file written by backend/scripts/export_course.py — every
-   bullet carries the ids of the tweets it rests on, and charts are linked from
-   X's own CDN rather than copied into the repo. */
+   bullet carries the ids of the tweets it rests on. Charts are served from our
+   own copies (frontend/public/course/img) so they outlive a deleted tweet;
+   X's CDN is only the fallback. */
 
 type Bullet = { text: string; ids: string[] };
-type Example = { tweet: string; image: string; caption: string };
+type Example = { tweet: string; image: string; local: string | null; caption: string };
 type Lesson = {
   id: string;
   setup: string | null;
@@ -43,6 +44,7 @@ type CaseStudy = {
   result_pct: number | null;
   result_note: string;
   image: string | null;
+  local: string | null;
   root: string;
   lessons: string[];
   timeline: { date: string; action: string; price: number | string | null; text: string; tweet: string }[];
@@ -79,6 +81,9 @@ function readModule(): string | null {
 
 const tweetUrl = (id: string) => `https://x.com/${HANDLE}/status/${id}`;
 const sized = (url: string, size: "small" | "large") => `${url}&name=${size}`;
+/** Our stored copy first; X's CDN only if the copy is missing. */
+const chartSrc = (local: string | null | undefined, cdn: string | null | undefined, size: "small" | "large") =>
+  local ? `${import.meta.env.BASE_URL}${local}` : cdn ? sized(cdn, size) : "";
 
 function Sources({ ids, dates, max = 4 }: { ids: string[]; dates: Record<string, string>; max?: number }) {
   if (!ids?.length) return null;
@@ -94,11 +99,35 @@ function Sources({ ids, dates, max = 4 }: { ids: string[]; dates: Record<string,
   );
 }
 
-function Chart({ image, caption, tweet, onZoom }: { image: string; caption: string; tweet?: string; onZoom: (src: string, alt: string) => void }) {
+function Chart({
+  image,
+  local,
+  caption,
+  tweet,
+  onZoom,
+}: {
+  image: string | null;
+  local: string | null;
+  caption: string;
+  tweet?: string;
+  onZoom: (src: string, alt: string) => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = failed ? chartSrc(null, image, "small") : chartSrc(local, image, "small");
+  const full = failed ? chartSrc(null, image, "large") : chartSrc(local, image, "large");
+  if (!src) return null;
   return (
     <figure className="course-figure">
-      <button type="button" className="course-zoom" onClick={() => onZoom(sized(image, "large"), caption)} aria-label="Enlarge chart">
-        <img src={sized(image, "small")} alt={caption} loading="lazy" referrerPolicy="no-referrer" />
+      <button type="button" className="course-zoom" onClick={() => onZoom(full, caption)} aria-label="Enlarge chart">
+        <img
+          src={src}
+          alt={caption}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => {
+            if (!failed && local && image) setFailed(true);
+          }}
+        />
       </button>
       <figcaption>
         {caption}{" "}
@@ -185,7 +214,7 @@ function LessonCard({
       {lesson.examples.length ? (
         <div className="course-examples">
           {lesson.examples.map((e) => (
-            <Chart key={e.image} image={e.image} caption={e.caption} tweet={e.tweet} onZoom={onZoom} />
+            <Chart key={e.image} image={e.image} local={e.local} caption={e.caption} tweet={e.tweet} onZoom={onZoom} />
           ))}
         </div>
       ) : null}
@@ -392,7 +421,7 @@ export function CoursePanel() {
                 {c.context ? <span className="course-chip">{c.context}</span> : null}
               </div>
               <div className="course-case">
-                {c.image ? <Chart image={c.image} caption={`${c.symbol} entry chart`} tweet={c.root} onZoom={onZoom} /> : null}
+                {c.image || c.local ? <Chart image={c.image} local={c.local} caption={`${c.symbol} entry chart`} tweet={c.root} onZoom={onZoom} /> : null}
                 <div className="course-case-body">
                   <p>{c.story}</p>
                   {c.timeline.length ? (

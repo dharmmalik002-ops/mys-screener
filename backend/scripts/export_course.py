@@ -4,9 +4,10 @@ Input is the gitignored archive in backend/data/x_archive/iManasArora (tweets, t
 verified lesson files in consol/verified_*.json). Output is the one file the
 Course page reads.
 
-Charts are NOT copied into the repo: each example points at the image on X's own
-CDN (pbs.twimg.com), the same URL his tweet uses. The lesson text is our own
-paraphrase, every bullet carrying the ids of the tweets it rests on.
+Every chart the course shows is copied (resized JPEG) into frontend/public/course/img
+so the page keeps working if a tweet is deleted; the X CDN URL is kept as a fallback.
+The lesson text is our own paraphrase, every bullet carrying the ids of the tweets it
+rests on.
 
 Years and strength are recomputed here from the cited tweets, never taken from the
 writers' labels (an LLM consolidation once claimed years its evidence did not show
@@ -19,12 +20,15 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ARCHIVE = os.path.join(ROOT, "data", "x_archive", "iManasArora")
 CONSOL = os.path.join(ARCHIVE, "consol")
 OUT = os.path.join(os.path.dirname(ROOT), "frontend", "public", "course", "course.json")
+IMG_DIR = os.path.join(os.path.dirname(OUT), "img")
+IMG_MAX_PX = 1400  # sharp enough for the lightbox, ~100 KB a chart
 
 MODULES = [
     ("philosophy", "How he thinks about the game"),
@@ -71,6 +75,25 @@ def cdn(local_path: str | None) -> str | None:
     return f"{base}?format={ext}"
 
 
+COPIED: set[str] = set()
+
+
+def local_copy(local_path: str | None) -> str | None:
+    """Resize the archived chart into frontend/public/course/img; return its site path."""
+    if not local_path or not os.path.exists(local_path):
+        return None
+    name = re.sub(r"\.[A-Za-z]+$", ".jpg", os.path.basename(local_path))
+    dst = os.path.join(IMG_DIR, name)
+    if not os.path.exists(dst):
+        os.makedirs(IMG_DIR, exist_ok=True)
+        subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "72", "-Z", str(IMG_MAX_PX),
+                        local_path, "--out", dst], capture_output=True, check=False)
+    if not os.path.exists(dst):
+        return None
+    COPIED.add(name)
+    return f"course/img/{name}"
+
+
 def ids(seq) -> list[str]:
     return [str(i) for i in seq or [] if str(i) in DATES]
 
@@ -94,7 +117,8 @@ def lesson(l: dict) -> dict:
     for e in l.get("examples") or []:
         url = cdn(e.get("image"))
         if url and str(e.get("tweet_id")) in DATES:
-            examples.append({"tweet": str(e["tweet_id"]), "image": url, "caption": e.get("caption", "")})
+            examples.append({"tweet": str(e["tweet_id"]), "image": url, "local": local_copy(e.get("image")),
+                             "caption": e.get("caption", "")})
             cited.add(str(e["tweet_id"]))
     cited_sorted = sorted(cited, key=lambda i: DATES[i])
     years = sorted({int(DATES[i][:4]) for i in cited_sorted})
@@ -147,7 +171,8 @@ def main() -> int:
                     "symbol": c.get("symbol"), "setup": c.get("setup", ""), "entry_date": c.get("entry_date"),
                     "context": c.get("context", ""), "story": c.get("story", ""), "takeaway": c.get("takeaway", ""),
                     "result_pct": c.get("result_pct"), "result_note": c.get("result_note", ""),
-                    "image": cdn(c.get("entry_image")), "root": str(c.get("root_tweet_id")),
+                    "image": cdn(c.get("entry_image")), "local": local_copy(c.get("entry_image")),
+                    "root": str(c.get("root_tweet_id")),
                     "lessons": c.get("lesson_ids") or [],
                     "timeline": [{"date": t.get("date"), "action": t.get("action"), "price": t.get("price"),
                                   "text": t.get("text", ""), "tweet": str(t.get("tweet_id"))}
@@ -172,11 +197,16 @@ def main() -> int:
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w") as fh:
         json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
+    # Drop copies no longer referenced, so a rebuild never leaves orphans in the repo.
+    for f in os.listdir(IMG_DIR) if os.path.isdir(IMG_DIR) else []:
+        if f not in COPIED:
+            os.remove(os.path.join(IMG_DIR, f))
     lessons = [l for m in modules for l in m.get("lessons", [])]
-    missing = sum(1 for l in lessons for e in l["examples"] if not e["image"])
+    missing = sum(1 for l in lessons for e in l["examples"] if not e["local"])
+    img_mb = sum(os.path.getsize(os.path.join(IMG_DIR, f)) for f in COPIED) / 1e6
     print(f"{len(lessons)} lessons ({sum(l['strength'] == 'core' for l in lessons)} core), "
           f"{len(all_ids)} cited tweets, {sum(len(l['examples']) for l in lessons)} chart links, "
-          f"{missing} without image -> {os.path.relpath(OUT, os.path.dirname(ROOT))} "
+          f"{missing} without a local copy, {len(COPIED)} charts stored ({img_mb:.1f} MB) -> {os.path.relpath(OUT, os.path.dirname(ROOT))} "
           f"({os.path.getsize(OUT) / 1e3:.0f} KB)")
     return 0
 
