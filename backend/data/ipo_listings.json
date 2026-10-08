@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-07",
+ "as_of": "2026-10-08",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,18 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544557": {
-   "name": "Glottis Limited",
-   "symbol": "GLOTTIS",
-   "listing_date": "2025-10-07",
-   "issue_price": 129.0
-  },
-  "544558": {
-   "name": "Fabtech Technologies Limited",
-   "symbol": "FABTECH",
-   "listing_date": "2025-10-07",
-   "issue_price": 191.0
-  },
   "544562": {
    "name": "Advance Agrolife Limited",
    "symbol": "ADVANCE",
@@ -1497,13 +1485,10 @@
   "BUILDPRO": {
    "listing_date": "2026-01-09",
    "name": "Shankara Buildpro Limited",
-   "isin": "INE24OJ01011",
+   "isin": "INE24OJ01029",
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544517",
-   "sector": "Consumer Services",
-   "sub_sector": "Speciality Retail",
-   "shares_crore": 2.424933,
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -2037,20 +2022,6 @@
    "basis": "bse_ipo_list",
    "issue_price": 120.0
   },
-  "FABTECH": {
-   "listing_date": "2025-10-07",
-   "name": "Fabtech Technologies Limited",
-   "isin": "INE0HF201011",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544558",
-   "sector": "Healthcare",
-   "sub_sector": "Medical Equipment & Supplies",
-   "shares_crore": 4.445053,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 191.0
-  },
   "FEDDERSHOL": {
    "listing_date": "2026-04-20",
    "name": "Fedders Holding Limited",
@@ -2197,20 +2168,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 182.0
-  },
-  "GLOTTIS": {
-   "listing_date": "2025-10-07",
-   "name": "Glottis Limited",
-   "isin": "INE0TQE01026",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544557",
-   "sector": "Services",
-   "sub_sector": "Logistics Solution Provider",
-   "shares_crore": 9.240261,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 129.0
   },
   "GNRL": {
    "listing_date": "2026-04-20",
@@ -2643,7 +2600,7 @@
    "listing_date": "2026-09-23",
    "name": "Jindal Supreme (India) Limited",
    "isin": "INE1DLO01028",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544935",
    "sector": "Capital Goods",
@@ -2654,14 +2611,18 @@
    "issue_price": 93.0
   },
   "JYOTIRES": {
-   "listing_date": "2026-08-17",
+   "listing_date": "2026-10-08",
    "name": "Jyoti Resins & Adhesives Limited",
    "isin": "INE577D01013",
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "514448",
-   "ipo": false,
-   "basis": "bse_ipo_list"
+   "checked_session": "2026-10-07",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
   },
   "KAMAHOLD": {
    "listing_date": "2026-04-20",
@@ -3628,6 +3589,20 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "NITYAS": {
+   "listing_date": "2026-10-08",
+   "name": "Nityas Gems and Jewellery Limited",
+   "isin": "INE211501023",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544974",
+   "checked_session": "2026-10-07",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "NOVARTIND": {
    "listing_date": "2026-04-20",
    "name": "Novartis India Limited",
@@ -4273,12 +4248,9 @@
    "isin": "INE137M01017",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "539112",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SAHLIBHFI": {
    "listing_date": "2026-04-10",
@@ -5470,6 +5442,20 @@
    "bse_code": "511509",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "VNL": {
+   "listing_date": "2026-10-08",
+   "name": "Vishal Nirmiti Limited",
+   "isin": "INE1O5L01025",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544973",
+   "checked_session": "2026-10-07",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "VOEPL": {
    "listing_date": "2026-07-01",
