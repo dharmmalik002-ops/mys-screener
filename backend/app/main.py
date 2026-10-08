@@ -1062,6 +1062,7 @@ app.include_router(
         database_url=settings.database_url,
         state_dir=settings.app_state_dir,
         # the AI second opinion on a chart (lookalike/ai_review.py)
+        llm_api_key=settings.llm_api_key,
         gemini_api_key=settings.gemini_api_key,
     )
 )

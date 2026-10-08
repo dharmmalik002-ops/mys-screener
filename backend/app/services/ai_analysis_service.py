@@ -1,4 +1,4 @@
-"""AI-powered company analysis using Google Gemini."""
+"""AI-powered company analysis using Claude."""
 
 import asyncio
 import json
@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 from pydantic import BaseModel
 
-from google import genai
+from app.services.llm import MODELS as _LLM_MODELS, GenConfig, LLMClient
 
 from app.models.market import (
     AISummary,
@@ -38,7 +38,7 @@ def _equity_market_labels(fundamentals: CompanyFundamentals) -> tuple[str, str, 
 
 
 def _build_analysis_prompt(fundamentals: CompanyFundamentals) -> str:
-    """Build a structured prompt for Gemini from existing fundamentals data."""
+    """Build a structured prompt for Claude from existing fundamentals data."""
     stock_label, _, equities_label = _equity_market_labels(fundamentals)
     q_results = ""
     if fundamentals.quarterly_results:
@@ -352,27 +352,27 @@ Answer in 2-4 concise paragraphs with direct reasoning. Keep it practical for an
 
 
 class AIAnalysisService:
-    """Generates AI-powered company analysis using Google Gemini."""
+    """Generates AI-powered company analysis using Claude."""
 
     # Models to try in order — if primary model quota is exhausted, fall back
-    _MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+    _MODELS = list(_LLM_MODELS)
     _MAX_RETRIES = 3
     _RETRY_BASE_DELAY = 5  # seconds
 
-    def __init__(self, api_key: str | None, cache_dir: Path | None = None):
+    def __init__(self, api_key: str | None, cache_dir: Path | None = None, gemini_api_key: str | None = None):
         self._api_key = api_key
-        self._client: genai.Client | None = None
+        self._client: LLMClient | None = None
         self._cache_dir = cache_dir or Path(__file__).resolve().parents[2] / "data"
         self._cache_path = self._cache_dir / "ai_analysis_cache.json"
         self._memory_cache: dict[str, dict[str, Any]] = {}
         self._disabled_until: datetime | None = None
 
-        if api_key:
+        if api_key or gemini_api_key:
             try:
-                self._client = genai.Client(api_key=api_key)
-                logger.info("Gemini AI client initialized (models: %s)", ", ".join(self._MODELS))
+                self._client = LLMClient(api_key=api_key, gemini_api_key=gemini_api_key)
+                logger.info("AI client initialized (Claude: %s, Gemini fallback: %s, models: %s)", bool(api_key), bool(gemini_api_key), ", ".join(self._MODELS))
             except Exception as exc:
-                logger.warning("Failed to initialize Gemini client: %s", exc)
+                logger.warning("Failed to initialize Claude client: %s", exc)
                 self._client = None
 
     @property
@@ -385,7 +385,7 @@ class AIAnalysisService:
 
     def _mark_quota_exhausted(self, cooldown_minutes: int = 30) -> None:
         self._disabled_until = datetime.now(timezone.utc) + timedelta(minutes=cooldown_minutes)
-        logger.warning("Gemini AI temporarily disabled until %s after quota exhaustion", self._disabled_until.isoformat())
+        logger.warning("Claude AI temporarily disabled until %s after quota exhaustion", self._disabled_until.isoformat())
 
     def analyze_company(self, fundamentals: CompanyFundamentals) -> dict[str, Any]:
         """Run AI analysis on company fundamentals. Returns dict of AI-generated fields."""
@@ -516,7 +516,7 @@ class AIAnalysisService:
             return {}
 
     def _generate_analysis(self, fundamentals: CompanyFundamentals) -> dict[str, Any]:
-        """Call Gemini API with retry and model fallback."""
+        """Call Claude API with retry and model fallback."""
         prompt = _build_analysis_prompt(fundamentals)
 
         last_exc: Exception | None = None
@@ -526,7 +526,7 @@ class AIAnalysisService:
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(
+                        config=GenConfig(
                             temperature=0.3,
                             max_output_tokens=4096,
                         ),
@@ -562,7 +562,7 @@ class AIAnalysisService:
                         raise  # non-rate-limit errors should not retry
 
         self._mark_quota_exhausted()
-        raise RuntimeError(f"All Gemini models exhausted after retries: {last_exc}")
+        raise RuntimeError(f"All Claude models exhausted after retries: {last_exc}")
 
     def _is_cache_fresh(self, entry: dict[str, Any], fundamentals_fetched_at: str | None = None) -> bool:
         if int(entry.get("cache_version", 0)) != AI_CACHE_VERSION:
@@ -633,7 +633,7 @@ class AIAnalysisService:
         return results
 
     def generate_money_flow_report(self, sector_data: str, week_key: str) -> dict[str, Any]:
-        """Generate a weekly money flow / sector rotation report using Gemini."""
+        """Generate a weekly money flow / sector rotation report using Claude."""
         if not self.available:
             return {}
 
@@ -680,7 +680,7 @@ Rules:
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(temperature=0.4, max_output_tokens=4096),
+                        config=GenConfig(temperature=0.4, max_output_tokens=4096),
                     )
                     text = response.text.strip()
                     if text.startswith("```"):
@@ -735,7 +735,7 @@ Return ONLY valid JSON (no markdown fences):
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(temperature=0.4, max_output_tokens=4096),
+                        config=GenConfig(temperature=0.4, max_output_tokens=4096),
                     )
                     text = (response.text or "").strip()
                     if text.startswith("```"):
@@ -809,7 +809,7 @@ Return ONLY valid JSON (no markdown fences):
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(temperature=0.3, max_output_tokens=8192),
+                        config=GenConfig(temperature=0.3, max_output_tokens=8192),
                     )
                     text = (response.text or "").strip()
                     start, end = text.find("{"), text.rfind("}")
@@ -879,7 +879,7 @@ Return ONLY valid JSON (no markdown fences):
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(temperature=0.3, max_output_tokens=4096),
+                        config=GenConfig(temperature=0.3, max_output_tokens=4096),
                     )
                     text = (response.text or "").strip()
                     # Take the outermost JSON object rather than trusting the
@@ -953,7 +953,7 @@ Return ONLY valid JSON (no markdown fences):
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(temperature=0.3, max_output_tokens=4096),
+                        config=GenConfig(temperature=0.3, max_output_tokens=4096),
                     )
                     text = (response.text or "").strip()
                     start, end = text.find("{"), text.rfind("}")
@@ -975,12 +975,12 @@ Return ONLY valid JSON (no markdown fences):
         raise RuntimeError(f"All models exhausted for portfolio health: {last_exc}")
 
     def answer_company_question(self, fundamentals: CompanyFundamentals, question: str) -> str:
-        """Answer a freeform company question using Gemini and existing fundamentals context."""
+        """Answer a freeform company question using Claude and existing fundamentals context."""
         cleaned_question = question.strip()
         if not cleaned_question:
             raise ValueError("Question cannot be empty")
         if not self.available:
-            raise RuntimeError("Gemini API key not configured")
+            raise RuntimeError("Anthropic API key not configured")
 
         prompt = _build_company_question_prompt(fundamentals, cleaned_question)
         last_exc: Exception | None = None
@@ -990,7 +990,7 @@ Return ONLY valid JSON (no markdown fences):
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(
+                        config=GenConfig(
                             temperature=0.25,
                             max_output_tokens=1400,
                         ),
@@ -1012,12 +1012,12 @@ Return ONLY valid JSON (no markdown fences):
                         break
                     raise
         self._mark_quota_exhausted()
-        raise RuntimeError(f"All Gemini models exhausted for company Q&A: {last_exc}")
+        raise RuntimeError(f"All Claude models exhausted for company Q&A: {last_exc}")
 
     async def parse_natural_language_scan(self, query: str) -> CustomScanRequest:
         """Parse a natural language query into a structured CustomScanRequest."""
         if not self._client:
-            raise ValueError("AI parsing requires a Gemini API key.")
+            raise ValueError("AI parsing requires a Anthropic API key.")
 
         from datetime import date as _date
         today_iso = _date.today().isoformat()
@@ -1077,7 +1077,6 @@ IMPORTANT:
         import asyncio
         for model in self._MODELS:
             try:
-                from google.genai import types
                 class AiScreenerSchema(BaseModel):
                     # Fundamental filters
                     min_eps_growth_yoy: float | None = None
@@ -1113,7 +1112,7 @@ IMPORTANT:
                     self._client.models.generate_content,
                     model=model,
                     contents=prompt,
-                    config=types.GenerateContentConfig(
+                    config=GenConfig(
                         response_mime_type="application/json",
                         response_schema=AiScreenerSchema,
                         temperature=0.0,
@@ -1138,9 +1137,9 @@ IMPORTANT:
         conversation_history: list[dict],
         knowledge_base_entries: list[dict],
     ) -> str:
-        """Analyze a chart using Gemini with user knowledge base context."""
+        """Analyze a chart using Claude with user knowledge base context."""
         if not self._client:
-            raise ValueError("AI analysis requires a Gemini API key.")
+            raise ValueError("AI analysis requires a Anthropic API key.")
 
         # Compute key stats from bars
         recent_bars = bars[-60:] if len(bars) > 60 else bars
@@ -1256,7 +1255,7 @@ IMPORTANT:
 
     async def _generate_json(self, prompt: str) -> dict[str, Any]:
         if not self._client:
-            raise ValueError("AI analysis requires a Gemini API key.")
+            raise ValueError("AI analysis requires a Anthropic API key.")
         last_error: Exception | None = None
         for model in self._MODELS:
             try:

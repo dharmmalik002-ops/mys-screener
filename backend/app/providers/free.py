@@ -283,7 +283,7 @@ logger = logging.getLogger(__name__)
 
 
 class FreeMarketDataProvider:
-    def __init__(self, gemini_api_key: str | None = None, *, eod_only_mode: bool = False) -> None:
+    def __init__(self, llm_api_key: str | None = None, *, gemini_api_key: str | None = None, eod_only_mode: bool = False) -> None:
         self.backend_root = Path(__file__).resolve().parents[2]
         self.universe_cache_path = self.backend_root / "data" / "free_universe.json"
         self.manual_universe_include_path = self.backend_root / "data" / "manual_universe_include.json"
@@ -331,7 +331,7 @@ class FreeMarketDataProvider:
         # starve scan + dashboard requests.
         self._chart_fetch_semaphore = asyncio.Semaphore(3)
         self.demo = DemoMarketDataProvider()
-        self.ai_service = AIAnalysisService(api_key=gemini_api_key, cache_dir=self.backend_root / "data")
+        self.ai_service = AIAnalysisService(api_key=llm_api_key, gemini_api_key=gemini_api_key, cache_dir=self.backend_root / "data")
 
     def _seed_snapshot_glob(self) -> str:
         return "free_snapshots_seed_*.json"

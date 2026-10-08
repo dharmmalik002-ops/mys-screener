@@ -103,7 +103,7 @@ SHOW_NEAR, SHOW_PEERS = 5, 6
 
 
 def build_lookalike_router(
-    data_dir: Path, database_url: str | None = None, state_dir: Path | None = None, gemini_api_key: str | None = None
+    data_dir: Path, database_url: str | None = None, state_dir: Path | None = None, llm_api_key: str | None = None, gemini_api_key: str | None = None
 ) -> APIRouter:
     from app.services.lookalike import feedback as fb
 
@@ -357,7 +357,7 @@ def build_lookalike_router(
     from app.services.lookalike.ai_review import Reviewer, describe_setup
     from app.services.lookalike.references import style_name
 
-    reviewer = Reviewer(gemini_api_key, state_dir)
+    reviewer = Reviewer(llm_api_key, state_dir, gemini_api_key)
 
     @router.get("/ai-review")
     def ai_review(style: str, symbol: str, date: str | None = None, cached_only: bool = False) -> dict[str, Any]:

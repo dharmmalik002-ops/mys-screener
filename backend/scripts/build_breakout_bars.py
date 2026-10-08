@@ -129,7 +129,7 @@ def main() -> int:
     ticker_to_symbol = {ticker: symbol for symbol, ticker in instruments}
 
     # Only used for its EOD gap-fill overlay; no network access happens here.
-    provider = FreeMarketDataProvider(gemini_api_key=None, eod_only_mode=True)
+    provider = FreeMarketDataProvider(llm_api_key=None, eod_only_mode=True)
 
     benchmark = download_chunk([BENCHMARK_TICKER], args.period).get(BENCHMARK_TICKER) or []
     if len(benchmark) < 250:

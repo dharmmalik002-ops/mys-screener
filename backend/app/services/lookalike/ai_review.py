@@ -1,6 +1,6 @@
 """An AI second opinion on one chart: does it show this setup?
 
-A vision model (Gemini, the app's existing AI) is shown the chart drawn large
+A vision model (Claude, the app's AI) is shown the chart drawn large
 — the same 120 sessions, 50-day average and volume the look-alike model saw —
 with the setup described in our own words (the setup guide), and asked one
 question: how well does the latest part of this chart fit the setup. It
@@ -24,7 +24,6 @@ from . import render
 logger = logging.getLogger(__name__)
 
 CACHE_FILE = "lookalike_ai_reviews.json"
-PREFERRED = ("gemini-2.5-flash", "gemini-2.0-flash")  # used only if the model list cannot be read
 VERDICTS = ("yes", "partly", "no")
 _lock = threading.Lock()
 
@@ -59,44 +58,21 @@ def prompt(setup_label: str, description: str) -> str:
 
 
 class Reviewer:
-    def __init__(self, api_key: str | None, state_dir: Path | None):
+    def __init__(self, api_key: str | None, state_dir: Path | None, gemini_api_key: str | None = None):
         self.api_key = api_key
+        self.gemini_api_key = gemini_api_key
         self.path = (state_dir / CACHE_FILE) if state_dir else None
         self._cache: dict | None = None
         self._client = None
 
     def _models(self) -> list[str]:
-        """The newest general "flash" models this key can use, newest first.
-        Google retires model names (gemini-2.0-flash was gone by 2026-10), so
-        the list is read from the API rather than written down here."""
-        if getattr(self, "_model_names", None):
-            return self._model_names
-        import re
+        from app.services.llm import MODELS
 
-        names = []
-        try:
-            for m in self._client.models.list():
-                name = (getattr(m, "name", "") or "").split("/")[-1]
-                actions = getattr(m, "supported_actions", None) or []
-                if not re.fullmatch(r"gemini-\d+(\.\d+)?-flash(-latest)?", name):
-                    continue
-                if actions and "generateContent" not in actions:
-                    continue
-                names.append(name)
-        except Exception as exc:
-            logger.info("gemini model list unavailable: %s", exc)
-
-        def version(n: str) -> float:
-            m = re.search(r"gemini-(\d+(?:\.\d+)?)", n)
-            return float(m.group(1)) if m else 0.0
-
-        names.sort(key=version, reverse=True)
-        self._model_names = names[:3] or list(PREFERRED)
-        return self._model_names
+        return list(MODELS)
 
     @property
     def available(self) -> bool:
-        return bool(self.api_key)
+        return bool(self.api_key or self.gemini_api_key)
 
     def _load(self) -> dict:
         if self._cache is None:
@@ -113,23 +89,23 @@ class Reviewer:
         hit = self.cached(key)
         if hit:
             return hit
-        if not self.api_key:
+        if not (self.api_key or self.gemini_api_key):
             raise RuntimeError("No AI key is configured on the server.")
         img = render.draw_large({k: chart[k][: render.WINDOW] for k in ("o", "h", "l", "c", "v", "sma") if k in chart})
         buf = io.BytesIO()
         img.save(buf, format="PNG")
-        from google import genai
+        from app.services.llm import GenConfig, ImagePart, LLMClient
 
         if self._client is None:
-            self._client = genai.Client(api_key=self.api_key)
+            self._client = LLMClient(api_key=self.api_key, gemini_api_key=self.gemini_api_key)
         last_error = None
         for model_name in self._models():
             try:
                 resp = self._client.models.generate_content(
                     model=model_name,
-                    contents=[genai.types.Part.from_bytes(data=buf.getvalue(), mime_type="image/png"), prompt(setup_label, description)],
+                    contents=[ImagePart(data=buf.getvalue(), mime_type="image/png"), prompt(setup_label, description)],
                     # room for the model's own reasoning before the short JSON answer
-                    config=genai.types.GenerateContentConfig(temperature=0.2, max_output_tokens=4096, response_mime_type="application/json"),
+                    config=GenConfig(temperature=0.2, max_output_tokens=4096, response_mime_type="application/json"),
                 )
                 raw = json.loads(resp.text or "")
                 out = {

@@ -148,7 +148,7 @@ class AiReviewRouteTests(unittest.TestCase):
                 "styles": {"zanger_flag": {"matches": [{"symbol": "ABC", "window": window}]}},
             }))
             app = FastAPI()
-            app.include_router(build_lookalike_router(data, None, data / "state", gemini_api_key="test-key"))
+            app.include_router(build_lookalike_router(data, None, data / "state", llm_api_key="test-key"))
             with mock.patch.dict(os.environ, {"LOOKALIKE_SELF_UPDATE": "0"}), mock.patch.object(ai_review.Reviewer, "review", fake_review):
                 c = TestClient(app)
                 r = c.get("/api/lookalikes/ai-review?style=zanger_flag&symbol=abc").json()

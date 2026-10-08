@@ -3382,7 +3382,7 @@ class DashboardService:
 
         ai = getattr(self.provider, "ai_service", None)
         if ai is None or not ai.available:
-            return {"error": "AI is not configured (GEMINI_API_KEY missing)."}
+            return {"error": "AI is not configured (ANTHROPIC_API_KEY or GEMINI_API_KEY missing)."}
 
         bars = []
         try:
@@ -3513,7 +3513,7 @@ class DashboardService:
         open positions; we enrich each open symbol with its recent tape."""
         ai = getattr(self.provider, "ai_service", None)
         if ai is None or not ai.available:
-            return {"error": "AI is not configured (GEMINI_API_KEY missing)."}
+            return {"error": "AI is not configured (ANTHROPIC_API_KEY or GEMINI_API_KEY missing)."}
 
         closed = payload.get("closed_trades") or []
         rows = ["Symbol | Setup | Entry | Exit | EntryDate | ExitDate | P&L | % | Tags"]
@@ -3588,7 +3588,7 @@ class DashboardService:
         AI can say whether mistakes are still being repeated."""
         ai = getattr(self.provider, "ai_service", None)
         if ai is None or not ai.available:
-            return {"error": "AI is not configured (GEMINI_API_KEY missing)."}
+            return {"error": "AI is not configured (ANTHROPIC_API_KEY or GEMINI_API_KEY missing)."}
 
         def _trade_rows(trades: list) -> str:
             rows = ["Symbol | Setup | Entry | Exit | EntryDate | ExitDate | P&L | % | Tags"]
@@ -6264,7 +6264,7 @@ class DashboardService:
 
         ai = getattr(self.provider, "ai_service", None)
         if ai is None or not ai.available:
-            result["review_error"] = "AI is not configured (GEMINI_API_KEY missing) — the measured numbers below still stand."
+            result["review_error"] = "AI is not configured (ANTHROPIC_API_KEY or GEMINI_API_KEY missing) — the measured numbers below still stand."
             return result
         try:
             result["review"] = await ai.study_review(stats)

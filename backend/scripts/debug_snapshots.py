@@ -11,7 +11,7 @@ from app.core.config import get_settings
 
 async def debug():
     settings = get_settings()
-    provider = FreeMarketDataProvider(gemini_api_key=settings.gemini_api_key)
+    provider = FreeMarketDataProvider(llm_api_key=settings.llm_api_key, gemini_api_key=settings.gemini_api_key)
     
     print(f"Checking snapshots for market cap >= {settings.market_cap_min_crore}...")
     try:

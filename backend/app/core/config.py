@@ -25,7 +25,9 @@ class Settings(BaseSettings):
     frontend_origin_regex: str | None = Field(default=r"https://.*\.vercel\.app$", alias="FRONTEND_ORIGIN_REGEX")
     upstox_access_token: str | None = Field(default=None, alias="UPSTOX_ACCESS_TOKEN")
     upstox_base_url: str = Field(default="https://api.upstox.com", alias="UPSTOX_BASE_URL")
-    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    llm_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")  # primary AI provider (Claude)
+    anthropic_workspace_id: str | None = Field(default=None, alias="ANTHROPIC_WORKSPACE_ID")
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")  # fallback when Claude fails
     india_eod_only: bool = Field(default=True, alias="INDIA_EOD_ONLY")
     live_universe_path: Path = Field(default=Path("data/live_universe.json"), alias="LIVE_UNIVERSE_PATH")
     default_timeframe: str = "1D"

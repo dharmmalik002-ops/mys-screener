@@ -188,7 +188,7 @@ def main() -> int:
     data_dir = BACKEND_ROOT / "data"
     out_path = Path(args.out) if args.out else data_dir / "breakout_stats.json"
 
-    provider = FreeMarketDataProvider(gemini_api_key=None, eod_only_mode=True)
+    provider = FreeMarketDataProvider(llm_api_key=None, eod_only_mode=True)
     universe = load_universe(data_dir)
     bars_dir = Path(args.bars_dir) if args.bars_dir else data_dir / "chart_cache"
     if not (bars_dir / BENCHMARK_FILE).exists():

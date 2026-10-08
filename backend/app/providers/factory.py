@@ -10,6 +10,7 @@ def build_provider(settings: Settings, market: str = "india"):
         raise ValueError(f"Unsupported market: {market}")
     if settings.data_mode == "free":
         return FreeMarketDataProvider(
+            llm_api_key=settings.llm_api_key,
             gemini_api_key=settings.gemini_api_key,
             eod_only_mode=settings.india_eod_only,
         )

@@ -11,6 +11,7 @@ lxml==6.0.2
 python-calamine>=0.4,<0.6
 # FastAPI needs this for the statement-upload endpoint's multipart form.
 python-multipart>=0.0.9,<0.1
+anthropic>=1.0,<2.0
 google-genai>=1.0,<2.0
 apscheduler>=3.10,<4.0
 pypdf>=5.0,<6.0

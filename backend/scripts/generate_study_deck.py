@@ -134,7 +134,7 @@ def main() -> int:
     data_dir = BACKEND_ROOT / "data"
     out_path = Path(args.out) if args.out else data_dir / "study_deck.json"
 
-    provider = FreeMarketDataProvider(gemini_api_key=None, eod_only_mode=True)
+    provider = FreeMarketDataProvider(llm_api_key=None, eod_only_mode=True)
     universe = gbs.load_universe(data_dir)
     benchmark = gbs.load_benchmark(data_dir)
 
