@@ -100,3 +100,6 @@ frontend/.vercel/
 backend/data/earnings_cache/
 backend/data/bot_sleeve_cache.json
 backend/data/bot_memory.json
+
+# Raw X/Twitter archives pulled with gallery-dl (personal study material, never shipped)
+backend/data/x_archive/

@@ -53,3 +53,6 @@ backend/data/lookalike_refs
 # The gallery's Indian history charts, one file per setup per month, fetched
 # by the Space when first asked for (same scheme as the reference shards).
 backend/data/lookalike_history
+
+# The Course page data: read by the frontend only.
+frontend/public/course

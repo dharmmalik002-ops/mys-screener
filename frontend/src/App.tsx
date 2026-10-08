@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  BookOpen,
   Bot,
   GraduationCap,
   ScanSearch,
@@ -160,6 +161,7 @@ const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then
 const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
 const SimilarChartsModal = lazy(() => import("./components/LookalikeModals").then((module) => ({ default: module.SimilarChartsModal })));
 const LookalikesPanel = lazy(() => import("./components/LookalikesPanel").then((module) => ({ default: module.LookalikesPanel })));
+const CoursePanel = lazy(() => import("./components/CoursePanel").then((module) => ({ default: module.CoursePanel })));
 const BotPanel = lazy(() => import("./components/BotPanel").then((module) => ({ default: module.BotPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
@@ -249,7 +251,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "bot";
+type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "course" | "bot";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -277,6 +279,7 @@ const NAV_PAGES: NavPage[] = [
   { page: "journal", label: "Journal", short: "Journal", blurb: "Trade log, P&L and reviews", Icon: NotebookPen },
   { page: "study", label: "Chart Gym", short: "Gym", blurb: "Practise reading historical setups", Icon: GraduationCap },
   { page: "lookalikes", label: "Look-alikes", short: "Alike", blurb: "Charts that resemble reference setups", Icon: ScanSearch },
+  { page: "course", label: "Course", short: "Course", blurb: "Lessons distilled from @iManasArora's posts", Icon: BookOpen },
   // Last in the bar deliberately: the bot is a research surface built on a
   // backtest, not the daily routine. It should be reached on purpose.
   { page: "bot", label: "Bot", short: "Bot", blurb: "Regime-timing research, not advice", Icon: Bot },
@@ -290,7 +293,7 @@ const NAV_GROUPS: { id: string; label: string; pages: AppPage[] }[] = [
   { id: "scan", label: "Scan", pages: ["screener", "watchlists", "live", "lookalikes"] },
   { id: "journal", label: "Journal", pages: ["journal"] },
   // Last deliberately, for the reason the bot sits last in NAV_PAGES.
-  { id: "research", label: "Research", pages: ["funds", "study", "bot"] },
+  { id: "research", label: "Research", pages: ["funds", "study", "course", "bot"] },
 ];
 
 const NAV_PAGE_BY_ID = new Map(NAV_PAGES.map((item) => [item.page, item]));
@@ -2336,6 +2339,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
     if (page === "lookalikes") {
       void import("./components/LookalikesPanel");
+      return;
+    }
+
+    if (page === "course") {
+      void import("./components/CoursePanel");
       return;
     }
   };
@@ -6585,6 +6593,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <LookalikesPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
+        {activePage === "course" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Ungated on `loading`: reads its own static course file. */}
+            <CoursePanel />
+          </Suspense>
+        ) : null}
         {activePage === "bot" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading` for the same reason as Chart Gym: the bot
@@ -6605,7 +6619,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "lookalikes" && activePage !== "bot" ? (
+        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "lookalikes" && activePage !== "course" && activePage !== "bot" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             {researchLayout ? null : <section className="page-metrics-strip">
