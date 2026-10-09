@@ -33,7 +33,8 @@ import re
 import sys
 import time
 import zipfile
-from datetime import date, datetime, timedelta
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -1564,6 +1565,90 @@ def _ticker_symbol(ticker: str) -> str:
     return str(ticker).removesuffix(".NS").removesuffix(".BO")
 
 
+CLOSE_HISTORY_PATH = DATA_DIR / "close_history.json"
+CLOSE_HISTORY_SESSIONS = 200  # same window as scripts/build_close_history.py
+CLOSE_HISTORY_MIN_BARS = 60
+CLOSE_HISTORY_MIN_SYMBOLS = 1000
+
+
+def _close_rows(sub, trade_date: date) -> list[tuple[date, float, float]]:
+    """(date, close, volume) rows from one symbol's adjusted daily history."""
+    import pandas as pd
+
+    if sub is None or sub.empty or "Close" not in sub:
+        return []
+    sub = sub.dropna(subset=["Close"])
+    sub = sub[sub["Close"] > 0]
+    if sub.empty:
+        return []
+    dates = pd.to_datetime(sub.index).date
+    volumes = sub["Volume"].fillna(0).astype(float) if "Volume" in sub else [0.0] * len(sub)
+    rows = [(d, float(c), float(v)) for d, c, v in zip(dates, sub["Close"].astype(float), volumes) if d <= trade_date]
+    # Slack beyond the window so dropping non-sessions still leaves a full one.
+    return rows[-(CLOSE_HISTORY_SESSIONS + 40):]
+
+
+def _non_sessions(rows_by_symbol: dict[str, list[tuple[date, float, float]]]) -> set[date]:
+    """Dates Yahoo filled in although the exchange was shut.
+
+    Yahoo returns rows for some NSE holidays (2026-09-14 Ganesh Chaturthi,
+    2026-10-02 Gandhi Jayanti) with every close copied forward and zero volume.
+    Kept, they shift every later bar by a session; across the universe they are
+    unmistakable, because nearly every symbol shows zero volume on the same day.
+    """
+    seen: dict[date, int] = defaultdict(int)
+    zero: dict[date, int] = defaultdict(int)
+    for rows in rows_by_symbol.values():
+        for day, _close, volume in rows:
+            seen[day] += 1
+            if volume <= 0:
+                zero[day] += 1
+    return {day for day, n in seen.items() if n >= 50 and zero[day] / n > 0.5}
+
+
+def _write_close_history(rows_by_symbol: dict[str, list[tuple[date, float, float]]], trade_date: date) -> int:
+    """Refresh `close_history.json` from the bars this run already downloaded.
+
+    The artifact used to be rebuilt by hand from a workstation's chart cache, and
+    the runtime can only splice 20 sessions of drift onto it (close_history.py),
+    so it silently stopped working a month after each rebuild — taking Power
+    Base, VCP and the Groups rotation with it. Same format as
+    build_close_history.py, minus the holiday rows."""
+    phantom = _non_sessions(rows_by_symbol)
+    fresh: dict[str, dict] = {}
+    for sym, rows in rows_by_symbol.items():
+        kept = [(day, close) for day, close, _volume in rows if day not in phantom][-CLOSE_HISTORY_SESSIONS:]
+        if len(kept) < CLOSE_HISTORY_MIN_BARS:
+            continue
+        last = kept[-1][0]
+        fresh[sym] = {
+            "last_time": int(datetime(last.year, last.month, last.day, tzinfo=timezone.utc).timestamp()),
+            "closes": [round(close, 2) for _day, close in kept],
+        }
+    if len(fresh) < CLOSE_HISTORY_MIN_SYMBOLS:
+        logger.warning("close history: only %d symbols downloaded; keeping the artifact on disk", len(fresh))
+        return 0
+    skipped = len(rows_by_symbol) - len(fresh)
+    try:
+        previous = json.loads(CLOSE_HISTORY_PATH.read_text(encoding="utf-8")).get("symbols") or {}
+    except (OSError, ValueError):
+        previous = {}
+    # A chunk that failed to download must not erase its symbols for a day.
+    for sym, entry in previous.items():
+        fresh.setdefault(sym, entry)
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "sessions": CLOSE_HISTORY_SESSIONS,
+        "symbols": fresh,
+        "skipped": skipped,
+        "non_sessions_dropped": sorted(day.isoformat() for day in phantom),
+    }
+    CLOSE_HISTORY_PATH.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    logger.info("close history: %d symbols through %s (dropped non-sessions %s)",
+                len(fresh), trade_date.isoformat(), payload["non_sessions_dropped"][-3:])
+    return len(fresh)
+
+
 def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_tickers: list[str] | None = None) -> int:
     """Fetch ~2y of adjusted daily bars for the universe and attach an "i"
     indicator block to each patch record. Mutates ``symbols`` in place and
@@ -1605,6 +1690,7 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
     end_str = (trade_date + timedelta(days=1)).strftime("%Y-%m-%d")
 
     attached = 0
+    rows_by_symbol: dict[str, list[tuple[date, float, float]]] = {}
     CHUNK = 200
     for i in range(0, len(tickers), CHUNK):
         chunk = tickers[i : i + CHUNK]
@@ -1633,6 +1719,10 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
                 except Exception:
                     continue
                 try:
+                    rows_by_symbol[sym] = _close_rows(sub, trade_date)
+                except Exception:
+                    pass
+                try:
                     block = _indicator_block_from_history(sub, trade_date)
                 except Exception:
                     continue
@@ -1642,6 +1732,10 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
         else:
             sym = _ticker_symbol(chunk[0])
             try:
+                rows_by_symbol[sym] = _close_rows(df, trade_date)
+            except Exception:
+                pass
+            try:
                 block = _indicator_block_from_history(df, trade_date)
             except Exception:
                 block = None
@@ -1650,6 +1744,10 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
                 attached += 1
 
     logger.info("indicator blocks attached: %s/%s universe symbols for %s", attached, len(tickers), trade_date.isoformat())
+    try:
+        _write_close_history(rows_by_symbol, trade_date)
+    except Exception as exc:  # the price patch must never be blocked by this
+        logger.warning("close history refresh failed: %s", exc)
     return attached
 
 

@@ -508,6 +508,18 @@ class IndustryGroupsTests(unittest.TestCase):
         series = industry_groups._prior_raw_scores(history, datetime(2026, 4, 2).date())
         self.assertEqual(series["a"], [40.0, 70.0])
 
+    def test_a_months_old_session_does_not_smooth_todays_score(self) -> None:
+        """Locally the store held an April snapshot and nothing until September,
+        and the EMA averaged October's score against April's: smoothed and raw
+        were 65 points apart."""
+        history = {
+            "2026-04-25": [{"groupId": "a", "rank": 1, "rawScore": 95.0}],
+            "2026-09-30": [{"groupId": "a", "rank": 1, "rawScore": 40.0}],
+            "2026-10-07": [{"groupId": "a", "rank": 1, "rawScore": 42.0}],
+        }
+        series = industry_groups._prior_raw_scores(history, datetime(2026, 10, 8).date())
+        self.assertEqual(series["a"], [40.0, 42.0])
+
     def test_rank_change_lookback_is_date_based(self) -> None:
         snapshots = self._spiker_vs_steady_snapshots()
         cold = build_industry_groups_response(

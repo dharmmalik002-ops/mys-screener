@@ -2644,6 +2644,79 @@ function fetchGroupRankHistory(market: MarketKey, limit: number) {
   );
 }
 
+/** One session of a group's price strength against the benchmark. */
+export type GroupRotationPoint = {
+  date: string;
+  /** % change of the smoothed group/benchmark line over 10 sessions. */
+  momentum: number;
+  /** Same over 15 sessions with heavier smoothing, for the weekly view. */
+  momentum_w: number;
+  /** Unsmoothed % change of group/benchmark over the last 5 sessions. */
+  rs_change_5d: number;
+};
+
+export type GroupRotationResponse = {
+  as_of_date: string | null;
+  benchmark: string | null;
+  sessions: string[];
+  groups: Record<string, GroupRotationPoint[]>;
+  sectors: Record<string, GroupRotationPoint[]>;
+};
+
+const groupRotationCache = new Map<string, { at: number; promise: Promise<GroupRotationResponse> }>();
+
+/**
+ * Price momentum per group and sector (backend services/group_rotation.py) —
+ * the Rotation chart's vertical axis. Cached like the rank history it is
+ * drawn beside.
+ */
+export function getGroupRotation(market: MarketKey) {
+  const hit = groupRotationCache.get(market);
+  if (hit && Date.now() - hit.at < RANK_HISTORY_TTL_MS) return hit.promise;
+  const promise = request<GroupRotationResponse>(
+    `/api/groups/rotation?market=${market}`,
+    undefined,
+    undefined,
+    (raw): GroupRotationResponse => {
+      const value = isRecord(raw) ? raw : {};
+      const readSeries = (source: unknown) => {
+        const out: Record<string, GroupRotationPoint[]> = {};
+        if (!isRecord(source)) return out;
+        for (const [key, series] of Object.entries(source)) {
+          if (!Array.isArray(series)) continue;
+          const points = series
+            .filter(isRecord)
+            .map((point) => ({
+              date: readString(point.date),
+              momentum: readNullableNumber(point.momentum),
+              momentum_w: readNullableNumber(point.momentum_w),
+              rs_change_5d: readNullableNumber(point.rs_change_5d),
+            }))
+            .filter(
+              (point): point is GroupRotationPoint =>
+                Boolean(point.date) &&
+                point.momentum !== null &&
+                point.momentum_w !== null &&
+                point.rs_change_5d !== null,
+            );
+          if (points.length) out[key] = points;
+        }
+        return out;
+      };
+      return {
+        as_of_date: typeof value.as_of_date === "string" ? value.as_of_date : null,
+        benchmark: typeof value.benchmark === "string" ? value.benchmark : null,
+        sessions: readStringArray(value.sessions),
+        groups: readSeries(value.groups),
+        sectors: readSeries(value.sectors),
+      };
+    },
+  );
+  groupRotationCache.set(market, { at: Date.now(), promise });
+  promise.catch(() => groupRotationCache.delete(market));
+  return promise;
+}
+
 
 // --- Market regime brief ---------------------------------------------------
 // Follow-through statistics from replaying the scanners over historical bars,

@@ -16,7 +16,10 @@ import {
 } from "../lib/rotation";
 import {
   getGroupRankHistory,
+  getGroupRotation,
   type GroupRankHistoryResponse,
+  type GroupRotationPoint,
+  type GroupRotationResponse,
   type IndustryGroupsResponse,
   type MarketKey,
 } from "../lib/api";
@@ -143,16 +146,17 @@ function placeLabels(
 
 export function RotationGraph({ market, data, onOpenGroup }: Props) {
   const [history, setHistory] = useState<GroupRankHistoryResponse | null>(null);
+  const [rotation, setRotation] = useState<GroupRotationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [timeframe, setTimeframe] = useState<Timeframe>("daily");
   const [universe, setUniverse] = useState<Universe>("groups");
   const [tail, setTail] = useState<number>(DEFAULT_TAIL.daily);
-  // 20, not 10: ranking by score means a small N is all leaders, so every
-  // group lands top-right and there is nothing to rotate against. 20 populates
-  // all four quadrants on live data while staying legible.
-  const [topN, setTopN] = useState<number>(20);
+  // All groups by default. The centre is the median of every group, so "Top
+  // 20" is honestly almost all on the right-hand side -- and the groups worth
+  // watching for a turn (Improving) are by definition outside the top half.
+  const [topN, setTopN] = useState<number>(0);
   const [hidden, setHidden] = useState<Set<Quadrant>>(() => new Set());
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: "x", desc: true });
   const [step, setStep] = useState<number | null>(null); // null = latest period
@@ -197,30 +201,55 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
     let alive = true;
     setLoading(true);
     setError(null);
-    getGroupRankHistory(market)
-      .then((r) => { if (alive) setHistory(r); })
-      .catch((e: unknown) => { if (alive) setError(e instanceof Error ? e.message : "Could not load rank history"); })
+    // Both halves of a point: the score history (across) and the price
+    // momentum (up). Neither is any use without the other.
+    Promise.all([getGroupRankHistory(market), getGroupRotation(market)])
+      .then(([h, r]) => { if (alive) { setHistory(h); setRotation(r); } })
+      .catch((e: unknown) => { if (alive) setError(e instanceof Error ? e.message : "Could not load the rotation data"); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [market]);
 
-  // Raw per-group series, before any timeframe or as-of choice.
-  const series = useMemo<SeriesInput[]>(() => {
-    if (!history || !data?.groups?.length) return [];
+  // Every group's series (score history joined to price momentum by date),
+  // before any timeframe, subset or as-of choice.
+  const allSeries = useMemo<SeriesInput[]>(() => {
+    if (!history || !rotation || !data?.groups?.length) return [];
     const ranked = [...data.groups].sort((a, b) => b.score - a.score);
-    const groupSeries = ranked.map((g) => ({
-      groupId: g.group_id,
-      label: g.group_name,
-      parentSector: g.parent_sector,
-      stockCount: g.stock_count,
-      scores: (history.groups[g.group_id] ?? []).map((p) => ({ date: p.date, score: p.score })),
-    }));
-    // Sectors roll up every group, not just the top N -- a sector is only
-    // itself if all of its groups are in it.
-    if (universe === "sectors") return aggregateBySector(groupSeries);
-    return topN > 0 ? groupSeries.slice(0, topN) : groupSeries;
-  }, [history, data, universe, topN]);
+    const groupSeries = ranked.map((g) => {
+      const scores = new Map<string, number | null>(
+        (history.groups[g.group_id] ?? []).map((p) => [p.date, p.score]),
+      );
+      // Today's point is the score the Rankings table shows. The stored
+      // history keeps the session's first build, which can differ.
+      if (data.as_of_date) scores.set(data.as_of_date, g.score);
+      const momentum = new Map<string, GroupRotationPoint>(
+        (rotation.groups[g.group_id] ?? []).map((p) => [p.date, p]),
+      );
+      return {
+        groupId: g.group_id,
+        label: g.group_name,
+        parentSector: g.parent_sector,
+        stockCount: g.stock_count,
+        scores: [...scores.keys()].sort().map((date) => ({
+          date,
+          score: scores.get(date) ?? null,
+          momentum: momentum.get(date)?.momentum ?? null,
+          momentumW: momentum.get(date)?.momentum_w ?? null,
+          rsChange5d: momentum.get(date)?.rs_change_5d ?? null,
+        })),
+      };
+    });
+    return universe === "sectors" ? aggregateBySector(groupSeries, rotation.sectors) : groupSeries;
+  }, [history, rotation, data, universe]);
 
+  // Sectors roll up every group, not just the top N -- a sector is only
+  // itself if all of its groups are in it.
+  const series = useMemo<SeriesInput[]>(
+    () => (universe === "groups" && topN > 0 ? allSeries.slice(0, topN) : allSeries),
+    [allSeries, universe, topN],
+  );
+
+  const { prepared: preparedAll } = useMemo(() => prepareSeries(allSeries, timeframe), [allSeries, timeframe]);
   const { prepared, periods } = useMemo(() => prepareSeries(series, timeframe), [series, timeframe]);
 
   // Clamp the slider whenever the calendar changes under it (switching daily to
@@ -234,8 +263,13 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
   const isLive = step === null || stepIndex >= maxStep;
 
   const { trails: allTrails, centre } = useMemo(
-    () => buildRotation(prepared, { timeframe, tailLength: tail, asOfDate: asOfDate ?? undefined }),
-    [prepared, timeframe, tail, asOfDate],
+    () => buildRotation(prepared, {
+      timeframe,
+      tailLength: tail,
+      asOfDate: asOfDate ?? undefined,
+      centreFrom: preparedAll,
+    }),
+    [prepared, preparedAll, timeframe, tail, asOfDate],
   );
 
   const counts = useMemo(() => {
@@ -292,8 +326,8 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
     if (!periods.length) return [];
     // One point per period is cheap at this scale (<=90 periods x <=94 groups)
     // and it is the only way to show where today sits in the cycle.
-    return quadrantHistory(prepared, timeframe, periods);
-  }, [prepared, timeframe, periods]);
+    return quadrantHistory(prepared, timeframe, periods, preparedAll);
+  }, [prepared, preparedAll, timeframe, periods]);
 
   /**
    * Playback advances one period per timeout, keyed on the period it is
@@ -345,10 +379,10 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
 
   if (error) return <div className="rrg-empty">{error}</div>;
   if (!data?.groups?.length) return <div className="rrg-empty">No group data yet.</div>;
-  if (loading && !history) {
+  if (loading && !(history && rotation)) {
     return (
       <div className="rrg-empty">
-        Loading rank history…
+        Loading rank history and price momentum…
         <br />
         <small>The first load can take a moment; it is shared with the Home page afterwards.</small>
       </div>
@@ -357,9 +391,8 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
   if (!allTrails.length) {
     return (
       <div className="rrg-empty">
-        Not enough recorded {params.unit}s yet — a {universe === "sectors" ? "sector" : "group"} needs{" "}
-        {params.lag + 1} {timeframe === "weekly" ? "weekly" : "daily"} snapshots before its rotation can
-        be plotted.
+        Nothing to plot yet — a {universe === "sectors" ? "sector" : "group"} needs a recorded score and
+        measured price momentum for the same {params.unit} before it can be placed.
         {timeframe === "weekly" ? (
           <>
             <br />
@@ -469,9 +502,11 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
           </div>
         </div>
         <p className="rrg-note">
-          {params.smooth}-{params.unit} smoothed strength against the median{" "}
-          {universe === "sectors" ? "sector" : "group"}, plotted against its own {params.lag}-
-          {params.unit} momentum. Rotation runs clockwise: Improving → Leading → Weakening → Lagging.
+          Across: ranking score against the median of all {universe === "sectors" ? "sectors" : "groups"} — right
+          of centre is the top half of the Rankings table. Up: price momentum against the{" "}
+          {rotation?.benchmark ?? "Nifty 500"} — how much the {universe === "sectors" ? "sector" : "group"}&apos;s
+          equal-weight index gained (or lost) on it over the last {params.momentumSessions} sessions,
+          smoothed. Rotation runs clockwise: Improving → Leading → Weakening → Lagging.
         </p>
       </div>
 
@@ -573,10 +608,10 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
               <line className="rrg-axis" x1={PAD.l} x2={PAD.l + innerW} y1={zeroY} y2={zeroY} />
               <line className="rrg-axis" x1={zeroX} x2={zeroX} y1={PAD.t} y2={PAD.t + innerH} />
               <text className="rrg-axis-title" x={PAD.l + innerW / 2} y={size.h - 10} textAnchor="middle">
-                relative strength vs median {universe === "sectors" ? "sector" : "group"} →
+                rank score vs median {universe === "sectors" ? "sector" : "group"} →
               </text>
               <text className="rrg-axis-title" x={16} y={PAD.t + innerH / 2} textAnchor="middle" transform={`rotate(-90 16 ${PAD.t + innerH / 2})`}>
-                {params.lag}-{params.unit} momentum →
+                {params.momentumSessions}-session momentum vs {rotation?.benchmark ?? "Nifty 500"} (%) →
               </text>
 
               {allTrails.map((t) => {
@@ -658,9 +693,15 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                   : `${hover.trail.parentSector} · ${hover.trail.stockCount} stocks`}
               </span>
               <span className="rrg-tt-meta">
-                strength {fmtSigned(hover.trail.points.at(-1)!.x)} · momentum{" "}
-                {fmtSigned(hover.trail.points.at(-1)!.y)}
+                score {fmtSigned(hover.trail.points.at(-1)!.x)} vs median · momentum{" "}
+                {fmtSigned(hover.trail.points.at(-1)!.y, 2)}%
               </span>
+              {hover.trail.points.at(-1)!.rsChange5d !== null ? (
+                <span className="rrg-tt-meta">
+                  last 5 sessions vs {rotation?.benchmark ?? "Nifty 500"}:{" "}
+                  {fmtSigned(hover.trail.points.at(-1)!.rsChange5d!, 2)}%
+                </span>
+              ) : null}
               <span className="rrg-tt-meta">
                 {hover.trail.periodsInQuadrant} {params.unit}
                 {hover.trail.periodsInQuadrant === 1 ? "" : "s"} in {QUADRANT_LABEL[hover.trail.quadrant].toLowerCase()}
@@ -699,8 +740,8 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                 <tr>
                   {([
                     ["label", universe === "sectors" ? "Sector" : "Group", "left"],
-                    ["x", "RS", "right"],
-                    ["y", "Mom", "right"],
+                    ["x", "Score", "right"],
+                    ["y", "Mom %", "right"],
                     ["dwell", `In Q`, "right"],
                   ] as const).map(([key, label, align]) => (
                     <th
@@ -736,7 +777,7 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                         <small>{t.stockCount}</small>
                       </td>
                       <td className={`num ${head.x >= 0 ? "up" : "down"}`}>{fmtSigned(head.x)}</td>
-                      <td className={`num ${head.y >= 0 ? "up" : "down"}`}>{fmtSigned(head.y)}</td>
+                      <td className={`num ${head.y >= 0 ? "up" : "down"}`}>{fmtSigned(head.y, 2)}</td>
                       <td className="num">{t.periodsInQuadrant}</td>
                     </tr>
                   );
@@ -872,7 +913,8 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
         <p className="rrg-note">
           {allTrails.length} of {universe === "sectors" ? series.length : data.groups.length}{" "}
           {universe === "sectors" ? "sectors" : "groups"} · {periods.length} recorded {params.unit}s ·
-          centre = median score {centre.toFixed(1)} as of {fmtDate(asOfDate)}
+          centre = median score {centre.toFixed(1)} of all {universe === "sectors" ? "sectors" : "groups"} as of{" "}
+          {fmtDate(asOfDate)}
         </p>
       </div>
     </div>
