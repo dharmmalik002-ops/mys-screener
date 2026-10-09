@@ -330,7 +330,7 @@
 
 /* premium.css sets `main :is(button, .nav-button)` to nowrap at (0,3,2); answer
    and drill text must wrap, so this needs four classes to win. */
-:root .panel.course-panel :is(.course-option, .course-drill-tab, .course-module-nav button, .course-link-button, .course-reveal) {
+:root .panel.course-panel :is(.course-option, .course-drill-tab, .course-module-nav button, .course-link-button, .course-reveal, .course-pill) {
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -457,6 +457,56 @@
 .course-lightbox-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
 .course-lightbox-links button { padding: 0; border: 0; background: none; color: #fff; font: inherit; text-decoration: underline; cursor: pointer; }
 .course-lightbox-links a { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---------- progress sync, find-it-today, real examples, case price chart ---------- */
+
+.course-sync { margin: -8px 0 12px; font-size: var(--fs-tiny); color: var(--text-muted); }
+.course-sync.is-conflict { color: var(--negative); }
+
+.course-small { font-size: var(--fs-small); max-width: 90ch; }
+
+.course-find { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.course-find .course-muted { font-size: var(--fs-tiny); }
+
+.course-examples-panel { margin-top: 12px; }
+.course-examples-panel > summary { cursor: pointer; font-size: var(--fs-small); color: var(--text); }
+.course-examples-panel[open] > summary { margin-bottom: 10px; }
+
+.course-setup-examples .course-gallery-filters { align-items: center; }
+.course-setup-examples select,
+.course-gallery .course-toolbar select {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card-flat);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-small);
+}
+
+.course-example-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin: 10px 0; }
+.course-example { margin: 0; min-width: 0; padding: 8px; border-radius: var(--radius-md); box-shadow: var(--ring); background: var(--card-flat); }
+.course-example.is-right { box-shadow: var(--ring), inset 0 0 0 2px color-mix(in srgb, var(--positive) 55%, transparent); }
+.course-example.is-wrong { box-shadow: var(--ring), inset 0 0 0 2px color-mix(in srgb, var(--negative) 55%, transparent); }
+.course-example .lookalike-canvas { display: block; width: 100%; border-radius: var(--radius-sm, 6px); background: #fff; }
+.course-example-blank { display: flex; align-items: center; justify-content: center; height: 150px; border-radius: var(--radius-sm, 6px); background: var(--surface-soft); color: var(--text-muted); font-size: var(--fs-small); }
+.course-example figcaption { margin-top: 6px; font-size: var(--fs-small); line-height: 1.4; }
+.course-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.course-example-head a { color: var(--text); text-decoration: none; font-weight: 500; }
+.course-example-head a:hover { text-decoration: underline; }
+.course-example-head .course-mono { color: var(--text-muted); }
+.course-example-head .course-result { margin-left: auto; }
+.course-example-detail { display: block; margin-top: 3px; color: var(--text-muted); font-size: var(--fs-tiny); }
+.course-grade.is-compact { margin-top: 6px; gap: 6px; }
+.course-grade.is-compact button { padding: 4px 10px; }
+
+.course-casechart { margin: 10px 0 4px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--ring); background: #fff; position: relative; }
+.course-casechart-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; color: #6b6f72; font-size: var(--fs-small); }
+.course-casechart-legend { margin: 0; padding: 6px 10px; font-size: var(--fs-tiny); color: #6b6f72; background: #fff; }
+.course-casechart-legend .is-buy { color: #1f6fd1; }
+.course-casechart-legend .is-sell { color: #c2410c; }
+.course-casechart-legend .is-note { color: #8b877d; }
+.course-casechart-missing { margin: 10px 0; padding: 8px 12px; border-radius: var(--radius-md); background: var(--surface-soft); color: var(--text-muted); font-size: var(--fs-small); }
 
 @media (max-width: 900px) {
   .course-layout { grid-template-columns: minmax(0, 1fr); }

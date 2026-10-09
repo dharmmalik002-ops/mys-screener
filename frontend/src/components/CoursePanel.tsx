@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Dumbbell, Images } from "lucide-react";
+import { BookOpen, Dumbbell, Images, Search } from "lucide-react";
 import { Panel } from "./Panel";
+import type { ScreenerMode } from "./ScreenerSidebar";
 import { fullChartUrl } from "../lib/chartLink";
+import { CaseChart } from "./course/CaseChart";
+import { linksFor } from "./course/courseLinks";
 import { CourseGallery } from "./course/CourseGallery";
 import { CourseLightbox } from "./course/CourseLightbox";
 import { CoursePractice } from "./course/CoursePractice";
+import { SetupExamples } from "./course/SetupExamples";
+import { STATUS_TEXT, useCourseProgress } from "./course/useCourseProgress";
 import {
   HANDLE,
   allCharts,
@@ -31,10 +36,8 @@ import "./CoursePanel.css";
 
 type View = "lessons" | "gallery" | "practice";
 
-const DONE_KEY = "mr-malik-course-done:v1";
 const MODULE_KEY = "mr-malik-course-module:v1";
 const VIEW_KEY = "mr-malik-course-view:v1";
-const NOTES_KEY = "mr-malik-course-notes:v1";
 
 /** The module key is stored as a bare string, not JSON. */
 function readModule(): string {
@@ -99,6 +102,7 @@ function LessonCard({
   onNote,
   onZoom,
   onOpenCase,
+  onOpenScanner,
 }: {
   lesson: Lesson;
   index: number;
@@ -110,7 +114,10 @@ function LessonCard({
   onNote: (text: string) => void;
   onZoom: (items: ChartItem[], index: number) => void;
   onOpenCase: (c: CaseStudy) => void;
+  onOpenScanner?: (mode: ScreenerMode) => void;
 }) {
+  const links = linksFor(lesson.id);
+  const [examplesOpen, setExamplesOpen] = useState(false);
   const charts = useMemo<ChartItem[]>(
     () =>
       lesson.examples.map((e) => ({
@@ -186,6 +193,23 @@ function LessonCard({
           ))}
         </div>
       ) : null}
+      {links.scanners?.length && onOpenScanner ? (
+        <p className="course-related course-find">
+          <Search size={13} aria-hidden /> Find it today:{" "}
+          {links.scanners.map((sc) => (
+            <button key={sc.mode} type="button" className="course-pill" onClick={() => onOpenScanner(sc.mode)}>
+              {sc.label} scanner
+            </button>
+          ))}
+          <span className="course-muted">closest scanner on this site, not his exact rules</span>
+        </p>
+      ) : null}
+      {links.examples?.length ? (
+        <details className="course-examples-panel" onToggle={(e) => setExamplesOpen((e.currentTarget as HTMLDetailsElement).open)}>
+          <summary>See it on real Indian charts: winners and failures, with a quiz mode</summary>
+          {examplesOpen ? <SetupExamples sources={links.examples} /> : null}
+        </details>
+      ) : null}
       {trades.length ? (
         <p className="course-related">
           In his trade logs:{" "}
@@ -243,15 +267,16 @@ function lessonMatches(l: Lesson, term: string, note?: string) {
   return matches(term, l.title, l.rule, l.when, l.evolution, l.setup, note, ...l.how.map((b) => b.text), ...l.mistakes.map((b) => b.text));
 }
 
-export function CoursePanel() {
+export function CoursePanel({ onOpenScanner }: { onOpenScanner?: (mode: ScreenerMode) => void } = {}) {
   const [data, setData] = useState<CourseData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(() => readJson<View>(VIEW_KEY, "lessons"));
   const [active, setActive] = useState<string>(readModule);
   const [query, setQuery] = useState("");
   const [coreOnly, setCoreOnly] = useState(false);
-  const [done, setDone] = useState<Record<string, true>>(() => readJson(DONE_KEY, {}));
-  const [notes, setNotes] = useState<Record<string, string>>(() => readJson(NOTES_KEY, {}));
+  const { progress, update: updateProgress, status: syncStatus } = useCourseProgress();
+  const done = progress.done;
+  const notes = progress.notes;
   const [zoom, setZoom] = useState<{ items: ChartItem[]; index: number } | null>(null);
   const [scrollTo, setScrollTo] = useState<string | null>(null);
 
@@ -298,23 +323,21 @@ export function CoursePanel() {
   }, [scrollTo, view, active]);
 
   const toggle = (id: string) =>
-    setDone((prev) => {
-      const next = { ...prev };
+    updateProgress((prev) => {
+      const next = { ...prev.done };
       if (next[id]) delete next[id];
       else next[id] = true;
-      writeJson(DONE_KEY, next);
-      return next;
+      return { ...prev, done: next };
     });
 
   const saveNote = (id: string, text: string) =>
-    setNotes((prev) => {
+    updateProgress((prev) => {
       const trimmed = text.trim();
-      if ((prev[id] ?? "") === trimmed) return prev;
-      const next = { ...prev };
+      if ((prev.notes[id] ?? "") === trimmed) return prev;
+      const next = { ...prev.notes };
       if (trimmed) next[id] = trimmed;
       else delete next[id];
-      writeJson(NOTES_KEY, next);
-      return next;
+      return { ...prev, notes: next };
     });
 
   const modules = useMemo(() => data?.modules ?? [], [data]);
@@ -376,6 +399,7 @@ export function CoursePanel() {
               onNote={(text) => saveNote(l.id, text)}
               onZoom={onZoom}
               onOpenCase={(c) => goTo(caseAnchor(c))}
+              onOpenScanner={onOpenScanner}
             />
           ))}
           {!shown.length ? <p className="course-empty">No core ideas in this module.</p> : null}
@@ -496,6 +520,7 @@ export function CoursePanel() {
                         <strong>Takeaway:</strong> {c.takeaway}
                       </p>
                     ) : null}
+                    <CasePriceChart c={c} />
                     <p className="course-related">
                       {c.lessons.length ? "Lessons it shows: " : null}
                       {c.lessons.map((id) => (
@@ -523,7 +548,7 @@ export function CoursePanel() {
   const views: { key: View; label: string; Icon: typeof BookOpen; count: string }[] = [
     { key: "lessons", label: "Lessons", Icon: BookOpen, count: `${doneCount}/${allLessons.length}` },
     { key: "gallery", label: "Chart gallery", Icon: Images, count: String(charts.length) },
-    { key: "practice", label: "Practice", Icon: Dumbbell, count: "4 drills" },
+    { key: "practice", label: "Practice", Icon: Dumbbell, count: "5 drills" },
   ];
 
   return (
@@ -550,9 +575,20 @@ export function CoursePanel() {
           </button>
         ))}
       </div>
-      {view === "gallery" ? <CourseGallery data={data} charts={charts} onZoom={onZoom} /> : null}
+      <p className={`course-sync is-${syncStatus}`} role="status">
+        {STATUS_TEXT[syncStatus]}
+      </p>
+      {view === "gallery" ? <CourseGallery data={data} lessons={allLessons} charts={charts} onZoom={onZoom} /> : null}
       {view === "practice" ? (
-        <CoursePractice data={data} lessons={allLessons} charts={charts} onOpenLesson={goTo} onZoom={onZoom} />
+        <CoursePractice
+          data={data}
+          lessons={allLessons}
+          charts={charts}
+          progress={progress}
+          onProgress={updateProgress}
+          onOpenLesson={goTo}
+          onZoom={onZoom}
+        />
       ) : null}
       {view === "lessons" ? (
         <>
@@ -654,5 +690,16 @@ function ModuleNav({ modules, current, onGo }: { modules: Module[]; current: Mod
         </button>
       ) : null}
     </nav>
+  );
+}
+
+/** The case's real price chart with his trades marked, built only when opened. */
+function CasePriceChart({ c }: { c: CaseStudy }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="course-examples-panel" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>Price chart with his buys and sells marked</summary>
+      {open ? <CaseChart c={c} height={320} /> : null}
+    </details>
   );
 }

@@ -29,6 +29,10 @@ CONSOL = os.path.join(ARCHIVE, "consol")
 OUT = os.path.join(os.path.dirname(ROOT), "frontend", "public", "course", "course.json")
 IMG_DIR = os.path.join(os.path.dirname(OUT), "img")
 IMG_MAX_PX = 1400  # sharp enough for the lightbox, ~100 KB a chart
+# Charts kept per lesson. Was 4; the page now has a gallery, a chart drill and
+# a lightbox that steps through a lesson's set, so more examples are used.
+# Each chart adds ~100 KB to frontend/public/course/img.
+MAX_EXAMPLES = 8
 
 MODULES = [
     ("philosophy", "How he thinks about the game"),
@@ -131,7 +135,7 @@ def lesson(l: dict) -> dict:
         "when": l.get("when", ""),
         "mistakes": mistakes,
         "evolution": l.get("evolution", ""),
-        "examples": examples[:4],
+        "examples": examples[:MAX_EXAMPLES],
         "evidence": cited_sorted,
         "years": years,
         # Core = recurs across time and in volume, measured from the tweets themselves.

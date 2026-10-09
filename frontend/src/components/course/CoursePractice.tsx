@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fullChartUrl } from "../../lib/chartLink";
+import { CaseChart } from "./CaseChart";
+import { LESSON_LINKS, lessonsWithExamples } from "./courseLinks";
+import { SetupExamples } from "./SetupExamples";
+import type { Progress } from "./useCourseProgress";
 import {
   caseTicker,
   chartSrc,
@@ -21,17 +25,15 @@ import {
    a lesson, or a trade he logged. So a right answer is always checkable
    against the cited tweets. */
 
-type Drill = "cards" | "spot" | "chart" | "replay";
-type CardState = Record<string, { box: number; due: string }>;
+type Drill = "cards" | "spot" | "chart" | "replay" | "call";
+type CardState = Progress["cards"];
 type Score = { right: number; total: number };
-type Scores = Record<"spot" | "chart" | "replay", Score>;
+type ScoreKey = "spot" | "chart" | "replay" | "call";
 
-const CARDS_KEY = "mr-malik-course-cards:v1";
-const SCORES_KEY = "mr-malik-course-scores:v1";
 const DRILL_KEY = "mr-malik-course-drill:v1";
 /** Leitner intervals in days for boxes 1..5; box 0 is "again today". */
 const INTERVALS = [0, 1, 3, 7, 16, 35];
-const EMPTY_SCORES: Scores = { spot: { right: 0, total: 0 }, chart: { right: 0, total: 0 }, replay: { right: 0, total: 0 } };
+const ZERO: Score = { right: 0, total: 0 };
 
 const today = () => new Date().toISOString().slice(0, 10);
 const addDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
@@ -41,34 +43,44 @@ export function CoursePractice({
   data,
   lessons,
   charts,
+  progress,
+  onProgress,
   onOpenLesson,
   onZoom,
 }: {
   data: CourseData;
   lessons: (Lesson & { moduleKey: string; moduleTitle: string })[];
   charts: ChartItem[];
+  progress: Progress;
+  onProgress: (fn: (prev: Progress) => Progress) => void;
   onOpenLesson: (lessonId: string) => void;
   onZoom: (items: ChartItem[], index: number) => void;
 }) {
   const [drill, setDrill] = useState<Drill>(() => (readJson<string>(DRILL_KEY, "cards") as Drill) || "cards");
-  const [scores, setScores] = useState<Scores>(() => ({ ...EMPTY_SCORES, ...readJson<Partial<Scores>>(SCORES_KEY, {}) }));
+  const score = (k: ScoreKey): Score => progress.scores[k] ?? ZERO;
 
   useEffect(() => writeJson(DRILL_KEY, drill), [drill]);
 
-  const record = useCallback((kind: keyof Scores, right: boolean) => {
-    setScores((prev) => {
-      const next = { ...prev, [kind]: { right: prev[kind].right + (right ? 1 : 0), total: prev[kind].total + 1 } };
-      writeJson(SCORES_KEY, next);
-      return next;
-    });
-  }, []);
+  const record = useCallback(
+    (kind: ScoreKey, right: boolean) =>
+      onProgress((prev) => {
+        const s = prev.scores[kind] ?? ZERO;
+        return { ...prev, scores: { ...prev.scores, [kind]: { right: s.right + (right ? 1 : 0), total: s.total + 1 } } };
+      }),
+    [onProgress],
+  );
+  const setCards = useCallback(
+    (fn: (prev: CardState) => CardState) => onProgress((prev) => ({ ...prev, cards: fn(prev.cards) })),
+    [onProgress],
+  );
 
   const cases = useMemo(() => data.modules.flatMap((m) => m.cases ?? []), [data]);
   const tabs: { key: Drill; label: string; blurb: string; score?: Score }[] = [
     { key: "cards", label: "Flashcards", blurb: "Recall each lesson's rule; spaced repetition brings back the ones you miss." },
-    { key: "spot", label: "Spot the mistake", blurb: "Three things he does, one he warns against. Find the warning.", score: scores.spot },
-    { key: "chart", label: "Read the chart", blurb: "Which lesson did he post this chart to make?", score: scores.chart },
-    { key: "replay", label: "Trade replay", blurb: "Step through a real trade log one decision at a time.", score: scores.replay },
+    { key: "spot", label: "Spot the mistake", blurb: "Three things he does, one he warns against. Find the warning.", score: score("spot") },
+    { key: "chart", label: "Read the chart", blurb: "Which lesson did he post this chart to make?", score: score("chart") },
+    { key: "replay", label: "Trade replay", blurb: "Step through a real trade on its price chart, one decision at a time.", score: score("replay") },
+    { key: "call", label: "Call the chart", blurb: "Real Indian setups with the ending hidden. Did it work?", score: score("call") },
   ];
 
   return (
@@ -93,7 +105,7 @@ export function CoursePractice({
           </button>
         ))}
       </div>
-      {drill === "cards" ? <Flashcards lessons={lessons} onOpenLesson={onOpenLesson} /> : null}
+      {drill === "cards" ? <Flashcards lessons={lessons} state={progress.cards} setState={setCards} onOpenLesson={onOpenLesson} /> : null}
       {drill === "spot" ? <SpotTheMistake lessons={lessons} dates={data.tweet_dates} onOpenLesson={onOpenLesson} onAnswer={(r) => record("spot", r)} /> : null}
       {drill === "chart" ? (
         <ReadTheChart lessons={lessons} charts={charts} onOpenLesson={onOpenLesson} onZoom={onZoom} onAnswer={(r) => record("chart", r)} />
@@ -108,15 +120,9 @@ export function CoursePractice({
           onAnswer={(r) => record("replay", r)}
         />
       ) : null}
-      {scores.spot.total + scores.chart.total + scores.replay.total > 0 ? (
-        <button
-          type="button"
-          className="course-link-button course-reset"
-          onClick={() => {
-            setScores(EMPTY_SCORES);
-            writeJson(SCORES_KEY, EMPTY_SCORES);
-          }}
-        >
+      {drill === "call" ? <CallTheChart lessons={lessons} onAnswer={(r) => record("call", r)} /> : null}
+      {Object.values(progress.scores).some((s) => s.total > 0) ? (
+        <button type="button" className="course-link-button course-reset" onClick={() => onProgress((prev) => ({ ...prev, scores: {} }))}>
           Reset drill scores
         </button>
       ) : null}
@@ -128,12 +134,15 @@ export function CoursePractice({
 
 function Flashcards({
   lessons,
+  state,
+  setState,
   onOpenLesson,
 }: {
   lessons: (Lesson & { moduleKey: string; moduleTitle: string })[];
+  state: CardState;
+  setState: (fn: (prev: CardState) => CardState) => void;
   onOpenLesson: (lessonId: string) => void;
 }) {
-  const [state, setState] = useState<CardState>(() => readJson<CardState>(CARDS_KEY, {}));
   const [moduleKey, setModuleKey] = useState("all");
   const [flipped, setFlipped] = useState(false);
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -158,15 +167,13 @@ function Flashcards({
       if (!card) return;
       setState((prev) => {
         const box = knew ? Math.min((prev[card.id]?.box ?? 0) + 1, INTERVALS.length - 1) : 0;
-        const next = { ...prev, [card.id]: { box, due: addDays(INTERVALS[box]) } };
-        writeJson(CARDS_KEY, next);
-        return next;
+        return { ...prev, [card.id]: { box, due: addDays(INTERVALS[box]) } };
       });
       // "Again" stays due today; push it behind the rest of this session's queue.
       if (!knew) setSkipped((s) => [...s, card.id]);
       setFlipped(false);
     },
-    [card],
+    [card, setState],
   );
 
   useEffect(() => {
@@ -532,6 +539,13 @@ function TradeReplay({
             <span className="course-mono">{c.symbol}</span> · {c.setup}
           </h3>
           {c.context ? <p className="course-muted">{c.context}</p> : null}
+          <CaseChart
+            key={c.root}
+            c={c}
+            revealThrough={finished ? undefined : shown.map((t) => t.date).sort()[shown.length - 1]}
+            revealEvents={finished ? undefined : shown.length}
+            height={300}
+          />
           <h4>Trade log</h4>
           <ol className="course-list course-replay-log">
             {shown.map((t, j) => (
@@ -634,5 +648,36 @@ function Outcome({
         </button>
       </div>
     </div>
+  );
+}
+
+/* ---------- Call the chart ---------- */
+
+function CallTheChart({
+  lessons,
+  onAnswer,
+}: {
+  lessons: (Lesson & { moduleTitle: string })[];
+  onAnswer: (right: boolean) => void;
+}) {
+  const ids = lessonsWithExamples();
+  const [lessonId, setLessonId] = useState(ids[0]);
+  const lesson = lessons.find((l) => l.id === lessonId);
+  const sources = LESSON_LINKS[lessonId]?.examples ?? [];
+  return (
+    <section className="course-drill">
+      <div className="course-toolbar">
+        <select value={lessonId} onChange={(e) => setLessonId(e.target.value)} aria-label="Setup to practise">
+          {ids.map((id) => (
+            <option key={id} value={id}>
+              {lessons.find((l) => l.id === id)?.title ?? id}
+            </option>
+          ))}
+        </select>
+      </div>
+      {lesson ? <p className="course-muted">{lesson.rule}</p> : null}
+      {/* Keyed so a new setup starts a fresh set and a fresh session score. */}
+      <SetupExamples key={lessonId} sources={sources} defaultQuiz onScore={onAnswer} />
+    </section>
   );
 }

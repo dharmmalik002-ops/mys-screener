@@ -6646,7 +6646,13 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         {activePage === "course" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading`: reads its own static course file. */}
-            <CoursePanel />
+            <CoursePanel
+              onOpenScanner={(mode) => {
+                handleNavigate("screener");
+                handleScannerModeChange(mode);
+                window.scrollTo({ top: 0 });
+              }}
+            />
           </Suspense>
         ) : null}
         {activePage === "bot" ? (

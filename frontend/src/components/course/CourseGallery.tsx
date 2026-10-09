@@ -1,17 +1,69 @@
 import { useMemo, useState } from "react";
-import { chartSrc, type ChartItem, type CourseData } from "./courseData";
+import { chartSrc, type ChartItem, type CourseData, type Lesson } from "./courseData";
+import { LESSON_LINKS, lessonsWithExamples } from "./courseLinks";
+import { SetupExamples } from "./SetupExamples";
 
 /* Every chart the course shows, in one browsable wall. "Hide captions" turns
    it into a reading drill: look at the chart, decide what it shows, then
    reveal his note. */
 export function CourseGallery({
   data,
+  lessons,
   charts,
   onZoom,
 }: {
   data: CourseData;
+  lessons: Lesson[];
   charts: ChartItem[];
   onZoom: (items: ChartItem[], index: number) => void;
+}) {
+  const [mode, setMode] = useState<"his" | "india">("his");
+  const setupIds = lessonsWithExamples();
+  const [setupId, setSetupId] = useState(setupIds[0]);
+  const modeSwitch = (
+    <div className="course-gallery-filters">
+      <button type="button" className={`course-pill${mode === "his" ? " is-active" : ""}`} onClick={() => setMode("his")}>
+        His charts <span>{charts.length}</span>
+      </button>
+      <button type="button" className={`course-pill${mode === "india" ? " is-active" : ""}`} onClick={() => setMode("india")}>
+        Real Indian examples by setup
+      </button>
+    </div>
+  );
+  if (mode === "india") {
+    return (
+      <div className="course-gallery">
+        {modeSwitch}
+        <p className="course-intro">
+          Thousands of real Indian charts for the setups he teaches, each drawn at its date with what happened next, failures included.
+          Tick “Call it” to hide the ending and test yourself.
+        </p>
+        <div className="course-toolbar">
+          <select value={setupId} onChange={(e) => setSetupId(e.target.value)} aria-label="Setup">
+            {setupIds.map((id) => (
+              <option key={id} value={id}>
+                {lessons.find((l) => l.id === id)?.title ?? id}
+              </option>
+            ))}
+          </select>
+        </div>
+        <SetupExamples key={setupId} sources={LESSON_LINKS[setupId]?.examples ?? []} />
+      </div>
+    );
+  }
+  return <HisCharts data={data} charts={charts} onZoom={onZoom} header={modeSwitch} />;
+}
+
+function HisCharts({
+  data,
+  charts,
+  onZoom,
+  header,
+}: {
+  data: CourseData;
+  charts: ChartItem[];
+  onZoom: (items: ChartItem[], index: number) => void;
+  header: React.ReactNode;
 }) {
   const [moduleKey, setModuleKey] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -41,6 +93,7 @@ export function CourseGallery({
 
   return (
     <div className="course-gallery">
+      {header}
       <p className="course-intro">
         All {charts.length} charts and screenshots the course uses, each tied to the lesson it illustrates. Click one to step through
         the set with ← and →.

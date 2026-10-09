@@ -254,6 +254,70 @@ def build_router(service):
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
 
+    # ── Course page (CoursePanel.tsx) ──────────────────────────────────────
+    # Bars for the case-study replays, real past signals for the setup lessons,
+    # and the learner's progress. See app/services/course.py.
+    _course: dict = {}
+
+    def _course_services():
+        if not _course:
+            from app.core.config import get_settings
+            from app.services import course as course_service
+
+            settings = get_settings()
+            state_dir = Path(settings.app_state_dir)
+            _course["bars"] = course_service.CourseBars(state_dir / "data" / "course_bars")
+            _course["progress"] = course_service.CourseProgressStore(settings.database_url, state_dir)
+        return _course
+
+    @router.get("/course/bars")
+    async def course_bars(symbol: str = Query(..., min_length=1), start: str = Query(...), end: str = Query(...)):
+        """Daily bars for an explicit past window — /chart keeps only ~500 sessions."""
+        from app.services.course import CourseBarsError
+
+        try:
+            return await asyncio.to_thread(_course_services()["bars"].get, symbol, start, end)
+        except CourseBarsError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    @router.get("/course/example-bars")
+    async def course_example_bars(card_id: str = Query(...), market: str = Query(default="india")):
+        """One archived signal drawn whole — the setup and what followed.
+
+        Only for signals the archive already shows with their result: today's
+        Chart Gym hand is refused, so the course can never give away the
+        answer to a card the drill is asking about (gotcha 15).
+        """
+        from app.services import study_archive
+
+        deck = _study_deck()
+        card = deck.card(card_id)
+        if card is None:
+            raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
+        hidden = await asyncio.to_thread(study_archive.dealt_today, deck, date.today())
+        if card.id in hidden:
+            raise HTTPException(status_code=403, detail="This signal is in today's Chart Gym hand.")
+        context, forward = await _study_bars(card, market)
+        # 90 sessions are drawn; the 49 before them let the page draw a true
+        # 50-day average from the first drawn bar.
+        context = context[-139:]
+        return {"id": card.id, "bars": context + forward, "trigger_index": len(context) - 1, "card": card.answer()}
+
+    @router.get("/course/progress")
+    async def course_progress():
+        return await asyncio.to_thread(_course_services()["progress"].load)
+
+    @router.put("/course/progress")
+    async def save_course_progress(payload: dict):
+        from app.services.course import ProgressShrinkRefused
+
+        try:
+            return await asyncio.to_thread(_course_services()["progress"].save, payload)
+        except ProgressShrinkRefused as exc:
+            raise HTTPException(status_code=409, detail=str(exc))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
     @router.get("/study/log")
     async def study_log():
         return await asyncio.to_thread(resolve_service("india").get_study_log)

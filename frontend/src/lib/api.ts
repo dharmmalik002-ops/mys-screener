@@ -6429,3 +6429,41 @@ export function getLookalikeSimilar(symbol: string) {
     { label: "similar-charts index" },
   );
 }
+
+/* Course page (components/CoursePanel.tsx, backend app/services/course.py). */
+export type CourseBars = { symbol: string; start: string; end: string; bars: StudyBar[]; source?: string };
+
+export function getCourseBars(symbol: string, start: string, end: string) {
+  const q = new URLSearchParams({ symbol, start, end });
+  return request<CourseBars>(`/api/course/bars?${q.toString()}`, undefined, { timeoutMs: 45000 });
+}
+
+export type CourseExampleBars = { id: string; bars: StudyBar[]; trigger_index: number; card: ArchiveRow };
+
+export function getCourseExampleBars(cardId: string) {
+  return request<CourseExampleBars>(`/api/course/example-bars?card_id=${encodeURIComponent(cardId)}`, undefined, {
+    timeoutMs: 45000,
+  });
+}
+
+export type CourseProgress = {
+  done: Record<string, true>;
+  notes: Record<string, string>;
+  cards: Record<string, { box: number; due: string }>;
+  scores: Record<string, { right: number; total: number }>;
+  updated_at?: string | null;
+};
+
+export function getCourseProgress() {
+  return whileWaking(() => request<CourseProgress>("/api/course/progress", undefined, { timeoutMs: 30000 }), {
+    label: "course progress",
+  });
+}
+
+export function saveCourseProgress(progress: CourseProgress, allowShrink = false) {
+  return request<CourseProgress>("/api/course/progress", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...progress, allowShrink }),
+  });
+}
