@@ -3471,12 +3471,12 @@ export type CatalystsResponse = {
   refreshed_on?: string;
   refreshed_at?: string;
   concall?: { id: string; date: string; title: string; link: string | null; read: boolean } | null;
-  sources?: Record<string, { ok: boolean; count?: number; error?: string; date?: string | null; read?: boolean }>;
+  sources?: Record<string, { ok: boolean; count?: number; error?: string | null; date?: string | null; read?: boolean; found?: boolean }>;
   pending_ai?: boolean;
   ai_error?: string | null;
 };
 
-/** Catalysts for one company: filings, latest concall and news, read by the AI. Rebuilt once a day. */
+/** Catalysts for one company: reputed-outlet news and the latest concall, read by the AI. Rebuilt once a day. */
 export function getCatalysts(symbol: string, refresh = false) {
   return request<CatalystsResponse>(
     `/api/catalysts/${encodeURIComponent(symbol)}${refresh ? "?refresh=true" : ""}`,

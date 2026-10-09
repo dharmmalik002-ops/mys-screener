@@ -4,7 +4,7 @@ import { getCatalysts, type CatalystItem, type CatalystsResponse } from "../lib/
 
 /**
  * The fundamentals pane's Catalysts tab: what could move this company's
- * business, from its BSE filings, its latest earnings call and the news,
+ * business, from reputed news outlets and its latest earnings call,
  * each explained in plain words by the AI (backend: services/catalysts.py).
  *
  * The server answers at once with the last record and rebuilds it in the
@@ -96,7 +96,7 @@ export function CatalystsTab({ symbol }: { symbol: string }) {
   if (!data || (data.status !== "ready" && !items.length)) {
     return (
       <div className="rf-empty">
-        Reading {symbol}'s latest filings, earnings call and news… the first read of a stock takes up to a minute.
+        Reading {symbol}'s latest news and earnings call… the first read of a stock takes up to a minute.
       </div>
     );
   }
@@ -104,12 +104,11 @@ export function CatalystsTab({ symbol }: { symbol: string }) {
   const overall = data.overall;
   const sources = data.sources ?? {};
   const sourceBits: string[] = [];
-  if (sources.filings?.ok) sourceBits.push("BSE filings");
-  if (data.concall?.date) sourceBits.push(`earnings call of ${fmtDate(data.concall.date)}${data.concall.read ? "" : " (not readable)"}`);
-  if (sources.news?.ok) sourceBits.push("news");
-  const failed = Object.entries(sources)
-    .filter(([key, s]) => key !== "concall" && !s.ok)
-    .map(([key]) => (key === "filings" ? "BSE filings" : key === "news" ? "News" : key));
+  if (sources.news?.ok) sourceBits.push("news from reputed outlets (ET, Mint, Business Standard, Moneycontrol, Reuters, Bloomberg and others)");
+  if (data.concall?.date) sourceBits.push(`the earnings call of ${fmtDate(data.concall.date)}${data.concall.read ? "" : " (transcript not readable)"}`);
+  const failed: string[] = [];
+  if (sources.news && !sources.news.ok) failed.push("News");
+  if (sources.concall && !sources.concall.ok) failed.push("The earnings-call transcript (BSE)");
 
   return (
     <div className="rf-section cat">
@@ -228,14 +227,14 @@ export function CatalystsTab({ symbol }: { symbol: string }) {
         <div className="rf-empty">
           {items.length
             ? "Nothing in this filter."
-            : "No company-specific catalyst in recent filings, the latest earnings call or the news. Routine filings and market wraps are left out on purpose."}
+            : "No company-specific catalyst in recent news from reputed outlets or the latest earnings call. Market wraps, stock-tip lists and other outlets are left out on purpose."}
         </div>
       )}
 
       <div className="cat-foot">
         {sourceBits.length ? `Read from ${sourceBits.join(", ")}. ` : ""}
         {failed.length ? `${failed.join(" and ")} could not be reached this time. ` : ""}
-        Updated daily; routine compliance filings and generic market news are left out. AI explanations can be wrong — open the source before acting.
+        Updated daily; generic market news and unknown outlets are left out. AI explanations can be wrong — open the source before acting.
       </div>
     </div>
   );

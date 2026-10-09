@@ -1,18 +1,21 @@
-"""Catalysts: what could move this company's business, from filings, the latest concall and news.
+"""Catalysts: what could move this company's business, from reputed news and the latest concall.
 
 A stock needs a reason to re-rate. This module collects the candidates for one
 company and has the AI read them the way an experienced analyst would:
 
-* **BSE corporate announcements** for the scrip (the regulator of record —
-  orders, acquisitions, capacity, rating actions, management changes,
-  penalties, pledges). Routine compliance filings (trading window, Reg 74(5),
-  lost share certificates, newspaper ads, ESOP allotments…) are dropped before
-  the AI ever sees them.
+* **News from reputed outlets only** (`REPUTED_OUTLETS`: ET, Mint, Business
+  Standard, Moneycontrol, Reuters, Bloomberg, CNBC-TV18, …), found through two
+  Google News searches — the company name, and the company name restricted to
+  those outlets' sites, so a big outlet's story is not crowded out of the 100
+  results by aggregators. Market wraps, "stocks to watch" lists and price-only
+  stories are dropped by rule first.
 * **The latest earnings-call transcript** filed on BSE: its PDF text is read and
   the AI pulls out guidance, capex, order book, margin outlook and the risks
   management admitted to.
-* **Google News** for the company name, with market wraps, "stocks to watch"
-  lists and price-only stories dropped by rule first.
+
+BSE announcements themselves are NOT shown as catalysts (the user's call:
+filing headlines read as noise). The BSE feed is read only to find the
+transcript.
 
 The AI then keeps only items that change the business outlook, explains each in
 plain words, says how it affects revenue / margins / earnings relative to the
@@ -27,7 +30,7 @@ known result immediately with ``refreshing: true`` and the page polls.
 A scheduler job refreshes every watchlist stock each evening.
 
 Without an AI key (or when the call fails) the page still shows the filtered
-filings and news, classified by keyword and marked ``ai: false``; they are sent
+news, classified by keyword and marked ``ai: false``; they are sent
 to the AI on the next refresh that can reach it.
 """
 
@@ -53,7 +56,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 IST = timezone(timedelta(hours=5, minutes=30))
-VERSION = 1
+VERSION = 2  # v2: BSE filings no longer become catalysts; v1 records are rebuilt
 BSE_ANN_URL = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
 BSE_ATTACH_URL = "https://www.bseindia.com/xml-data/corpfiling/AttachLive/{name}"
 BSE_ATTACH_HIS_URL = "https://www.bseindia.com/xml-data/corpfiling/AttachHis/{name}"
@@ -65,8 +68,8 @@ BSE_HEADERS = {
 }
 NEWS_URL = "https://news.google.com/rss/search?q={q}&hl=en-IN&gl=IN&ceid=IN:en"
 
-FILING_LOOKBACK_DAYS = 120
-NEWS_LOOKBACK_DAYS = 45
+NEWS_LOOKBACK_DAYS = 60
+MAX_NEWS_ITEMS = 50
 CONCALL_LOOKBACK_DAYS = 200
 KEEP_DAYS = 365
 MAX_CATALYSTS = 60
@@ -81,36 +84,60 @@ IMPACTS = ("high", "medium", "low")
 HORIZONS = ("near", "medium", "long")
 STANCES = ("supportive", "mixed", "cautionary", "quiet")
 
-# Filings that never move a business. Matched against subject + sub-category.
-ROUTINE_PATTERNS = [
-    r"trading window", r"74\s*\(5\)", r"reg(ulation)?\.?\s*74", r"loss of share certificate", r"duplicate share",
-    r"issue of duplicate", r"newspaper", r"news paper", r"advertisement", r"publication of",
-    r"compliance certificate", r"reg(ulation)?\.?\s*40\s*\(\s*9", r"reg(ulation)?\.?\s*7\s*\(3\)",
-    r"investor complaint", r"statement of investor", r"shareholding pattern", r"esop", r"esos", r"employee stock option",
-    r"allotment of .*(esop|options|under .*scheme)", r"book closure", r"record date", r"change in (the )?registrar",
-    r"\brta\b", r"certificate under", r"scrutini[sz]er", r"voting results", r"proceedings of", r"notice of (the )?agm",
-    r"annual report", r"business responsibility", r"\bbrsr\b", r"secretarial", r"related party transaction",
-    r"intimation of (the )?(analyst|investor) meet", r"schedule of (analyst|investor)", r"(analyst|investor)s? meet",
-    r"audio recording", r"link of (the )?(audio|recording)", r"recording of", r"loss of certificate",
-    r"closure of trading", r"structured digital database", r"\bsdd\b", r"cyber security incident.*nil",
-    r"disclosure under regulation 30.*(newspaper|advert)", r"postal ballot", r"e-voting", r"\bagm\b", r"\begm\b",
-    r"change in (company )?secretary", r"compliance officer", r"name change of rta", r"reconciliation of share capital",
-    r"intimation (of|regarding) (board meeting|date of board)", r"board meeting (intimation|on)",
-    r"clarification sought", r"price movement", r"increase in volume",
-    r"spurt in volume", r"general updates?$", r"\bxbrl\b", r"format of", r"credit of shares", r"demat",
-]
-_ROUTINE_RE = re.compile("|".join(ROUTINE_PATTERNS), re.I)
-# Kept even if a routine word appears (e.g. "outcome of board meeting - acquisition").
-MATERIAL_HINT_RE = re.compile(
-    r"\border|contract|award|letter of (intent|award)|\bloa\b|acqui|merger|amalgamat|demerg|capacity|expansion|"
-    r"commission(ed|ing)|\blaunch|approval|usfda|warning letter|import alert|form 483|downgrade|upgrade|fund rais|"
-    r"\bqip\b|preferential|rights issue|buy\s?back|bonus|split|resign|penalt|show cause|demand|fraud|insolven|default|"
-    r"pledge|joint venture|\bjv\b|stake|divest|guidance|fire\b|accident|shutdown|strike",
-    re.I,
-)
 TRANSCRIPT_RE = re.compile(r"transcript|earnings call|conference call|con-?call", re.I)
 # Only a transcript itself is read; call intimations and audio links mention the call too.
 TRANSCRIPT_DOC_RE = re.compile(r"transcript", re.I)
+
+# Outlets whose reporting is trusted for catalysts, by domain (matched against the
+# Google News <source url=...>, subdomains included). Aggregators, stock-tip
+# sites and auto-generated price blogs are deliberately absent.
+REPUTED_OUTLETS: dict[str, str] = {
+    "economictimes.indiatimes.com": "The Economic Times",
+    "livemint.com": "Mint",
+    "business-standard.com": "Business Standard",
+    "moneycontrol.com": "Moneycontrol",
+    "financialexpress.com": "Financial Express",
+    "thehindubusinessline.com": "The Hindu BusinessLine",
+    "thehindu.com": "The Hindu",
+    "cnbctv18.com": "CNBC-TV18",
+    "ndtvprofit.com": "NDTV Profit",
+    "businesstoday.in": "Business Today",
+    "reuters.com": "Reuters",
+    "bloomberg.com": "Bloomberg",
+    "ft.com": "Financial Times",
+    "wsj.com": "The Wall Street Journal",
+    "forbesindia.com": "Forbes India",
+    "fortuneindia.com": "Fortune India",
+    "indianexpress.com": "The Indian Express",
+    "timesofindia.indiatimes.com": "The Times of India",
+    "hindustantimes.com": "Hindustan Times",
+    "zeebiz.com": "Zee Business",
+    "outlookbusiness.com": "Outlook Business",
+}
+# Publisher names Google News shows, for items whose <source> carries no url.
+_REPUTED_NAMES = {n.lower() for n in REPUTED_OUTLETS.values()} | {
+    "economic times", "et now", "etmarkets", "livemint", "hindu businessline", "businessline",
+    "cnbc tv18", "cnbctv18", "bloomberg.com",
+}
+# The sites searched directly in the second query (Google News caps the OR list).
+REPUTED_SEARCH_SITES = (
+    "economictimes.indiatimes.com", "livemint.com", "business-standard.com", "moneycontrol.com",
+    "financialexpress.com", "thehindubusinessline.com", "cnbctv18.com", "ndtvprofit.com", "reuters.com",
+    "bloomberg.com", "businesstoday.in",
+)
+
+
+def reputed_outlet(source_url: str, publisher: str) -> str | None:
+    """The outlet's display name when it is on the reputed list, else None."""
+    host = re.sub(r"^https?://", "", (source_url or "").strip().lower()).split("/")[0]
+    host = host[4:] if host.startswith("www.") else host
+    for domain, label in REPUTED_OUTLETS.items():
+        if host == domain or host.endswith("." + domain):
+            return label
+    if not host and publisher.strip().lower() in _REPUTED_NAMES:
+        return publisher.strip()
+    return None
+
 
 # News that is about the market, not the company.
 GENERIC_NEWS_RE = re.compile(
@@ -199,18 +226,6 @@ def _parse_bse_dt(value: Any) -> datetime | None:
     except ValueError:
         return None
     return dt.replace(tzinfo=IST) if dt.tzinfo is None else dt
-
-
-def is_routine(subject: str) -> bool:
-    """A compliance filing that cannot move the business. A material word overrides."""
-    text = subject or ""
-    if TRANSCRIPT_RE.search(text):
-        return False
-    if not _ROUTINE_RE.search(text):
-        return False
-    # "Outcome of board meeting - approval of acquisition" stays.
-    stripped = _ROUTINE_RE.sub(" ", text)
-    return not MATERIAL_HINT_RE.search(stripped)
 
 
 def bse_row_to_item(row: dict[str, Any], bse_code: str) -> dict[str, Any] | None:
@@ -312,6 +327,9 @@ def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[
         link = (item.findtext("link") or "").strip()
         source_el = item.find("source")
         publisher = (source_el.text or "").strip() if source_el is not None and source_el.text else ""
+        outlet = reputed_outlet(source_el.get("url", "") if source_el is not None else "", publisher)
+        if outlet is None:
+            continue
         title = raw_title
         if publisher and title.endswith(f" - {publisher}"):
             title = title[: -len(publisher) - 3].strip()
@@ -335,7 +353,7 @@ def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[
         out[news_id] = {
             "id": news_id,
             "date": published.astimezone(IST).isoformat(),
-            "source": publisher or "News",
+            "source": publisher or outlet,
             "source_type": "news",
             "title": title,
             "details": desc[:400] if desc and desc.lower() != title.lower() else "",
@@ -344,11 +362,28 @@ def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[
     return sorted(out.values(), key=lambda i: i["date"], reverse=True)
 
 
+def news_queries(name: str, days: int) -> list[str]:
+    quoted = f'"{short_name(name)}"'
+    sites = " OR ".join(f"site:{s}" for s in REPUTED_SEARCH_SITES)
+    return [f"{quoted} when:{days}d", f"{quoted} ({sites}) when:{days}d"]
+
+
 def fetch_news(name: str, symbol: str, days: int) -> list[dict[str, Any]]:
-    query = f'"{short_name(name)}" when:{days}d'
-    resp = requests.get(NEWS_URL.format(q=quote_plus(query)), headers={"User-Agent": BSE_HEADERS["User-Agent"]}, timeout=15)
-    resp.raise_for_status()
-    return parse_news_rss(resp.content, name, symbol, days)[:40]
+    """Reputed-outlet stories about the company, newest first. Raises only if every search failed."""
+    merged: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+    for query in news_queries(name, days):
+        try:
+            resp = requests.get(NEWS_URL.format(q=quote_plus(query)), headers={"User-Agent": BSE_HEADERS["User-Agent"]}, timeout=15)
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            errors.append(str(exc))
+            continue
+        for item in parse_news_rss(resp.content, name, symbol, days):
+            merged.setdefault(item["id"], item)
+    if errors and not merged and len(errors) == len(news_queries(name, days)):
+        raise RuntimeError(errors[0])
+    return sorted(merged.values(), key=lambda i: i["date"], reverse=True)[:MAX_NEWS_ITEMS]
 
 
 def fetch_transcript_text(attachment: str, session: requests.Session | None = None) -> str | None:
@@ -454,8 +489,10 @@ def build_prompt(
         "Rules:",
         "- keep=true ONLY for items that change the company's revenue, margins, earnings, balance sheet, risk or "
         "management. keep=false for generic or routine items: share-price moves with no business reason, market "
-        "wraps, 'stocks to watch' lists, broker target-price notes, compliance filings, AGM/record-date notices, "
-        "meeting intimations with no content, and duplicates (if a news story repeats a filing, keep the filing).",
+        "wraps, 'stocks to watch' lists, broker target-price notes, AGM/record-date notices, routine compliance "
+        "news, and duplicates (when several outlets report the same event, keep the one with the most detail).",
+        "- The items are news headlines from reputed outlets, sometimes with a short summary. Explain only what the "
+        "headline and summary support; do not invent details of the deal, order or event.",
         "- Include NEGATIVE catalysts as readily as positive ones: penalties, tax demands, regulatory action, plant "
         "shutdowns, order cancellations, resignations of key people or auditors, pledges, downgrades, weak guidance.",
         "- Size every catalyst against the company: an order worth 2% of annual revenue is low impact, 25% is high. "
@@ -472,7 +509,6 @@ def build_prompt(
         for item in new_items:
             lines.append(
                 f"- id={item['id']} | {item['date'][:10]} | {item['source']} | {item['title']}"
-                + (f" | category: {item['bse_category']}" if item.get("bse_category") else "")
                 + (f" | details: {item['details']}" if item.get("details") else "")
             )
         lines.append("")
@@ -769,19 +805,23 @@ class CatalystService:
         bse_code = str(info.get("bse_code") or "").strip()
         previous = self.load(symbol) or {}
         seen: dict[str, str] = dict(previous.get("seen") or {})
-        catalysts: dict[str, dict[str, Any]] = {c["id"]: c for c in previous.get("catalysts") or []}
+        catalysts: dict[str, dict[str, Any]] = {
+            c["id"]: c for c in previous.get("catalysts") or [] if c.get("source_type") != "filing"
+        }
         sources: dict[str, Any] = {}
 
+        # BSE is read only to find the latest earnings-call transcript; its
+        # announcements are not catalysts here (reputed news is).
         filings: list[dict[str, Any]] = []
+        lookup_error: str | None = None
         if bse_code:
             try:
-                filings = self._fetch_filings(bse_code, max(FILING_LOOKBACK_DAYS, CONCALL_LOOKBACK_DAYS))
-                sources["filings"] = {"ok": True, "count": len(filings)}
+                filings = self._fetch_filings(bse_code, CONCALL_LOOKBACK_DAYS)
             except Exception as exc:
                 logger.info("BSE announcements for %s failed: %s", symbol, exc)
-                sources["filings"] = {"ok": False, "error": str(exc)[:160]}
+                lookup_error = str(exc)[:160]
         else:
-            sources["filings"] = {"ok": False, "error": "no BSE code on record"}
+            lookup_error = "no BSE code on record"
         try:
             news = self._fetch_headlines(name, symbol, NEWS_LOOKBACK_DAYS)
             sources["news"] = {"ok": True, "count": len(news)}
@@ -790,14 +830,9 @@ class CatalystService:
             news = []
             sources["news"] = {"ok": False, "error": str(exc)[:160]}
 
-        filing_cutoff = (datetime.now(IST) - timedelta(days=FILING_LOOKBACK_DAYS)).isoformat()
         transcripts = [f for f in filings if f.get("attachment") and TRANSCRIPT_DOC_RE.search(f"{f['title']} {f.get('bse_category', '')}")]
         latest_transcript = transcripts[0] if transcripts else None
-        candidates = [
-            f for f in filings
-            if f is not latest_transcript and f["date"] >= filing_cutoff and not TRANSCRIPT_RE.search(f["title"])
-            and not is_routine(f"{f['title']} {f.get('bse_category', '')}")
-        ] + news
+        candidates = news
         new_items = [c for c in candidates if c["id"] not in seen][:MAX_NEW_PER_CALL]
 
         transcript = None
@@ -813,8 +848,8 @@ class CatalystService:
             concall_meta["read"] = bool(text)
             if text:
                 transcript = {**concall_meta, "text": text}
-        sources["concall"] = {"ok": bool(concall_meta), "date": (concall_meta or {}).get("date"),
-                              "read": bool((concall_meta or {}).get("read"))}
+        sources["concall"] = {"ok": lookup_error is None, "found": bool(concall_meta), "error": lookup_error,
+                              "date": (concall_meta or {}).get("date"), "read": bool((concall_meta or {}).get("read"))}
 
         overall = previous.get("overall")
         pending_ai = False
@@ -860,7 +895,7 @@ class CatalystService:
         cutoff = (datetime.now(IST) - timedelta(days=KEEP_DAYS)).isoformat()
         ordered = sorted((c for c in catalysts.values() if c["date"] >= cutoff), key=lambda c: c["date"], reverse=True)
         if overall is None and not ordered:
-            overall = {"stance": "quiet", "summary": "No company-specific catalyst in recent filings, calls or news.",
+            overall = {"stance": "quiet", "summary": "No company-specific catalyst in recent news from reputed outlets or the latest earnings call.",
                        "reasons_to_own": [], "reasons_to_avoid": [], "watch_next": []}
         record = {
             "version": VERSION,
