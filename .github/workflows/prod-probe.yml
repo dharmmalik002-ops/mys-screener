@@ -53,6 +53,28 @@ jobs:
           for js in $(grep -o 'assets/[^"]*\.js' index.html | sort -u); do curl -sS -m 30 "$SITE/$js" >> bundle.js; done
           echo "bundle bytes: $(wc -c < bundle.js)"
           for s in "rank score vs median" "getGroupRotation" "groups/rotation" "relative strength vs median"; do printf '%-32s %s\n' "$s" "$(grep -c "$s" bundle.js || true)"; done
+          echo "== Rotation chunk on Vercel"
+          for js in $(grep -o 'assets/[^"]*\.js' bundle.js | sort -u | grep -i -E 'rotation|groups' | head -5); do
+            curl -sS -m 30 "$SITE/$js" -o chunk.js
+            printf '%s  new-axis:%s  old-axis:%s\n' "$js" "$(grep -c 'rank score vs median' chunk.js || true)" "$(grep -c 'relative strength vs median' chunk.js || true)"
+          done
+          echo "== Live quadrants (x = score - median of all groups, y = 10-session momentum)"
+          python3 - <<'EOF2'
+          import json, statistics
+          g = json.load(open("groups.json")); r = json.load(open("rot.json"))
+          med = statistics.median(x["score"] for x in g["groups"])
+          rows = []
+          for x in g["groups"]:
+              pts = r["groups"].get(x["group_id"])
+              if not pts: continue
+              p = pts[-1]; dx = x["score"] - med; dy = p["momentum"]
+              q = ("Leading" if dy >= 0 else "Weakening") if dx >= 0 else ("Improving" if dy >= 0 else "Lagging")
+              rows.append((q, x["rank"], x["group_name"], round(dx, 1), dy, p["rs_change_5d"], p["date"]))
+          for q in ("Leading", "Improving", "Weakening", "Lagging"):
+              sel = sorted((t for t in rows if t[0] == q), key=lambda t: t[1])
+              print(q, len(sel))
+              for t in sel[:8]: print("   #%d %-40s score%+6.1f mom%+6.2f%% last5d%+6.2f%% %s" % t[1:])
+          EOF2
           echo "== commit status on main (Vercel)"
           curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ github.repository }}/commits/main/status" \
             | python3 -c "import json,sys; d=json.load(sys.stdin); print('state', d.get('state'), 'sha', d.get('sha','')[:8]); [print(' ', s.get('context'), s.get('state'), s.get('description'), s.get('target_url')) for s in d.get('statuses', [])]"
