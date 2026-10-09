@@ -156,12 +156,41 @@ export function readablePct(value: number | null | undefined, sample: number | n
   return `${value.toFixed(digits)}%`;
 }
 
-/** R5 — the session the page is describing, and anything lagging behind it. */
+/** IST calendar date and minutes-since-midnight for an instant. */
+function istClock(now: Date): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return { date: `${get("year")}-${get("month")}-${get("day")}`, minutes: (Number(get("hour")) % 24) * 60 + Number(get("minute")) };
+}
+
+/** NSE's cash session closes 15:30 IST; a few minutes' grace for the closing print. */
+const SESSION_FINAL_MINUTES = 15 * 60 + 40;
+
+export type Freshness = {
+  /** Session of the newest index bar. */
+  asOf: string | null;
+  /** True while that session is still being traded — the bar is a print, not a close. */
+  live: boolean;
+  /** Session the breadth / exposure figures describe, when it differs from `asOf`. */
+  breadthAsOf: string | null;
+  notes: string[];
+};
+
+/**
+ * R5 — the session the page is describing, and anything lagging behind it.
+ * Indices can be a session newer than breadth (the closing file lands within minutes;
+ * the breadth files land at ~16:30), and a page that quietly mixed the two read as one
+ * date. The two dates are surfaced instead.
+ */
 export function freshness(
   indices: IndexRead[],
   exposure: MarketsExposure | null,
+  env: MarketEnvironmentResponse | null = null,
+  now: Date = new Date(),
   staleAfterDays = 4,
-): { asOf: string | null; notes: string[] } {
+): Freshness {
   const dates = indices.map((i) => i.asOf).filter((d): d is string => Boolean(d)).sort();
   const asOf = dates.length ? dates[dates.length - 1] : exposure?.as_of_session ?? null;
   const notes: string[] = [];
@@ -172,7 +201,10 @@ export function freshness(
   if (lag > staleAfterDays) {
     notes.push(`The breakout replay behind the exposure number is ${lag} days old (last session ${exposure?.stats_as_of_session}).`);
   }
-  return { asOf, notes };
+  const clock = istClock(now);
+  const live = asOf !== null && asOf === clock.date && clock.minutes < SESSION_FINAL_MINUTES;
+  const breadthDate = env?.date ?? exposure?.as_of_session ?? null;
+  return { asOf, live, breadthAsOf: breadthDate && asOf && breadthDate !== asOf ? breadthDate : null, notes };
 }
 
 /** "2026-10-08" -> "8 Oct 2026" */

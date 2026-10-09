@@ -18,6 +18,7 @@ import {
   type ScanMatch,
   type XpBreadthScore,
 } from "../lib/api";
+import { barDate } from "../lib/marketsBrief";
 
 import { Sparkline } from "./Sparkline";
 
@@ -1210,12 +1211,21 @@ export function HomePanel({
   // CHART_QUOTE_JOIN_TOLERANCE means "stale chart" and the quote is used.
   const CHART_QUOTE_JOIN_TOLERANCE = 0.004;
   const niftyPoint = macroItems.find((c) => c.symbol === "^NSEI");
-  const niftyLastBar = niftyBars.length ? niftyBars[niftyBars.length - 1] : null;
-  const niftyPrevBar = niftyBars.length > 1 ? niftyBars[niftyBars.length - 2] : null;
+  // Everything in the briefing describes ONE session: breadth_today's. Once the chart carries a
+  // newer bar (the 9th's, while the stock counts are still the 8th's) the Nifty figure comes from
+  // the bar for the briefing's own session, so the line can never mix two days under one date.
+  const sessionIndex = breadthToday?.date ? niftyBars.findIndex((b) => barDate(b.time) === breadthToday.date) : -1;
+  const sessionBar = sessionIndex >= 0 ? niftyBars[sessionIndex] : null;
+  const niftyLastBar = sessionBar ?? (niftyBars.length ? niftyBars[niftyBars.length - 1] : null);
+  const niftyPrevBar = sessionBar
+    ? (sessionIndex > 0 ? niftyBars[sessionIndex - 1] : null)
+    : niftyBars.length > 1 ? niftyBars[niftyBars.length - 2] : null;
   const chartMatchesQuote =
     niftyLastBar !== null &&
     Number.isFinite(niftyLastBar.close) &&
-    (niftyPoint?.price == null || Math.abs(niftyLastBar.close / niftyPoint.price - 1) <= CHART_QUOTE_JOIN_TOLERANCE);
+    (sessionBar !== null ||
+      niftyPoint?.price == null ||
+      Math.abs(niftyLastBar.close / niftyPoint.price - 1) <= CHART_QUOTE_JOIN_TOLERANCE);
   const niftyPrice = chartMatchesQuote && niftyLastBar ? niftyLastBar.close : niftyPoint?.price ?? null;
   const niftyChange = chartMatchesQuote && niftyLastBar && niftyPrevBar && niftyPrevBar.close > 0
     ? ((niftyLastBar.close - niftyPrevBar.close) / niftyPrevBar.close) * 100

@@ -42,15 +42,22 @@ export function MarketsBrief({ exposure, xp, env, indices, reasons, flips }: Pro
   const condition = readCondition(exposure, xp);
   const mixed = disagreement(condition, indices);
   const facts = breadthFacts(env, xp);
-  const { asOf, notes } = freshness(indices, exposure);
+  const { asOf, live, breadthAsOf, notes } = freshness(indices, exposure, env);
   const verdict = exposure?.available && exposure.verdict?.available ? exposure.verdict : null;
   const ruleToday = env?.ai?.one_rule_today?.trim() || null;
   const aiRead = env?.ai?.headline?.trim() || null;
   const dateLabel = longDate(asOf);
+  const breadthLabel = longDate(breadthAsOf);
 
   return (
     <section className={`mkb mkb-${condition.tone}`} aria-label="Market condition">
-      <div className="ol-kicker">Market condition{dateLabel ? ` · close of ${dateLabel}` : ""}</div>
+      {/* Indices can be a session newer than breadth, and an open session is a print rather than a
+          close, so the kicker says which is which instead of printing one date over both. */}
+      <div className="ol-kicker">
+        Market condition
+        {dateLabel ? ` · ${breadthLabel ? "indices " : ""}${live ? "live " : "close of "}${dateLabel}` : ""}
+        {breadthLabel ? ` · breadth ${breadthLabel}` : ""}
+      </div>
 
       <h2 className="mkb-headline">
         The market is <span className="mkb-word">{condition.word}</span>.{" "}
