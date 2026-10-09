@@ -39,7 +39,12 @@ export function loadBars(symbol: string, start: string, end: string): Promise<St
   const key = `${symbol}|${start}|${end}`;
   let hit = cache.get(key);
   if (!hit) {
-    hit = limited(() => getCourseBars(symbol, start, end)).then((r) => r?.bars ?? []);
+    hit = limited(() => getCourseBars(symbol, start, end)).then((r) => {
+      const bars = r?.bars ?? [];
+      // An empty answer is a failure too: forget it so Retry asks again.
+      if (!bars.length) cache.delete(key);
+      return bars;
+    });
     hit.catch(() => cache.delete(key));
     cache.set(key, hit);
   }

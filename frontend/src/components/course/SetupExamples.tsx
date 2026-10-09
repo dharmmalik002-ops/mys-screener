@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SeriesMarker, UTCTimestamp } from "lightweight-charts";
 import { getGalleryIndianHistory, getSignalArchive, type ArchiveRow, type GalleryHistoryRow, type StudyBar } from "../../lib/api";
 import { fullChartUrl } from "../../lib/chartLink";
@@ -7,6 +7,7 @@ import { CourseCandleChart } from "./CourseCandleChart";
 import { CourseChartToolbar } from "./CourseChartOptions";
 import { barAtOrBefore, isoShift, loadBars, toTime } from "./courseBars";
 import { readJson, shuffle, writeJson } from "./courseData";
+import { useNearViewport } from "./useNearViewport";
 import type { ExampleSource } from "./courseLinks";
 
 /* Real Indian charts for a setup lesson — winners AND failures, because a
@@ -134,27 +135,10 @@ function useExamples(source: ExampleSource, outcome: Outcome, page: number, bala
   return { rows, total, baseRate, error };
 }
 
-/** Whether the element is on screen or within ~one screen of it. */
-function useNearViewport<T extends Element>() {
-  const ref = useRef<T | null>(null);
-  const [near, setNear] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === "undefined") {
-      setNear(true);
-      return;
-    }
-    const io = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), { rootMargin: "900px 0px" });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return [ref, near] as const;
-}
-
 /** The example's real bars: enough history before the setup for a 200-day
     average, the setup window, and the sessions that followed. Nothing is
     fetched until the card first comes near the screen. */
-function useExampleBars(ex: Example, wanted: boolean) {
+function useExampleBars(ex: Example, wanted: boolean, attempt: number) {
   const [state, setState] = useState<{ bars: StudyBar[]; trigger: number } | "missing" | null>(null);
   useEffect(() => {
     if (!wanted) return;
@@ -174,19 +158,16 @@ function useExampleBars(ex: Example, wanted: boolean) {
     return () => {
       live = false;
     };
-  }, [ex.symbol, ex.setup, wanted]);
+  }, [ex.symbol, ex.setup, wanted, attempt]);
   return state;
 }
 
 function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean; height: number; onCall: (right: boolean) => void }) {
   // Charts mount only near the screen and unmount when scrolled far away, so a
   // page of 200 keeps a handful of live canvases; the bars stay cached.
-  const [ref, near] = useNearViewport<HTMLElement>();
-  const [seen, setSeen] = useState(false);
-  useEffect(() => {
-    if (near) setSeen(true);
-  }, [near]);
-  const data = useExampleBars(ex, seen);
+  const { ref, near, seen } = useNearViewport<HTMLElement>();
+  const [attempt, setAttempt] = useState(0);
+  const data = useExampleBars(ex, seen, attempt);
   const [called, setCalled] = useState<boolean | null>(null);
   const canCall = quiz && ex.worked !== null;
   const hidden = canCall && called === null;
@@ -223,7 +204,18 @@ function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean;
         />
       ) : (
         <div className="course-example-blank" style={{ height }}>
-          {data === "missing" ? "No price history for this stock and date" : loaded ? "" : "Loading chart…"}
+          {data === "missing" ? (
+            <span>
+              Couldn&apos;t load prices for {ex.symbol} around {ex.setup}.{" "}
+              <button type="button" className="course-link-button" onClick={() => setAttempt((n) => n + 1)}>
+                Retry
+              </button>
+            </span>
+          ) : loaded ? (
+            ""
+          ) : (
+            "Loading chart…"
+          )}
         </div>
       )}
       {hidden ? (

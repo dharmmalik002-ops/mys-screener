@@ -271,14 +271,34 @@ def build_router(service):
         return _course
 
     @router.get("/course/bars")
-    async def course_bars(symbol: str = Query(..., min_length=1), start: str = Query(...), end: str = Query(...)):
-        """Daily bars for an explicit past window — /chart keeps only ~500 sessions."""
-        from app.services.course import CourseBarsError
+    async def course_bars(
+        symbol: str = Query(..., min_length=1),
+        start: str = Query(...),
+        end: str = Query(...),
+        market: str = Query(default="india"),
+    ):
+        """Daily bars for an explicit past window — /chart keeps only ~500 sessions.
 
+        Tries Yahoo for the exact window first, then the site's own full chart
+        history (the path the main chart's scroll-back uses in production), so
+        a window Yahoo refuses from the Space still draws.
+        """
+        from app.services.course import CourseBarsError, bars_in_window
+
+        store = _course_services()["bars"]
         try:
-            return await asyncio.to_thread(_course_services()["bars"].get, symbol, start, end)
+            ticker, lo, hi = store.window(symbol, start, end)
+            document = await asyncio.to_thread(store.get, symbol, start, end)
         except CourseBarsError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
+        if document.get("bars"):
+            return document
+        try:
+            raw = await resolve_service(market).get_chart_full_history(symbol=ticker, timeframe="1D")
+        except Exception:
+            raw = []
+        bars = await asyncio.to_thread(bars_in_window, list(raw or []), lo, hi)
+        return await asyncio.to_thread(store.store, ticker, lo, hi, bars, "site-history")
 
     @router.get("/course/progress")
     async def course_progress():

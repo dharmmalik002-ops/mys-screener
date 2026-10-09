@@ -9,6 +9,7 @@ import { CourseGallery } from "./course/CourseGallery";
 import { CourseLightbox } from "./course/CourseLightbox";
 import { CoursePractice } from "./course/CoursePractice";
 import { SetupExamples } from "./course/SetupExamples";
+import { useNearViewport } from "./course/useNearViewport";
 import { STATUS_TEXT, useCourseProgress } from "./course/useCourseProgress";
 import {
   HANDLE,
@@ -117,7 +118,9 @@ function LessonCard({
   onOpenScanner?: (mode: ScreenerMode) => void;
 }) {
   const links = linksFor(lesson.id);
-  const [examplesOpen, setExamplesOpen] = useState(false);
+  // Open by default: the examples are the point of a setup lesson, and the
+  // charts inside only load as they scroll into view.
+  const [examplesOpen, setExamplesOpen] = useState(true);
   const charts = useMemo<ChartItem[]>(
     () =>
       lesson.examples.map((e) => ({
@@ -205,8 +208,8 @@ function LessonCard({
         </p>
       ) : null}
       {links.examples?.length ? (
-        <details className="course-examples-panel" onToggle={(e) => setExamplesOpen((e.currentTarget as HTMLDetailsElement).open)}>
-          <summary>See it on real Indian charts: winners and failures, with a quiz mode</summary>
+        <details className="course-examples-panel" open={examplesOpen} onToggle={(e) => setExamplesOpen((e.currentTarget as HTMLDetailsElement).open)}>
+          <summary>Real Indian charts of this setup: winners and failures, with a quiz mode</summary>
           {examplesOpen ? <SetupExamples sources={links.examples} /> : null}
         </details>
       ) : null}
@@ -693,13 +696,14 @@ function ModuleNav({ modules, current, onGo }: { modules: Module[]; current: Mod
   );
 }
 
-/** The case's real price chart with his trades marked, built only when opened. */
+/** The case's real price chart with his trades marked, built once it scrolls near. */
 function CasePriceChart({ c }: { c: CaseStudy }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
+  const { ref, seen } = useNearViewport<HTMLDetailsElement>();
   return (
-    <details className="course-examples-panel" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+    <details ref={ref} className="course-examples-panel" open={open} onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
       <summary>Price chart with his buys and sells marked</summary>
-      {open ? <CaseChart c={c} height={440} /> : null}
+      {open && seen ? <CaseChart c={c} height={440} /> : null}
     </details>
   );
 }

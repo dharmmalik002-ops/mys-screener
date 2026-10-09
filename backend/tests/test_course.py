@@ -165,6 +165,42 @@ class RouteTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_bars_fall_back_to_the_sites_own_chart_history(self):
+        """Yahoo refusing the exact window must not blank the chart: the route
+        falls back to the full history the main chart already serves."""
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from app.api.routes import build_router
+        from app.core.config import get_settings
+
+        day = 86400
+        jan4 = 1609718400  # 2021-01-04T00:00Z
+
+        class Service:
+            async def get_chart_full_history(self, symbol, timeframe):
+                assert (symbol, timeframe) == ("SEQUENT", "1D")
+                return [
+                    {"time": jan4 - 400 * day, "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1},  # outside
+                    {"time": jan4, "open": 170, "high": 175, "low": 168, "close": 173, "volume": 1000},
+                    {"time": jan4 + day, "open": 173, "high": 180, "low": 172, "close": 179, "volume": 900},
+                ]
+
+        get_settings.cache_clear()
+        try:
+            with mock.patch.dict("os.environ", {"APP_STATE_DIR": self.tmp.name, "DATABASE_URL": ""}), \
+                    mock.patch.object(course, "default_fetcher", return_value=[]):
+                app = FastAPI()
+                app.include_router(build_router({"india": Service()}))
+                client = TestClient(app)
+                body = client.get("/api/course/bars", params={"symbol": "SEQUENT", "start": "2020-12-01", "end": "2021-02-01"}).json()
+                self.assertEqual([b["close"] for b in body["bars"]], [173, 179])
+                self.assertEqual(body["source"], "site-history")
+                again = client.get("/api/course/bars", params={"symbol": "SEQUENT", "start": "2020-12-01", "end": "2021-02-01"}).json()
+                self.assertEqual(len(again["bars"]), 2)  # served from the disk cache
+        finally:
+            get_settings.cache_clear()
+
     def test_bars_route_rejects_a_bad_window(self):
         response = self.client.get("/api/course/bars", params={"symbol": "SEQUENT", "start": "2021-02-01", "end": "2021-01-01"})
         self.assertEqual(response.status_code, 400)

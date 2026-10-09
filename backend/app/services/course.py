@@ -125,6 +125,27 @@ def parse_yahoo_chart(payload: dict[str, Any]) -> list[Bar]:
     return [out[t] for t in sorted(out)]
 
 
+def bars_in_window(raw: list[Any], lo: date, hi: date) -> list[Bar]:
+    """Bars from the site's chart history (dicts or ChartBar models, epoch-second
+    `time`) restricted to [lo, hi] and stamped like `parse_yahoo_chart`'s."""
+    out: dict[int, Bar] = {}
+    for bar in raw or []:
+        get = bar.get if isinstance(bar, dict) else (lambda k, b=bar: getattr(b, k, None))
+        try:
+            t = int(get("time") or 0)
+            o, h, l, c = (float(get(k) or 0) for k in ("open", "high", "low", "close"))
+        except (TypeError, ValueError):
+            continue
+        if t <= 0 or min(o, h, l, c) <= 0:
+            continue
+        day = datetime.fromtimestamp(t, timezone.utc).date()
+        if not (lo <= day <= hi):
+            continue
+        stamp = int(datetime(day.year, day.month, day.day, tzinfo=timezone.utc).timestamp())
+        out[stamp] = {"time": stamp, "open": o, "high": h, "low": l, "close": c, "volume": float(get("volume") or 0)}
+    return [out[t] for t in sorted(out)]
+
+
 def default_fetcher(symbol: str, lo: date, hi: date) -> list[Bar]:
     for suffix in (".NS", ".BO"):
         try:
@@ -149,6 +170,30 @@ class CourseBars:
     def _path(self, symbol: str, lo: date, hi: date) -> Path:
         return self._dir / f"{symbol}_{lo.isoformat()}_{hi.isoformat()}.json"
 
+    def window(self, symbol: str, start: str, end: str, today: date | None = None) -> tuple[str, date, date]:
+        """Validated (ticker, start, end) — raises CourseBarsError."""
+        ticker = clean_symbol(symbol)
+        lo, hi = parse_window(start, end, today)
+        return ticker, lo, hi
+
+    def store(self, ticker: str, lo: date, hi: date, bars: list[Bar], source: str) -> dict[str, Any]:
+        """Cache bars that came from somewhere other than this class's fetcher
+        (the route's fallback to the site's own chart history)."""
+        document = {"symbol": ticker, "start": lo.isoformat(), "end": hi.isoformat(), "bars": bars, "source": source}
+        if bars:
+            self._write(self._path(ticker, lo, hi), document)
+        return document
+
+    def _write(self, path: Path, document: dict[str, Any]) -> None:
+        with self._lock:
+            try:
+                self._dir.mkdir(parents=True, exist_ok=True)
+                tmp = path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(document, separators=(",", ":")), encoding="utf-8")
+                tmp.replace(path)
+            except OSError as exc:
+                logger.warning("course bars: could not cache %s (%s)", path.name, exc)
+
     def get(self, symbol: str, start: str, end: str, today: date | None = None) -> dict[str, Any]:
         ticker = clean_symbol(symbol)
         lo, hi = parse_window(start, end, today)
@@ -165,14 +210,7 @@ class CourseBars:
         bars = self._fetch(ticker, lo, hi)
         document = {"symbol": ticker, "start": lo.isoformat(), "end": hi.isoformat(), "bars": bars, "source": "yahoo"}
         if bars:  # never cache a failure: the next request should try again
-            with self._lock:
-                try:
-                    self._dir.mkdir(parents=True, exist_ok=True)
-                    tmp = path.with_suffix(".tmp")
-                    tmp.write_text(json.dumps(document, separators=(",", ":")), encoding="utf-8")
-                    tmp.replace(path)
-                except OSError as exc:
-                    logger.warning("course bars: could not cache %s (%s)", path.name, exc)
+            self._write(path, document)
         return document
 
 
