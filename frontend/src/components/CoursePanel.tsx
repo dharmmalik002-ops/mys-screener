@@ -1,7 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { ExternalLink, X as CloseIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookOpen, Dumbbell, Images } from "lucide-react";
 import { Panel } from "./Panel";
+import { fullChartUrl } from "../lib/chartLink";
+import { CourseGallery } from "./course/CourseGallery";
+import { CourseLightbox } from "./course/CourseLightbox";
+import { CoursePractice } from "./course/CoursePractice";
+import {
+  HANDLE,
+  allCharts,
+  caseAnchor,
+  caseTicker,
+  chartSrc,
+  moduleOfLesson,
+  readJson,
+  tweetUrl,
+  writeJson,
+  type CaseStudy,
+  type ChartItem,
+  type CourseData,
+  type Lesson,
+  type Module,
+} from "./course/courseData";
 import "./CoursePanel.css";
 
 /* The Course page: @iManasArora's approach, distilled from his 2021-2026 posts.
@@ -10,80 +29,21 @@ import "./CoursePanel.css";
    own copies (frontend/public/course/img) so they outlive a deleted tweet;
    X's CDN is only the fallback. */
 
-type Bullet = { text: string; ids: string[] };
-type Example = { tweet: string; image: string; local: string | null; caption: string };
-type Lesson = {
-  id: string;
-  setup: string | null;
-  title: string;
-  rule: string;
-  how: Bullet[];
-  when: string;
-  mistakes: Bullet[];
-  evolution: string;
-  examples: Example[];
-  evidence: string[];
-  years: number[];
-  strength: "core" | "supporting";
-};
-type Condition = {
-  name: string;
-  reads: string;
-  does: string;
-  periods: { from: string; to: string; note: string; ids: string[] }[];
-  lessons: string[];
-  evidence: string[];
-};
-type CaseStudy = {
-  symbol: string;
-  setup: string;
-  entry_date: string;
-  context: string;
-  story: string;
-  takeaway: string;
-  result_pct: number | null;
-  result_note: string;
-  image: string | null;
-  local: string | null;
-  root: string;
-  lessons: string[];
-  timeline: { date: string; action: string; price: number | string | null; text: string; tweet: string }[];
-};
-type Module = {
-  key: string;
-  title: string;
-  intro: string;
-  lessons?: Lesson[];
-  conditions?: Condition[];
-  cases?: CaseStudy[];
-};
-type CourseData = { source: string; span: [string, string]; tweet_dates: Record<string, string>; modules: Module[] };
+type View = "lessons" | "gallery" | "practice";
 
 const DONE_KEY = "mr-malik-course-done:v1";
 const MODULE_KEY = "mr-malik-course-module:v1";
-const HANDLE = "iManasArora";
+const VIEW_KEY = "mr-malik-course-view:v1";
+const NOTES_KEY = "mr-malik-course-notes:v1";
 
-function readDone(): Record<string, true> {
+/** The module key is stored as a bare string, not JSON. */
+function readModule(): string {
   try {
-    return JSON.parse(localStorage.getItem(DONE_KEY) || "{}") || {};
+    return localStorage.getItem(MODULE_KEY) || "philosophy";
   } catch {
-    return {};
+    return "philosophy";
   }
 }
-
-function readModule(): string | null {
-  try {
-    return localStorage.getItem(MODULE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-const tweetUrl = (id: string) => `https://x.com/${HANDLE}/status/${id}`;
-const sized = (url: string, size: "small" | "large") => `${url}&name=${size}`;
-/** Our stored copy first; X's CDN only if the copy is missing. */
-const chartSrc = (local: string | null | undefined, cdn: string | null | undefined, size: "small" | "large") =>
-  local ? `${import.meta.env.BASE_URL}${local}` : cdn ? sized(cdn, size) : "";
 
 function Sources({ ids, dates, max = 4 }: { ids: string[]; dates: Record<string, string>; max?: number }) {
   if (!ids?.length) return null;
@@ -99,41 +59,28 @@ function Sources({ ids, dates, max = 4 }: { ids: string[]; dates: Record<string,
   );
 }
 
-function Chart({
-  image,
-  local,
-  caption,
-  tweet,
-  onZoom,
-}: {
-  image: string | null;
-  local: string | null;
-  caption: string;
-  tweet?: string;
-  onZoom: (src: string, alt: string) => void;
-}) {
+function Chart({ item, onZoom }: { item: ChartItem; onZoom: () => void }) {
   const [failed, setFailed] = useState(false);
-  const src = failed ? chartSrc(null, image, "small") : chartSrc(local, image, "small");
-  const full = failed ? chartSrc(null, image, "large") : chartSrc(local, image, "large");
+  const src = failed ? chartSrc(null, item.image, "small") : chartSrc(item.local, item.image, "small");
   if (!src) return null;
   return (
     <figure className="course-figure">
-      <button type="button" className="course-zoom" onClick={() => onZoom(full, caption)} aria-label="Enlarge chart">
+      <button type="button" className="course-zoom" onClick={onZoom} aria-label="Enlarge chart">
         <img
           src={src}
-          alt={caption}
+          alt={item.caption}
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => {
-            if (!failed && local && image) setFailed(true);
+            if (!failed && item.local && item.image) setFailed(true);
           }}
         />
       </button>
       <figcaption>
-        {caption}{" "}
-        {tweet ? (
-          <a className="course-src" href={tweetUrl(tweet)} target="_blank" rel="noreferrer noopener">
-            tweet
+        {item.caption}{" "}
+        {item.tweet ? (
+          <a className="course-src" href={tweetUrl(item.tweet)} target="_blank" rel="noreferrer noopener">
+            {item.date ?? "tweet"}
           </a>
         ) : null}
       </figcaption>
@@ -146,16 +93,36 @@ function LessonCard({
   index,
   dates,
   done,
+  note,
+  trades,
   onToggle,
+  onNote,
   onZoom,
+  onOpenCase,
 }: {
   lesson: Lesson;
   index: number;
   dates: Record<string, string>;
   done: boolean;
+  note: string;
+  trades: CaseStudy[];
   onToggle: () => void;
-  onZoom: (src: string, alt: string) => void;
+  onNote: (text: string) => void;
+  onZoom: (items: ChartItem[], index: number) => void;
+  onOpenCase: (c: CaseStudy) => void;
 }) {
+  const charts = useMemo<ChartItem[]>(
+    () =>
+      lesson.examples.map((e) => ({
+        key: `${lesson.id}:${e.local ?? e.image}`,
+        local: e.local,
+        image: e.image,
+        caption: e.caption,
+        tweet: e.tweet,
+        date: dates[e.tweet],
+      })),
+    [lesson, dates],
+  );
   return (
     <article className={`course-lesson${done ? " is-done" : ""}`} id={lesson.id}>
       <header className="course-lesson-head">
@@ -173,6 +140,7 @@ function LessonCard({
         <span className="course-chip">
           {lesson.evidence.length} tweets · {lesson.years.join(", ") || "—"}
         </span>
+        {charts.length ? <span className="course-chip">{charts.length} chart{charts.length === 1 ? "" : "s"}</span> : null}
       </div>
       <p className="course-rule"><Linked text={lesson.rule} dates={dates} /></p>
       {lesson.how.length ? (
@@ -211,13 +179,32 @@ function LessonCard({
           <p><Linked text={lesson.evolution} dates={dates} /></p>
         </>
       ) : null}
-      {lesson.examples.length ? (
+      {charts.length ? (
         <div className="course-examples">
-          {lesson.examples.map((e) => (
-            <Chart key={e.image} image={e.image} local={e.local} caption={e.caption} tweet={e.tweet} onZoom={onZoom} />
+          {charts.map((c, i) => (
+            <Chart key={c.key} item={c} onZoom={() => onZoom(charts, i)} />
           ))}
         </div>
       ) : null}
+      {trades.length ? (
+        <p className="course-related">
+          In his trade logs:{" "}
+          {trades.map((c) => (
+            <button key={c.root} type="button" className="course-link-button" onClick={() => onOpenCase(c)}>
+              {c.symbol} ({c.entry_date.slice(0, 4)})
+            </button>
+          ))}
+        </p>
+      ) : null}
+      <details className="course-notes" open={note ? true : undefined}>
+        <summary>{note ? "My notes" : "Add my notes"}</summary>
+        <textarea
+          defaultValue={note}
+          placeholder="What will you do differently? A stock of yours this applies to? Saved in this browser."
+          onBlur={(e) => onNote(e.target.value)}
+          rows={3}
+        />
+      </details>
       {lesson.evidence.length ? (
         <details className="course-evidence">
           <summary>All {lesson.evidence.length} source tweets</summary>
@@ -252,18 +239,21 @@ function matches(term: string, ...parts: Array<string | null | undefined>) {
   return parts.some((p) => (p ?? "").toLowerCase().includes(term));
 }
 
-function lessonMatches(l: Lesson, term: string) {
-  return matches(term, l.title, l.rule, l.when, l.evolution, l.setup, ...l.how.map((b) => b.text), ...l.mistakes.map((b) => b.text));
+function lessonMatches(l: Lesson, term: string, note?: string) {
+  return matches(term, l.title, l.rule, l.when, l.evolution, l.setup, note, ...l.how.map((b) => b.text), ...l.mistakes.map((b) => b.text));
 }
 
 export function CoursePanel() {
   const [data, setData] = useState<CourseData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [active, setActive] = useState<string>(() => readModule() ?? "philosophy");
+  const [view, setView] = useState<View>(() => readJson<View>(VIEW_KEY, "lessons"));
+  const [active, setActive] = useState<string>(readModule);
   const [query, setQuery] = useState("");
   const [coreOnly, setCoreOnly] = useState(false);
-  const [done, setDone] = useState<Record<string, true>>(readDone);
-  const [zoom, setZoom] = useState<{ src: string; alt: string } | null>(null);
+  const [done, setDone] = useState<Record<string, true>>(() => readJson(DONE_KEY, {}));
+  const [notes, setNotes] = useState<Record<string, string>>(() => readJson(NOTES_KEY, {}));
+  const [zoom, setZoom] = useState<{ items: ChartItem[]; index: number } | null>(null);
+  const [scrollTo, setScrollTo] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -290,32 +280,68 @@ export function CoursePanel() {
       /* per-viewer convenience only */
     }
   }, [active]);
+  useEffect(() => writeJson(VIEW_KEY, view), [view]);
 
+  // Scroll once the target lesson or case has rendered in its module.
   useEffect(() => {
-    if (!zoom) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setZoom(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [zoom]);
+    if (!scrollTo || view !== "lessons") return;
+    const frame = requestAnimationFrame(() => {
+      const el = document.getElementById(scrollTo);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.classList.add("is-flash");
+        window.setTimeout(() => el.classList.remove("is-flash"), 1400);
+      }
+      setScrollTo(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [scrollTo, view, active]);
 
   const toggle = (id: string) =>
     setDone((prev) => {
       const next = { ...prev };
       if (next[id]) delete next[id];
       else next[id] = true;
-      try {
-        localStorage.setItem(DONE_KEY, JSON.stringify(next));
-      } catch {
-        /* per-viewer convenience only */
-      }
+      writeJson(DONE_KEY, next);
       return next;
     });
 
-  const modules = data?.modules ?? [];
-  const allLessons = useMemo(() => modules.flatMap((m) => m.lessons ?? []), [modules]);
+  const saveNote = (id: string, text: string) =>
+    setNotes((prev) => {
+      const trimmed = text.trim();
+      if ((prev[id] ?? "") === trimmed) return prev;
+      const next = { ...prev };
+      if (trimmed) next[id] = trimmed;
+      else delete next[id];
+      writeJson(NOTES_KEY, next);
+      return next;
+    });
+
+  const modules = useMemo(() => data?.modules ?? [], [data]);
+  const allLessons = useMemo(
+    () => modules.flatMap((m) => (m.lessons ?? []).map((l) => ({ ...l, moduleKey: m.key, moduleTitle: m.title }))),
+    [modules],
+  );
+  const charts = useMemo(() => (data ? allCharts(data) : []), [data]);
+  const casesByLesson = useMemo(() => {
+    const out: Record<string, CaseStudy[]> = {};
+    for (const m of modules) for (const c of m.cases ?? []) for (const id of c.lessons) (out[id] ??= []).push(c);
+    return out;
+  }, [modules]);
+  const titleOf = useCallback((id: string) => allLessons.find((l) => l.id === id)?.title ?? id, [allLessons]);
+
+  const goTo = useCallback((anchor: string) => {
+    setZoom(null);
+    setQuery("");
+    setView("lessons");
+    setActive(anchor.startsWith("case-") ? "cases" : moduleOfLesson(anchor));
+    setScrollTo(anchor);
+  }, []);
+  const onZoom = useCallback((items: ChartItem[], index: number) => setZoom({ items, index }), []);
+
   const doneCount = allLessons.filter((l) => done[l.id]).length;
+  const nextUp = allLessons.find((l) => !done[l.id]);
   const term = query.trim().toLowerCase();
-  const onZoom = (src: string, alt: string) => setZoom({ src, alt });
   const dates = data?.tweet_dates ?? {};
 
   if (error || !data) {
@@ -328,7 +354,7 @@ export function CoursePanel() {
 
   const current = modules.find((m) => m.key === active) ?? modules[0];
   const searching = term.length >= 2;
-  const filterLesson = (l: Lesson) => (!coreOnly || l.strength === "core") && (!searching || lessonMatches(l, term));
+  const filterLesson = (l: Lesson) => (!coreOnly || l.strength === "core") && (!searching || lessonMatches(l, term, notes[l.id]));
 
   const renderModule = (m: Module) => {
     if (m.lessons) {
@@ -338,7 +364,19 @@ export function CoursePanel() {
         <section key={m.key} className="course-module">
           {searching ? <h3 className="course-module-title">{m.title}</h3> : <p className="course-intro">{m.intro}</p>}
           {shown.map(({ l, i }) => (
-            <LessonCard key={l.id} lesson={l} index={i + 1} dates={dates} done={!!done[l.id]} onToggle={() => toggle(l.id)} onZoom={onZoom} />
+            <LessonCard
+              key={l.id}
+              lesson={l}
+              index={i + 1}
+              dates={dates}
+              done={!!done[l.id]}
+              note={notes[l.id] ?? ""}
+              trades={casesByLesson[l.id] ?? []}
+              onToggle={() => toggle(l.id)}
+              onNote={(text) => saveNote(l.id, text)}
+              onZoom={onZoom}
+              onOpenCase={(c) => goTo(caseAnchor(c))}
+            />
           ))}
           {!shown.length ? <p className="course-empty">No core ideas in this module.</p> : null}
         </section>
@@ -385,9 +423,9 @@ export function CoursePanel() {
                 <p className="course-related">
                   Related lessons:{" "}
                   {c.lessons.map((id) => (
-                    <a key={id} href={`#${id}`} onClick={() => setActive(id.replace(/-\d+$/, ""))}>
-                      {id}
-                    </a>
+                    <button key={id} type="button" className="course-link-button" onClick={() => goTo(id)}>
+                      {titleOf(id)}
+                    </button>
                   ))}
                 </p>
               ) : null}
@@ -401,57 +439,92 @@ export function CoursePanel() {
       if (searching && !shown.length) return null;
       return (
         <section key={m.key} className="course-module">
-          {searching ? <h3 className="course-module-title">{m.title}</h3> : <p className="course-intro">{m.intro}</p>}
-          {shown.map((c, i) => (
-            <article key={`${c.symbol}-${c.root}`} className="course-lesson">
-              <header className="course-lesson-head">
-                <span className="course-num">C{i + 1}</span>
-                <h3>
-                  <span className="course-mono">{c.symbol}</span> · {c.setup}
-                </h3>
-                <span
-                  className={`course-result${c.result_pct == null ? "" : c.result_pct > 0 ? " is-up" : c.result_pct < 0 ? " is-down" : ""}`}
-                  title={c.result_note || undefined}
-                >
-                  {c.result_pct == null ? "result not stated" : `${c.result_pct > 0 ? "+" : ""}${c.result_pct.toFixed(1)}%`}
-                </span>
-              </header>
-              <div className="course-chips">
-                <span className="course-chip">Entered {c.entry_date}</span>
-                {c.context ? <span className="course-chip">{c.context}</span> : null}
-              </div>
-              <div className="course-case">
-                {c.image || c.local ? <Chart image={c.image} local={c.local} caption={`${c.symbol} entry chart`} tweet={c.root} onZoom={onZoom} /> : null}
-                <div className="course-case-body">
-                  <p>{c.story}</p>
-                  {c.timeline.length ? (
-                    <>
-                      <h4>Trade log</h4>
-                      <ol className="course-list">
-                        {c.timeline.map((t, j) => (
-                          <li key={j}>
-                            <span className="course-mono">{t.date}</span> <strong>{t.action}</strong>
-                            {t.price != null && t.price !== "" ? <span className="course-mono"> @ {t.price}</span> : null} — {t.text}{" "}
-                            {dates[t.tweet] ? <Sources ids={[t.tweet]} dates={dates} /> : null}
-                          </li>
-                        ))}
-                      </ol>
-                    </>
-                  ) : null}
-                  {c.takeaway ? (
-                    <p className="course-takeaway">
-                      <strong>Takeaway:</strong> {c.takeaway}
-                    </p>
-                  ) : null}
+          {searching ? (
+            <h3 className="course-module-title">{m.title}</h3>
+          ) : (
+            <p className="course-intro">
+              {m.intro} Want to test yourself first?{" "}
+              <button type="button" className="course-link-button" onClick={() => setView("practice")}>
+                Replay them one decision at a time in Practice
+              </button>
+            </p>
+          )}
+          {shown.map((c, i) => {
+            const chart: ChartItem | null =
+              c.image || c.local
+                ? { key: c.root, local: c.local, image: c.image, caption: `${c.symbol} entry chart`, tweet: c.root, date: c.entry_date }
+                : null;
+            const ticker = caseTicker(c.symbol);
+            return (
+              <article key={`${c.symbol}-${c.root}`} className="course-lesson" id={caseAnchor(c)}>
+                <header className="course-lesson-head">
+                  <span className="course-num">C{i + 1}</span>
+                  <h3>
+                    <span className="course-mono">{c.symbol}</span> · {c.setup}
+                  </h3>
+                  <span
+                    className={`course-result${c.result_pct == null ? "" : c.result_pct > 0 ? " is-up" : c.result_pct < 0 ? " is-down" : ""}`}
+                    title={c.result_note || undefined}
+                  >
+                    {c.result_pct == null ? "result not stated" : `${c.result_pct > 0 ? "+" : ""}${c.result_pct.toFixed(1)}%`}
+                  </span>
+                </header>
+                <div className="course-chips">
+                  <span className="course-chip">Entered {c.entry_date}</span>
+                  {c.context ? <span className="course-chip">{c.context}</span> : null}
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="course-case">
+                  {chart ? <Chart item={chart} onZoom={() => onZoom([chart], 0)} /> : null}
+                  <div className="course-case-body">
+                    <p>{c.story}</p>
+                    {c.timeline.length ? (
+                      <>
+                        <h4>Trade log</h4>
+                        <ol className="course-list">
+                          {c.timeline.map((t, j) => (
+                            <li key={j}>
+                              <span className="course-mono">{t.date}</span> <strong>{t.action}</strong>
+                              {t.price != null && t.price !== "" ? <span className="course-mono"> @ {t.price}</span> : null} — {t.text}{" "}
+                              {dates[t.tweet] ? <Sources ids={[t.tweet]} dates={dates} /> : null}
+                            </li>
+                          ))}
+                        </ol>
+                      </>
+                    ) : null}
+                    {c.takeaway ? (
+                      <p className="course-takeaway">
+                        <strong>Takeaway:</strong> {c.takeaway}
+                      </p>
+                    ) : null}
+                    <p className="course-related">
+                      {c.lessons.length ? "Lessons it shows: " : null}
+                      {c.lessons.map((id) => (
+                        <button key={id} type="button" className="course-link-button" onClick={() => goTo(id)}>
+                          {titleOf(id)}
+                        </button>
+                      ))}
+                      {ticker ? (
+                        <a className="course-link-button" href={fullChartUrl(ticker)} target="_blank" rel="noreferrer noopener">
+                          {ticker} chart today
+                        </a>
+                      ) : null}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </section>
       );
     }
     return null;
   };
+
+  const views: { key: View; label: string; Icon: typeof BookOpen; count: string }[] = [
+    { key: "lessons", label: "Lessons", Icon: BookOpen, count: `${doneCount}/${allLessons.length}` },
+    { key: "gallery", label: "Chart gallery", Icon: Images, count: String(charts.length) },
+    { key: "practice", label: "Practice", Icon: Dumbbell, count: "4 drills" },
+  ];
 
   return (
     <Panel
@@ -463,78 +536,123 @@ export function CoursePanel() {
         Unofficial study notes compiled from his public posts and checked against the tweets each point cites. He did not write or review them.
         Nothing here is a recommendation to buy or sell anything.
       </p>
-      <div className="course-toolbar">
-        <input
-          id="course-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search all lessons: VCP, breadth, stop, pyramiding…"
-          aria-label="Search lessons"
+      <div className="course-views" role="tablist" aria-label="Course views">
+        {views.map(({ key, label, Icon, count }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={view === key}
+            className={`course-view${view === key ? " is-active" : ""}`}
+            onClick={() => setView(key)}
+          >
+            <Icon size={15} aria-hidden /> {label} <span className="course-mono">{count}</span>
+          </button>
+        ))}
+      </div>
+      {view === "gallery" ? <CourseGallery data={data} charts={charts} onZoom={onZoom} /> : null}
+      {view === "practice" ? (
+        <CoursePractice data={data} lessons={allLessons} charts={charts} onOpenLesson={goTo} onZoom={onZoom} />
+      ) : null}
+      {view === "lessons" ? (
+        <>
+          <div className="course-toolbar">
+            <input
+              id="course-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search all lessons and your notes: VCP, breadth, stop, pyramiding…"
+              aria-label="Search lessons"
+            />
+            <label className="course-toggle">
+              <input type="checkbox" checked={coreOnly} onChange={(e) => setCoreOnly(e.target.checked)} /> Core ideas only
+            </label>
+            <span className="course-progress">
+              {doneCount} of {allLessons.length} studied
+              <span className="course-bar">
+                <i style={{ width: `${allLessons.length ? (100 * doneCount) / allLessons.length : 0}%` }} />
+              </span>
+            </span>
+            {nextUp ? (
+              <button type="button" className="course-link-button" onClick={() => goTo(nextUp.id)} title={nextUp.title}>
+                Continue: {nextUp.title.length > 42 ? `${nextUp.title.slice(0, 40)}…` : nextUp.title}
+              </button>
+            ) : null}
+          </div>
+          <div className="course-layout">
+            <nav className="course-rail" aria-label="Course modules">
+              {modules.map((m, i) => {
+                const count = m.lessons?.length ?? m.conditions?.length ?? m.cases?.length ?? 0;
+                const studied = (m.lessons ?? []).filter((l) => done[l.id]).length;
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    className={`course-rail-item${!searching && m.key === current.key ? " is-active" : ""}`}
+                    onClick={() => {
+                      setQuery("");
+                      setActive(m.key);
+                    }}
+                  >
+                    <span className="course-mono">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="course-rail-label">{m.title}</span>
+                    <span className="course-rail-count">{m.lessons ? `${studied}/${count}` : count}</span>
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="course-content">
+              {searching ? (
+                <>
+                  {modules.map(renderModule)}
+                  {!modules.some((m) => renderModule(m)) ? <p className="course-empty">Nothing matches “{query}”.</p> : null}
+                </>
+              ) : (
+                <>
+                  <h3 className="course-module-title">{current.title}</h3>
+                  {renderModule(current)}
+                  <ModuleNav modules={modules} current={current} onGo={(key) => {
+                    setActive(key);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }} />
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      ) : null}
+      {zoom ? (
+        <CourseLightbox
+          items={zoom.items}
+          index={zoom.index}
+          onIndex={(index) => setZoom((z) => (z ? { ...z, index } : z))}
+          onClose={() => setZoom(null)}
+          onOpenLesson={goTo}
         />
-        <label className="course-toggle">
-          <input type="checkbox" checked={coreOnly} onChange={(e) => setCoreOnly(e.target.checked)} /> Core ideas only
-        </label>
-        <span className="course-progress">
-          {doneCount} of {allLessons.length} studied
-          <span className="course-bar">
-            <i style={{ width: `${allLessons.length ? (100 * doneCount) / allLessons.length : 0}%` }} />
-          </span>
-        </span>
-      </div>
-      <div className="course-layout">
-        <nav className="course-rail" aria-label="Course modules">
-          {modules.map((m, i) => {
-            const count = m.lessons?.length ?? m.conditions?.length ?? m.cases?.length ?? 0;
-            const studied = (m.lessons ?? []).filter((l) => done[l.id]).length;
-            return (
-              <button
-                key={m.key}
-                type="button"
-                className={`course-rail-item${!searching && m.key === current.key ? " is-active" : ""}`}
-                onClick={() => {
-                  setQuery("");
-                  setActive(m.key);
-                }}
-              >
-                <span className="course-mono">{String(i + 1).padStart(2, "0")}</span>
-                <span className="course-rail-label">{m.title}</span>
-                <span className="course-rail-count">{m.lessons ? `${studied}/${count}` : count}</span>
-              </button>
-            );
-          })}
-        </nav>
-        <div className="course-content">
-          {searching ? (
-            <>
-              {modules.map(renderModule)}
-              {!modules.some((m) => renderModule(m)) ? <p className="course-empty">Nothing matches “{query}”.</p> : null}
-            </>
-          ) : (
-            <>
-              <h3 className="course-module-title">{current.title}</h3>
-              {renderModule(current)}
-            </>
-          )}
-        </div>
-      </div>
-      {zoom
-        ? createPortal(
-            <div className="course-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged chart" onClick={() => setZoom(null)}>
-              <button type="button" className="course-lightbox-close" onClick={() => setZoom(null)} aria-label="Close">
-                <CloseIcon size={18} />
-              </button>
-              <img src={zoom.src} alt={zoom.alt} referrerPolicy="no-referrer" onClick={(e) => e.stopPropagation()} />
-              <p onClick={(e) => e.stopPropagation()}>
-                {zoom.alt}{" "}
-                <a href={zoom.src} target="_blank" rel="noreferrer noopener">
-                  Open image <ExternalLink size={12} />
-                </a>
-              </p>
-            </div>,
-            document.body,
-          )
-        : null}
+      ) : null}
     </Panel>
+  );
+}
+
+function ModuleNav({ modules, current, onGo }: { modules: Module[]; current: Module; onGo: (key: string) => void }) {
+  const i = modules.findIndex((m) => m.key === current.key);
+  const prev = modules[i - 1];
+  const next = modules[i + 1];
+  return (
+    <nav className="course-module-nav" aria-label="Previous and next module">
+      {prev ? (
+        <button type="button" onClick={() => onGo(prev.key)}>
+          <span>Previous</span> {prev.title}
+        </button>
+      ) : (
+        <span />
+      )}
+      {next ? (
+        <button type="button" className="is-next" onClick={() => onGo(next.key)}>
+          <span>Next</span> {next.title}
+        </button>
+      ) : null}
+    </nav>
   );
 }
