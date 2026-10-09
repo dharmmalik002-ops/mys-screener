@@ -336,13 +336,24 @@ def build_lookalike_router(
                 "rows": [refs[k] for k in keys if k in refs]}
 
     @router.get("/gallery/{style}/india")
-    def gallery_india(style: str, page: int = Query(0, ge=0), size: int = Query(24, ge=1), outcome: str = "all") -> dict[str, Any]:
+    def gallery_india(
+        style: str,
+        page: int = Query(0, ge=0),
+        size: int = Query(24, ge=1),
+        outcome: str = "all",
+        offset: int | None = Query(None, ge=0),
+    ) -> dict[str, Any]:
         """Indian charts in history that looked like this setup, newest first.
-        No prices — the page draws each from the site's own chart API."""
+        No prices — the page draws each from the site's own chart API.
+
+        `offset` (when given) replaces `page * size`, so a caller asking for more
+        rows than one page holds — the Course page shows up to 200 — can read
+        consecutive chunks of any size without gaps or repeats."""
         hist = _load(HISTORY_FILE) or {}
         rows = [r for r in (hist.get("styles") or {}).get(style, []) if _outcome_ok(r.get("label"), outcome)]
         size = min(size, GALLERY_PAGE_MAX)
-        chunk = rows[page * size:(page + 1) * size]
+        start = offset if offset is not None else page * size
+        chunk = rows[start:start + size]
         stamps = hist.get("files") or {}
         months: dict[str, dict] = {}
         out = []

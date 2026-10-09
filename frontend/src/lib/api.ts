@@ -6374,8 +6374,8 @@ export function getGalleryTraderCharts(style: string, page: number, size: number
   });
 }
 
-export function getGalleryIndianHistory(style: string, page: number, size: number, outcome: GalleryOutcome) {
-  const q = `page=${page}&size=${size}&outcome=${outcome}`;
+export function getGalleryIndianHistory(style: string, page: number, size: number, outcome: GalleryOutcome, offset?: number) {
+  const q = `page=${page}&size=${size}&outcome=${outcome}${offset != null ? `&offset=${offset}` : ""}`;
   return request<GalleryPage<GalleryHistoryRow>>(`/api/lookalikes/gallery/${encodeURIComponent(style)}/india?${q}`, undefined, {
     timeoutMs: 30000,
   });

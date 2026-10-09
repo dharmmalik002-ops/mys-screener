@@ -28,6 +28,12 @@ export const LESSON_LINKS: Record<string, LessonLinks> = {
     examples: [VCP_DECK, { kind: "style", style: "minervini", label: "Matched to Minervini setups" }],
   },
   "setups-2": { scanners: [{ mode: "contraction", label: "Contraction" }] },
+  // Entries: buying inside the tight area, before the obvious breakout point.
+  "entries-1": {
+    scanners: [{ mode: "near-pivot", label: "Near Pivot" }, { mode: "tight-closes", label: "3 Tight Closes" }],
+    examples: [VCP_DECK, { kind: "style", style: "minervini", label: "Matched to Minervini setups" }],
+  },
+  "stock_selection-6": { scanners: [{ mode: "pull-backs", label: "Pull Backs" }, { mode: "bread-butter", label: "Bread & Butter" }] },
   "setups-3": {
     scanners: [{ mode: "consolidating", label: "Consolidating" }, { mode: "near-pivot", label: "Near Pivot" }],
     examples: [{ kind: "style", style: "zanger_base", label: "Matched to Zanger base breakouts" }],

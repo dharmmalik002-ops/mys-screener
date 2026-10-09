@@ -116,6 +116,8 @@ class GalleryRouteTests(unittest.TestCase):
                 self.assertEqual(india["total"], 1)
                 self.assertEqual(india["rows"][0]["symbol"], "A")
                 self.assertEqual(len(india["rows"][0]["chart"]["c"]) > 120, True)
+                self.assertEqual(len(c.get("/api/lookalikes/gallery/zanger_flag/india?offset=0&size=5").json()["rows"]), 1)
+                self.assertEqual(c.get("/api/lookalikes/gallery/zanger_flag/india?offset=1&size=5").json()["rows"], [])
                 none = c.get("/api/lookalikes/gallery/zanger_flag/india?outcome=pending").json()
                 self.assertEqual(none["total"], 0)
 

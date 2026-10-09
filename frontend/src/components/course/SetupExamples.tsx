@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SeriesMarker, UTCTimestamp } from "lightweight-charts";
 import { getGalleryIndianHistory, getSignalArchive, type ArchiveRow, type GalleryHistoryRow, type StudyBar } from "../../lib/api";
 import { fullChartUrl } from "../../lib/chartLink";
@@ -26,7 +26,10 @@ import type { ExampleSource } from "./courseLinks";
 
 const COUNT_KEY = "mr-malik-course-examples-count:v1";
 const COLS_KEY = "mr-malik-course-examples-cols:v1";
-const MAX_COUNT = 60;
+const MAX_COUNT = 200;
+const QUICK_COUNTS = [6, 12, 24, 48, 96];
+/** The gallery endpoint returns at most this many rows per call (GALLERY_PAGE_MAX). */
+const GALLERY_CHUNK = 60;
 const SHOW_BEFORE = 120; // sessions drawn up to and including the setup day
 const SHOW_AFTER = 60; // sessions drawn after it
 
@@ -82,8 +85,19 @@ async function fetchPage(source: ExampleSource, outcome: Outcome, page: number, 
     const base = res.baseline;
     return { rows: res.rows.map(fromArchive), total: res.total, rate: base && base.count ? base.wins / base.count : null };
   }
-  const res = await getGalleryIndianHistory(source.style, page, size, outcome);
-  return { rows: res.rows.map(fromGallery), total: res.total, rate: null };
+  // Read [page*size, page*size+size) in chunks the endpoint will serve.
+  const rows: Example[] = [];
+  let total = 0;
+  for (let offset = page * size, left = size; left > 0; ) {
+    const n = Math.min(GALLERY_CHUNK, left);
+    const res = await getGalleryIndianHistory(source.style, 0, n, outcome, offset);
+    total = res.total;
+    rows.push(...res.rows.map(fromGallery));
+    if (res.rows.length < n) break;
+    offset += n;
+    left -= n;
+  }
+  return { rows, total, rate: null };
 }
 
 /** Quiz sets are half winners, half failures, shuffled — so 50% is what
@@ -120,11 +134,30 @@ function useExamples(source: ExampleSource, outcome: Outcome, page: number, bala
   return { rows, total, baseRate, error };
 }
 
+/** Whether the element is on screen or within ~one screen of it. */
+function useNearViewport<T extends Element>() {
+  const ref = useRef<T | null>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const io = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), { rootMargin: "900px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, near] as const;
+}
+
 /** The example's real bars: enough history before the setup for a 200-day
-    average, the setup window, and the sessions that followed. */
-function useExampleBars(ex: Example) {
+    average, the setup window, and the sessions that followed. Nothing is
+    fetched until the card first comes near the screen. */
+function useExampleBars(ex: Example, wanted: boolean) {
   const [state, setState] = useState<{ bars: StudyBar[]; trigger: number } | "missing" | null>(null);
   useEffect(() => {
+    if (!wanted) return;
     let live = true;
     setState(null);
     loadBars(ex.symbol, isoShift(ex.setup, -420), isoShift(ex.setup, 100))
@@ -141,12 +174,19 @@ function useExampleBars(ex: Example) {
     return () => {
       live = false;
     };
-  }, [ex.symbol, ex.setup]);
+  }, [ex.symbol, ex.setup, wanted]);
   return state;
 }
 
 function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean; height: number; onCall: (right: boolean) => void }) {
-  const data = useExampleBars(ex);
+  // Charts mount only near the screen and unmount when scrolled far away, so a
+  // page of 200 keeps a handful of live canvases; the bars stay cached.
+  const [ref, near] = useNearViewport<HTMLElement>();
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    if (near) setSeen(true);
+  }, [near]);
+  const data = useExampleBars(ex, seen);
   const [called, setCalled] = useState<boolean | null>(null);
   const canCall = quiz && ex.worked !== null;
   const hidden = canCall && called === null;
@@ -162,7 +202,7 @@ function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean;
   );
 
   return (
-    <figure className={`course-example${called === null ? "" : right ? " is-right" : " is-wrong"}`}>
+    <figure ref={ref} className={`course-example${called === null ? "" : right ? " is-right" : " is-wrong"}`}>
       <figcaption className="course-example-head">
         <a href={fullChartUrl(ex.symbol)} target="_blank" rel="noreferrer noopener" className="course-mono" title="Chart today, on this site">
           {ex.symbol}
@@ -172,7 +212,7 @@ function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean;
           <span className={`course-result${ex.worked === true ? " is-up" : ex.worked === false ? " is-down" : ""}`}>{ex.resultText}</span>
         )}
       </figcaption>
-      {loaded ? (
+      {loaded && near ? (
         <CourseCandleChart
           bars={loaded.bars}
           height={height}
@@ -183,7 +223,7 @@ function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean;
         />
       ) : (
         <div className="course-example-blank" style={{ height }}>
-          {data === "missing" ? "No price history for this stock and date" : "Loading chart…"}
+          {data === "missing" ? "No price history for this stock and date" : loaded ? "" : "Loading chart…"}
         </div>
       )}
       {hidden ? (
@@ -248,6 +288,18 @@ export function SetupExamples({
     setCountDraft(String(v));
     writeJson(COUNT_KEY, v);
   };
+  const applyDraft = () => {
+    const n = Number(countDraft);
+    if (Number.isFinite(n) && n >= 1) setCount(n);
+    else setCountDraft(String(count));
+  };
+  // A typed number applies once typing pauses, so "150" does not load 1, then 15, then 150.
+  useEffect(() => {
+    const n = Number(countDraft);
+    if (!Number.isFinite(n) || n < 1 || n === count) return;
+    const t = window.setTimeout(() => setCount(n), 700);
+    return () => window.clearTimeout(t);
+  }, [countDraft]);
 
   return (
     <div className="course-setup-examples">
@@ -287,7 +339,7 @@ export function SetupExamples({
       <div className="course-gallery-filters">
         <label className="course-count">
           Stocks shown{" "}
-          {[2, 4, 6, 12, 24].map((n) => (
+          {QUICK_COUNTS.map((n) => (
             <button key={n} type="button" className={`lookalike-filter${count === n ? " is-active" : ""}`} aria-pressed={count === n} onClick={() => setCount(n)}>
               {n}
             </button>
@@ -298,12 +350,11 @@ export function SetupExamples({
             max={MAX_COUNT}
             value={countDraft}
             aria-label={`Stocks shown, 1 to ${MAX_COUNT}`}
-            onChange={(e) => {
-              setCountDraft(e.target.value);
-              const n = Number(e.target.value);
-              if (n >= 1 && n <= MAX_COUNT) setCount(n);
+            onChange={(e) => setCountDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") applyDraft();
             }}
-            onBlur={() => setCountDraft(String(count))}
+            onBlur={applyDraft}
           />
         </label>
         <ChartsPerRow value={cols} onChange={setCols} />
