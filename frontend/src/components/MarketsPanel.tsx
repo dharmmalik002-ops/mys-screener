@@ -258,16 +258,12 @@ function buildOutlook(
 
   const byImpact = [...signals].sort((a, b) => Math.abs(b.score * b.weight) - Math.abs(a.score * a.weight));
   const reasons = byImpact.slice(0, 3).map((s) => {
-    const dir = s.score > 0.2 ? "supports" : s.score < -0.2 ? "works against" : "is neutral for";
-    return `${s.label} (${s.valueLabel}) ${dir} the market right now.`;
+    const read = s.score > 0.2 ? "supportive" : s.score < -0.2 ? "negative" : "neutral";
+    return `${s.label}: ${s.valueLabel} — ${read}`;
   });
 
   const nearFlip = [...signals].sort((a, b) => Math.abs(a.score) - Math.abs(b.score)).slice(0, 2);
-  const flips = nearFlip.map((s) =>
-    s.score <= 0
-      ? `${s.label} turning decisively up would upgrade this outlook.`
-      : `${s.label} rolling over would downgrade this outlook.`,
-  );
+  const flips = nearFlip.map((s) => (s.score <= 0 ? `${s.label} turns decisively up` : `${s.label} rolls over`));
 
   return { score, verdict, guidance, tone, signals, reasons, flips };
 }

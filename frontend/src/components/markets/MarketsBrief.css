@@ -8,9 +8,11 @@
   margin-bottom: 14px;
 }
 
-.mkb-headline {
+/* Specificity is deliberate: `.panel h2` and the Studio `html:root[data-design] .panel h2`
+   rule both set size and family on any h2 inside a panel, and the Markets page is a panel. */
+:root[data-design] .panel .mkb h2.mkb-headline {
   margin: 12px 0 14px;
-  max-width: 26em;
+  max-width: 30em;
   font-family: var(--font-editorial);
   font-size: clamp(24px, 2.8vw, 38px);
   font-weight: 400;
@@ -110,7 +112,7 @@
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
-.mkb-why h3 {
+:root[data-design] .panel .mkb .mkb-why h3 {
   margin: 0 0 6px;
   font-family: var(--font-caption);
   font-size: 10.5px;

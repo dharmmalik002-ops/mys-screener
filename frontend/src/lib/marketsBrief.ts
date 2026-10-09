@@ -124,8 +124,10 @@ export function breadthFacts(env: MarketEnvironmentResponse | null, xp: XpBreadt
   const facts: BriefFact[] = [];
   const posture = env?.posture;
   if (posture && posture.advances + posture.declines > 0) {
+    // Name the universe: Home counts every NSE stock (2,594), this page the liquid ones (1,047),
+    // and two different advancer counts with the same label read as a contradiction.
     facts.push({
-      label: "Advancing / declining",
+      label: posture.universe > 0 ? `Advancing / declining · ${posture.universe.toLocaleString("en-IN")} liquid` : "Advancing / declining",
       value: `${posture.advances.toLocaleString("en-IN")} / ${posture.declines.toLocaleString("en-IN")}`,
       tone: posture.advances >= posture.declines ? "pos" : "neg",
     });
