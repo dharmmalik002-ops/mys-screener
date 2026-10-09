@@ -824,6 +824,20 @@ class DashboardService:
             and self._snapshot_session_matches(snapshot, latest_patch_date)
         ]
 
+    def _group_eligible_snapshots(self, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
+        """Rows the Groups page may rank and paint: the scanners' staleness rule.
+
+        Fourteen rows on the 2026-10-08 snapshot (JBCHEPHARM, GUJGASLTD, GSPL,
+        AKZOINDIA, HEG, ...) still carried a March/April session, so their
+        six-month-old returns fed group scores and the Market Map painted
+        April's daily move as today's. The classification half of the scanner
+        guard is not applied: the group classifier has its own fallbacks.
+        """
+        latest_patch_date = self._latest_applied_patch_date()
+        fresh = [s for s in snapshots if self._snapshot_session_matches(s, latest_patch_date)]
+        # A guard that empties the page is worse than the rows it removes.
+        return fresh or snapshots
+
     def _latest_applied_patch_date(self) -> date | None:
         bhav_status_path = getattr(self.provider, "_bhavcopy_status_path", None)
         if not callable(bhav_status_path):
@@ -7727,7 +7741,7 @@ class DashboardService:
             self._industry_groups_cache = response
             return response
 
-        snapshots = await self._snapshots()
+        snapshots = self._group_eligible_snapshots(await self._snapshots())
         benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
         market_key = self._market_key()
         response = await asyncio.to_thread(
@@ -7754,6 +7768,66 @@ class DashboardService:
         import gc
         gc.collect()
         return response
+
+    _group_rotation_cache: tuple[tuple, dict] | None = None
+
+    async def get_group_rotation(self) -> dict:
+        """Price momentum per group/sector for the Rotation chart (services/group_rotation.py).
+
+        Keyed on the groups payload it describes, so membership and momentum
+        always come from the same build."""
+        groups = await self.get_industry_groups()
+        key = (groups.generated_at, groups.as_of_date, groups.total_groups)
+        cached = self._group_rotation_cache
+        if cached is not None and cached[0] == key:
+            return cached[1]
+        snapshots = self._group_eligible_snapshots(await self._snapshots())
+        benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
+        payload = await asyncio.to_thread(
+            self._build_group_rotation, groups, snapshots, [s.symbol for s in benchmark_snapshots]
+        )
+        payload["benchmark"] = benchmark_label
+        payload["groups_as_of_date"] = groups.as_of_date
+        self._group_rotation_cache = (key, payload)
+        return payload
+
+    def _build_group_rotation(
+        self,
+        groups: IndustryGroupsResponse,
+        snapshots: list[StockSnapshot],
+        benchmark_symbols: list[str],
+    ) -> dict:
+        from app.services.group_rotation import build_group_rotation
+
+        wanted = {symbol for group in groups.groups for symbol in group.symbols} | set(benchmark_symbols)
+        closes: dict[str, list[float]] = {}
+        sessions: dict[str, date | None] = {}
+        for snapshot in snapshots:
+            if snapshot.symbol not in wanted:
+                continue
+            series = close_history.closes_for(snapshot)
+            if series:
+                closes[snapshot.symbol] = series
+                sessions[snapshot.symbol] = snapshot.history_session_date
+        return build_group_rotation(
+            [
+                {"group_id": g.group_id, "parent_sector": g.parent_sector, "symbols": g.symbols}
+                for g in groups.groups
+            ],
+            closes,
+            sessions,
+            benchmark_symbols,
+            self._exchange_session_calendar(),
+        )
+
+    def _exchange_session_calendar(self) -> list[date]:
+        """NSE's own session dates (nse_breadth_history.json, written by the daily job)."""
+        backend_root = getattr(self.provider, "backend_root", None) or Path(__file__).resolve().parents[2]
+        try:
+            payload = json.loads((Path(backend_root) / "data" / "nse_breadth_history.json").read_text(encoding="utf-8"))
+            return [date.fromisoformat(str(row["date"])) for row in payload.get("days") or [] if row.get("date")]
+        except (OSError, ValueError, TypeError, KeyError):
+            return []
 
     async def refresh_market_data(self) -> dict[str, object]:
         snapshot_before = self.provider.get_snapshot_updated_at()

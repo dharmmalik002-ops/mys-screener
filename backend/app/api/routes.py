@@ -490,6 +490,12 @@ def build_router(service):
 
         return await asyncio.to_thread(build_rank_history_series, limit)
 
+    @router.get("/groups/rotation")
+    async def groups_rotation(market: str = Query(default="india")):
+        # Price momentum against the Nifty 500 per group and sector — the
+        # Rotation chart's vertical axis (services/group_rotation.py).
+        return await resolve_service(market).get_group_rotation()
+
     @router.get("/markets/regime-analysis")
     async def markets_regime_analysis(
         market: str = Query(default="india"),
@@ -924,6 +930,10 @@ def build_router(service):
         from app.services.industry_groups import build_rank_history_series
 
         return await asyncio.to_thread(build_rank_history_series, limit)
+
+    @router.get("/{market_name}/groups/rotation")
+    async def namespaced_groups_rotation(market_name: str):
+        return await resolve_service(market_name).get_group_rotation()
 
     @router.get("/{market_name}/watchlists", response_model=WatchlistsStateResponse)
     async def namespaced_watchlists(market_name: str):

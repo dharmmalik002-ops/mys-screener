@@ -374,13 +374,18 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
     }
 
     for (const rect of outer) {
-      out.push({ ...rect, depth: 1, parentId: null });
       const parent = rect.datum as Branch;
       // Reserve the header strip, then nest the children below it. Too small
-      // to hold a header plus a readable child? Leave it as one flat tile.
+      // to hold a header plus a readable child? Draw the sector as one
+      // coloured, clickable tile. Pushing only the frame left it blank white:
+      // on 8 Oct Real Estate (-3.0%) read as an empty box with no return.
       const innerY = rect.y + SECTOR_HEADER_H;
       const innerH = rect.h - SECTOR_HEADER_H - 2;
-      if (rect.w < 56 || innerH < 26) continue;
+      if (rect.w < 56 || innerH < 26) {
+        out.push({ ...rect, depth: 2, parentId: null });
+        continue;
+      }
+      out.push({ ...rect, depth: 1, parentId: null });
       const inner = foldSmallChildren(
         parent.children,
         Math.max(0, rect.w - 2) * innerH,

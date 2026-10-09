@@ -613,7 +613,7 @@ export function GroupsPanel({
                 {view === "map" ? (
                   `Sectors, then groups, then stocks — click any tile to drill in${closeLabel ? ` · ${closeLabel}` : ""}`
                 ) : view === "rotation" ? (
-                  "Where each group sits in the rotation cycle, from its recorded score history"
+                  "Where each group sits in the rotation cycle: its ranking score, and whether its prices are gaining on the market"
                 ) : (
                   <>
                     {filteredGroups.length} of {totalGroups} groups

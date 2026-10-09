@@ -80,6 +80,10 @@ EMERGING_MIN_MOMENTUM = 70.0
 # Day-over-day EMA smoothing of the rank score (raw stored, smoothed at read time).
 SCORE_EMA_SPAN = 4
 SCORE_EMA_MAX_SESSIONS = 15
+# A session older than this is not "yesterday's score", whatever its position in
+# the store: with a gap in the history (Space down, store reset) the EMA would
+# otherwise average today against a months-old ranking as if it were recent.
+SCORE_EMA_MAX_AGE_DAYS = 30
 
 RANK_HISTORY_DIR = Path(__file__).resolve().parent.parent / "data" / "rank_history"
 # label -> (calendar_days_back, tolerance_days)
@@ -328,10 +332,14 @@ def _history_ranks_asof(
 
 
 def _prior_raw_scores(history: dict[str, list[dict]], asof: date) -> dict[str, list[float]]:
-    """Per-group raw-score series from sessions strictly before `asof`,
-    oldest first, capped at the newest SCORE_EMA_MAX_SESSIONS sessions.
+    """Per-group raw-score series from sessions strictly before `asof` and no
+    more than SCORE_EMA_MAX_AGE_DAYS older, oldest first, capped at the newest
+    SCORE_EMA_MAX_SESSIONS sessions.
     Falls back to `score` for pre-rawScore history entries."""
-    days = sorted(d for d in history if (parsed := _parse_history_date(d)) is not None and parsed < asof)
+    oldest = asof - timedelta(days=SCORE_EMA_MAX_AGE_DAYS)
+    days = sorted(
+        d for d in history if (parsed := _parse_history_date(d)) is not None and oldest <= parsed < asof
+    )
     # Entries written before history was keyed by data session repeat the
     # previous session's scores under a non-trading date. An identical payload
     # is not a new session; counting it would weight a stale day twice.

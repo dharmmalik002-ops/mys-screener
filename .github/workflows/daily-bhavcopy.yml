@@ -130,6 +130,12 @@ jobs:
           if [ -f backend/data/volume_history.json ]; then
             git add backend/data/volume_history.json || true
           fi
+          # 200 sessions of daily closes per symbol, rewritten from the bars the
+          # indicator step already downloads. Power Base, VCP and the Groups
+          # rotation read it; the runtime can only bridge 20 sessions of drift.
+          if [ -f backend/data/close_history.json ]; then
+            git add backend/data/close_history.json || true
+          fi
           # Last 12 quarters of standalone results per company, from BSE.
           if [ -f backend/data/quarterly_summary.json ]; then
             git add backend/data/quarterly_summary.json || true
