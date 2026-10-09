@@ -3431,6 +3431,60 @@ export type PeerMetricsItem = {
   profit_yoy_pct: number | null;
 };
 
+export type CatalystPolarity = "positive" | "negative" | "mixed";
+
+export type CatalystItem = {
+  id: string;
+  date: string;
+  source: string;
+  source_type: "filing" | "concall" | "news";
+  title: string;
+  link: string | null;
+  polarity: CatalystPolarity;
+  category: string;
+  impact: "high" | "medium" | "low";
+  horizon: "near" | "medium" | "long";
+  headline: string;
+  what_happened: string;
+  effect_on_company: string;
+  analyst_view: string;
+  /** false: classified by keyword because the AI was unavailable. */
+  ai: boolean;
+};
+
+export type CatalystOverall = {
+  stance: "supportive" | "mixed" | "cautionary" | "quiet";
+  summary: string;
+  reasons_to_own: string[];
+  reasons_to_avoid: string[];
+  watch_next: string[];
+};
+
+export type CatalystsResponse = {
+  symbol: string;
+  status: "ready" | "building" | "empty";
+  refreshing: boolean;
+  stale?: boolean;
+  ai_available: boolean;
+  catalysts: CatalystItem[];
+  overall: CatalystOverall | null;
+  refreshed_on?: string;
+  refreshed_at?: string;
+  concall?: { id: string; date: string; title: string; link: string | null; read: boolean } | null;
+  sources?: Record<string, { ok: boolean; count?: number; error?: string; date?: string | null; read?: boolean }>;
+  pending_ai?: boolean;
+  ai_error?: string | null;
+};
+
+/** Catalysts for one company: filings, latest concall and news, read by the AI. Rebuilt once a day. */
+export function getCatalysts(symbol: string, refresh = false) {
+  return request<CatalystsResponse>(
+    `/api/catalysts/${encodeURIComponent(symbol)}${refresh ? "?refresh=true" : ""}`,
+    undefined,
+    { timeoutMs: 20000 },
+  );
+}
+
 export function getPeerMetrics(symbols: string[], market: MarketKey) {
   return request<{ items: PeerMetricsItem[] }>(
     `/api/peer-metrics?symbols=${encodeURIComponent(symbols.join(","))}&market=${market}`,

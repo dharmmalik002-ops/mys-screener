@@ -17,12 +17,14 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.bot_routes import build_bot_router
+from app.api.catalyst_routes import build_catalyst_router
 from app.api.lookalike_routes import build_lookalike_router
 from app.api.mutual_funds_routes import build_mutual_funds_router
 from app.api.routes import build_router
 from app.core.config import get_settings
 from app.providers.factory import build_provider
 from app.scanners.definitions import scan_catalog_with_counts
+from app.services.catalysts import CatalystService
 from app.services.dashboard_service import DashboardService
 from app.services.maintenance import (
     UNIVERSE_WARM_START_DELAY_SECONDS,
@@ -67,6 +69,9 @@ if IS_HF_SPACE:
 services = {
     "india": service,
 }
+catalyst_service = CatalystService(
+    settings.app_state_dir, llm_api_key=settings.llm_api_key, gemini_api_key=settings.gemini_api_key
+)
 scheduler = AsyncIOScheduler(timezone=IST)
 
 
@@ -900,6 +905,24 @@ def trigger_github_lookalike_if_stale() -> None:
 _universe_chart_warm_running = False
 
 
+async def catalyst_watchlist_refresh_job() -> None:
+    """Each evening, bring every watchlist stock's catalysts up to date (services/catalysts.py).
+
+    Other stocks refresh the first time their Catalysts tab is opened that day.
+    """
+    try:
+        state = service.get_watchlists_state()
+        symbols: list[str] = []
+        for watchlist in state.watchlists:
+            for symbol in watchlist.symbols:
+                if symbol.upper() not in symbols:
+                    symbols.append(symbol.upper())
+        done = await asyncio.to_thread(catalyst_service.refresh_many, symbols)
+        logger.info("Catalysts refreshed for %d of %d watchlist stocks", done, len(symbols))
+    except Exception as exc:
+        logger.warning("Catalyst watchlist refresh failed: %s", exc)
+
+
 async def universe_chart_warm_job(market_name: str, service_obj, delay_seconds: float = 0.0) -> None:
     """Keep every universe symbol's daily chart on disk (see maintenance.py).
 
@@ -988,6 +1011,13 @@ async def lifespan(app: FastAPI):
             id="india_universe_chart_warm",
             replace_existing=True,
         )
+        # After the day's filings and the evening news have landed.
+        scheduler.add_job(
+            catalyst_watchlist_refresh_job,
+            CronTrigger(hour=20, minute=40, timezone=IST),
+            id="catalyst_watchlist_refresh",
+            replace_existing=True,
+        )
         scheduler.start()
         # A deploy or restart starts with an empty chart_cache/: fill it in the
         # background shortly after boot instead of on each user's first click.
@@ -1066,6 +1096,8 @@ app.include_router(
         gemini_api_key=settings.gemini_api_key,
     )
 )
+# Catalysts per company: filings, the latest concall and news, read by the AI.
+app.include_router(build_catalyst_router(catalyst_service))
 app.include_router(
     build_mutual_funds_router(
         MutualFundService(

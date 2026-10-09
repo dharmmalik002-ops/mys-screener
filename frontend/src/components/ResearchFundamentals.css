@@ -302,3 +302,243 @@
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Catalysts tab (CatalystsTab.tsx). Colour marks meaning only: a small
+   badge and a hairline per item, never the body text (DESIGN.md §1.4). */
+
+.cat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cat-kicker {
+  color: var(--text-muted);
+  font-family: var(--font-caption, ui-monospace, monospace);
+  font-size: var(--fs-tiny, 11px);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cat-stance {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.cat-stance-supportive {
+  color: var(--positive);
+}
+
+.cat-stance-cautionary {
+  color: var(--negative);
+}
+
+.cat-refresh {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-flat, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cat-refresh:hover:not(:disabled) {
+  border-color: var(--line-strong, var(--line));
+  background: var(--muted-bg, transparent);
+}
+
+.cat-refresh:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.cat-summary {
+  margin: 10px 0 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cat-case {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .cat-case {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cat-case-col {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-soft, transparent);
+  font-size: var(--fs-small, 13px);
+}
+
+.cat-case-col ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.cat-case-col li + li {
+  margin-top: 4px;
+}
+
+.cat-case-h {
+  margin-bottom: 6px;
+  font-size: var(--fs-tiny, 11px);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cat-pos {
+  color: var(--positive);
+}
+
+.cat-neg {
+  color: var(--negative);
+}
+
+.cat-watch {
+  margin-top: 10px;
+  color: var(--text);
+  font-size: var(--fs-small, 13px);
+  line-height: 1.45;
+}
+
+.cat-watch-h,
+.cat-label {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cat-note {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--muted-bg, transparent);
+  color: var(--text-muted);
+  font-size: var(--fs-small, 13px);
+}
+
+.cat-filters {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 8px;
+}
+
+.cat-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cat-chip.active {
+  border-color: var(--inverse, var(--text));
+  background: var(--inverse, var(--text));
+  color: var(--inverse-ink, #fff);
+}
+
+.cat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cat-item {
+  padding: 12px 0 12px 12px;
+  border-bottom: 1px solid var(--line);
+  border-left: 2px solid var(--line);
+}
+
+.cat-item.cat-positive {
+  border-left-color: var(--positive);
+}
+
+.cat-item.cat-negative {
+  border-left-color: var(--negative);
+}
+
+.cat-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+}
+
+.cat-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  color: var(--text-muted);
+}
+
+.cat-badge-positive {
+  background: color-mix(in srgb, var(--positive) 12%, transparent);
+  color: var(--positive);
+}
+
+.cat-badge-negative {
+  background: color-mix(in srgb, var(--negative) 12%, transparent);
+  color: var(--negative);
+}
+
+.cat-impact {
+  text-transform: capitalize;
+}
+
+.cat-title {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.cat-text {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: var(--fs-small, 13px);
+  line-height: 1.5;
+}
+
+.cat-source {
+  margin-top: 6px;
+  font-size: var(--fs-tiny, 11px);
+}
+
+.cat-foot {
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny, 11px);
+  line-height: 1.5;
+}

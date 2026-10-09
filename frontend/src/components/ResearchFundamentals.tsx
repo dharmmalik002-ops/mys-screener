@@ -10,6 +10,7 @@ import {
   type StockOverview,
 } from "../lib/api";
 
+import { CatalystsTab } from "./CatalystsTab";
 import "./ResearchFundamentals.css";
 
 /**
@@ -22,7 +23,7 @@ import "./ResearchFundamentals.css";
  * summed from four filed quarters, and says so.
  */
 
-type TabKey = "about" | "quarters" | "pnl" | "peers" | "balance" | "cashflow" | "ratios" | "shareholding" | "updates" | "details";
+type TabKey = "about" | "catalysts" | "quarters" | "pnl" | "peers" | "balance" | "cashflow" | "ratios" | "shareholding" | "updates" | "details";
 
 type ResearchFundamentalsProps = {
   symbol: string | null;
@@ -254,6 +255,7 @@ export function ResearchFundamentals({
 
   const tabs: Array<{ key: TabKey; label: string }> = [
     { key: "about", label: "About" },
+    { key: "catalysts", label: "Catalysts" },
     { key: "quarters", label: "Quarters" },
     { key: "pnl", label: "Profit & Loss" },
     { key: "peers", label: "Peers" },
@@ -355,6 +357,9 @@ export function ResearchFundamentals({
 
   const body = !symbol ? (
     <Empty>Pick a stock to view fundamentals.</Empty>
+  ) : activeTab === "catalysts" ? (
+    // Its own source and cache; it does not wait for the fundamentals payload.
+    <CatalystsTab symbol={symbol} />
   ) : loading && !data ? (
     <Empty>Loading fundamentals for {symbol}…</Empty>
   ) : error && !data ? (
