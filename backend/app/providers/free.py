@@ -291,6 +291,7 @@ INDEX_CLOSE_STAMP_IST = (15, 25)
 # different series (or a re-based one) and must not be appended to it.
 INDEX_SERIES_JOIN_TOLERANCE = 0.01
 INDEX_COMPLETION_TTL_SECONDS = 120
+INDEX_NON_DAILY_TIMEFRAMES = frozenset({"15m", "30m", "1h", "1W"})
 
 logger = logging.getLogger(__name__)
 
@@ -1847,7 +1848,10 @@ class FreeMarketDataProvider:
 
     async def get_chart(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
         chart_bars = await self._get_chart_uncompleted(symbol, timeframe, bars)
-        if timeframe == "1D" and str(symbol or "").strip().upper() in INDIAN_INDEX_SYMBOLS:
+        # Daily series only. The front end also asks for range names ("1Y", "3Y") that the
+        # backend serves as daily bars, so the test is "not intraday, not weekly" rather
+        # than "== 1D" — the latter left the Home and Markets pages on the old session.
+        if timeframe not in INDEX_NON_DAILY_TIMEFRAMES and str(symbol or "").strip().upper() in INDIAN_INDEX_SYMBOLS:
             completed = await asyncio.to_thread(self._with_completed_index_session, symbol, chart_bars)
             return completed[-bars:] if len(completed) > bars else completed
         return chart_bars

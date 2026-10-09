@@ -67,6 +67,23 @@ class IndexSessionCompletionTests(unittest.TestCase):
             out = self._complete(symbol, [bar(22603.05)], nse_stamp(8, 15, 30), NSE_ROW)
             self.assertEqual(len(out), 1, symbol)
 
+    def test_range_names_the_front_end_sends_are_completed_too(self):
+        """Home asks for "3Y" and Markets for "1Y"; both are daily series on the backend."""
+        import asyncio
+
+        async def run(timeframe):
+            with patch.object(self.provider, "_get_chart_uncompleted", return_value=[bar(22603.05)]) as inner, \
+                 patch.object(self.provider, "_nse_index_rows", return_value=(nse_stamp(8, 15, 30), {"NIFTY 50": NSE_ROW})):
+                async def fake(*_a, **_k):
+                    return [bar(22603.05)]
+                inner.side_effect = fake
+                return await self.provider.get_chart("^NSEI", timeframe, 500)
+
+        for timeframe in ("1D", "1Y", "3Y"):
+            self.assertEqual(asyncio.run(run(timeframe))[-1].close, 22231.8, timeframe)
+        for timeframe in ("1W", "15m", "1h"):
+            self.assertEqual(asyncio.run(run(timeframe))[-1].close, 22603.05, timeframe)
+
     def test_yahoo_smallcap_100_is_not_called_the_250(self):
         from app.providers.free import INDEX_SYMBOL_TO_NSE_NAME
         self.assertEqual(INDEX_SYMBOL_TO_NSE_NAME["^CNXSC"], "NIFTY SMALLCAP 100")
