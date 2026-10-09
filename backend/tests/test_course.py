@@ -1,5 +1,5 @@
-"""The Course page's backend: historical bars for case replays, archived
-signals drawn whole, and saved progress (app/services/course.py)."""
+"""The Course page's backend: historical bars for the case studies and the
+setup lessons' real examples, and saved progress (app/services/course.py)."""
 
 from __future__ import annotations
 
@@ -149,7 +149,7 @@ class ProgressTests(unittest.TestCase):
 
 
 class RouteTests(unittest.TestCase):
-    """The example-bars route must never hand out today's Chart Gym answer."""
+    """The /api/course routes, mounted on a bare app."""
 
     def setUp(self):
         from fastapi import FastAPI
@@ -164,32 +164,6 @@ class RouteTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
-
-    def test_todays_hand_is_refused_and_other_cards_are_drawn_whole(self):
-        from app.services import study_archive, study_deck
-
-        deck = study_deck.StudyDeck(BACKEND_ROOT / "data")
-        deck._load()  # noqa: SLF001
-        cards = list(deck._cards.values())  # noqa: SLF001
-        if len(cards) < 2:
-            self.skipTest("study deck not present")
-        hidden = study_archive.dealt_today(deck, date.today())
-        dealt = next(c for c in cards if c.id in hidden)
-        free = next(c for c in cards if c.id not in hidden)
-
-        refused = self.client.get("/api/course/example-bars", params={"card_id": dealt.id})
-        self.assertEqual(refused.status_code, 403)
-
-        context = [{"time": i, "open": 1, "high": 1, "low": 1, "close": 1} for i in range(120)]
-        forward = [{"time": 200 + i, "open": 1, "high": 1, "low": 1, "close": 1} for i in range(30)]
-        with mock.patch.object(study_deck, "split_bars", return_value=(context, forward)):
-            ok = self.client.get("/api/course/example-bars", params={"card_id": free.id})
-        self.assertEqual(ok.status_code, 200)
-        body = ok.json()
-        self.assertEqual(body["trigger_index"], 119)  # every context bar (<=139), then the answer
-        self.assertEqual(len(body["bars"]), 150)
-        self.assertEqual(body["bars"][120]["time"], 200)
-        self.assertEqual(body["card"]["id"], free.id)
 
     def test_bars_route_rejects_a_bad_window(self):
         response = self.client.get("/api/course/bars", params={"symbol": "SEQUENT", "start": "2021-02-01", "end": "2021-01-01"})

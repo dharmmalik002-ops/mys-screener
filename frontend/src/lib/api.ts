@@ -6438,14 +6438,6 @@ export function getCourseBars(symbol: string, start: string, end: string) {
   return request<CourseBars>(`/api/course/bars?${q.toString()}`, undefined, { timeoutMs: 45000 });
 }
 
-export type CourseExampleBars = { id: string; bars: StudyBar[]; trigger_index: number; card: ArchiveRow };
-
-export function getCourseExampleBars(cardId: string) {
-  return request<CourseExampleBars>(`/api/course/example-bars?card_id=${encodeURIComponent(cardId)}`, undefined, {
-    timeoutMs: 45000,
-  });
-}
-
 export type CourseProgress = {
   done: Record<string, true>;
   notes: Record<string, string>;

@@ -255,8 +255,8 @@ def build_router(service):
             raise HTTPException(status_code=400, detail=str(exc))
 
     # ── Course page (CoursePanel.tsx) ──────────────────────────────────────
-    # Bars for the case-study replays, real past signals for the setup lessons,
-    # and the learner's progress. See app/services/course.py.
+    # Bars for the case studies and the setup lessons' real examples, and the
+    # learner's progress. See app/services/course.py.
     _course: dict = {}
 
     def _course_services():
@@ -279,29 +279,6 @@ def build_router(service):
             return await asyncio.to_thread(_course_services()["bars"].get, symbol, start, end)
         except CourseBarsError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
-
-    @router.get("/course/example-bars")
-    async def course_example_bars(card_id: str = Query(...), market: str = Query(default="india")):
-        """One archived signal drawn whole — the setup and what followed.
-
-        Only for signals the archive already shows with their result: today's
-        Chart Gym hand is refused, so the course can never give away the
-        answer to a card the drill is asking about (gotcha 15).
-        """
-        from app.services import study_archive
-
-        deck = _study_deck()
-        card = deck.card(card_id)
-        if card is None:
-            raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
-        hidden = await asyncio.to_thread(study_archive.dealt_today, deck, date.today())
-        if card.id in hidden:
-            raise HTTPException(status_code=403, detail="This signal is in today's Chart Gym hand.")
-        context, forward = await _study_bars(card, market)
-        # 90 sessions are drawn; the 49 before them let the page draw a true
-        # 50-day average from the first drawn bar.
-        context = context[-139:]
-        return {"id": card.id, "bars": context + forward, "trigger_index": len(context) - 1, "card": card.answer()}
 
     @router.get("/course/progress")
     async def course_progress():

@@ -121,6 +121,36 @@ class DeckResilienceTests(unittest.TestCase):
             self.assertEqual(deck.meta()["total_cards"], 2)
 
 
+    def test_a_second_caller_waits_for_the_first_read(self):
+        """Two requests on a cold process: the one arriving while the file is
+        still being read must see the whole deck, never an empty one (it used
+        to, and the archive then reported "not generated yet")."""
+        import threading
+        import time
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_deck(directory, [card_row(i, "win") for i in range(5)] + [card_row(50 + i, "loss") for i in range(5)])
+            deck = sd.StudyDeck(directory)
+            real_loads = json.loads
+            reading = threading.Event()
+
+            def slow_loads(text, *args, **kwargs):
+                reading.set()
+                time.sleep(0.3)
+                return real_loads(text, *args, **kwargs)
+
+            with mock.patch.object(sd.json, "loads", side_effect=slow_loads):
+                first = threading.Thread(target=deck._load)  # noqa: SLF001
+                first.start()
+                reading.wait(2)
+                deck._load()  # noqa: SLF001 — the second caller, mid-read
+                seen = len(deck._cards)  # noqa: SLF001
+                first.join()
+            self.assertEqual(seen, 10)
+
+
 class SplitBarsTests(unittest.TestCase):
     def test_split_puts_the_trigger_bar_last_in_the_question(self):
         with tempfile.TemporaryDirectory() as tmp:

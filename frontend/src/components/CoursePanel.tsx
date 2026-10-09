@@ -699,7 +699,7 @@ function CasePriceChart({ c }: { c: CaseStudy }) {
   return (
     <details className="course-examples-panel" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
       <summary>Price chart with his buys and sells marked</summary>
-      {open ? <CaseChart c={c} height={320} /> : null}
+      {open ? <CaseChart c={c} height={440} /> : null}
     </details>
   );
 }

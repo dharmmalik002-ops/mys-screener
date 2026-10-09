@@ -544,7 +544,7 @@ function TradeReplay({
             c={c}
             revealThrough={finished ? undefined : shown.map((t) => t.date).sort()[shown.length - 1]}
             revealEvents={finished ? undefined : shown.length}
-            height={300}
+            height={420}
           />
           <h4>Trade log</h4>
           <ol className="course-list course-replay-log">

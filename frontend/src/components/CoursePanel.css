@@ -484,24 +484,50 @@
   font-size: var(--fs-small);
 }
 
-.course-example-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin: 10px 0; }
-.course-example { margin: 0; min-width: 0; padding: 8px; border-radius: var(--radius-md); box-shadow: var(--ring); background: var(--card-flat); }
+.course-example-grid { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 14px; margin: 10px 0; }
+.course-example { margin: 0; min-width: 0; padding: 10px; border-radius: var(--radius-md); box-shadow: var(--ring); background: var(--card-flat); }
 .course-example.is-right { box-shadow: var(--ring), inset 0 0 0 2px color-mix(in srgb, var(--positive) 55%, transparent); }
 .course-example.is-wrong { box-shadow: var(--ring), inset 0 0 0 2px color-mix(in srgb, var(--negative) 55%, transparent); }
-.course-example .lookalike-canvas { display: block; width: 100%; border-radius: var(--radius-sm, 6px); background: #fff; }
-.course-example-blank { display: flex; align-items: center; justify-content: center; height: 150px; border-radius: var(--radius-sm, 6px); background: var(--surface-soft); color: var(--text-muted); font-size: var(--fs-small); }
-.course-example figcaption { margin-top: 6px; font-size: var(--fs-small); line-height: 1.4; }
-.course-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
-.course-example-head a { color: var(--text); text-decoration: none; font-weight: 500; }
+.course-example-blank { display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm, 6px); background: var(--surface-soft); color: var(--text-muted); font-size: var(--fs-small); }
+.course-example-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 6px; font-size: var(--fs-small); }
+.course-example-head a { color: var(--text); text-decoration: none; font-weight: 500; font-size: var(--fs-base); }
 .course-example-head a:hover { text-decoration: underline; }
 .course-example-head .course-mono { color: var(--text-muted); }
 .course-example-head .course-result { margin-left: auto; }
-.course-example-detail { display: block; margin-top: 3px; color: var(--text-muted); font-size: var(--fs-tiny); }
-.course-grade.is-compact { margin-top: 6px; gap: 6px; }
-.course-grade.is-compact button { padding: 4px 10px; }
+.course-example-detail { display: block; margin-top: 6px; color: var(--text-muted); font-size: var(--fs-tiny); }
+.course-grade.is-compact { margin-top: 8px; gap: 6px; }
+.course-grade.is-compact button { padding: 5px 12px; }
 
-.course-casechart { margin: 10px 0 4px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--ring); background: #fff; position: relative; }
-.course-casechart-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; color: #6b6f72; font-size: var(--fs-small); }
+/* One chart look for every course chart (CourseCandleChart.tsx): white paper, like the main chart. */
+.course-candle-chart { width: 100%; border-radius: var(--radius-sm, 6px); overflow: hidden; background: #fff; }
+
+.course-chart-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.course-chart-toolbar-group { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.course-ma-swatch { display: inline-block; width: 10px; height: 3px; border-radius: 2px; }
+.course-count { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 13px; }
+.course-count input,
+.course-panel .charts-per-row input { width: 3.6em; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; }
+.course-panel .charts-per-row { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 13px; margin-left: auto; }
+
+/* The site's filter-chip look (LookalikesPanel.css), which that stylesheet only ships with its own page. */
+.course-panel .lookalike-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.course-panel .lookalike-filter:hover { color: var(--text); background: var(--surface-soft); }
+.course-panel .lookalike-filter.is-active { background: var(--text); border-color: var(--text); color: var(--surface-strong); }
+
+.course-casechart { margin: 10px 0 4px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--ring); background: #fff; }
+.course-casechart-tools { padding: 8px 10px 4px; background: var(--card-flat); }
+.course-casechart-loading { display: flex; align-items: center; justify-content: center; margin: 0; color: #6b6f72; font-size: var(--fs-small); }
 .course-casechart-legend { margin: 0; padding: 6px 10px; font-size: var(--fs-tiny); color: #6b6f72; background: #fff; }
 .course-casechart-legend .is-buy { color: #1f6fd1; }
 .course-casechart-legend .is-sell { color: #c2410c; }
@@ -513,6 +539,8 @@
   .course-rail { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
   .course-rail-item { width: auto; flex: 0 0 auto; white-space: nowrap; }
   .course-play, .course-case, .course-chart-drill { grid-template-columns: minmax(0, 1fr); }
+  .course-example-grid { grid-template-columns: minmax(0, 1fr); }
+  .course-panel .charts-per-row { margin-left: 0; }
   .course-drill { padding: 16px 14px; }
   .course-lightbox-nav { top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: none; }
   .course-lesson { padding: 16px 14px; }

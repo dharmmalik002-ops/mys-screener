@@ -20,6 +20,7 @@ import hashlib
 import json
 import logging
 import random
+import threading
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -139,13 +140,26 @@ class StudyDeck:
         self._losses: list[str] = []
         self._meta: dict[str, Any] = {}
         self._loaded = False
+        self._load_lock = threading.Lock()
 
     # --- Loading ----------------------------------------------------------
 
     def _load(self) -> None:
+        # Routes call this from worker threads, and two requests often arrive
+        # together on a cold process (the Course quiz asks for winners and
+        # failures at once). Marking the deck loaded before it was read let the
+        # second caller see an empty deck and report "not generated yet".
         if self._loaded:
             return
-        self._loaded = True
+        with self._load_lock:
+            if self._loaded:
+                return
+            try:
+                self._read()
+            finally:
+                self._loaded = True
+
+    def _read(self) -> None:
         path = self._data_dir / DECK_FILENAME
         if not path.exists():
             logger.warning("study deck missing at %s — run scripts/generate_study_deck.py", path)
