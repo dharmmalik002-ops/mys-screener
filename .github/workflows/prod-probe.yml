@@ -1,0 +1,60 @@
+name: Production probe (read-only)
+
+# Diagnostic only: reads the live Space and Vercel site and prints what they
+# serve. Runs on pushes to this working branch; never deploys or writes anything.
+on:
+  push:
+    branches: [claude/optimistic-rubin-vljhd6]
+
+permissions:
+  contents: read
+  statuses: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          API=https://dharmmalik-stock-scanner-backend.hf.space
+          SITE=https://my-screener-theta.vercel.app
+          echo "== HF Space runtime"
+          curl -sS -m 30 https://huggingface.co/api/spaces/dharmmalik/stock-scanner-backend \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('runtime') or {}; print('stage', r.get('stage'), 'sha', d.get('sha'), 'lastModified', d.get('lastModified'), 'errorMessage', (r.get('errorMessage') or '')[:400])" || true
+          echo "== health / bhavcopy"
+          curl -sS -m 60 $API/api/health; echo
+          curl -sS -m 60 $API/api/bhavcopy/status; echo
+          echo "== /api/groups/rotation"
+          curl -sS -m 180 -o rot.json -w "HTTP %{http_code} %{time_total}s\n" "$API/api/groups/rotation?market=india" || true
+          python3 - <<'EOF' || head -c 600 rot.json
+          import json
+          d = json.load(open("rot.json"))
+          print("as_of", d.get("as_of_date"), "groups", len(d.get("groups") or {}), "sectors", len(d.get("sectors") or {}), "sessions", len(d.get("sessions") or []), "dropped", d.get("non_sessions_dropped"))
+          EOF
+          echo "== /api/groups"
+          curl -sS -m 180 -o groups.json -w "HTTP %{http_code} %{time_total}s\n" "$API/api/groups?market=india" || true
+          python3 - <<'EOF' || head -c 600 groups.json
+          import json
+          d = json.load(open("groups.json"))
+          stale = {"JBCHEPHARM","GUJGASLTD","GSPL","AKZOINDIA","HEG","MIDWEST","CIGNITITEC","ASHIKA","LKPFIN","SANGHIIND","BRRL","MIRCELECTR","BRIGHT","SASTASUNDR"}
+          print("as_of", d.get("as_of_date"), "generated_at", d.get("generated_at"), "groups", d.get("total_groups"), "stocks", len(d.get("stocks") or []))
+          print("stale symbols still present:", sorted(s["symbol"] for s in d.get("stocks") or [] if s.get("symbol") in stale))
+          for g in (d.get("groups") or [])[:5]:
+              print("  ", g.get("rank"), g.get("group_name"), round(g.get("score", 0), 1), "raw", round(g.get("raw_score") or 0, 1))
+          EOF
+          echo "== /api/groups/rank-history"
+          curl -sS -m 180 "$API/api/groups/rank-history?limit=90&market=india" -o hist.json -w "HTTP %{http_code} %{time_total}s\n" || true
+          python3 -c "import json; d=json.load(open('hist.json')); s=d.get('sessions') or []; print('sessions', len(s), s[:3], s[-5:])" || true
+          echo "== Vercel bundle"
+          curl -sS -m 30 $SITE/ -o index.html
+          grep -o 'assets/[^"]*\.js' index.html | sort -u | head -5
+          for js in $(grep -o 'assets/[^"]*\.js' index.html | sort -u); do curl -sS -m 30 "$SITE/$js" >> bundle.js; done
+          echo "bundle bytes: $(wc -c < bundle.js)"
+          for s in "rank score vs median" "getGroupRotation" "groups/rotation" "relative strength vs median"; do printf '%-32s %s\n' "$s" "$(grep -c "$s" bundle.js || true)"; done
+          echo "== commit status on main (Vercel)"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ github.repository }}/commits/main/status" \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print('state', d.get('state'), 'sha', d.get('sha','')[:8]); [print(' ', s.get('context'), s.get('state'), s.get('description'), s.get('target_url')) for s in d.get('statuses', [])]"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ github.repository }}/deployments?per_page=5" \
+            | python3 -c "import json,sys; [print(' deploy', d.get('environment'), d.get('sha','')[:8], d.get('created_at')) for d in json.load(sys.stdin)]"
