@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-08",
+ "as_of": "2026-10-09",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,18 +9,6 @@
  "bse_ipo_list_read": false,
  "bse_ipos_as_of": "2026-09-29",
  "bse_ipos": {
-  "544562": {
-   "name": "Advance Agrolife Limited",
-   "symbol": "ADVANCE",
-   "listing_date": "2025-10-08",
-   "issue_price": 100.0
-  },
-  "544564": {
-   "name": "Om Freight Forwarders Limited",
-   "symbol": "OMFREIGHT",
-   "listing_date": "2025-10-08",
-   "issue_price": 135.0
-  },
   "544570": {
    "name": "WeWork India Management Limited",
    "symbol": "WEWORK",
@@ -810,20 +798,6 @@
    "bse_code": "543230",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "ADVANCE": {
-   "listing_date": "2025-10-08",
-   "name": "Advance Agrolife Limited",
-   "isin": "INE1B0W01010",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544562",
-   "sector": "Chemicals",
-   "sub_sector": "Pesticides & Agrochemicals",
-   "shares_crore": 6.428607,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 100.0
   },
   "ADVENTHTL": {
    "listing_date": "2025-11-13",
@@ -3647,20 +3621,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "OMFREIGHT": {
-   "listing_date": "2025-10-08",
-   "name": "Om Freight Forwarders Limited",
-   "isin": "INE1BZC01019",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544564",
-   "sector": "Services",
-   "sub_sector": "Logistics Solution Provider",
-   "shares_crore": 3.367516,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 135.0
-  },
   "OMNI": {
    "listing_date": "2026-03-05",
    "name": "Omnitech Engineering Limited",
@@ -4549,12 +4509,9 @@
    "isin": "INE719F01016",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2025-11-13",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "544969",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SHRADDHA": {
    "listing_date": "2026-08-17",
@@ -4673,21 +4630,11 @@
    "basis": "bse_ipo_list",
    "issue_price": 138.0
   },
-  "SOLEX": {
-   "listing_date": "2025-10-08",
-   "name": "Solex Energy Limited",
-   "isin": "INE880Y01017",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544862",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "SONA": {
    "listing_date": "2026-09-24",
    "name": "Sonaselection India Limited",
    "isin": "INE0LLZ01011",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544938",
    "sector": "Textiles",
@@ -4777,7 +4724,7 @@
    "listing_date": "2026-08-17",
    "name": "Steel Strips Infrastructures Limited",
    "isin": "INE205F01016",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "513173",
    "ipo": false,
