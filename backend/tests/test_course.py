@@ -165,9 +165,9 @@ class RouteTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_bars_fall_back_to_the_sites_own_chart_history(self):
+    def test_bars_fall_back_to_the_providers_full_history(self):
         """Yahoo refusing the exact window must not blank the chart: the route
-        falls back to the full history the main chart already serves."""
+        falls back to the provider's own downloader for the whole history."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
 
@@ -177,14 +177,29 @@ class RouteTests(unittest.TestCase):
         day = 86400
         jan4 = 1609718400  # 2021-01-04T00:00Z
 
+        import pandas as pd
+
+        frame = pd.DataFrame(
+            {"Open": [1, 170, 173], "High": [1, 175, 180], "Low": [1, 168, 172], "Close": [1, 173, 179], "Volume": [1, 1000, 900]},
+            index=pd.to_datetime([jan4 - 400 * day, jan4, jan4 + day], unit="s"),  # the first is outside the window
+        )
+
+        class Provider:
+            def _resolve_ticker(self, symbol):
+                return f"{symbol}.NS"
+
+            def _download_history_frame(self, ticker, period, interval):
+                assert (ticker, period, interval) == ("SEQUENT.NS", "max", "1d")
+                return frame
+
+            def _split_adjusted_history(self, history):
+                return history
+
         class Service:
-            async def get_chart_full_history(self, symbol, timeframe):
-                assert (symbol, timeframe) == ("SEQUENT", "1D")
-                return [
-                    {"time": jan4 - 400 * day, "open": 1, "high": 1, "low": 1, "close": 1, "volume": 1},  # outside
-                    {"time": jan4, "open": 170, "high": 175, "low": 168, "close": 173, "volume": 1000},
-                    {"time": jan4 + day, "open": 173, "high": 180, "low": 172, "close": 179, "volume": 900},
-                ]
+            provider = Provider()
+
+            async def get_chart(self, symbol, timeframe):
+                return None  # the provider's ~2-year chart cannot reach 2021
 
         get_settings.cache_clear()
         try:
@@ -198,6 +213,44 @@ class RouteTests(unittest.TestCase):
                 self.assertEqual(body["source"], "site-history")
                 again = client.get("/api/course/bars", params={"symbol": "SEQUENT", "start": "2020-12-01", "end": "2021-02-01"}).json()
                 self.assertEqual(len(again["bars"]), 2)  # served from the disk cache
+        finally:
+            get_settings.cache_clear()
+
+    def test_local_chart_cache_answers_without_any_network(self):
+        """Recent examples sit inside the Space's warmed chart_cache; they must
+        load from it instantly, never queue on Yahoo."""
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        from app.api.routes import build_router
+        from app.core.config import get_settings
+        from app.services import study_deck
+
+        day = 86400
+        start = 1735689600  # 2025-01-01T00:00Z
+        cached = [{"time": start + i * day, "open": 10, "high": 11, "low": 9, "close": 10 + i * 0.01, "volume": 5} for i in range(600)]
+
+        class Service:
+            async def get_chart(self, symbol, timeframe):
+                raise AssertionError("provider must not be asked when the cache covers the window")
+
+            async def get_chart_full_history(self, symbol, timeframe):
+                raise AssertionError("full history must not be asked when the cache covers the window")
+
+        yahoo = mock.Mock(return_value=[])
+        get_settings.cache_clear()
+        try:
+            with mock.patch.dict("os.environ", {"APP_STATE_DIR": self.tmp.name, "DATABASE_URL": ""}), \
+                    mock.patch.object(course, "default_fetcher", yahoo), \
+                    mock.patch.object(study_deck, "_read_bars", return_value=cached):
+                app = FastAPI()
+                app.include_router(build_router({"india": Service()}))
+                body = TestClient(app).get(
+                    "/api/course/bars", params={"symbol": "ABC", "start": "2025-03-01", "end": "2026-05-01"}
+                ).json()
+            self.assertEqual(body["source"], "chart-cache")
+            self.assertGreater(len(body["bars"]), 300)
+            yahoo.assert_not_called()
         finally:
             get_settings.cache_clear()
 

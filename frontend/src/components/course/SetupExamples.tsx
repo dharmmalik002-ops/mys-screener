@@ -168,6 +168,13 @@ function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean;
   const { ref, near, seen } = useNearViewport<HTMLElement>();
   const [attempt, setAttempt] = useState(0);
   const data = useExampleBars(ex, seen, attempt);
+  // A busy server can drop a request; try twice more on its own before
+  // asking the reader to press Retry.
+  useEffect(() => {
+    if (data !== "missing" || attempt >= 2) return;
+    const t = window.setTimeout(() => setAttempt((n) => n + 1), 2500 * (attempt + 1));
+    return () => window.clearTimeout(t);
+  }, [data, attempt]);
   const [called, setCalled] = useState<boolean | null>(null);
   const canCall = quiz && ex.worked !== null;
   const hidden = canCall && called === null;
@@ -204,7 +211,9 @@ function ExampleCard({ ex, quiz, height, onCall }: { ex: Example; quiz: boolean;
         />
       ) : (
         <div className="course-example-blank" style={{ height }}>
-          {data === "missing" ? (
+          {data === "missing" && attempt < 2 ? (
+            "Loading chart…"
+          ) : data === "missing" ? (
             <span>
               Couldn&apos;t load prices for {ex.symbol} around {ex.setup}.{" "}
               <button type="button" className="course-link-button" onClick={() => setAttempt((n) => n + 1)}>

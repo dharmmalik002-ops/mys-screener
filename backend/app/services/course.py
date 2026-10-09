@@ -83,7 +83,7 @@ def _yahoo_bars(ticker: str, lo: date, hi: date) -> list[Bar]:
     period1 = int(datetime(lo.year, lo.month, lo.day, tzinfo=timezone.utc).timestamp())
     period2 = int(datetime(hi.year, hi.month, hi.day, tzinfo=timezone.utc).timestamp()) + 86400
     headers = {"User-Agent": USER_AGENT, "Accept": "application/json,text/plain,*/*", "Referer": "https://finance.yahoo.com/"}
-    with httpx.Client(timeout=20, headers=headers, follow_redirects=True) as client:
+    with httpx.Client(timeout=10, headers=headers, follow_redirects=True) as client:
         response = client.get(
             f"{YAHOO_CHART_URL}/{ticker}",
             params={"period1": period1, "period2": period2, "interval": "1d", "includePrePost": "false", "events": "div,splits"},
@@ -146,6 +146,20 @@ def bars_in_window(raw: list[Any], lo: date, hi: date) -> list[Bar]:
     return [out[t] for t in sorted(out)]
 
 
+def covers(bars: list[Bar], lo: date, hi: date, today: date | None = None) -> bool:
+    """Whether bars already on hand can draw [lo, hi]: they reach back to within
+    ~200 days of `lo` (the window asks for ~420 days of warm-up before a setup,
+    so this still leaves ~150 sessions before it) and forward to `hi`, or to
+    the last week when the window runs to today."""
+    if len(bars) < 30:
+        return False
+    first = datetime.fromtimestamp(bars[0]["time"], timezone.utc).date()
+    last = datetime.fromtimestamp(bars[-1]["time"], timezone.utc).date()
+    today = today or datetime.now(IST).date()
+    need_end = min(hi, today - timedelta(days=7))
+    return first <= lo + timedelta(days=200) and last >= need_end
+
+
 def default_fetcher(symbol: str, lo: date, hi: date) -> list[Bar]:
     for suffix in (".NS", ".BO"):
         try:
@@ -194,24 +208,28 @@ class CourseBars:
             except OSError as exc:
                 logger.warning("course bars: could not cache %s (%s)", path.name, exc)
 
-    def get(self, symbol: str, start: str, end: str, today: date | None = None) -> dict[str, Any]:
-        ticker = clean_symbol(symbol)
-        lo, hi = parse_window(start, end, today)
+    def cached(self, ticker: str, lo: date, hi: date, today: date | None = None) -> dict[str, Any] | None:
+        """A stored window, if it is still good: one that ended more than a week
+        ago never changes; a window still running is refetched after a TTL."""
         today = today or datetime.now(IST).date()
         closed = (today - hi).days > CLOSED_AFTER_DAYS
         path = self._path(ticker, lo, hi)
         try:
-            cached = json.loads(path.read_text(encoding="utf-8"))
+            doc = json.loads(path.read_text(encoding="utf-8"))
             fresh = closed or (time.time() - path.stat().st_mtime) < OPEN_WINDOW_TTL_S
-            if cached.get("bars") and fresh:
-                return cached
+            if doc.get("bars") and fresh:
+                return doc
         except (OSError, ValueError):
             pass
-        bars = self._fetch(ticker, lo, hi)
-        document = {"symbol": ticker, "start": lo.isoformat(), "end": hi.isoformat(), "bars": bars, "source": "yahoo"}
-        if bars:  # never cache a failure: the next request should try again
-            self._write(path, document)
-        return document
+        return None
+
+    def fetch(self, ticker: str, lo: date, hi: date) -> dict[str, Any]:
+        """Yahoo for the exact window; cached only when it returned bars."""
+        return self.store(ticker, lo, hi, self._fetch(ticker, lo, hi), "yahoo")
+
+    def get(self, symbol: str, start: str, end: str, today: date | None = None) -> dict[str, Any]:
+        ticker, lo, hi = self.window(symbol, start, end, today)
+        return self.cached(ticker, lo, hi, today) or self.fetch(ticker, lo, hi)
 
 
 # --------------------------------------------------------------------------- progress

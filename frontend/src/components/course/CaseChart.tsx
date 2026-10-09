@@ -53,6 +53,7 @@ export function CaseChart({
 }) {
   const [raw, setRaw] = useState<StudyBar[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const ticker = caseTicker(c.symbol);
   const isShort = /short/i.test(c.symbol) || /short/i.test(c.timeline[0]?.action ?? "");
   const win = useMemo(() => caseWindow(c), [c]);
@@ -65,17 +66,23 @@ export function CaseChart({
       setFailed(true);
       return;
     }
+    // One quiet retry before admitting failure: a busy server drops requests.
+    const fail = () => {
+      if (!live) return;
+      if (attempt < 1) window.setTimeout(() => live && setAttempt((n) => n + 1), 3000);
+      else setFailed(true);
+    };
     loadBars(ticker, win.start, win.end)
       .then((bars) => {
         if (!live) return;
-        if (bars.length < 10) setFailed(true);
+        if (bars.length < 10) fail();
         else setRaw(bars);
       })
-      .catch(() => live && setFailed(true));
+      .catch(fail);
     return () => {
       live = false;
     };
-  }, [ticker, win.start, win.end]);
+  }, [ticker, win.start, win.end, attempt]);
 
   // Put the bars on his price scale when a later split/bonus restated them.
   const scaled = useMemo(() => {
@@ -118,7 +125,17 @@ export function CaseChart({
   if (failed) {
     return (
       <p className="course-casechart-missing">
-        No price history for {ticker || c.symbol} in this window (delisted, renamed or not on Yahoo). His own chart is above.
+        No price history for {ticker || c.symbol} in this window (delisted, renamed or not on Yahoo). His own chart is above.{" "}
+        <button
+          type="button"
+          className="course-link-button"
+          onClick={() => {
+            setFailed(false);
+            setAttempt((n) => n + 1);
+          }}
+        >
+          Retry
+        </button>
       </p>
     );
   }

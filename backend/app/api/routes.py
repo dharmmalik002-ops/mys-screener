@@ -270,6 +270,34 @@ def build_router(service):
             _course["progress"] = course_service.CourseProgressStore(settings.database_url, state_dir)
         return _course
 
+    def _provider_max_history(service, ticker: str) -> list[dict]:
+        provider = getattr(service, "provider", None)
+        if provider is None:
+            return []
+        try:
+            frame = provider._download_history_frame(ticker=provider._resolve_ticker(ticker), period="max", interval="1d")
+            frame = provider._split_adjusted_history(frame)
+        except Exception:
+            return []
+        if frame is None or getattr(frame, "empty", True):
+            return []
+        out: list[dict] = []
+        for ts, row in frame.iterrows():
+            try:
+                out.append(
+                    {
+                        "time": int(ts.timestamp()),
+                        "open": float(row["Open"]),
+                        "high": float(row["High"]),
+                        "low": float(row["Low"]),
+                        "close": float(row["Close"]),
+                        "volume": float(row.get("Volume", 0) or 0),
+                    }
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+        return out
+
     @router.get("/course/bars")
     async def course_bars(
         symbol: str = Query(..., min_length=1),
@@ -279,26 +307,50 @@ def build_router(service):
     ):
         """Daily bars for an explicit past window — /chart keeps only ~500 sessions.
 
-        Tries Yahoo for the exact window first, then the site's own full chart
-        history (the path the main chart's scroll-back uses in production), so
-        a window Yahoo refuses from the Space still draws.
+        Cheapest source first, so a page of dozens of example charts loads
+        without queueing on Yahoo: (1) a window stored earlier; (2) the Space's
+        own chart_cache, warmed for the whole universe after every boot (about
+        two years of bars, which covers the newest examples the page shows
+        first); (3) the provider's chart, the path the main chart uses; then,
+        only for older windows, (4) Yahoo for the exact window and (5) the full
+        history. Whatever answers is stored for next time.
         """
-        from app.services.course import CourseBarsError, bars_in_window
+        from app.services.course import CourseBarsError, bars_in_window, covers
 
         store = _course_services()["bars"]
         try:
             ticker, lo, hi = store.window(symbol, start, end)
-            document = await asyncio.to_thread(store.get, symbol, start, end)
         except CourseBarsError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
+        hit = await asyncio.to_thread(store.cached, ticker, lo, hi)
+        if hit:
+            return hit
+
+        backend_root = Path(__file__).resolve().parents[2]
+        local = await asyncio.to_thread(sd._read_bars, backend_root / "data", ticker)
+        bars = await asyncio.to_thread(bars_in_window, local, lo, hi)
+        if covers(bars, lo, hi):
+            return await asyncio.to_thread(store.store, ticker, lo, hi, bars, "chart-cache")
+
+        try:
+            chart = await resolve_service(market).get_chart(symbol=ticker, timeframe="1D")
+            bars = await asyncio.to_thread(bars_in_window, list(getattr(chart, "bars", []) or []), lo, hi)
+        except Exception:
+            bars = []
+        if covers(bars, lo, hi):
+            return await asyncio.to_thread(store.store, ticker, lo, hi, bars, "chart")
+
+        document = await asyncio.to_thread(store.fetch, ticker, lo, hi)
         if document.get("bars"):
             return document
-        try:
-            raw = await resolve_service(market).get_chart_full_history(symbol=ticker, timeframe="1D")
-        except Exception:
-            raw = []
-        bars = await asyncio.to_thread(bars_in_window, list(raw or []), lo, hi)
-        return await asyncio.to_thread(store.store, ticker, lo, hi, bars, "site-history")
+        # Last resort: the provider's own downloader for the whole history,
+        # bypassing chart_cache (which holds only ~2 years and would otherwise
+        # answer for an old window with nothing in it).
+        raw = await asyncio.to_thread(_provider_max_history, resolve_service(market), ticker)
+        full = await asyncio.to_thread(bars_in_window, raw, lo, hi)
+        # A partial window still beats an empty card; prefer whichever reaches further back.
+        best = full if len(full) >= len(bars) else bars
+        return await asyncio.to_thread(store.store, ticker, lo, hi, best, "site-history")
 
     @router.get("/course/progress")
     async def course_progress():
