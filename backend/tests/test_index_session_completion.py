@@ -102,6 +102,13 @@ class IndexSessionCompletionTests(unittest.TestCase):
         out = self._complete("^NSEI", [bar(22457.15, fri)], None, None, archive=archive, today=date(2026, 10, 12))
         self.assertEqual([b.close for b in out], [22457.15, 22480.0])  # Sat/Sun have no file
 
+    def test_a_session_missing_from_the_middle_is_inserted(self):
+        """Yahoo serving the 9th while still lacking the 8th must not leave a hole in the candles."""
+        oct9 = int(datetime(2026, 10, 9, tzinfo=timezone.utc).timestamp())
+        archive = {date(2026, 10, 8): self.archive_row(22599.05, 22599.05, 22179.9, 22231.8, -371.25)}
+        out = self._complete("^NSEI", [bar(22603.05), bar(22457.15, oct9)], None, None, archive=archive, today=date(2026, 10, 9))
+        self.assertEqual([b.close for b in out], [22603.05, 22231.8, 22457.15])
+
     def test_a_discontinuous_archive_file_is_not_joined(self):
         archive = {date(2026, 10, 8): self.archive_row(1, 1, 1, 1000.0, -5.0)}
         out = self._complete("^NSEI", [bar(22603.05)], None, None, archive=archive)

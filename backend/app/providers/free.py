@@ -1194,9 +1194,35 @@ class FreeMarketDataProvider:
         cache[session] = (time.time(), rows)
         return rows
 
-    def _index_bars_from_archive(self, symbol: str, last_bar: ChartBar) -> list[ChartBar]:
+    def _archive_bar(self, symbol: str, day: date, prev_close: float) -> ChartBar | None:
+        """That session's official bar, or None if there is no file, no row, or it does not
+        join: the file's own previous close (close minus points change) must be ``prev_close``."""
         name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
-        if not name:
+        row = ((self._nse_index_close_rows(day) or {}).get(name.lower()) if name else None)
+        if not row:
+            return None
+        try:
+            open_v, high_v, low_v, close_v = (float(row[k]) for k in (
+                "Open Index Value", "High Index Value", "Low Index Value", "Closing Index Value"))
+            points = float(row.get("Points Change") or 0)
+        except (TypeError, ValueError, KeyError):
+            return None
+        if min(open_v, high_v, low_v, close_v) <= 0 or prev_close <= 0:
+            return None
+        if abs((close_v - points) / prev_close - 1) > INDEX_SERIES_JOIN_TOLERANCE:
+            return None
+        return ChartBar(
+            time=int(datetime.combine(day, datetime.min.time(), tzinfo=timezone.utc).timestamp()),
+            open=round(open_v, 2),
+            high=round(max(high_v, open_v, close_v), 2),
+            low=round(min(low_v, open_v, close_v), 2),
+            close=round(close_v, 2),
+            volume=0,
+        )
+
+    def _index_bars_from_archive(self, symbol: str, last_bar: ChartBar) -> list[ChartBar]:
+        """Sessions after ``last_bar`` up to today, each joined to the one before it."""
+        if symbol.upper() not in INDEX_SYMBOL_TO_NSE_NAME:
             return []
         last_date = self._chart_bar_trade_date(last_bar)
         today = self._today_ist()
@@ -1207,31 +1233,33 @@ class FreeMarketDataProvider:
         day = last_date + timedelta(days=1)
         while day <= today:
             if day.weekday() < 5:  # a weekend session (Budget Saturday) is covered by the live row
-                rows = self._nse_index_close_rows(day)
-                row = (rows or {}).get(name.lower())
-                if row:
-                    try:
-                        open_v, high_v, low_v, close_v = (float(row[k]) for k in (
-                            "Open Index Value", "High Index Value", "Low Index Value", "Closing Index Value"))
-                        points = float(row.get("Points Change") or 0)
-                    except (TypeError, ValueError, KeyError):
-                        return out
-                    if min(open_v, high_v, low_v, close_v) <= 0:
-                        return out
-                    # continuity: the file's own previous close (close - points) must be our last close
-                    if abs((close_v - points) / prev_close - 1) > INDEX_SERIES_JOIN_TOLERANCE:
-                        return out
-                    out.append(ChartBar(
-                        time=int(datetime.combine(day, datetime.min.time(), tzinfo=timezone.utc).timestamp()),
-                        open=round(open_v, 2),
-                        high=round(max(high_v, open_v, close_v), 2),
-                        low=round(min(low_v, open_v, close_v), 2),
-                        close=round(close_v, 2),
-                        volume=0,
-                    ))
-                    prev_close = close_v
+                bar = self._archive_bar(symbol, day, prev_close)
+                if bar is not None:
+                    out.append(bar)
+                    prev_close = bar.close
             day += timedelta(days=1)
         return out
+
+    def _with_index_interior_gaps_filled(self, symbol: str, bars: list[ChartBar]) -> list[ChartBar]:
+        """A session missing from the MIDDLE of the recent series (Yahoo serving the 9th while
+        still lacking the 8th) is inserted from the archive, so candles never skip a day."""
+        if len(bars) < 2 or symbol.upper() not in INDEX_SYMBOL_TO_NSE_NAME:
+            return bars
+        have = {self._chart_bar_trade_date(b): b for b in bars}
+        last_date = max(have)
+        start = max(min(have), last_date - timedelta(days=INDEX_ARCHIVE_MAX_GAP_DAYS))
+        added = False
+        day = start
+        while day < last_date:
+            if day.weekday() < 5 and day not in have:
+                before = [d for d in have if d < day]
+                if before:
+                    bar = self._archive_bar(symbol, day, have[max(before)].close)
+                    if bar is not None:
+                        have[day] = bar
+                        added = True
+            day += timedelta(days=1)
+        return [have[d] for d in sorted(have)] if added else bars
 
     def _nse_index_rows(self) -> tuple[datetime | None, dict[str, dict[str, Any]]]:
         """NSE's allIndices rows keyed by index name, with the feed's own timestamp.
@@ -1328,6 +1356,7 @@ class FreeMarketDataProvider:
     def _with_completed_index_session(self, symbol: str, bars: list[ChartBar]) -> list[ChartBar]:
         if not bars or str(symbol or "").strip().upper() not in INDIAN_INDEX_SYMBOLS:
             return bars
+        bars = self._with_index_interior_gaps_filled(str(symbol).strip(), bars)
         return [*bars, *self._completed_index_session_bars(str(symbol).strip(), bars[-1])]
 
     def _apply_session_bar_to_daily_history(self, history: pd.DataFrame, bar: ChartBar) -> pd.DataFrame:
