@@ -23,6 +23,8 @@ import { BreadthTimeline } from "./markets/BreadthTimeline";
 import { ContextStrip } from "./markets/ContextStrip";
 import { Disclosure } from "./markets/Disclosure";
 import { ExposureVerdict } from "./markets/ExposureVerdict";
+import { MarketsBrief } from "./markets/MarketsBrief";
+import { barDate, readablePct, type IndexRead } from "../lib/marketsBrief";
 
 import "./MarketsPanel.css";
 
@@ -739,6 +741,46 @@ export function MarketsPanel({
     .map((p) => p.above_ma50_pct ?? p.above_ema21_pct ?? p.above_ma20_pct)
     .filter((v): v is number => typeof v === "number");
 
+  // The first screen. Index reads come straight from the same bars as the charts below,
+  // so the level shown up here and the last candle down there can never disagree.
+  const BRIEF_INDEX_ORDER = ["^NSEI", "NIFTYMIDCAP150.NS", "NIFTYSMLCAP250.NS"];
+  const indexReads: IndexRead[] = BRIEF_INDEX_ORDER.flatMap((symbol) => {
+    const h = indexHealth[symbol];
+    const bars = indexBars[symbol] ?? [];
+    if (!h || !bars.length) return [];
+    const lastBar = bars[bars.length - 1];
+    const prevBar = bars.length > 1 ? bars[bars.length - 2] : null;
+    return [{
+      label: h.label,
+      last: h.last,
+      dayPct: prevBar && prevBar.close > 0 ? ((lastBar.close - prevBar.close) / prevBar.close) * 100 : null,
+      above50: h.above50,
+      above200: h.above200,
+      state: h.state,
+      asOf: barDate(lastBar.time),
+    }];
+  });
+  const briefOutlook = buildOutlook(xpBreadth, data, indexHealth);
+  const topOfPage = (
+    <>
+      <MarketsBrief
+        exposure={exposure}
+        xp={xpBreadth}
+        env={data}
+        indices={indexReads}
+        reasons={briefOutlook?.reasons ?? []}
+        flips={briefOutlook?.flips ?? []}
+      />
+      <Disclosure id="exposure" summary="How the exposure number is set" hint="breakout win rate vs break-even">
+        <ExposureVerdict data={exposure} />
+        <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+      </Disclosure>
+      <Disclosure id="macro" summary="Global and macro backdrop" hint="oil, dollar, US markets, news">
+        <MacroContextPanel market="india" />
+      </Disclosure>
+    </>
+  );
+
   // The verdict, the context strip and the breadth history come from their own
   // endpoints and resolve in well under a second. /market-environment takes far
   // longer to rebuild, and gating the whole page on it meant the headline sat
@@ -747,9 +789,7 @@ export function MarketsPanel({
   if (state === "loading" && !data) {
     return (
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
-        <ExposureVerdict data={exposure} />
-        <ContextStrip data={exposure} breadthSeries={breadthSeries} />
-        <MacroContextPanel market="india" />
+        {topOfPage}
         <Disclosure
           id="breadth"
           summary="Breadth, 3 years"
@@ -769,12 +809,9 @@ export function MarketsPanel({
   if ((state === "error" && !data) || !today) {
     return (
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
-        <ExposureVerdict data={exposure} />
-        <ContextStrip data={exposure} breadthSeries={breadthSeries} />
-        {/* The external read does not depend on the domestic payload, so it
-            still renders when that fetch has failed — losing breadth should
-            not also cost the user the global picture. */}
-        <MacroContextPanel market="india" />
+        {/* The brief and the macro read do not depend on the domestic payload, so
+            they still render when that fetch has failed. */}
+        {topOfPage}
         <Disclosure id="breadth" summary="Breadth, 3 years" hint={`${breadth?.points.length ?? 0} sessions`}>
           <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
         </Disclosure>
@@ -808,15 +845,10 @@ export function MarketsPanel({
       subtitle={`Follow-through health · ${data?.date ?? ""} · ${today.universe} liquid stocks measured`}
       className="markets-panel"
     >
-      {/* One verdict. This replaced three competing top-level verdicts that
-          used different vocabularies and could disagree on screen. */}
-      <ExposureVerdict data={exposure} />
-      <ContextStrip data={exposure} breadthSeries={breadthSeries} />
-
-      {/* The outside world, in prose. Loads on its own clock: it reaches Yahoo,
-          NSE and the RSS feeds, none of which the domestic panel waits on, so
-          coupling them would put a slow external fetch in front of breadth. */}
-      <MacroContextPanel market="india" />
+      {/* One condition word, the size it implies, the three indices, five breadth
+          facts and why — then everything else, collapsed. The rules for what
+          appears first are in lib/marketsBrief.ts. */}
+      {topOfPage}
 
       <Disclosure
         id="breadth"
@@ -830,7 +862,7 @@ export function MarketsPanel({
         <RegimeBrief market="india" />
       </Disclosure>
 
-      <Disclosure id="internals" summary="Index trend, internals and counted metrics">
+      <Disclosure id="internals" summary="Index charts, evidence and counted metrics" hint="the full working">
       {/* ===== Market Outlook — the backbone ===== */}
       {outlook ? (
         <section className="mko-hero mko-hero--evidence" aria-label="Weight of evidence">
@@ -1108,7 +1140,7 @@ export function MarketsPanel({
       <div className="mk-grid">
         <div className="mk-card">
           <div className="mk-card-hdr">Base Breakout Follow-Through</div>
-          <div className="mk-big">{num(structural.held_pct ?? null, 0, "%")}<small> of {structural.events ?? 0} base breakouts (last ~12 sessions) still above pivot</small></div>
+          <div className="mk-big">{readablePct(structural.held_pct ?? null, structural.events ?? 0)}<small> of {structural.events ?? 0} base breakouts (last ~12 sessions) still above pivot</small></div>
           <div className="mk-sub">
             back inside base: {num(structural.back_in_base_pct ?? null, 0, "%")} · short-term clears held (1d/3d/5d): {num(ft1.held_pct, 0, "%")} / {num(ft3.held_pct, 0, "%")} / {num(ft5.held_pct, 0, "%")}
           </div>
@@ -1117,13 +1149,13 @@ export function MarketsPanel({
         </div>
         <div className="mk-card">
           <div className="mk-card-hdr">Today's Breakout Quality</div>
-          <div className="mk-big">{num(quality.strong_pct, 0, "%")}<small> strong closes of {quality.count ?? 0} attempts</small></div>
+          <div className="mk-big">{readablePct(quality.strong_pct, quality.count ?? 0)}<small> strong closes of {quality.count ?? 0} attempts</small></div>
           <div className="mk-sub">faded below midpoint: {num(quality.faded_pct, 0, "%")}</div>
           <div className="mk-meaning">{qualityMeaning(quality.strong_pct ?? null, quality.faded_pct ?? null)}</div>
         </div>
         <div className="mk-card">
           <div className="mk-card-hdr">Leader EMA Health</div>
-          <div className="mk-big">{num(ema.above_ema21_pct, 0, "%")}<small> of {ema.leaders ?? 0} leaders above 20 EMA</small></div>
+          <div className="mk-big">{readablePct(ema.above_ema21_pct, ema.leaders ?? 0)}<small> of {ema.leaders ?? 0} leaders above 20 EMA</small></div>
           <div className="mk-sub">
             above 10 EMA: {num(ema.above_ema10_pct, 0, "%")} · 20 EMA tests bought: {num(ema.ema21_bounce_pct, 0, "%")} of {ema.ema21_touches ?? 0}
           </div>

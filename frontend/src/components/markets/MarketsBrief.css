@@ -1,0 +1,135 @@
+/* The first screen of Markets. Same editorial register as the Home briefing:
+   mono kicker, one serif sentence, hairline, then small dt/dd figures. */
+.mkb {
+  background: var(--card-flat);
+  border-radius: var(--radius-xl, 14px);
+  box-shadow: var(--ring);
+  padding: 20px 24px 18px;
+  margin-bottom: 14px;
+}
+
+.mkb-headline {
+  margin: 12px 0 14px;
+  max-width: 26em;
+  font-family: var(--font-editorial);
+  font-size: clamp(24px, 2.8vw, 38px);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.mkb-soft { color: var(--text-muted); }
+.mkb-pos .mkb-word { color: var(--positive); }
+.mkb-neg .mkb-word { color: var(--negative); }
+.mkb-neu .mkb-word { color: var(--text); }
+
+.mkb-size {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.mkb-size strong {
+  font-size: 22px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.mkb-size em { font-style: normal; }
+
+.mkb-indices,
+.mkb-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 36px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.mkb-facts { margin-top: 12px; }
+
+.mkb-indices > div,
+.mkb-facts > div { min-width: 0; }
+
+.mkb-indices dt,
+.mkb-facts dt {
+  margin-bottom: 3px;
+  font-family: var(--font-caption);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mkb-indices dd,
+.mkb-facts dd {
+  margin: 0;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.mkb-facts dd { font-size: 15px; }
+.mkb-indices dd small { font-size: 13px; }
+.mkb-indices .pos, .mkb-facts .pos { color: var(--positive); }
+.mkb-indices .neg, .mkb-facts .neg { color: var(--negative); }
+
+.mkb-index-trend {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mkb-mixed,
+.mkb-rule,
+.mkb-ai,
+.mkb-stale {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.mkb-rule span,
+.mkb-ai span {
+  margin-right: 8px;
+  font-family: var(--font-caption);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mkb-mixed { color: var(--text-muted); }
+.mkb-ai { color: var(--text-muted); }
+.mkb-stale { font-size: 12.5px; color: var(--text-muted); }
+
+.mkb-why {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 36px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.mkb-why h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-caption);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mkb-why ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.mkb-why li + li { margin-top: 4px; }
+
+@media (max-width: 760px) {
+  .mkb { padding: 16px 16px 14px; }
+  .mkb-why { grid-template-columns: 1fr; }
+  .mkb-indices, .mkb-facts { gap: 12px 24px; }
+}

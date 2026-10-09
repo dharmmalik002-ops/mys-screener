@@ -716,16 +716,20 @@ Below are COUNTED FACTS from full-market EOD data: breakout follow-through rates
 METRICS:
 {metrics_json}
 
-Write for a trader deciding position size TODAY. Interpret, don't recite numbers — say what the numbers MEAN and what changed vs yesterday and vs last week. Be direct about what is working and what is not.
+Write for a trader deciding position size TODAY. Be crisp: every sentence must change a decision, so cut anything that does not.
+- Say what the numbers MEAN and what changed vs yesterday and vs last week; do not recite them (the page already shows them).
+- Describe present conditions only. Never predict where the index goes next.
+- Use only figures that appear in METRICS. Do not invent levels, percentages or dates.
+- Keep it consistent with the data: if follow-through is weak, say entries are not being paid; do not soften it.
 
 Return ONLY valid JSON (no markdown fences):
 {{
-  "headline": "one punchy sentence capturing today's environment",
-  "narrative": ["paragraph 1: today's behavior and what changed vs yesterday", "paragraph 2: the week in context — trend of follow-through and leaders", "paragraph 3: what this means for fresh entries, existing positions, and sizing"],
-  "what_worked": ["3-5 short bullets about last week: setups/sectors that paid"],
-  "what_didnt": ["3-5 short bullets: what failed or got sold into"],
+  "headline": "ONE plain sentence, at most 16 words, no hype",
+  "narrative": ["paragraph 1: what the tape did today and what changed vs yesterday (max 2 sentences)", "paragraph 2: what that means for new entries, open positions and size (max 2 sentences)"],
+  "what_worked": ["up to 3 bullets of at most 12 words: what paid last week"],
+  "what_didnt": ["up to 3 bullets of at most 12 words: what failed or got sold into"],
   "posture": "Press|Selective|Protect|Stand Aside",
-  "one_rule_today": "single actionable rule for today"
+  "one_rule_today": "ONE sentence, at most 20 words: a concrete sizing or entry rule that follows from the numbers"
 }}"""
 
         last_exc: Exception | None = None

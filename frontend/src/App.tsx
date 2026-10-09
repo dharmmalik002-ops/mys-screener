@@ -249,6 +249,10 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 // Cap at 6 hours so a stale cache never outlives the next bhavcopy update.
 // Previously 24 h kept yesterday's snapshot visible for an entire trading day.
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+/** How long a copy of the industry groups (and the Market Map drawn from it) may be shown
+ *  without asking the server again. A tab left open through the 4:30 PM bhavcopy used to keep
+ *  the morning's groups forever: the Groups page only fetched when it held nothing. */
+const GROUPS_REVALIDATE_MS = 5 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
 type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "course" | "bot";
@@ -1995,6 +1999,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [scanSectorSummariesLoading, setScanSectorSummariesLoading] = useState(false);
   const [sectorTabData, setSectorTabData] = useState<SectorTabResponse | null>(null);
   const [groupsData, setGroupsData] = useState<IndustryGroupsResponse | null>(null);
+  // When the server last confirmed the groups. Zero until it has: a copy restored from
+  // localStorage is exactly the thing that must not count as fresh.
+  const groupsConfirmedAtRef = useRef(0);
   const [improvingRsData, setImprovingRsData] = useState<ImprovingRsResponse | null>(null);
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(bootstrapChartSymbol);
@@ -2918,6 +2925,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               return;
             }
             const nextUniverseCatalog = buildUniverseCatalogFromIndustryGroups(groupsPayload);
+            groupsConfirmedAtRef.current = Date.now();
             setGroupsData(groupsPayload);
             setUniverseCatalog(nextUniverseCatalog);
             setSelectedSymbol((current) => {
@@ -3048,6 +3056,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           if (!active) {
             return;
           }
+          groupsConfirmedAtRef.current = Date.now();
           setGroupsData(payload);
           setSelectedSymbol((current) => (
             current && (keepsDeepLink(current) || payload.stocks.some((item) => item.symbol === current))
@@ -3235,6 +3244,46 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     sectorSummaryState,
   ]);
 
+  // Groups and Market Map: while the Groups page is open, a copy older than
+  // GROUPS_REVALIDATE_MS is re-requested (on entering the page, on returning to the tab, and
+  // every few minutes). The old copy stays on screen until the new one lands.
+  useEffect(() => {
+    if (loading || activePage !== "groups") {
+      return;
+    }
+    let active = true;
+    let inFlight = false;
+    const revalidate = () => {
+      if (inFlight || Date.now() - groupsConfirmedAtRef.current < GROUPS_REVALIDATE_MS) {
+        return;
+      }
+      inFlight = true;
+      void getIndustryGroups(activeMarket)
+        .then((payload) => {
+          if (!active) return;
+          groupsConfirmedAtRef.current = Date.now();
+          setGroupsData(payload);
+        })
+        .catch(() => {
+          // Keep showing the copy we have; the next tick or focus tries again.
+        })
+        .finally(() => {
+          inFlight = false;
+        });
+    };
+    revalidate();
+    const timer = window.setInterval(revalidate, GROUPS_REVALIDATE_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") revalidate();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [activeMarket, activePage, loading]);
+
   useEffect(() => {
     if (loading || activePage === "groups" || groupsData) {
       return;
@@ -3249,6 +3298,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       try {
         const payload = await getIndustryGroups(activeMarket);
         if (active) {
+          groupsConfirmedAtRef.current = Date.now();
           setGroupsData(payload);
         }
       } catch {

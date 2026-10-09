@@ -267,7 +267,11 @@ YAHOO_SECTOR_ALIASES = SECTOR_ALIASES
 INDEX_SYMBOL_TO_NSE_NAME = {
     "^NSEI": "NIFTY 50",
     "^CNX500": "NIFTY 500",
-    "^CNXSC": "NIFTY SMALLCAP 250",
+    # Yahoo's ^CNXSC is the Nifty Smallcap 100 (19,050 on 2026-10-08), NOT the
+    # 250 (17,488) — mapping it to the 250 made the two sources disagree.
+    "^CNXSC": "NIFTY SMALLCAP 100",
+    "NIFTYSMLCAP250.NS": "NIFTY SMALLCAP 250",
+    "NIFTYMIDCAP150.NS": "NIFTY MIDCAP 150",
     "^NSEMDCP50": "NIFTY MIDCAP 50",
     "^NSEBANK": "NIFTY BANK",
     "^CNXIT": "NIFTY IT",
@@ -278,6 +282,15 @@ INDEX_SYMBOL_TO_NSE_NAME = {
     "^CNXREALTY": "NIFTY REALTY",
 }
 
+
+# Indian indices whose daily series is completed from the post-close quote.
+INDIAN_INDEX_SYMBOLS = frozenset(INDEX_SYMBOL_TO_NSE_NAME) | {"^BSESN"}
+# NSE's cash session ends 15:30 IST; Yahoo stamps the closing print 15:29-15:32.
+INDEX_CLOSE_STAMP_IST = (15, 25)
+# A quote whose previous close differs from our last bar by more than this is a
+# different series (or a re-based one) and must not be appended to it.
+INDEX_SERIES_JOIN_TOLERANCE = 0.01
+INDEX_COMPLETION_TTL_SECONDS = 120
 
 logger = logging.getLogger(__name__)
 
@@ -1108,6 +1121,128 @@ class FreeMarketDataProvider:
             return bars
         return [by_date[d] for d in sorted(by_date)]
 
+    def _completed_index_session_bar(self, symbol: str, last_bar: ChartBar) -> ChartBar | None:
+        """The finished session bar for an Indian index, when the series is a day short.
+
+        Yahoo's daily history leaves the newest index session out (null close)
+        for a while after the close, and the production Space runs EOD-only, so
+        nothing patched it: every index chart ended a session early, and
+        anything read off its last candle (home briefing, Markets page levels,
+        index health) quoted yesterday's close. This asks for the quote instead
+        and returns a bar only when the print is (a) from a LATER session than
+        the last bar, (b) stamped at or after the close — never a mid-session
+        print — and (c) continuous with our series (its previous close matches
+        our last close), so a re-based or mismatched series is never joined.
+        """
+        now = time.time()
+        cache = self.__dict__.setdefault("_index_completion_cache", {})
+        key = (symbol.upper(), int(last_bar.time))
+        hit = cache.get(key)
+        if hit and now - hit[0] < INDEX_COMPLETION_TTL_SECONDS:
+            return hit[1]
+
+        bar = self._index_bar_from_nse(symbol, last_bar) or self._index_bar_from_quote(symbol, last_bar)
+        cache[key] = (now, bar)
+        return bar
+
+    def _nse_index_rows(self) -> tuple[datetime | None, dict[str, dict[str, Any]]]:
+        """NSE's allIndices rows keyed by index name, with the feed's own timestamp.
+
+        One fetch is shared by every index asked for within the TTL.
+        """
+        cached = self.__dict__.get("_nse_index_rows_cache")
+        if cached and time.time() - cached[0] < INDEX_COMPLETION_TTL_SECONDS:
+            return cached[1], cached[2]
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json,text/plain,*/*",
+            "Referer": "https://www.nseindia.com/",
+        }
+        stamp: datetime | None = None
+        rows: dict[str, dict[str, Any]] = {}
+        try:
+            with httpx.Client(timeout=15, headers=headers, follow_redirects=True) as client:
+                client.get("https://www.nseindia.com/")
+                response = client.get(NSE_ALL_INDICES_URL)
+                response.raise_for_status()
+                payload = response.json()
+            for pattern in ("%d-%b-%Y %H:%M:%S", "%d-%b-%Y %H:%M"):
+                try:
+                    stamp = datetime.strptime(str(payload.get("timestamp") or "").strip(), pattern).replace(tzinfo=IST)
+                    break
+                except ValueError:
+                    continue
+            rows = {str(r.get("index", "")).strip().upper(): r for r in payload.get("data") or []}
+        except Exception as exc:
+            logger.info("NSE allIndices unavailable: %s", exc)
+        self.__dict__["_nse_index_rows_cache"] = (time.time(), stamp, rows)
+        return stamp, rows
+
+    def _index_bar_from_nse(self, symbol: str, last_bar: ChartBar) -> ChartBar | None:
+        """The official finished session from NSE (open/high/low/close), if it is newer than ours."""
+        name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
+        if not name:
+            return None
+        stamp, rows = self._nse_index_rows()
+        row = rows.get(name.upper())
+        if not row or stamp is None:
+            return None
+        close_v = self._to_float(row.get("last"))
+        prev_close = self._to_float(row.get("previousClose"))
+        if not close_v or not prev_close:
+            return None
+        closed = (stamp.hour, stamp.minute) >= INDEX_CLOSE_STAMP_IST
+        continuous = abs(prev_close / float(last_bar.close) - 1) <= INDEX_SERIES_JOIN_TOLERANCE
+        if not (stamp.date() > self._chart_bar_trade_date(last_bar) and closed and continuous):
+            return None
+        open_v = self._to_float(row.get("open")) or prev_close
+        high_v = self._to_float(row.get("high")) or max(open_v, close_v)
+        low_v = self._to_float(row.get("low")) or min(open_v, close_v)
+        return ChartBar(
+            time=int(datetime.combine(stamp.date(), datetime.min.time(), tzinfo=timezone.utc).timestamp()),
+            open=round(open_v, 2),
+            high=round(max(high_v, open_v, close_v), 2),
+            low=round(min(low_v, open_v, close_v), 2),
+            close=round(close_v, 2),
+            volume=0,
+        )
+
+    def _index_bar_from_quote(self, symbol: str, last_bar: ChartBar) -> ChartBar | None:
+        """Same, from the Yahoo quote — used when NSE's feed cannot be reached."""
+        try:
+            ticker = self._resolve_ticker(symbol)
+            quote = (self._fetch_quote_batch([ticker]) or {}).get(ticker.upper()) or {}
+            price = self._to_float(quote.get("regularMarketPrice"))
+            prev_close = self._to_float(quote.get("regularMarketPreviousClose"))
+            stamp = quote.get("regularMarketTime")
+            if not (price and prev_close and isinstance(stamp, (int, float))):
+                return None
+            quote_time = datetime.fromtimestamp(int(stamp), tz=timezone.utc).astimezone(IST)
+            closed = (quote_time.hour, quote_time.minute) >= INDEX_CLOSE_STAMP_IST
+            continuous = abs(prev_close / float(last_bar.close) - 1) <= INDEX_SERIES_JOIN_TOLERANCE
+            if not (quote_time.date() > self._chart_bar_trade_date(last_bar) and closed and continuous):
+                return None
+            open_v = self._to_float(quote.get("regularMarketOpen")) or prev_close
+            high_v = self._to_float(quote.get("regularMarketDayHigh")) or max(open_v, price)
+            low_v = self._to_float(quote.get("regularMarketDayLow")) or min(open_v, price)
+            return ChartBar(
+                time=int(datetime.combine(quote_time.date(), datetime.min.time(), tzinfo=timezone.utc).timestamp()),
+                open=round(open_v, 2),
+                high=round(max(high_v, open_v, price), 2),
+                low=round(min(low_v, open_v, price), 2),
+                close=round(price, 2),
+                volume=0,
+            )
+        except Exception as exc:
+            logger.info("index completion skipped for %s: %s", symbol, exc)
+            return None
+
+    def _with_completed_index_session(self, symbol: str, bars: list[ChartBar]) -> list[ChartBar]:
+        if not bars or str(symbol or "").strip().upper() not in INDIAN_INDEX_SYMBOLS:
+            return bars
+        completed = self._completed_index_session_bar(str(symbol).strip(), bars[-1])
+        return [*bars, completed] if completed is not None else bars
+
     def _apply_session_bar_to_daily_history(self, history: pd.DataFrame, bar: ChartBar) -> pd.DataFrame:
         patched = history.copy()
         trade_date = self._chart_bar_trade_date(bar)
@@ -1711,6 +1846,13 @@ class FreeMarketDataProvider:
         ]
 
     async def get_chart(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
+        chart_bars = await self._get_chart_uncompleted(symbol, timeframe, bars)
+        if timeframe == "1D" and str(symbol or "").strip().upper() in INDIAN_INDEX_SYMBOLS:
+            completed = await asyncio.to_thread(self._with_completed_index_session, symbol, chart_bars)
+            return completed[-bars:] if len(completed) > bars else completed
+        return chart_bars
+
+    async def _get_chart_uncompleted(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
         if self.eod_only_mode and timeframe in {"15m", "30m", "1h"}:
             timeframe = "1D"
         cached_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars)
@@ -5597,7 +5739,7 @@ class FreeMarketDataProvider:
         # ── NSE Indices (price + P/E via allIndices) ───────────────────────────
         nse_targets = [
             ("^NSEI", "Nifty 50", "NIFTY 50"),
-            ("^CNXSC", "Nifty SmallCap 250", "NIFTY SMALLCAP 250"),
+            ("^CNXSC", "Nifty SmallCap 100", "NIFTY SMALLCAP 100"),
             ("^NSEMDCP50", "Nifty Midcap 50", "NIFTY MIDCAP 50"),
         ]
         nse_rows: dict[str, dict[str, Any]] = {}
@@ -5649,7 +5791,7 @@ class FreeMarketDataProvider:
     # symbol → NSE index name used in the PE-history API
     _PE_HISTORY_INDEX_MAP = {
         "^NSEI": "NIFTY 50",
-        "^CNXSC": "NIFTY SMALLCAP 250",
+        "^CNXSC": "NIFTY SMALLCAP 100",
         "^NSEMDCP50": "NIFTY MIDCAP 50",
     }
 

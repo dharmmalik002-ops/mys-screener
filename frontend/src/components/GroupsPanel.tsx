@@ -453,6 +453,16 @@ export function GroupsPanel({
   const allGroups = data?.groups ?? [];
   const totalGroups = data?.total_groups ?? allGroups.length;
 
+  // "Close of 8 Oct" — the session the tiles are drawn from. The map used to carry no date at
+  // all, so a copy left open across a close looked identical to a fresh one.
+  const closeLabel = (() => {
+    const iso = data?.as_of_date;
+    const parsed = iso ? new Date(`${iso}T00:00:00`) : null;
+    return parsed && !Number.isNaN(parsed.getTime())
+      ? `close of ${parsed.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+      : null;
+  })();
+
   const pageSubtitle = data
     ? `${data.total_groups} swing groups · ${data.benchmark} · EOD ${data.as_of_date ?? ""}`
     : "Loading ranked industry groups";
@@ -601,7 +611,7 @@ export function GroupsPanel({
               <h3>{view === "map" ? "Market Map" : view === "rotation" ? "Rotation" : "Group Rankings"}</h3>
               <p className="gp-card-sub">
                 {view === "map" ? (
-                  "Sectors, then groups, then stocks — click any tile to drill in"
+                  `Sectors, then groups, then stocks — click any tile to drill in${closeLabel ? ` · ${closeLabel}` : ""}`
                 ) : view === "rotation" ? (
                   "Where each group sits in the rotation cycle, from its recorded score history"
                 ) : (

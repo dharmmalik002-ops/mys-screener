@@ -1202,15 +1202,22 @@ export function HomePanel({
 
   // The headline must agree with the candle under it. The macro quote and the
   // chart come from different Yahoo feeds and routinely differ by 20+ points
-  // at the close (22,841.95 -1.29% over a last candle of 22,821.1 -1.38%), so
-  // the chart's own last two closes win whenever they exist.
+  // at the close (22,841.95 -1.29% over a last candle of 22,821.1 -1.38%), so the
+  // chart's own last two closes win — but only while the chart is the SAME session
+  // as the quote. A chart a session behind (2026-10-08: candles ended on the 7th, so
+  // the page said Nifty 22,603 -0.76% when it had closed 22,231.8 -1.64%) is wrong
+  // by a whole day's move, never by 20 points, so a gap wider than
+  // CHART_QUOTE_JOIN_TOLERANCE means "stale chart" and the quote is used.
+  const CHART_QUOTE_JOIN_TOLERANCE = 0.004;
   const niftyPoint = macroItems.find((c) => c.symbol === "^NSEI");
   const niftyLastBar = niftyBars.length ? niftyBars[niftyBars.length - 1] : null;
   const niftyPrevBar = niftyBars.length > 1 ? niftyBars[niftyBars.length - 2] : null;
-  const niftyPrice = niftyLastBar && Number.isFinite(niftyLastBar.close)
-    ? niftyLastBar.close
-    : niftyPoint?.price ?? null;
-  const niftyChange = niftyLastBar && niftyPrevBar && niftyPrevBar.close > 0
+  const chartMatchesQuote =
+    niftyLastBar !== null &&
+    Number.isFinite(niftyLastBar.close) &&
+    (niftyPoint?.price == null || Math.abs(niftyLastBar.close / niftyPoint.price - 1) <= CHART_QUOTE_JOIN_TOLERANCE);
+  const niftyPrice = chartMatchesQuote && niftyLastBar ? niftyLastBar.close : niftyPoint?.price ?? null;
+  const niftyChange = chartMatchesQuote && niftyLastBar && niftyPrevBar && niftyPrevBar.close > 0
     ? ((niftyLastBar.close - niftyPrevBar.close) / niftyPrevBar.close) * 100
     : niftyPoint?.change_pct ?? null;
 
