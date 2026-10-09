@@ -292,6 +292,10 @@ INDEX_CLOSE_STAMP_IST = (15, 25)
 INDEX_SERIES_JOIN_TOLERANCE = 0.01
 INDEX_COMPLETION_TTL_SECONDS = 120
 INDEX_NON_DAILY_TIMEFRAMES = frozenset({"15m", "30m", "1h", "1W"})
+# NSE publishes one closing file per session with official open/high/low/close for every index.
+NSE_INDEX_CLOSE_URL = "https://nsearchives.nseindia.com/content/indices/ind_close_all_{stamp}.csv"
+INDEX_ARCHIVE_RETRY_SECONDS = 600
+INDEX_ARCHIVE_MAX_GAP_DAYS = 20
 
 logger = logging.getLogger(__name__)
 
@@ -1122,18 +1126,21 @@ class FreeMarketDataProvider:
             return bars
         return [by_date[d] for d in sorted(by_date)]
 
-    def _completed_index_session_bar(self, symbol: str, last_bar: ChartBar) -> ChartBar | None:
-        """The finished session bar for an Indian index, when the series is a day short.
+    def _completed_index_session_bars(self, symbol: str, last_bar: ChartBar) -> list[ChartBar]:
+        """Every finished session an Indian index series is missing after ``last_bar``.
 
-        Yahoo's daily history leaves the newest index session out (null close)
-        for a while after the close, and the production Space runs EOD-only, so
-        nothing patched it: every index chart ended a session early, and
-        anything read off its last candle (home briefing, Markets page levels,
-        index health) quoted yesterday's close. This asks for the quote instead
-        and returns a bar only when the print is (a) from a LATER session than
-        the last bar, (b) stamped at or after the close — never a mid-session
-        print — and (c) continuous with our series (its previous close matches
-        our last close), so a re-based or mismatched series is never joined.
+        Yahoo's daily history leaves the newest index sessions out (null close) for
+        days, and the production Space runs EOD-only, so nothing patched it: every
+        index chart ended on an old session and anything read off its last candle
+        (home briefing, Markets levels, index health) quoted a stale close.
+
+        Sources, best first: NSE's per-session index closing file (official OHLC, kept
+        for every past session, so a gap of any length fills); then, for a session that
+        has just closed and is not archived yet, NSE's live allIndices row; then the
+        Yahoo quote. A bar is only ever added when it is from a LATER session, stamped
+        at or after the close (never mid-session), and continuous with the series (its
+        previous close matches our last close), so a re-based or mismatched series is
+        never joined.
         """
         now = time.time()
         cache = self.__dict__.setdefault("_index_completion_cache", {})
@@ -1142,9 +1149,89 @@ class FreeMarketDataProvider:
         if hit and now - hit[0] < INDEX_COMPLETION_TTL_SECONDS:
             return hit[1]
 
-        bar = self._index_bar_from_nse(symbol, last_bar) or self._index_bar_from_quote(symbol, last_bar)
-        cache[key] = (now, bar)
-        return bar
+        bars = self._index_bars_from_archive(symbol, last_bar)
+        tail = bars[-1] if bars else last_bar
+        if not bars or self._chart_bar_trade_date(tail) < self._today_ist():
+            extra = self._index_bar_from_nse(symbol, tail) or self._index_bar_from_quote(symbol, tail)
+            if extra is not None:
+                bars = [*bars, extra]
+        cache[key] = (now, bars)
+        return bars
+
+    @staticmethod
+    def _today_ist() -> date:
+        return datetime.now(IST).date()
+
+    def _nse_index_close_rows(self, session: date) -> dict[str, dict[str, Any]] | None:
+        """One session's official index closing file, keyed by lower-cased index name.
+
+        Positive results are kept for the life of the process (a closed session never
+        changes); a miss is retried after INDEX_ARCHIVE_RETRY_SECONDS (the file for
+        today appears in the evening, and holidays never get one).
+        """
+        cache = self.__dict__.setdefault("_nse_index_close_cache", {})
+        hit = cache.get(session)
+        if hit is not None and (hit[1] is not None or time.time() - hit[0] < INDEX_ARCHIVE_RETRY_SECONDS):
+            return hit[1]
+        rows: dict[str, dict[str, Any]] | None = None
+        try:
+            response = httpx.get(
+                NSE_INDEX_CLOSE_URL.format(stamp=session.strftime("%d%m%Y")),
+                headers={"User-Agent": USER_AGENT, "Referer": "https://www.nseindia.com/"},
+                timeout=15,
+                follow_redirects=True,
+            )
+            if response.status_code == 200 and response.text.lstrip().lower().startswith("index name"):
+                import csv
+                import io
+
+                rows = {
+                    str(r.get("Index Name", "")).strip().lower(): r
+                    for r in csv.DictReader(io.StringIO(response.text))
+                }
+        except Exception as exc:
+            logger.info("NSE index closing file for %s unavailable: %s", session, exc)
+        cache[session] = (time.time(), rows)
+        return rows
+
+    def _index_bars_from_archive(self, symbol: str, last_bar: ChartBar) -> list[ChartBar]:
+        name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
+        if not name:
+            return []
+        last_date = self._chart_bar_trade_date(last_bar)
+        today = self._today_ist()
+        if (today - last_date).days > INDEX_ARCHIVE_MAX_GAP_DAYS:
+            return []  # too stale to be the same stretch; the continuity check would reject it anyway
+        out: list[ChartBar] = []
+        prev_close = float(last_bar.close)
+        day = last_date + timedelta(days=1)
+        while day <= today:
+            if day.weekday() < 5:  # a weekend session (Budget Saturday) is covered by the live row
+                rows = self._nse_index_close_rows(day)
+                row = (rows or {}).get(name.lower())
+                if row:
+                    try:
+                        open_v, high_v, low_v, close_v = (float(row[k]) for k in (
+                            "Open Index Value", "High Index Value", "Low Index Value", "Closing Index Value"))
+                        points = float(row.get("Points Change") or 0)
+                    except (TypeError, ValueError, KeyError):
+                        return out
+                    if min(open_v, high_v, low_v, close_v) <= 0:
+                        return out
+                    # continuity: the file's own previous close (close - points) must be our last close
+                    if abs((close_v - points) / prev_close - 1) > INDEX_SERIES_JOIN_TOLERANCE:
+                        return out
+                    out.append(ChartBar(
+                        time=int(datetime.combine(day, datetime.min.time(), tzinfo=timezone.utc).timestamp()),
+                        open=round(open_v, 2),
+                        high=round(max(high_v, open_v, close_v), 2),
+                        low=round(min(low_v, open_v, close_v), 2),
+                        close=round(close_v, 2),
+                        volume=0,
+                    ))
+                    prev_close = close_v
+            day += timedelta(days=1)
+        return out
 
     def _nse_index_rows(self) -> tuple[datetime | None, dict[str, dict[str, Any]]]:
         """NSE's allIndices rows keyed by index name, with the feed's own timestamp.
@@ -1241,8 +1328,7 @@ class FreeMarketDataProvider:
     def _with_completed_index_session(self, symbol: str, bars: list[ChartBar]) -> list[ChartBar]:
         if not bars or str(symbol or "").strip().upper() not in INDIAN_INDEX_SYMBOLS:
             return bars
-        completed = self._completed_index_session_bar(str(symbol).strip(), bars[-1])
-        return [*bars, completed] if completed is not None else bars
+        return [*bars, *self._completed_index_session_bars(str(symbol).strip(), bars[-1])]
 
     def _apply_session_bar_to_daily_history(self, history: pd.DataFrame, bar: ChartBar) -> pd.DataFrame:
         patched = history.copy()
@@ -1851,10 +1937,19 @@ class FreeMarketDataProvider:
         # Daily series only. The front end also asks for range names ("1Y", "3Y") that the
         # backend serves as daily bars, so the test is "not intraday, not weekly" rather
         # than "== 1D" — the latter left the Home and Markets pages on the old session.
-        if timeframe not in INDEX_NON_DAILY_TIMEFRAMES and str(symbol or "").strip().upper() in INDIAN_INDEX_SYMBOLS:
-            completed = await asyncio.to_thread(self._with_completed_index_session, symbol, chart_bars)
-            return completed[-bars:] if len(completed) > bars else completed
-        return chart_bars
+        if str(symbol or "").strip().upper() not in INDIAN_INDEX_SYMBOLS or timeframe in {"15m", "30m", "1h"}:
+            return chart_bars
+        if timeframe == "1W":
+            # A weekly candle is folded from the completed daily series, so this week's
+            # candle carries the sessions Yahoo has not published yet.
+            daily = await self._get_chart_uncompleted(symbol, "1D", max(bars * 7, 260))
+            completed = await asyncio.to_thread(self._with_completed_index_session, symbol, daily)
+            if len(completed) == len(daily):
+                return chart_bars
+            weekly = self._aggregate_weekly_chart_bars(completed)
+            return weekly[-bars:] if weekly else chart_bars
+        completed = await asyncio.to_thread(self._with_completed_index_session, symbol, chart_bars)
+        return completed[-bars:] if len(completed) > bars else completed
 
     async def _get_chart_uncompleted(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
         if self.eod_only_mode and timeframe in {"15m", "30m", "1h"}:
