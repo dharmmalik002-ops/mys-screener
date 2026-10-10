@@ -55,6 +55,14 @@ def build_router(service):
     async def health():
         return {"ok": True, "scanner_patch": "eod-scanners-v10"}
 
+    @router.get("/data-freshness")
+    def data_freshness():
+        """How many trading sessions behind each committed feed is (header badge).
+        Plain ``def``: it reads seven small-to-mid JSON files from disk."""
+        from app.services.data_freshness import build_report
+
+        return build_report(Path(__file__).resolve().parents[2] / "data")
+
     @router.get("/dashboard")
     async def dashboard(market: str = Query(default="india")):
         return await resolve_service(market).build_dashboard()
@@ -651,6 +659,14 @@ def build_router(service):
     @router.get("/watchlists", response_model=WatchlistsStateResponse)
     async def watchlists(market: str = Query(default="india")):
         return resolve_service(market).get_watchlists_state()
+
+    @router.get("/watchlists/alerts")
+    def watchlist_alerts_status():
+        """Whether trigger/stop alerts are configured, and the last evening's run."""
+        from app.core.config import get_settings
+        from app.services.watchlist_alerts import last_run
+
+        return last_run(Path(get_settings().app_state_dir))
 
     @router.put("/watchlists", response_model=WatchlistsStateResponse)
     async def save_watchlists(payload: WatchlistsStateResponse, market: str = Query(default="india")):

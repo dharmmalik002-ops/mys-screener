@@ -923,6 +923,23 @@ async def catalyst_watchlist_refresh_job() -> None:
         logger.warning("Catalyst watchlist refresh failed: %s", exc)
 
 
+async def watchlist_alerts_job() -> None:
+    """Each weekday evening, message any watchlist stock that closed through
+    its trigger or stop (services/watchlist_alerts.py). Inert until
+    TELEGRAM_BOT_TOKEN and TELEGRAM_ALERT_CHAT_ID are set."""
+    try:
+        from app.services.watchlist_alerts import run_watchlist_alerts
+
+        state = service.get_watchlists_state()
+        summary = await run_watchlist_alerts(state, settings.app_state_dir)
+        logger.info(
+            "Watchlist alerts: %s (%d crossing(s), %d new)",
+            summary["status"], len(summary["crossings"]), summary["new"],
+        )
+    except Exception as exc:
+        logger.warning("Watchlist alerts failed: %s", exc)
+
+
 async def universe_chart_warm_job(market_name: str, service_obj, delay_seconds: float = 0.0) -> None:
     """Keep every universe symbol's daily chart on disk (see maintenance.py).
 
@@ -1012,6 +1029,15 @@ async def lifespan(app: FastAPI):
             replace_existing=True,
         )
         # After the day's filings and the evening news have landed.
+        # After the bhavcopy job has committed the day's closes (it retries
+        # until ~18:30 IST), and again later in case it ran late.
+        for hour, minute in ((19, 5), (21, 35)):
+            scheduler.add_job(
+                watchlist_alerts_job,
+                CronTrigger(day_of_week="mon-fri", hour=hour, minute=minute, timezone=IST),
+                id=f"watchlist_alerts_{hour}{minute:02d}",
+                replace_existing=True,
+            )
         scheduler.add_job(
             catalyst_watchlist_refresh_job,
             CronTrigger(hour=20, minute=40, timezone=IST),
