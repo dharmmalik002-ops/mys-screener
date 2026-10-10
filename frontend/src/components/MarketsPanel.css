@@ -828,3 +828,39 @@
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
+
+/* ===== Reading order below the verdict =====
+   The sections are numbered questions; inside each, the plain-English read
+   comes first, then the numbers, then the names. */
+.mk-outline-hdr {
+  margin: 18px 0 8px;
+  font-size: var(--fs-tiny);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.markets-panel .mk-read {
+  margin: 12px 0 0;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.mk-part {
+  margin-top: 18px;
+}
+
+.mk-part-hdr {
+  font-size: var(--fs-tiny);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.mk-part > .mk-read:first-of-type {
+  margin-top: 0;
+}

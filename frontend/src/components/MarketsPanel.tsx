@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 
 import {
@@ -24,7 +23,17 @@ import { ContextStrip } from "./markets/ContextStrip";
 import { Disclosure } from "./markets/Disclosure";
 import { ExposureVerdict } from "./markets/ExposureVerdict";
 import { MarketsBrief } from "./markets/MarketsBrief";
-import { barDate, readablePct, type IndexRead } from "../lib/marketsBrief";
+import {
+  barDate,
+  breadthAnswer,
+  MIN_SAMPLE,
+  breakoutAnswer,
+  leadershipAnswer,
+  planAnswer,
+  readablePct,
+  trendAnswer,
+  type IndexRead,
+} from "../lib/marketsBrief";
 
 import "./MarketsPanel.css";
 
@@ -275,8 +284,9 @@ function buildOutlook(
 // Every sentence is generated from live counted data.
 // ---------------------------------------------------------------------------
 
+type UnderneathKey = "participation" | "stress" | "rotation" | "pipeline";
 type UnderneathRead = {
-  paras: Array<{ title: string; text: string }>;
+  paras: Array<{ key: UnderneathKey; title: string; text: string }>;
 };
 
 function buildUnderneath(
@@ -288,7 +298,7 @@ function buildUnderneath(
   if (!env) return null;
   const posture = env.posture;
   const ev = env.evidence;
-  const paras: Array<{ title: string; text: string }> = [];
+  const paras: UnderneathRead["paras"] = [];
 
   // --- Participation: is the crowd moving with the index? ---
   if (posture) {
@@ -310,6 +320,7 @@ function buildUnderneath(
       }
     }
     paras.push({
+      key: "participation",
       title: "Participation",
       text: `Across every NSE stock over Rs 1,000 cr: ${adv} advancers vs ${dec} decliners${advPct != null ? ` (${advPct}% up)` : ""} · ${a21 != null ? `${Math.round(a21)}% above the 20-EMA` : ""}${a200 != null ? `, ${Math.round(a200)}% above the 200-SMA` : ""} · ${posture.new_52w_highs} new 52-week highs against ${posture.new_52w_lows} new lows.${divergence}`,
     });
@@ -318,9 +329,17 @@ function buildUnderneath(
   // --- Leadership stress test: are breakouts being PAID? ---
   const working = ev?.breakouts_working ?? [];
   const failed = ev?.breakouts_failed ?? [];
-  if (working.length || failed.length) {
+  // The verdict reads the same measured figure as the Breakouts row, the card and the
+  // evidence model (structural.held_pct over every recent base breakout), with the same
+  // 65 / 45 bands. The named lists are only the clearest examples, so a rate counted off
+  // them used to say "being paid" beside a headline reading "mixed".
+  const structural = env.today?.structural ?? {};
+  const measuredHeld = structural.held_pct ?? null;
+  const measuredEvents = structural.events ?? 0;
+  if (working.length || failed.length || measuredHeld !== null) {
     const total = working.length + failed.length;
-    const holdRate = total > 0 ? Math.round((working.length / total) * 100) : null;
+    const holdRate = measuredHeld ?? (total > 0 ? (working.length / total) * 100 : null);
+    const sample = measuredHeld !== null ? measuredEvents : total;
     const best = [...working].sort((a, b) => b.pct_vs_pivot - a.pct_vs_pivot).slice(0, 3);
     const worst = [...failed].sort((a, b) => a.pct_vs_pivot - b.pct_vs_pivot)[0];
     const bounced = ev?.ema_tests?.bounced ?? [];
@@ -334,16 +353,25 @@ function buildUnderneath(
             : ` The 20-EMA test is split (${bounced.length} bounced / ${sliced.length} sliced) — no clear hand in control.`
         : "";
     const verdict =
-      holdRate == null
-        ? ""
-        : holdRate >= 60
+      holdRate == null || sample < MIN_SAMPLE
+        ? "Too few recent base breakouts to judge follow-through."
+        : holdRate >= 65
           ? "Breakouts are being paid — the single most bullish thing a tape can do."
-          : holdRate >= 40
+          : holdRate >= 45
             ? "Breakouts are a coin-flip — buy only the cleanest pivots and take partials fast."
             : "Breakouts are failing — the market is punishing entries; patience beats aggression here.";
+    const rate =
+      holdRate != null && sample > 0
+        ? ` ${Math.round(holdRate)}% of ${sample} recent base breakouts still hold above their pivots`
+        : "";
+    const examples = [
+      best.length ? `strongest: ${best.map((b) => `${b.symbol} (+${b.pct_vs_pivot.toFixed(1)}% vs pivot)`).join(", ")}` : "",
+      worst ? `worst failure ${worst.symbol} (${worst.pct_vs_pivot.toFixed(1)}%)` : "",
+    ].filter(Boolean).join("; ");
     paras.push({
+      key: "stress",
       title: "Leadership stress test",
-      text: `${verdict} ${working.length} of ${total} recent base breakouts still hold above their pivots${best.length ? ` — strongest: ${best.map((b) => `${b.symbol} (+${b.pct_vs_pivot.toFixed(1)}% vs pivot)`).join(", ")}` : ""}${worst ? `; worst failure ${worst.symbol} (${worst.pct_vs_pivot.toFixed(1)}%)` : ""}.${dipRead}`,
+      text: `${verdict}${rate}${examples ? `${rate ? " — " : " "}${examples}` : ""}${rate || examples ? "." : ""}${dipRead}`,
     });
   }
 
@@ -352,6 +380,7 @@ function buildUnderneath(
   const bottom = env.week_review?.bottom_sectors ?? [];
   if (top.length) {
     paras.push({
+      key: "rotation",
       title: "Rotation",
       text: `Money moved into ${top
         .slice(0, 3)
@@ -383,6 +412,7 @@ function buildUnderneath(
             ? "a moderate pipeline — selection matters more than aggression"
             : "a thin pipeline — few quality bases means few low-risk entries; forcing trades here is how drawdowns start";
       paras.push({
+        key: "pipeline",
         title: "Setup pipeline (forward-looking)",
         text: `${totalBases} quality bases are forming right now (${parts.join(", ")}). This is the supply of NEXT month's breakouts — ${read}.`,
       });
@@ -756,752 +786,662 @@ export function MarketsPanel({
       asOf: barDate(lastBar.time),
     }];
   });
-  const briefOutlook = buildOutlook(xpBreadth, data, indexHealth);
-  const topOfPage = (
-    <>
+  const outlook = buildOutlook(xpBreadth, data, indexHealth);
+  const underneath = buildUnderneath(data, setupCounts, indexHealth["NIFTYSMLCAP250.NS"] ?? null, xpBreadth);
+  const read = (key: UnderneathKey) => underneath?.paras.find((p) => p.key === key) ?? null;
+  const smallcap = indexHealth["NIFTYSMLCAP250.NS"] ?? null;
+
+  const structural = (today?.structural ?? {}) as Record<string, number | null>;
+  const ft3 = (today?.followthrough?.d3 ?? {}) as Record<string, number | null>;
+  const ft1 = (today?.followthrough?.d1 ?? {}) as Record<string, number | null>;
+  const ft5 = (today?.followthrough?.d5 ?? {}) as Record<string, number | null>;
+  const quality = today?.close_quality ?? {};
+  const ema = today?.ema_health ?? {};
+  const pressure = today?.volume_pressure ?? {};
+  const expansion = today?.range_expansion ?? {};
+  const thrust = today?.thrust ?? {};
+  const scoreDelta = delta(today?.score, yesterday?.score ?? null);
+  const ai = data?.ai ?? null;
+  const week = data?.week_review;
+  const positions = data?.positions ?? [];
+
+  // Index rows in reading order: the hunting ground first, the tide last.
+  const trendRows = OUTLOOK_INDICES.flatMap((ix) => {
+    const h = indexHealth[ix.symbol];
+    return h ? [{ ix, h }] : [];
+  });
+  const lastBreadth = breadth?.points?.length ? breadth.points[breadth.points.length - 1] : null;
+
+  // Sections that read /market-environment wait on it without holding the rest of the page.
+  const domesticReady = Boolean(today);
+  const domesticPending = state === "loading" && !data;
+  const domesticFallback = domesticPending ? (
+    <div className="mk-skeleton" aria-label="Loading counted metrics" role="status">
+      <div className="skeleton" style={{ height: 46 }} />
+    </div>
+  ) : (
+    <div className="mk-loading">
+      Could not load the counted metrics.{" "}
+      <button type="button" onClick={load}>Retry</button>
+    </div>
+  );
+  const pendingAnswer = domesticPending ? "Loading…" : domesticReady ? null : "Not available right now";
+
+  const trend = trendAnswer(trendRows.map(({ h }) => ({ label: h.label, state: h.state })));
+  const breadthRead = breadthAnswer(data, lastBreadth?.above_ma50_pct ?? null);
+  const breakouts = breakoutAnswer(data);
+  const leadership = leadershipAnswer(data);
+  const plan = domesticReady ? planAnswer(positions.length, focusVisible.length) : null;
+
+  return (
+    <Panel
+      title="Markets"
+      subtitle={
+        today
+          ? `Follow-through health · ${data?.date ?? ""} · ${today.universe} liquid stocks measured`
+          : "Daily follow-through health of the tape"
+      }
+      className="markets-panel"
+    >
+      {/* The answer first: one condition word, the size it implies, the three indices,
+          five breadth facts and why. The rules for what appears are in lib/marketsBrief.ts. */}
       <MarketsBrief
         exposure={exposure}
         xp={xpBreadth}
         env={data}
         indices={indexReads}
-        reasons={briefOutlook?.reasons ?? []}
-        flips={briefOutlook?.flips ?? []}
+        reasons={outlook?.reasons ?? []}
+        flips={outlook?.flips ?? []}
       />
-      <Disclosure id="exposure" summary="How the exposure number is set" hint="breakout win rate vs break-even">
-        <ExposureVerdict data={exposure} />
-        <ContextStrip data={exposure} breadthSeries={breadthSeries} />
-      </Disclosure>
-      <Disclosure id="macro" summary="Global and macro backdrop" hint="oil, dollar, US markets, news">
-        <MacroContextPanel market="india" />
-      </Disclosure>
-    </>
-  );
 
-  // The verdict, the context strip and the breadth history come from their own
-  // endpoints and resolve in well under a second. /market-environment takes far
-  // longer to rebuild, and gating the whole page on it meant the headline sat
-  // behind a skeleton for a minute waiting on data it does not use. Only the
-  // section that actually needs it waits.
-  if (state === "loading" && !data) {
-    return (
-      <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
-        {topOfPage}
-        <Disclosure
-          id="breadth"
-          summary="Breadth, 3 years"
-          hint={breadth?.points.length ? `${breadth.points.length} sessions` : undefined}
-        >
-          <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
-        </Disclosure>
-        <Disclosure id="edge" summary="Full breakout evidence" hint="setups, cohorts, arithmetic">
-          <RegimeBrief market="india" />
-        </Disclosure>
-        <div className="mk-skeleton" aria-label="Loading counted metrics" role="status">
-          <div className="skeleton" style={{ height: 46 }} />
+      {/* Then the working, as the questions an analyst asks in order. Each closed row
+          carries its one-line answer, so the collapsed page reads as a summary and a
+          section is opened only to see how the answer was reached. Every block lives
+          in exactly one section — nothing is shown twice. */}
+      <div className="mk-outline-hdr">The full picture, in order</div>
+
+      <Disclosure
+        id="trend"
+        step={1}
+        summary="Trend — where are the indices heading?"
+        answer={trend?.text ?? (trendRows.length ? null : "Loading…")}
+        answerTone={trend?.tone}
+        hint="charts & key levels"
+      >
+        {trendRows.length ? (
+          trendRows.map(({ ix, h }) => {
+            const bars = indexBars[ix.symbol] ?? [];
+            const tone: "pos" | "neu" | "neg" = h.stateScore >= 1 ? "pos" : h.stateScore <= -1 ? "neg" : "neu";
+            const StateIcon = h.stateScore >= 1 ? ArrowUpRight : h.stateScore <= -1 ? ArrowDownRight : Minus;
+            const featured = ix.symbol === "NIFTYSMLCAP250.NS";
+            return (
+              <section key={ix.symbol} className="mko-chart-card" aria-label={`${h.label} trend`}>
+                <div className="mko-index-head">
+                  <div>
+                    <strong>{h.label}</strong>
+                    <span className="mko-index-price">{h.last.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="mko-index-stats">
+                    <span title="Return over the last 20 sessions">
+                      20d <strong className={h.ret20Pct !== null && h.ret20Pct >= 0 ? "pos" : "neg"}>{num(h.ret20Pct, 1, "%")}</strong>
+                    </span>
+                    <span title="Return over the last 60 sessions">
+                      60d <strong className={h.ret60Pct !== null && h.ret60Pct >= 0 ? "pos" : "neg"}>{num(h.ret60Pct, 1, "%")}</strong>
+                    </span>
+                    <span title="Distance below the 52-week high">
+                      off 52wH <strong>{num(h.distFrom52wHighPct, 1, "%")}</strong>
+                    </span>
+                    <span className={`mko-state mko-${tone}`}>
+                      <StateIcon size={12} strokeWidth={2.4} /> {h.state}
+                    </span>
+                  </div>
+                </div>
+                {ix.chart && bars.length >= 2 ? <IndexCandleChart bars={bars} height={featured ? 360 : 280} /> : null}
+                {featured && smallcap ? (
+                  <div className="mko-levels">
+                    <span>Levels that matter:</span>
+                    {smallcap.sma20 !== null ? <em>20DMA {Math.round(smallcap.sma20).toLocaleString("en-IN")}</em> : null}
+                    {smallcap.sma50 !== null ? <em>50DMA {Math.round(smallcap.sma50).toLocaleString("en-IN")}</em> : null}
+                    {smallcap.sma200 !== null ? <em>200DMA {Math.round(smallcap.sma200).toLocaleString("en-IN")}</em> : null}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })
+        ) : (
+          <div className="mk-muted">Loading index charts…</div>
+        )}
+        <div className="mk-footnote">
+          Smallcap 250 and Midcap 150 are where most setups on this site come from, so they are charted; the
+          Nifty 50 is the tide they swim in. Uptrend = above a rising 50-day that is above the 200-day.
         </div>
-      </Panel>
-    );
-  }
-  if ((state === "error" && !data) || !today) {
-    return (
-      <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
-        {/* The brief and the macro read do not depend on the domestic payload, so
-            they still render when that fetch has failed. */}
-        {topOfPage}
-        <Disclosure id="breadth" summary="Breadth, 3 years" hint={`${breadth?.points.length ?? 0} sessions`}>
-          <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
-        </Disclosure>
-        <div className="mk-loading">
-          Could not load the counted metrics.{" "}
-          <button type="button" onClick={load}>Retry</button>
-        </div>
-      </Panel>
-    );
-  }
-
-  const structural = (today.structural ?? {}) as Record<string, number | null>;
-  const ft3 = (today.followthrough?.d3 ?? {}) as Record<string, number | null>;
-  const ft1 = (today.followthrough?.d1 ?? {}) as Record<string, number | null>;
-  const ft5 = (today.followthrough?.d5 ?? {}) as Record<string, number | null>;
-  const quality = today.close_quality ?? {};
-  const ema = today.ema_health ?? {};
-  const pressure = today.volume_pressure ?? {};
-  const expansion = today.range_expansion ?? {};
-  const thrust = today.thrust ?? {};
-  const scoreDelta = delta(today.score, yesterday?.score ?? null);
-  const ai = data?.ai ?? null;
-  const week = data?.week_review;
-  const outlook = buildOutlook(xpBreadth, data, indexHealth);
-  const underneath = buildUnderneath(data, setupCounts, indexHealth["NIFTYSMLCAP250.NS"] ?? null, xpBreadth);
-  const smallcap = indexHealth["NIFTYSMLCAP250.NS"] ?? null;
-
-  return (
-    <Panel
-      title="Markets"
-      subtitle={`Follow-through health · ${data?.date ?? ""} · ${today.universe} liquid stocks measured`}
-      className="markets-panel"
-    >
-      {/* One condition word, the size it implies, the three indices, five breadth
-          facts and why — then everything else, collapsed. The rules for what
-          appears first are in lib/marketsBrief.ts. */}
-      {topOfPage}
+      </Disclosure>
 
       <Disclosure
         id="breadth"
-        summary="Breadth, 3 years"
-        hint={breadth?.points.length ? `${breadth.points.length} sessions` : undefined}
+        step={2}
+        summary="Breadth — how many stocks are taking part?"
+        answer={breadthRead?.text ?? pendingAnswer}
+        answerTone={breadthRead?.tone}
+        hint={breadth?.points.length ? `${breadth.points.length} sessions of history` : undefined}
       >
-        <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
-      </Disclosure>
-
-      <Disclosure id="edge" summary="Full breakout evidence" hint="setups, cohorts, arithmetic">
-        <RegimeBrief market="india" />
-      </Disclosure>
-
-      <Disclosure id="internals" summary="Index charts, evidence and counted metrics" hint="the full working">
-      {/* ===== Market Outlook — the backbone ===== */}
-      {outlook ? (
-        <section className="mko-hero mko-hero--evidence" aria-label="Weight of evidence">
-          {/* The RISK-ON…RISK-OFF verdict word, its ±100 meter and its guidance
-              sentence were deleted here. They were the second of three
-              competing top-level verdicts and, measured on the live page, they
-              disagreed — this block read CONSTRUCTIVE while the tape score read
-              PROTECT and the exposure rule read Defensive. The evidence and the
-              what-would-change-my-mind list are kept: those informed rather
-              than concluded. */}
-          <div className="mko-why">
-            <div className="mko-why-title">Why — the three heaviest pieces of evidence</div>
-            <ul>
-              {outlook.reasons.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
-            <div className="mko-why-title mko-flip-title">What would change this view</div>
-            <ul className="mko-flips">
-              {outlook.flips.map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
-
-      {/* ===== Index charts — Smallcap 250 & Midcap 150, full candles ===== */}
-      {OUTLOOK_INDICES.filter((ix) => ix.chart).map((ix) => {
-        const h = indexHealth[ix.symbol];
-        const bars = indexBars[ix.symbol] ?? [];
-        if (!h || bars.length < 2) return null;
-        const tone: "pos" | "neu" | "neg" = h.stateScore >= 1 ? "pos" : h.stateScore <= -1 ? "neg" : "neu";
-        const StateIcon = h.stateScore >= 1 ? ArrowUpRight : h.stateScore <= -1 ? ArrowDownRight : Minus;
-        const featured = ix.symbol === "NIFTYSMLCAP250.NS";
-        return (
-          <section key={ix.symbol} className="mko-chart-card" aria-label={`${h.label} chart`}>
-            <div className="mko-index-head">
-              <div>
-                <strong>{h.label}</strong>
-                <span className="mko-index-price">{h.last.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="mko-index-stats">
-                <span title="Return over the last 20 sessions">
-                  20d <strong className={h.ret20Pct !== null && h.ret20Pct >= 0 ? "pos" : "neg"}>{num(h.ret20Pct, 1, "%")}</strong>
-                </span>
-                <span title="Return over the last 60 sessions">
-                  60d <strong className={h.ret60Pct !== null && h.ret60Pct >= 0 ? "pos" : "neg"}>{num(h.ret60Pct, 1, "%")}</strong>
-                </span>
-                <span title="Distance below the 52-week high">
-                  off 52wH <strong>{num(h.distFrom52wHighPct, 1, "%")}</strong>
-                </span>
-                <span className={`mko-state mko-${tone}`}>
-                  <StateIcon size={12} strokeWidth={2.4} /> {h.state}
-                </span>
-              </div>
-            </div>
-            <IndexCandleChart bars={bars} height={featured ? 360 : 280} />
-            {featured && smallcap ? (
-              <div className="mko-levels">
-                <span>Levels that matter:</span>
-                {smallcap.sma20 !== null ? <em>20DMA {Math.round(smallcap.sma20).toLocaleString("en-IN")}</em> : null}
-                {smallcap.sma50 !== null ? <em>50DMA {Math.round(smallcap.sma50).toLocaleString("en-IN")}</em> : null}
-                {smallcap.sma200 !== null ? <em>200DMA {Math.round(smallcap.sma200).toLocaleString("en-IN")}</em> : null}
-              </div>
-            ) : null}
-          </section>
-        );
-      })}
-
-      {/* ===== Underneath the surface — the full internals read ===== */}
-      {underneath ? (
-        <section className="mko-under" aria-label="Underneath the surface">
-          <div className="mko-signals-head">Underneath the surface — what the leaders and internals are actually doing</div>
-          {underneath.paras.map((p) => (
-            <div key={p.title} className="mko-under-para">
-              <strong>{p.title}</strong>
-              <p>{p.text}</p>
-            </div>
-          ))}
-          {(data?.evidence?.breakouts_working?.length || data?.evidence?.breakouts_failed?.length) ? (
-            <div className="mko-under-chips">
-              {(data?.evidence?.breakouts_working ?? []).slice(0, 8).map((b) => (
-                <button
-                  key={`w-${b.symbol}`}
-                  type="button"
-                  className="mko-chip mko-chip-pos"
-                  onClick={() => onOpenSymbolChart?.(b.symbol)}
-                  title={`Broke out ${b.sessions_ago}d ago from a ${b.base_len_label} base · pivot ${b.pivot} · click to open chart`}
-                >
-                  {b.symbol} +{b.pct_vs_pivot.toFixed(1)}%
-                </button>
-              ))}
-              {(data?.evidence?.breakouts_failed ?? []).slice(0, 6).map((b) => (
-                <button
-                  key={`f-${b.symbol}`}
-                  type="button"
-                  className="mko-chip mko-chip-neg"
-                  onClick={() => onOpenSymbolChart?.(b.symbol)}
-                  title={`Failed breakout from ${b.sessions_ago}d ago · pivot ${b.pivot} · click to open chart`}
-                >
-                  {b.symbol} {b.pct_vs_pivot.toFixed(1)}%
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      {/* ===== The evidence table ===== */}
-      {outlook ? (
-        <section className="mko-signals" aria-label="Outlook evidence">
-          <div className="mko-signals-head">The evidence — every signal, its weight, and the logic</div>
-          {outlook.signals.map((s) => {
-            const tone = s.score > 0.2 ? "pos" : s.score < -0.2 ? "neg" : "neu";
-            return (
-              <div key={s.label} className="mko-signal-row">
-                <span className={`mko-dot mko-${tone}`} aria-label={tone === "pos" ? "bullish" : tone === "neg" ? "bearish" : "neutral"} />
-                <div className="mko-signal-main">
-                  <div className="mko-signal-top">
-                    <strong>{s.label}</strong>
-                    <span className="mko-signal-value">{s.valueLabel}</span>
-                    <span className="mko-signal-weight" title={`Weight ${s.weight} of the model`}>w{s.weight}</span>
-                  </div>
-                  <div className="mko-signal-logic">{s.logic}</div>
-                </div>
-              </div>
-            );
-          })}
-          <div className="mk-footnote mko-footnote">
-            Weight-of-evidence model computed live from breadth, trend and follow-through data. Probabilities, not prophecy — when the evidence changes, the outlook changes with it.
-          </div>
-        </section>
-      ) : null}
-
-      <div className="mko-section-hdr">Under the hood — today's counted metrics</div>
-
-      {/* The tape score, demoted from a top-level verdict to one metric among
-          many. It used to headline the page in a third vocabulary
-          (Press / Selective / Protect / Stand Aside) alongside two others. */}
-      <div className="mk-header">
-        <div className={`mk-score ${verdictClass(today.verdict)}`}>
-          <strong>{num(today.score, 1)}</strong>
-          <span className="mk-verdict">Tape score · {today.verdict}</span>
-        </div>
-        <div className="mk-header-context">
-          <div>
-            {scoreDelta ? (
-              <span className={Number(scoreDelta) >= 0 ? "pos" : "neg"}>{scoreDelta} vs yesterday</span>
-            ) : (
-              <span className="mk-muted">first recorded session</span>
-            )}
-            {data?.week_avg_score !== null && data?.week_avg_score !== undefined ? (
-              <span className="mk-muted"> · last-week avg {num(data.week_avg_score, 1)}</span>
-            ) : null}
-          </div>
-          <Spark values={(data?.history ?? []).map((h) => h.score)} />
-        </div>
-        {ai?.one_rule_today ? <div className="mk-rule">Rule today: {ai.one_rule_today}</div> : null}
-      </div>
-
-      {/* Market posture strip */}
-      {data?.posture ? (
-        <div className="mk-posture">
-          <div className="mk-posture-item">
-            <span>Adv / Dec</span>
-            <strong><em className="pos">{data.posture.advances}</em> / <em className="neg">{data.posture.declines}</em></strong>
-          </div>
-          <div className="mk-posture-item">
-            <span>52w High / Low today</span>
-            <strong><em className="pos">{data.posture.new_52w_highs}</em> / <em className="neg">{data.posture.new_52w_lows}</em></strong>
-          </div>
-          <div className="mk-posture-item">
-            {/* 20, not 21: `above_ema21_pct` is counted off the snapshot's
-                `ema20` field (StockSnapshot has no ema21). The wire key keeps
-                its name — it is persisted in the stored history files — but the
-                label has to say what was actually measured. */}
-            <span>&gt; 20 EMA</span>
-            <strong>{num(data.posture.above_ema21_pct, 0, "%")}</strong>
-          </div>
-          <div className="mk-posture-item">
-            <span>&gt; 50 SMA</span>
-            <strong>{num(data.posture.above_sma50_pct, 0, "%")}</strong>
-          </div>
-          <div className="mk-posture-item">
-            <span>&gt; 200 SMA</span>
-            <strong>{num(data.posture.above_sma200_pct, 0, "%")}</strong>
-          </div>
-          <div className="mk-posture-note">
-            Every NSE stock over Rs 1,000 cr ({data.posture.universe} names). 52w/MA stats measured on
-            the {data.posture.leveled_universe ?? data.posture.universe} of those with verified-fresh
-            levels; stale-history names are excluded, not guessed.
-          </div>
-        </div>
-      ) : null}
-
-      {/* Breadth trend — is participation improving? */}
-      {(() => {
-        const series = (data?.history ?? [])
-          .filter((h) => h.date)
-          .map((h) => ({
-            date: (h.date ?? "").slice(5),
-            "> 20 EMA": h.above_ema21_pct ?? null,
-            "> 50 SMA": h.above_sma50_pct ?? null,
-            "> 200 SMA": h.above_sma200_pct ?? null,
-          }));
-        if (series.length < 2) {
-          return (
-            <div className="mk-breadth">
-              <div className="mk-week-hdr">Breadth Trend</div>
-              <div className="mk-muted">Building — the multi-day breadth chart needs a few sessions of history. Today's snapshot is in the posture strip above.</div>
-            </div>
-          );
-        }
-        return (
-          <div className="mk-breadth">
-            <div className="mk-week-hdr">Breadth Trend — % of stocks above key moving averages</div>
-            <div className="mk-breadth-chart">
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={series} margin={{ top: 8, right: 12, bottom: 4, left: -18 }}>
-                  <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: "var(--fs-tiny)", fill: "var(--text-muted)" }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-tiny)", fill: "var(--text-muted)" }} />
-                  <Tooltip contentStyle={{ fontSize: "var(--fs-small)" }} />
-                  <Legend wrapperStyle={{ fontSize: "var(--fs-small)" }} />
-                  {/* isAnimationActive=false: the draw-in animation freezes mid-way
-                      when rAF is throttled (background tab, battery saver), leaving
-                      a stuck stroke-dasharray and an apparently empty chart. */}
-                  <Line type="monotone" dataKey="> 20 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="> 50 SMA" stroke="#f7b955" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="> 200 SMA" stroke="var(--candle-up)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mk-footnote">
-              Rising lines = broadening participation (healthy); falling while the index holds = a narrowing,
-              distribution-prone tape. The 200 SMA line is the slow, structural one; the 20 EMA line is the fast swing gauge.
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* AI daily read */}
-      {ai ? (
-        <div className="mk-ai">
-          {ai.headline ? <div className="mk-ai-headline">{ai.headline}</div> : null}
-          {(ai.narrative ?? []).map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </div>
-      ) : (
-        // Quiet footnote, not a boxed error: the absence of the AI read is
-        // routine (rate limits, cold start) and shouldn't look like a fault.
-        <div className="mk-footnote" style={{ marginBottom: 14 }}>
-          AI read unavailable right now — the counted metrics below stand on their own.
-        </div>
-      )}
-
-      {/* Today vs yesterday vs week */}
-      <div className="mk-compare">
-        <div className="mk-compare-head">
-          <span>Metric</span><span>Today</span><span>Yesterday</span><span>Week avg</span>
-        </div>
-        {compareRows.map((row) => (
-          <div key={row.label} className="mk-compare-row">
-            <span>{row.label}</span>
-            <strong>{num(row.today, 1)}</strong>
-            <span>{num(row.yesterday, 1)}</span>
-            <span>{row.week !== null ? num(row.week, 1) : "—"}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Component cards */}
-      <div className="mk-grid">
-        <div className="mk-card">
-          <div className="mk-card-hdr">Base Breakout Follow-Through</div>
-          <div className="mk-big">{readablePct(structural.held_pct ?? null, structural.events ?? 0)}<small> of {structural.events ?? 0} base breakouts (last ~12 sessions) still above pivot</small></div>
-          <div className="mk-sub">
-            back inside base: {num(structural.back_in_base_pct ?? null, 0, "%")} · short-term clears held (1d/3d/5d): {num(ft1.held_pct, 0, "%")} / {num(ft3.held_pct, 0, "%")} / {num(ft5.held_pct, 0, "%")}
-          </div>
-          <div className="mk-meaning">{ftMeaning(structural.held_pct ?? null)}</div>
-          <Spark values={(data?.history ?? []).map((h) => h.structural_held_pct ?? null)} />
-        </div>
-        <div className="mk-card">
-          <div className="mk-card-hdr">Today's Breakout Quality</div>
-          <div className="mk-big">{readablePct(quality.strong_pct, quality.count ?? 0)}<small> strong closes of {quality.count ?? 0} attempts</small></div>
-          <div className="mk-sub">faded below midpoint: {num(quality.faded_pct, 0, "%")}</div>
-          <div className="mk-meaning">{qualityMeaning(quality.strong_pct ?? null, quality.faded_pct ?? null)}</div>
-        </div>
-        <div className="mk-card">
-          <div className="mk-card-hdr">Leader EMA Health</div>
-          <div className="mk-big">{readablePct(ema.above_ema21_pct, ema.leaders ?? 0)}<small> of {ema.leaders ?? 0} leaders above 20 EMA</small></div>
-          <div className="mk-sub">
-            above 10 EMA: {num(ema.above_ema10_pct, 0, "%")} · 20 EMA tests bought: {num(ema.ema21_bounce_pct, 0, "%")} of {ema.ema21_touches ?? 0}
-          </div>
-          <div className="mk-meaning">{emaMeaning(ema.above_ema21_pct ?? null, ema.ema21_bounce_pct ?? null)}</div>
-          <Spark values={(data?.history ?? []).map((h) => h.above_ema21_pct)} />
-        </div>
-        <div className="mk-card">
-          <div className="mk-card-hdr">Leader Volume Pressure</div>
-          <div className="mk-big">
-            {num(pressure.accumulation_share_pct, 0, "%")}
-            <small> accumulation share ({pressure.accumulation ?? 0} up / {pressure.distribution ?? 0} down on volume)</small>
-          </div>
-          <div className="mk-meaning">{pressureMeaning(pressure.accumulation_share_pct ?? null)}</div>
-        </div>
-        <div className="mk-card">
-          <div className="mk-card-hdr">Range Expansion Direction</div>
-          <div className="mk-big">{num(expansion.up_share_pct, 0, "%")}<small> of wide-range days closed up ({expansion.up ?? 0} vs {expansion.down ?? 0})</small></div>
-          <div className="mk-meaning">
-            {expansion.up_share_pct === null ? "No unusually wide days today." : (expansion.up_share_pct ?? 0) >= 60 ? "The big candles belong to buyers." : (expansion.up_share_pct ?? 0) <= 40 ? "The big candles belong to sellers." : "Big-range days are split — no side in control."}
-          </div>
-        </div>
-        <div className="mk-card">
-          <div className="mk-card-hdr">Thrust &amp; Tape</div>
-          <div className="mk-big">
-            {thrust.up_4pct ?? 0} <small>up 4%+</small> / {thrust.down_4pct ?? 0} <small>down 4%+</small>
-          </div>
-          <div className="mk-sub">
-            up/down volume {num(thrust.updown_volume_ratio, 2, "x")} · fresh 20d highs {thrust.fresh_20d_highs ?? 0} vs lows {thrust.fresh_20d_lows ?? 0}
-          </div>
-          <div className="mk-meaning">
-            {(thrust.up_4pct ?? 0) >= (thrust.down_4pct ?? 0) * 2 ? "Momentum aggression is one-sided to the upside." : (thrust.down_4pct ?? 0) >= (thrust.up_4pct ?? 0) * 2 ? "Downside aggression dominates — momentum longs are swimming upstream." : "Two-way tape — aggression is balanced."}
-          </div>
-        </div>
-      </div>
-
-      {/* Open positions health */}
-      {(data?.positions ?? []).length ? (
-        <div className="mk-week">
-          <div className="mk-week-hdr">Your Open Positions — health check</div>
-          <div className="mk-pos-list">
-            {(data?.positions ?? []).map((p) => (
-              <div key={p.symbol + String(p.avg_px)} className={`mk-pos-row cat-${p.category.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
-                <button type="button" className="mk-symbol" onClick={() => p.mapped && onOpenSymbolChart?.(p.symbol)}>
-                  {p.symbol}
-                </button>
-                <span className="mk-pos-cat">{p.category}</span>
-                {p.pnl_pct !== null && p.pnl_pct !== undefined ? (
-                  <strong className={p.pnl_pct >= 0 ? "pos" : "neg"}>
-                    {p.pnl_pct >= 0 ? "+" : ""}{p.pnl_pct.toFixed(1)}%
-                  </strong>
-                ) : <strong>—</strong>}
-                <small>
-                  {p.mapped ? `avg ${p.avg_px} → ${p.last_price}` : `avg ${p.avg_px}`}
-                  {p.rs_rating ? ` · RS ${p.rs_rating}` : ""}
-                </small>
-                <div className="mk-pos-advice">{p.advice}</div>
-              </div>
-            ))}
-          </div>
+        {read("participation") ? <ReadPara text={read("participation")!.text} /> : null}
+        {data?.posture ? (
           <div className="mk-footnote">
-            Positions are netted from your journal's buy/sell entries and re-classified daily against the same
-            rules as the market metrics. Worst conditions listed first.
-          </div>
-        </div>
-      ) : (
-        <div className="mk-week">
-          <div className="mk-week-hdr">Your Open Positions</div>
-          <div className="mk-muted">
-            No open positions synced yet — open the Journal page once (it syncs your positions to the backend), then revisit.
-          </div>
-        </div>
-      )}
-
-      {/* Leaders + sector-breakout cards */}
-      <div className="mk-cardrow">
-        {(data?.leaders ?? []).length ? (
-          <div className="mk-bigcard">
-            <div className="mk-bigcard-num">{data?.leaders?.length ?? 0}</div>
-            <div className="mk-bigcard-label">Market Leaders</div>
-            <div className="mk-bigcard-sub">
-              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 20 EMA · 2%/5% circuit-band names excluded
-            </div>
-            <div className="mk-bigcard-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  const syms = (data?.leaders ?? []).map((l) => l.symbol);
-                  openChart(syms[0], syms);
-                }}
-              >
-                Full chart (↑/↓ steps all)
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setGridModal({
-                    title: "Market Leaders",
-                    subtitle: `${data?.leaders?.length ?? 0} Stage-2 leaders · click any chart to open it full`,
-                    items: (data?.leaders ?? []).map((l) => ({
-                      symbol: l.symbol,
-                      name: l.name,
-                      badge: l.rs_rating ? `RS ${l.rs_rating}` : undefined,
-                      badgeTone: "pos",
-                      note: `${l.above_ema21 ? "above" : "below"} 20 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
-                    })),
-                  })
-                }
-              >
-                ⊞ Grid view
-              </button>
-            </div>
+            Counted across every NSE stock over Rs 1,000 cr ({data.posture.universe} names); moving-average and
+            52-week figures use the {data.posture.leveled_universe ?? data.posture.universe} with verified-fresh
+            history — stale names are excluded, not guessed.
           </div>
         ) : null}
-        {(data?.sector_breakouts ?? []).length ? (
-          <div className="mk-bigcard">
-            <div className="mk-bigcard-num">{data?.sector_breakouts?.length ?? 0}</div>
-            <div className="mk-bigcard-label">Sector Breakouts Setting Up</div>
-            <div className="mk-bigcard-sub">Leading-sector names 0–5% under a pivot — the next to fire</div>
-            <div className="mk-bigcard-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  const syms = (data?.sector_breakouts ?? []).map((b) => b.symbol);
-                  openChart(syms[0], syms);
-                }}
-              >
-                Full chart (↑/↓ steps all)
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setGridModal({
-                    title: "Leading-sector breakouts, about to fire",
-                    subtitle: "Names in the strongest sectors coiled 0–5% under a base pivot",
-                    items: (data?.sector_breakouts ?? []).map((b) => ({
-                      symbol: b.symbol,
-                      name: b.name,
-                      badge: `${b.pct_below_pivot.toFixed(1)}% to pivot`,
-                      badgeTone: "muted",
-                      note: `${b.sector} · pivot ${b.pivot}`,
-                    })),
-                  })
-                }
-              >
-                ⊞ Grid view
-              </button>
-            </div>
+        <Part title="Participation over time">
+          <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
+          <div className="mk-footnote">
+            Rising lines = broadening participation (healthy); falling while the index holds = a narrowing,
+            distribution-prone tape. The 200-day line is the slow, structural one; the fast average is the swing gauge.
           </div>
-        ) : null}
-      </div>
+        </Part>
+      </Disclosure>
 
-      {/* Focus list — 40+ names with a buy plan, removable, learns your taste */}
-      {focusRaw.length ? (
-        <div className="mk-week">
-          <div className="mk-week-hdr">Focus for the coming week — {focusVisible.length} names, each with a plan</div>
-          {Object.keys(sectorAffinity).length ? (
-            <div className="mk-affinity">
-              Learned from your edits:
-              {Object.entries(sectorAffinity)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 6)
-                .map(([sector, v]) => (
-                  <span key={sector} className={`mk-tag ${v >= 0 ? "pos-tag" : "neg-tag"}`}>
-                    {sector} {v >= 0 ? "↑" : "↓"}
-                  </span>
+      <Disclosure
+        id="breakouts"
+        step={3}
+        summary="Breakouts — are setups getting paid?"
+        answer={breakouts?.text ?? pendingAnswer}
+        answerTone={breakouts?.tone}
+        hint="follow-through & names"
+      >
+        {!domesticReady ? domesticFallback : (
+          <>
+            {read("stress") ? <ReadPara text={read("stress")!.text} /> : null}
+
+            <Part title="Today vs yesterday vs last week">
+              <div className="mk-compare">
+                <div className="mk-compare-head">
+                  <span>Metric</span><span>Today</span><span>Yesterday</span><span>Week avg</span>
+                </div>
+                {compareRows.map((row) => (
+                  <div key={row.label} className="mk-compare-row">
+                    <span>{row.label}</span>
+                    <strong>{num(row.today, 1)}</strong>
+                    <span>{num(row.yesterday, 1)}</span>
+                    <span>{row.week !== null ? num(row.week, 1) : "—"}</span>
+                  </div>
                 ))}
-            </div>
-          ) : null}
-          <div className="mk-focus-grid">
-            {focusVisible.map((f) => (
-              <div key={f.symbol} className="mk-focus-card">
-                <div className="mk-focus-top">
-                  <button
-                    type="button"
-                    className="mk-symbol"
-                    onClick={() => openChart(f.symbol, focusVisible.map((x) => x.symbol))}
-                  >
-                    {f.symbol}
-                  </button>
-                  <span className={f.change_pct >= 0 ? "pos" : "neg"}>
-                    {f.change_pct >= 0 ? "+" : ""}{f.change_pct.toFixed(1)}%
-                  </span>
-                  <button
-                    type="button"
-                    className="mk-focus-remove"
-                    aria-label={`Remove ${f.symbol}`}
-                    title="Remove — the page learns your preference"
-                    onClick={() => removeFocus(f.symbol, f.sector)}
-                  >
-                    ×
-                  </button>
+              </div>
+            </Part>
+
+            <Part title="Follow-through, close quality and leader health">
+              <div className="mk-grid">
+                <div className="mk-card">
+                  <div className="mk-card-hdr">Base Breakout Follow-Through</div>
+                  <div className="mk-big">{readablePct(structural.held_pct ?? null, structural.events ?? 0)}<small> of {structural.events ?? 0} base breakouts (last ~12 sessions) still above pivot</small></div>
+                  <div className="mk-sub">
+                    back inside base: {num(structural.back_in_base_pct ?? null, 0, "%")} · short-term clears held (1d/3d/5d): {num(ft1.held_pct, 0, "%")} / {num(ft3.held_pct, 0, "%")} / {num(ft5.held_pct, 0, "%")}
+                  </div>
+                  <div className="mk-meaning">{ftMeaning(structural.held_pct ?? null)}</div>
+                  <Spark values={(data?.history ?? []).map((h) => h.structural_held_pct ?? null)} />
                 </div>
-                <div className="mk-focus-setup">
-                  {f.setup ?? "Setup"} · <span className="mk-muted">{f.sector}</span>
+                <div className="mk-card">
+                  <div className="mk-card-hdr">Today's Breakout Quality</div>
+                  <div className="mk-big">{readablePct(quality.strong_pct, quality.count ?? 0)}<small> strong closes of {quality.count ?? 0} attempts</small></div>
+                  <div className="mk-sub">faded below midpoint: {num(quality.faded_pct, 0, "%")}</div>
+                  <div className="mk-meaning">{qualityMeaning(quality.strong_pct ?? null, quality.faded_pct ?? null)}</div>
                 </div>
-                {f.entry ? (
-                  <div className="mk-focus-plan">
-                    <div><em>Buy:</em> {f.entry}</div>
-                    <div><em>Stop:</em> {f.stop}</div>
-                    {f.buy_note ? <div className="mk-muted">{f.buy_note}</div> : null}
+                <div className="mk-card">
+                  <div className="mk-card-hdr">Leader EMA Health</div>
+                  <div className="mk-big">{readablePct(ema.above_ema21_pct, ema.leaders ?? 0)}<small> of {ema.leaders ?? 0} leaders above 20 EMA</small></div>
+                  <div className="mk-sub">
+                    above 10 EMA: {num(ema.above_ema10_pct, 0, "%")} · 20 EMA tests bought: {num(ema.ema21_bounce_pct, 0, "%")} of {ema.ema21_touches ?? 0}
+                  </div>
+                  <div className="mk-meaning">{emaMeaning(ema.above_ema21_pct ?? null, ema.ema21_bounce_pct ?? null)}</div>
+                  <Spark values={(data?.history ?? []).map((h) => h.above_ema21_pct)} />
+                </div>
+                <div className="mk-card">
+                  <div className="mk-card-hdr">Leader Volume Pressure</div>
+                  <div className="mk-big">
+                    {num(pressure.accumulation_share_pct, 0, "%")}
+                    <small> accumulation share ({pressure.accumulation ?? 0} up / {pressure.distribution ?? 0} down on volume)</small>
+                  </div>
+                  <div className="mk-meaning">{pressureMeaning(pressure.accumulation_share_pct ?? null)}</div>
+                </div>
+                <div className="mk-card">
+                  <div className="mk-card-hdr">Range Expansion Direction</div>
+                  <div className="mk-big">{num(expansion.up_share_pct, 0, "%")}<small> of wide-range days closed up ({expansion.up ?? 0} vs {expansion.down ?? 0})</small></div>
+                  <div className="mk-meaning">
+                    {expansion.up_share_pct === null || expansion.up_share_pct === undefined ? "No unusually wide days today." : expansion.up_share_pct >= 60 ? "The big candles belong to buyers." : expansion.up_share_pct <= 40 ? "The big candles belong to sellers." : "Big-range days are split — no side in control."}
+                  </div>
+                </div>
+                <div className="mk-card">
+                  <div className="mk-card-hdr">Thrust &amp; Tape</div>
+                  <div className="mk-big">
+                    {thrust.up_4pct ?? 0} <small>up 4%+</small> / {thrust.down_4pct ?? 0} <small>down 4%+</small>
+                  </div>
+                  <div className="mk-sub">
+                    up/down volume {num(thrust.updown_volume_ratio, 2, "x")} · fresh 20d highs {thrust.fresh_20d_highs ?? 0} vs lows {thrust.fresh_20d_lows ?? 0}
+                  </div>
+                  <div className="mk-meaning">
+                    {(thrust.up_4pct ?? 0) >= (thrust.down_4pct ?? 0) * 2 ? "Momentum aggression is one-sided to the upside." : (thrust.down_4pct ?? 0) >= (thrust.up_4pct ?? 0) * 2 ? "Downside aggression dominates — momentum longs are swimming upstream." : "Two-way tape — aggression is balanced."}
+                  </div>
+                </div>
+              </div>
+            </Part>
+
+            <Part title="The names behind the numbers">
+              <div className="mk-week-grid">
+                <div>
+                  <div className="mk-week-sub pos-hdr">Breakouts working ({(data?.evidence?.breakouts_working ?? []).length})</div>
+                  {(data?.evidence?.breakouts_working ?? []).map((e) => (
+                    <div key={e.symbol} className="mk-week-row">
+                      <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(e.symbol)}>{e.symbol}</button>
+                      <strong className="pos">+{e.pct_vs_pivot.toFixed(1)}%</strong>
+                      <small>vs pivot {e.pivot} · broke {e.sessions_ago}s ago · base {e.base_len_label}</small>
+                    </div>
+                  ))}
+                  {(data?.evidence?.breakouts_working ?? []).length === 0 ? <div className="mk-muted">None in the last ~12 sessions.</div> : null}
+                </div>
+                <div>
+                  <div className="mk-week-sub neg-hdr">Back inside the base ({(data?.evidence?.breakouts_failed ?? []).length})</div>
+                  {(data?.evidence?.breakouts_failed ?? []).map((e) => (
+                    <div key={e.symbol} className="mk-week-row">
+                      <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(e.symbol)}>{e.symbol}</button>
+                      <strong className="neg">{e.pct_vs_pivot.toFixed(1)}%</strong>
+                      <small>vs pivot {e.pivot} · broke {e.sessions_ago}s ago · base {e.base_len_label}</small>
+                    </div>
+                  ))}
+                  {(data?.evidence?.breakouts_failed ?? []).length === 0 ? <div className="mk-muted">None — breakouts are holding.</div> : null}
+                </div>
+              </div>
+              <div className="mk-week-grid mk-ema-tests">
+                <div>
+                  <div className="mk-week-sub pos-hdr">20 EMA tests bought</div>
+                  <div className="mk-chip-row">
+                    {(data?.evidence?.ema_tests?.bounced ?? []).map((e) => (
+                      <button key={e.symbol} type="button" className="mk-chip pos-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
+                        {e.symbol} <small>+{e.pct_vs_ema21.toFixed(1)}%</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="mk-week-sub neg-hdr">20 EMA tests failed</div>
+                  <div className="mk-chip-row">
+                    {(data?.evidence?.ema_tests?.sliced ?? []).map((e) => (
+                      <button key={e.symbol} type="button" className="mk-chip neg-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
+                        {e.symbol} <small>{e.pct_vs_ema21.toFixed(1)}%</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Part>
+          </>
+        )}
+      </Disclosure>
+
+      <Disclosure
+        id="leadership"
+        step={4}
+        summary="Leadership — where is the money going?"
+        answer={leadership?.text ?? pendingAnswer}
+        hint="sectors, leaders, setups forming"
+      >
+        {!domesticReady ? domesticFallback : (
+          <>
+            {read("rotation") ? <ReadPara text={read("rotation")!.text} /> : null}
+
+            <Part title="Last week — what worked, what didn't">
+              <div className="mk-week-grid">
+                <div>
+                  <div className="mk-week-sub pos-hdr">Worked</div>
+                  {ai?.what_worked?.length ? (
+                    <ul>{ai.what_worked.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                  ) : null}
+                  {(week?.top_sectors ?? []).map((s) => (
+                    <div key={s.sector} className="mk-week-row">
+                      <span>{s.sector}</span>
+                      <strong className={s.median_return_5d_pct >= 0 ? "pos" : "neg"}>
+                        {s.median_return_5d_pct >= 0 ? "+" : ""}{s.median_return_5d_pct.toFixed(1)}%
+                      </strong>
+                      <small>sector median 5d</small>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="mk-week-sub neg-hdr">Didn't</div>
+                  {ai?.what_didnt?.length ? (
+                    <ul>{ai.what_didnt.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                  ) : null}
+                  {(week?.bottom_sectors ?? []).map((s) => (
+                    <div key={s.sector} className="mk-week-row">
+                      <span>{s.sector}</span>
+                      <strong className={s.median_return_5d_pct >= 0 ? "pos" : "neg"}>
+                        {s.median_return_5d_pct >= 0 ? "+" : ""}{s.median_return_5d_pct.toFixed(1)}%
+                      </strong>
+                      <small>sector median 5d</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mk-footnote">
+                Sector rows are the median 5-day return across each sector's liquid stocks.
+              </div>
+            </Part>
+
+            <Part title="Leaders and setups forming">
+              {read("pipeline") ? <ReadPara text={read("pipeline")!.text} /> : null}
+              <div className="mk-cardrow">
+                {(data?.leaders ?? []).length ? (
+                  <div className="mk-bigcard">
+                    <div className="mk-bigcard-num">{data?.leaders?.length ?? 0}</div>
+                    <div className="mk-bigcard-label">Market Leaders</div>
+                    <div className="mk-bigcard-sub">
+                      {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 20 EMA · 2%/5% circuit-band names excluded
+                    </div>
+                    <div className="mk-bigcard-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const syms = (data?.leaders ?? []).map((l) => l.symbol);
+                          openChart(syms[0], syms);
+                        }}
+                      >
+                        Full chart (↑/↓ steps all)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGridModal({
+                            title: "Market Leaders",
+                            subtitle: `${data?.leaders?.length ?? 0} Stage-2 leaders · click any chart to open it full`,
+                            items: (data?.leaders ?? []).map((l) => ({
+                              symbol: l.symbol,
+                              name: l.name,
+                              badge: l.rs_rating ? `RS ${l.rs_rating}` : undefined,
+                              badgeTone: "pos",
+                              note: `${l.above_ema21 ? "above" : "below"} 20 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
+                            })),
+                          })
+                        }
+                      >
+                        ⊞ Grid view
+                      </button>
+                    </div>
                   </div>
                 ) : null}
-                <div className="mk-focus-tags">
-                  {f.reasons.map((r) => <span key={r} className="mk-tag">{r}</span>)}
+                {(data?.sector_breakouts ?? []).length ? (
+                  <div className="mk-bigcard">
+                    <div className="mk-bigcard-num">{data?.sector_breakouts?.length ?? 0}</div>
+                    <div className="mk-bigcard-label">Sector Breakouts Setting Up</div>
+                    <div className="mk-bigcard-sub">Leading-sector names 0–5% under a pivot — the next to fire</div>
+                    <div className="mk-bigcard-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const syms = (data?.sector_breakouts ?? []).map((b) => b.symbol);
+                          openChart(syms[0], syms);
+                        }}
+                      >
+                        Full chart (↑/↓ steps all)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGridModal({
+                            title: "Leading-sector breakouts, about to fire",
+                            subtitle: "Names in the strongest sectors coiled 0–5% under a base pivot",
+                            items: (data?.sector_breakouts ?? []).map((b) => ({
+                              symbol: b.symbol,
+                              name: b.name,
+                              badge: `${b.pct_below_pivot.toFixed(1)}% to pivot`,
+                              badgeTone: "muted",
+                              note: `${b.sector} · pivot ${b.pivot}`,
+                            })),
+                          })
+                        }
+                      >
+                        ⊞ Grid view
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </Part>
+          </>
+        )}
+      </Disclosure>
+
+      <Disclosure id="macro" step={5} summary="Global backdrop — what could hit from outside?" hint="oil, dollar, US markets, news">
+        <MacroContextPanel market="india" />
+      </Disclosure>
+
+      <Disclosure
+        id="plan"
+        step={6}
+        summary="Your plan — positions and the watch list"
+        answer={plan?.text ?? pendingAnswer}
+        hint="health check, focus list, last list graded"
+      >
+        {!domesticReady ? domesticFallback : (
+          <>
+            <Part title="Your open positions — health check">
+              {positions.length ? (
+                <>
+                  <div className="mk-pos-list">
+                    {positions.map((p) => (
+                      <div key={p.symbol + String(p.avg_px)} className={`mk-pos-row cat-${p.category.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
+                        <button type="button" className="mk-symbol" onClick={() => p.mapped && onOpenSymbolChart?.(p.symbol)}>
+                          {p.symbol}
+                        </button>
+                        <span className="mk-pos-cat">{p.category}</span>
+                        {p.pnl_pct !== null && p.pnl_pct !== undefined ? (
+                          <strong className={p.pnl_pct >= 0 ? "pos" : "neg"}>
+                            {p.pnl_pct >= 0 ? "+" : ""}{p.pnl_pct.toFixed(1)}%
+                          </strong>
+                        ) : <strong>—</strong>}
+                        <small>
+                          {p.mapped ? `avg ${p.avg_px} → ${p.last_price}` : `avg ${p.avg_px}`}
+                          {p.rs_rating ? ` · RS ${p.rs_rating}` : ""}
+                        </small>
+                        <div className="mk-pos-advice">{p.advice}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mk-footnote">
+                    Positions are netted from your journal's buy/sell entries and re-classified daily against the same
+                    rules as the market metrics. Worst conditions listed first.
+                  </div>
+                </>
+              ) : (
+                <div className="mk-muted">
+                  No open positions synced yet — open the Journal page once (it syncs your positions to the backend), then revisit.
                 </div>
-              </div>
-            ))}
-          </div>
-          {focusRemovedRows.length ? (
-            <div className="mk-removed">
-              Removed ({focusRemovedRows.length}):
-              {focusRemovedRows.map((f) => (
-                <button key={f.symbol} type="button" className="mk-tag mk-restore" onClick={() => restoreFocus(f.symbol)}>
-                  {f.symbol} ↺
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div className="mk-footnote">
-            Selection: RS ≥ 72–80, above a stacked 50/200 SMA, within 18% of the 52-week high, liquid. Each card shows
-            the setup and a concrete plan — a watch list, not a buy list. Remove any you don't want; the page learns
-            which sectors you keep and re-ranks future lists toward them.
-          </div>
-        </div>
-      ) : null}
+              )}
+            </Part>
 
-      {/* Weekly focus review — did last week's picks do what we thought? */}
-      {data?.focus_review?.summary ? (
-        <div className="mk-week">
-          <div className="mk-week-hdr">
-            Focus scorecard — the list from {data.focus_review.reviewed_date}, graded
-          </div>
-          <div className="mk-review-summary">
-            <strong className={data.focus_review.summary.avg_return_pct >= 0 ? "pos" : "neg"}>
-              {data.focus_review.summary.avg_return_pct >= 0 ? "+" : ""}
-              {data.focus_review.summary.avg_return_pct.toFixed(1)}% avg
-            </strong>
-            <span>{data.focus_review.summary.worked}/{data.focus_review.summary.count} behaved as expected (≥3%) · {data.focus_review.summary.hit_rate_pct.toFixed(0)}% hit rate</span>
-          </div>
-          <div className="mk-review-grid">
-            {data.focus_review.rows.slice(0, 20).map((r) => (
-              <div key={r.symbol} className={`mk-review-row detailed ${r.worked ? "won" : "lost"}`}>
-                <div className="mk-review-head">
-                  <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(r.symbol)}>{r.symbol}</button>
-                  <strong className={r.return_pct >= 0 ? "pos" : "neg"}>{r.return_pct >= 0 ? "+" : ""}{r.return_pct.toFixed(1)}%</strong>
-                  <small>{r.setup}</small>
+            {focusRaw.length ? (
+              <Part title={`Focus for the coming week — ${focusVisible.length} names, each with a plan`}>
+                {Object.keys(sectorAffinity).length ? (
+                  <div className="mk-affinity">
+                    Learned from your edits:
+                    {Object.entries(sectorAffinity)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 6)
+                      .map(([sector, v]) => (
+                        <span key={sector} className={`mk-tag ${v >= 0 ? "pos-tag" : "neg-tag"}`}>
+                          {sector} {v >= 0 ? "↑" : "↓"}
+                        </span>
+                      ))}
+                  </div>
+                ) : null}
+                <div className="mk-focus-grid">
+                  {focusVisible.map((f) => (
+                    <div key={f.symbol} className="mk-focus-card">
+                      <div className="mk-focus-top">
+                        <button
+                          type="button"
+                          className="mk-symbol"
+                          onClick={() => openChart(f.symbol, focusVisible.map((x) => x.symbol))}
+                        >
+                          {f.symbol}
+                        </button>
+                        <span className={f.change_pct >= 0 ? "pos" : "neg"}>
+                          {f.change_pct >= 0 ? "+" : ""}{f.change_pct.toFixed(1)}%
+                        </span>
+                        <button
+                          type="button"
+                          className="mk-focus-remove"
+                          aria-label={`Remove ${f.symbol}`}
+                          title="Remove — the page learns your preference"
+                          onClick={() => removeFocus(f.symbol, f.sector)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="mk-focus-setup">
+                        {f.setup ?? "Setup"} · <span className="mk-muted">{f.sector}</span>
+                      </div>
+                      {f.entry ? (
+                        <div className="mk-focus-plan">
+                          <div><em>Buy:</em> {f.entry}</div>
+                          <div><em>Stop:</em> {f.stop}</div>
+                          {f.buy_note ? <div className="mk-muted">{f.buy_note}</div> : null}
+                        </div>
+                      ) : null}
+                      <div className="mk-focus-tags">
+                        {f.reasons.map((r) => <span key={r} className="mk-tag">{r}</span>)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {r.why ? <div className="mk-review-why">{r.why}</div> : null}
-                {r.strategy ? <div className="mk-review-strategy">{r.strategy}</div> : null}
-              </div>
-            ))}
-          </div>
-          <div className="mk-footnote">
-            Return since the suggestion day, unmanaged. "Behaved as expected" = a tradable follow-through of +3% or
-            more — the goal is that the setups fire, not that every one is green.
-          </div>
-        </div>
-      ) : null}
+                {focusRemovedRows.length ? (
+                  <div className="mk-removed">
+                    Removed ({focusRemovedRows.length}):
+                    {focusRemovedRows.map((f) => (
+                      <button key={f.symbol} type="button" className="mk-tag mk-restore" onClick={() => restoreFocus(f.symbol)}>
+                        {f.symbol} ↺
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="mk-footnote">
+                  Selection: RS ≥ 72–80, above a stacked 50/200 SMA, within 18% of the 52-week high, liquid. Each card shows
+                  the setup and a concrete plan — a watch list, not a buy list. Remove any you don't want; the page learns
+                  which sectors you keep and re-ranks future lists toward them.
+                </div>
+              </Part>
+            ) : null}
 
-      {/* Named evidence */}
-      <div className="mk-week">
-        <div className="mk-week-hdr">The Evidence — names, not claims</div>
-        <div className="mk-week-grid">
-          <div>
-            <div className="mk-week-sub pos-hdr">Breakouts working ({(data?.evidence?.breakouts_working ?? []).length})</div>
-            {(data?.evidence?.breakouts_working ?? []).map((e) => (
-              <div key={e.symbol} className="mk-week-row">
-                <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(e.symbol)}>{e.symbol}</button>
-                <strong className="pos">+{e.pct_vs_pivot.toFixed(1)}%</strong>
-                <small>vs pivot {e.pivot} · broke {e.sessions_ago}s ago · base {e.base_len_label}</small>
+            {data?.focus_review?.summary ? (
+              <Part title={`Last list graded — the focus list from ${data.focus_review.reviewed_date}`}>
+                <div className="mk-review-summary">
+                  <strong className={data.focus_review.summary.avg_return_pct >= 0 ? "pos" : "neg"}>
+                    {data.focus_review.summary.avg_return_pct >= 0 ? "+" : ""}
+                    {data.focus_review.summary.avg_return_pct.toFixed(1)}% avg
+                  </strong>
+                  <span>{data.focus_review.summary.worked}/{data.focus_review.summary.count} behaved as expected (≥3%) · {data.focus_review.summary.hit_rate_pct.toFixed(0)}% hit rate</span>
+                </div>
+                <div className="mk-review-grid">
+                  {data.focus_review.rows.slice(0, 20).map((r) => (
+                    <div key={r.symbol} className={`mk-review-row detailed ${r.worked ? "won" : "lost"}`}>
+                      <div className="mk-review-head">
+                        <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(r.symbol)}>{r.symbol}</button>
+                        <strong className={r.return_pct >= 0 ? "pos" : "neg"}>{r.return_pct >= 0 ? "+" : ""}{r.return_pct.toFixed(1)}%</strong>
+                        <small>{r.setup}</small>
+                      </div>
+                      {r.why ? <div className="mk-review-why">{r.why}</div> : null}
+                      {r.strategy ? <div className="mk-review-strategy">{r.strategy}</div> : null}
+                    </div>
+                  ))}
+                </div>
+                <div className="mk-footnote">
+                  Return since the suggestion day, unmanaged. "Behaved as expected" = a tradable follow-through of +3% or
+                  more — the goal is that the setups fire, not that every one is green.
+                </div>
+              </Part>
+            ) : null}
+          </>
+        )}
+      </Disclosure>
+
+      <Disclosure
+        id="method"
+        step={7}
+        summary="Method — how the verdict above is built"
+        hint="exposure arithmetic, evidence weights, commentary"
+      >
+        <Part title="How the exposure number is set">
+          <ExposureVerdict data={exposure} />
+          <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+        </Part>
+
+        {outlook ? (
+          <Part title="Weight of evidence — every signal, its weight and the logic">
+            <section className="mko-signals" aria-label="Outlook evidence">
+              {outlook.signals.map((s) => {
+                const tone = s.score > 0.2 ? "pos" : s.score < -0.2 ? "neg" : "neu";
+                return (
+                  <div key={s.label} className="mko-signal-row">
+                    <span className={`mko-dot mko-${tone}`} aria-label={tone === "pos" ? "bullish" : tone === "neg" ? "bearish" : "neutral"} />
+                    <div className="mko-signal-main">
+                      <div className="mko-signal-top">
+                        <strong>{s.label}</strong>
+                        <span className="mko-signal-value">{s.valueLabel}</span>
+                        <span className="mko-signal-weight" title={`Weight ${s.weight} of the model`}>w{s.weight}</span>
+                      </div>
+                      <div className="mko-signal-logic">{s.logic}</div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="mk-footnote mko-footnote">
+                The "Why" and "What would change it" lines in the verdict are the heaviest and the closest-to-flipping
+                of these signals. Probabilities, not prophecy — when the evidence changes, the read changes with it.
               </div>
-            ))}
-            {(data?.evidence?.breakouts_working ?? []).length === 0 ? <div className="mk-muted">None in the last ~12 sessions.</div> : null}
-          </div>
-          <div>
-            <div className="mk-week-sub neg-hdr">Back inside the base ({(data?.evidence?.breakouts_failed ?? []).length})</div>
-            {(data?.evidence?.breakouts_failed ?? []).map((e) => (
-              <div key={e.symbol} className="mk-week-row">
-                <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(e.symbol)}>{e.symbol}</button>
-                <strong className="neg">{e.pct_vs_pivot.toFixed(1)}%</strong>
-                <small>vs pivot {e.pivot} · broke {e.sessions_ago}s ago · base {e.base_len_label}</small>
+            </section>
+          </Part>
+        ) : null}
+
+        {today ? (
+          <Part title="Tape score — one metric among many">
+            {/* Demoted from a top-level verdict: it used to headline the page in a third
+                vocabulary (Press / Selective / Protect / Stand Aside) beside two others. */}
+            <div className="mk-header">
+              <div className={`mk-score ${verdictClass(today.verdict)}`}>
+                <strong>{num(today.score, 1)}</strong>
+                <span className="mk-verdict">Tape score · {today.verdict}</span>
               </div>
-            ))}
-            {(data?.evidence?.breakouts_failed ?? []).length === 0 ? <div className="mk-muted">None — breakouts are holding.</div> : null}
-          </div>
-        </div>
-        <div className="mk-week-grid mk-ema-tests">
-          <div>
-            <div className="mk-week-sub pos-hdr">20 EMA tests bought</div>
-            <div className="mk-chip-row">
-              {(data?.evidence?.ema_tests?.bounced ?? []).map((e) => (
-                <button key={e.symbol} type="button" className="mk-chip pos-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
-                  {e.symbol} <small>+{e.pct_vs_ema21.toFixed(1)}%</small>
-                </button>
+              <div className="mk-header-context">
+                <div>
+                  {scoreDelta ? (
+                    <span className={Number(scoreDelta) >= 0 ? "pos" : "neg"}>{scoreDelta} vs yesterday</span>
+                  ) : (
+                    <span className="mk-muted">first recorded session</span>
+                  )}
+                  {data?.week_avg_score !== null && data?.week_avg_score !== undefined ? (
+                    <span className="mk-muted"> · last-week avg {num(data.week_avg_score, 1)}</span>
+                  ) : null}
+                </div>
+                <Spark values={(data?.history ?? []).map((h) => h.score)} />
+              </div>
+            </div>
+          </Part>
+        ) : null}
+
+        {ai?.narrative?.length ? (
+          <Part title="AI commentary">
+            <div className="mk-ai">
+              {(ai.narrative ?? []).map((p, i) => (
+                <p key={i}>{p}</p>
               ))}
             </div>
-          </div>
-          <div>
-            <div className="mk-week-sub neg-hdr">20 EMA tests failed</div>
-            <div className="mk-chip-row">
-              {(data?.evidence?.ema_tests?.sliced ?? []).map((e) => (
-                <button key={e.symbol} type="button" className="mk-chip neg-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
-                  {e.symbol} <small>{e.pct_vs_ema21.toFixed(1)}%</small>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+            <div className="mk-footnote">Written from the counted metrics above; the numbers stand on their own without it.</div>
+          </Part>
+        ) : null}
 
-      {/* Last week review */}
-      <div className="mk-week">
-        <div className="mk-week-hdr">Last Week — what worked, what didn't</div>
-        <div className="mk-week-grid">
-          <div>
-            <div className="mk-week-sub pos-hdr">Worked</div>
-            {ai?.what_worked?.length ? (
-              <ul>{ai.what_worked.map((w, i) => <li key={i}>{w}</li>)}</ul>
-            ) : null}
-            {(week?.top_sectors ?? []).map((s) => (
-              <div key={s.sector} className="mk-week-row">
-                <span>{s.sector}</span>
-                <strong className={s.median_return_5d_pct >= 0 ? "pos" : "neg"}>
-                  {s.median_return_5d_pct >= 0 ? "+" : ""}{s.median_return_5d_pct.toFixed(1)}%
-                </strong>
-                <small>sector median 5d</small>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div className="mk-week-sub neg-hdr">Didn't</div>
-            {ai?.what_didnt?.length ? (
-              <ul>{ai.what_didnt.map((w, i) => <li key={i}>{w}</li>)}</ul>
-            ) : null}
-            {(week?.bottom_sectors ?? []).map((s) => (
-              <div key={s.sector} className="mk-week-row">
-                <span>{s.sector}</span>
-                <strong className={s.median_return_5d_pct >= 0 ? "pos" : "neg"}>
-                  {s.median_return_5d_pct >= 0 ? "+" : ""}{s.median_return_5d_pct.toFixed(1)}%
-                </strong>
-                <small>sector median 5d</small>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="mk-footnote">
-          Sector rows are the median 5-day return across each sector's liquid stocks. Day-vs-day and week
-          comparisons deepen automatically as daily history accumulates.
-        </div>
-      </div>
+        <Part title="Full breakout evidence — setups, cohorts, arithmetic">
+          <RegimeBrief market="india" />
+        </Part>
+      </Disclosure>
 
       {gridModal ? (
         <SymbolGridModal
@@ -1516,7 +1456,21 @@ export function MarketsPanel({
           onClose={() => setGridModal(null)}
         />
       ) : null}
-      </Disclosure>
     </Panel>
+  );
+}
+
+/** A section's plain-English read, shown before its numbers. */
+function ReadPara({ text }: { text: string }) {
+  return <p className="mk-read">{text}</p>;
+}
+
+/** A titled sub-block inside a section. */
+function Part({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mk-part">
+      <div className="mk-part-hdr">{title}</div>
+      {children}
+    </div>
   );
 }
