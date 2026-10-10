@@ -6,10 +6,21 @@ import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minimize2, Settings2
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import { computeAutoLevels, type AutoLevels } from "../lib/levels";
+import { chartPaneLayout } from "../lib/chartPaneLayout";
 import type { ChartTradeMarker } from "../lib/journal";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { computeCandleWeights, WeightedCandleSeries } from "../lib/weightedCandleSeries";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
+import {
+  INDEX_OVERLAY_CHOICES,
+  fetchIndexOverlay,
+  isOverlayIndexSymbol,
+  loadIndexOverlaySettings,
+  resolveIndexChoice,
+  saveIndexOverlaySettings,
+  type IndexOverlaySeries,
+  type IndexOverlaySettings,
+} from "../lib/indexOverlay";
 import { Panel } from "./Panel";
 import { StageBadge } from "./StageBadge";
 import { SimilarChartsModal } from "./LookalikeModals";
@@ -1641,10 +1652,11 @@ type SnappedTradeMarker = {
 type HoverSnapshot = {
   bar: HoveredPriceBar | null;
   rsPoint: ChartLinePoint | null;
+  indexPoint: ChartLinePoint | null;
   tradeMarkers: SnappedTradeMarker[];
 };
 
-const EMPTY_HOVER_SNAPSHOT: HoverSnapshot = { bar: null, rsPoint: null, tradeMarkers: [] };
+const EMPTY_HOVER_SNAPSHOT: HoverSnapshot = { bar: null, rsPoint: null, indexPoint: null, tradeMarkers: [] };
 
 function createHoverStore() {
   let snapshot: HoverSnapshot = EMPTY_HOVER_SNAPSHOT;
@@ -1983,6 +1995,7 @@ export function ChartPanel({
   const volumeSmaSeriesRef = useRef<any>(null);
   const rsSeriesRef = useRef<any>(null);
   const benchmarkSeriesRef = useRef<any>(null);
+  const indexOverlaySeriesRef = useRef<any>(null);
   const indicatorSeriesMapRef = useRef<Map<IndicatorKey, any>>(new Map());
   const srPriceLinesRef = useRef<any[]>([]);
   const prevCloseLineRef = useRef<any>(null);
@@ -2153,6 +2166,7 @@ export function ChartPanel({
   // carries no size, so a widget that positions itself absolutely inside the
   // stage has nothing to clamp against. This does.
   const [stageSize, setStageSize] = useState<{ width: number; height: number } | null>(null);
+  const paneHeight = stageSize ? Math.round(stageSize.height / 16) * 16 : null;
 
   // One delayed overlay bump after bars land: timeToCoordinate() returns null
   // until the chart engine finishes its first layout, so overlays computed
@@ -2170,6 +2184,10 @@ export function ChartPanel({
   const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  // The index line along the top of the chart (Nifty 50 / Midcap 100 /
+  // Smallcap 100 by the stock's size). Settings persist like the volume mode.
+  const [indexOverlay, setIndexOverlay] = useState<IndexOverlaySettings>(loadIndexOverlaySettings);
+  const [indexOverlaySeries, setIndexOverlaySeries] = useState<IndexOverlaySeries | null>(null);
   const initialRvolWidget = useMemo(() => readRvolWidgetSettings(), []);
   const [showRvol, setShowRvol] = useState(initialRvolWidget.enabled);
   const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(initialRvolWidget.pos);
@@ -2376,6 +2394,43 @@ export function ChartPanel({
   const monoVolume = volumeMode === "mono" || (volumeMode === "auto" && chartPalette === "mono");
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
+  const indexOverlayChoice = resolveIndexChoice(indexOverlay.choice, summary?.market_cap_crore);
+  const indexOverlayActive =
+    indexOverlay.enabled && panelTab === "technical" && Boolean(symbol) && !isOverlayIndexSymbol(symbol);
+  useEffect(() => {
+    saveIndexOverlaySettings(indexOverlay);
+  }, [indexOverlay]);
+  useEffect(() => {
+    if (!indexOverlayActive) {
+      setIndexOverlaySeries(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchIndexOverlay(indexOverlayChoice, timeframe, market).then((series) => {
+      if (!cancelled) setIndexOverlaySeries(series);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [indexOverlayActive, indexOverlayChoice, timeframe, market]);
+  /** The index close carried onto each of the stock's own bar times. A point at
+   *  a time the stock has no bar for would add a slot to the shared time axis
+   *  and open a gap in the candles, so the index is sampled, never merged. */
+  const indexOverlayData = useMemo(() => {
+    if (!indexOverlayActive || !indexOverlaySeries || activeBars.length < 2) return [];
+    const indexBars = sanitizeChartBars(indexOverlaySeries.bars);
+    const points: Array<{ time: UTCTimestamp; value: number }> = [];
+    let j = 0;
+    let last: number | null = null;
+    for (const bar of activeBars) {
+      while (j < indexBars.length && indexBars[j].time <= bar.time) {
+        last = indexBars[j].close;
+        j += 1;
+      }
+      if (last !== null) points.push({ time: bar.time as UTCTimestamp, value: last });
+    }
+    return points;
+  }, [activeBars, indexOverlayActive, indexOverlaySeries]);
   /** How extended price is from its moving averages, measured in the stock's
    *  OWN average daily range rather than in rupees or raw percent. "3 ADR above
    *  the 10 EMA" is a sizing decision; "34 rupees above" is not, because the
@@ -3301,7 +3356,7 @@ export function ChartPanel({
       // to notice a live refresh landing under a stationary cursor.
       const hoverKey = `${hoveredTime}:${barsNow.length}:${barsNow[barsNow.length - 1]?.close ?? 0}:${
         snappedTradeMarkersRef.current.length
-      }:${safeRsLineRef.current.length}`;
+      }:${safeRsLineRef.current.length}:${indexOverlaySeriesRef.current ? "i" : ""}`;
       hoverStore.publish(hoverKey, () => buildHoverSnapshot(hoveredTime, barsNow, param));
     };
 
@@ -3366,7 +3421,14 @@ export function ChartPanel({
             : [...safeRsLineRef.current].reverse().find((point) => point.time <= hoveredTime) ?? null;
       }
 
-      return { bar, rsPoint, tradeMarkers };
+      let indexPoint: ChartLinePoint | null = null;
+      const indexSeries = indexOverlaySeriesRef.current;
+      if (indexSeries) {
+        const seriesData = param.seriesData?.get?.(indexSeries) as { value?: number } | undefined;
+        if (seriesData?.value !== undefined) indexPoint = { time: hoveredTime, value: Number(seriesData.value) };
+      }
+
+      return { bar, rsPoint, indexPoint, tradeMarkers };
     };
     const handleCrosshairMove = (param: any) => {
       pendingCrosshairParamRef.current = param;
@@ -3432,6 +3494,7 @@ export function ChartPanel({
       volumeSmaSeriesRef.current = null;
       rsSeriesRef.current = null;
       benchmarkSeriesRef.current = null;
+      indexOverlaySeriesRef.current = null;
       indicatorSeriesMapRef.current.clear();
       srPriceLinesRef.current = [];
       prevCloseLineRef.current = null;
@@ -3658,21 +3721,11 @@ export function ChartPanel({
     // labels; start price ~22% down so it reads clearly (tight panes excepted).
     const priceTop = tightPanes && !phoneViewport ? 0.04 : 0.22;
 
-    mainSeries.priceScale().applyOptions({
-      scaleMargins: safeRsLine.length
-        ? tightPanes
-          ? { top: priceTop, bottom: 0.22 }
-          : { top: priceTop, bottom: 0.32 }
-        : tightPanes
-          ? { top: priceTop, bottom: 0.1 }
-          : { top: priceTop, bottom: 0.18 },
-    });
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: safeRsLine.length ? (tightPanes ? 0.92 : 0.88) : tightPanes ? 0.9 : 0.82,
-        bottom: 0,
-      },
-    });
+    // Fractions with a pixel floor under volume and RS: a short full screen
+    // used to leave volume a 28px strip that read as no volume at all.
+    const panes = chartPaneLayout(paneHeight, { hasRs: safeRsLine.length > 0, tight: tightPanes, priceTop });
+    mainSeries.priceScale().applyOptions({ scaleMargins: panes.price });
+    volumeSeries.priceScale().applyOptions({ scaleMargins: panes.volume });
 
     if (safeRsLine.length) {
       let rsSeries = rsSeriesRef.current;
@@ -3691,7 +3744,7 @@ export function ChartPanel({
       // tightPanes when the phone is rotated.
       rsSeries.priceScale().applyOptions({
         visible: false,
-        scaleMargins: tightPanes ? { top: 0.8, bottom: 0.1 } : { top: 0.72, bottom: 0.14 },
+        scaleMargins: panes.rs ?? { top: 0.72, bottom: 0.14 },
       });
       rsSeries.applyOptions({ color: chartColors.rsLine });
       rsSeries.setData(
@@ -3740,7 +3793,40 @@ export function ChartPanel({
       }
       benchmarkSeriesRef.current = null;
     }
-  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize, chartFullscreen, shortViewport, phoneViewport]);
+  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize, chartFullscreen, shortViewport, phoneViewport, paneHeight]);
+
+  // ── E5b: index line along the top (MarketSmith style) ────────────────────
+  // Its own hidden price scale, squeezed into the band above the candles (price
+  // starts ~22% down), so it never rescales the stock's axis.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    if (!indexOverlayData.length) {
+      if (indexOverlaySeriesRef.current) {
+        try {
+          chart.removeSeries(indexOverlaySeriesRef.current);
+        } catch {
+          // disposed with chart
+        }
+        indexOverlaySeriesRef.current = null;
+      }
+      return;
+    }
+    let series = indexOverlaySeriesRef.current;
+    if (!series) {
+      series = chart.addLineSeries({
+        priceScaleId: "index-overlay",
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      indexOverlaySeriesRef.current = series;
+    }
+    series.priceScale().applyOptions({ visible: false, scaleMargins: { top: 0.03, bottom: 0.81 } });
+    series.applyOptions({ color: withOpacity(indexOverlay.color, indexOverlay.opacity) });
+    series.setData(indexOverlayData);
+  }, [chartEpoch, indexOverlayData, indexOverlay.color, indexOverlay.opacity]);
 
   // ── E6: main-series markers (pips, trades, circuit locks, tightness) ─────
   useEffect(() => {
@@ -5122,6 +5208,49 @@ export function ChartPanel({
         >
           Auto Levels
         </button>
+        <button
+          type="button"
+          className={indexOverlay.enabled ? "indicator-pill active" : "indicator-pill"}
+          onClick={() => setIndexOverlay((current) => ({ ...current, enabled: !current.enabled }))}
+          title="Index line along the top of the chart: Nifty 50 for large caps, Nifty Midcap 100 for mid caps, Nifty Smallcap 100 for small caps"
+        >
+          Index Line
+        </button>
+        {indexOverlay.enabled ? (
+          <span className="chart-index-line-ctl">
+            <select
+              value={indexOverlay.choice}
+              onChange={(event) =>
+                setIndexOverlay((current) => ({ ...current, choice: event.target.value as IndexOverlaySettings["choice"] }))
+              }
+              aria-label="Index drawn along the top"
+              title="Which index to draw. Auto picks it by the stock's size."
+            >
+              {INDEX_OVERLAY_CHOICES.map((choice) => (
+                <option key={choice.key} value={choice.key}>
+                  {choice.key === "auto" && indexOverlaySeries ? `Auto · ${indexOverlaySeries.label.replace(/^Nifty /, "")}` : choice.label}
+                </option>
+              ))}
+            </select>
+            <input
+              type="color"
+              value={indexOverlay.color}
+              onChange={(event) => setIndexOverlay((current) => ({ ...current, color: event.target.value }))}
+              title="Index line colour"
+              aria-label="Index line colour"
+            />
+            <input
+              type="range"
+              min={10}
+              max={100}
+              step={5}
+              value={Math.round(indexOverlay.opacity * 100)}
+              onChange={(event) => setIndexOverlay((current) => ({ ...current, opacity: Number(event.target.value) / 100 }))}
+              title={`Index line opacity: ${Math.round(indexOverlay.opacity * 100)}%`}
+              aria-label="Index line opacity"
+            />
+          </span>
+        ) : null}
       </div>
     </>
   );
@@ -6154,8 +6283,8 @@ export function ChartPanel({
                 <>
                   <ToolbarMenu
                     label="Indicators"
-                    badge={indicatorKeys.length + (showRvol ? 1 : 0) + (autoLevelsEnabled ? 1 : 0)}
-                    title="Moving averages, VWAP, RVOL and auto levels"
+                    badge={indicatorKeys.length + (showRvol ? 1 : 0) + (autoLevelsEnabled ? 1 : 0) + (indexOverlay.enabled ? 1 : 0)}
+                    title="Moving averages, VWAP, RVOL, auto levels and the index line"
                   >
                     {indicatorPills}
                   </ToolbarMenu>
@@ -6822,6 +6951,20 @@ export function ChartPanel({
                         }}
                       >
                         {hover.rsPoint ? `RS Rating ${Math.round(hover.rsPoint.value)} on ${formatChartDateFromTimestamp(hover.rsPoint.time)}` : "RS Rating line is plotted below price."}
+                      </span>
+                    ) : null}
+                    {indexOverlaySeries && indexOverlayData.length && (hover.indexPoint || !chartFullscreen) ? (
+                      <span
+                        className="chart-stage-label"
+                        style={{
+                          color: indexOverlay.color,
+                          background: palette.background,
+                          borderColor: palette.borderColor,
+                        }}
+                      >
+                        {hover.indexPoint
+                          ? `${indexOverlaySeries.label} ${hover.indexPoint.value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+                          : `${indexOverlaySeries.label} line at top`}
                       </span>
                     ) : null}
                   </>

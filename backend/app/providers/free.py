@@ -272,6 +272,8 @@ INDEX_SYMBOL_TO_NSE_NAME = {
     "^CNXSC": "NIFTY SMALLCAP 100",
     "NIFTYSMLCAP250.NS": "NIFTY SMALLCAP 250",
     "NIFTYMIDCAP150.NS": "NIFTY MIDCAP 150",
+    # The chart's index line behind mid caps (Yahoo's own symbol for the 100).
+    "NIFTY_MIDCAP_100.NS": "NIFTY MIDCAP 100",
     "^NSEMDCP50": "NIFTY MIDCAP 50",
     "^NSEBANK": "NIFTY BANK",
     "^CNXIT": "NIFTY IT",

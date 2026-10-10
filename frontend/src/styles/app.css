@@ -9858,6 +9858,31 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
   border-radius: var(--radius-xs); background: transparent; cursor: pointer;
 }
 
+/* Index line: which index, its colour and opacity, beside its toggle. */
+.chart-index-line-ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chart-index-line-ctl select {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  background: var(--surface, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
+.chart-index-line-ctl input[type="color"] {
+  width: 26px; height: 26px; padding: 0; border: 1px solid var(--line);
+  border-radius: var(--radius-xs); background: transparent; cursor: pointer;
+}
+.chart-index-line-ctl input[type="range"] {
+  width: 72px;
+  accent-color: var(--text, currentColor);
+}
+
 /* Firefox has no ::-webkit-scrollbar; without this its scrollbars ignore the
    theme entirely. Kept subtle so dense tables don't gain a heavy gutter. */
 * {
