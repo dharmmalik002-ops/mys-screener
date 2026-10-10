@@ -1098,10 +1098,46 @@ class CustomScanRequest(BaseModel):
     shakeout_21ema: bool = False
     shakeout_50ema: bool = False
     max_consolidation_range_pct: float | None = Field(default=None, ge=0.1, le=50.0)
+    # Quarterly fundamentals, in percent, from BSE's standalone filings
+    # (services/quarterly_growth.py). YoY = latest quarter vs the same quarter a
+    # year earlier; TTM = last four quarters vs the four before. A company with
+    # no current filing, or growth on a zero/negative base, fails these filters.
+    min_sales_growth_yoy_pct: float | None = None
+    max_sales_growth_yoy_pct: float | None = None
+    min_profit_growth_yoy_pct: float | None = None
+    max_profit_growth_yoy_pct: float | None = None
+    min_eps_growth_yoy_pct: float | None = None
+    min_sales_growth_qoq_pct: float | None = None
+    min_profit_growth_qoq_pct: float | None = None
+    min_sales_growth_ttm_pct: float | None = None
+    min_profit_growth_ttm_pct: float | None = None
+    min_operating_margin_pct: float | None = None
+    max_operating_margin_pct: float | None = None
+    min_net_margin_pct: float | None = None
+    min_operating_margin_change_yoy_pp: float | None = None
+    # The YoY sales/profit floors must hold in each of the newest N quarters.
+    growth_quarters: int = Field(default=1, ge=1, le=4)
+    require_quarterly_profit: bool = False
     pattern: CustomScanPattern = "any"
     sort_by: CustomSortBy = "pattern"
     sort_order: SortOrder = "desc"
     limit: int = Field(default=1500, ge=1, le=5000)
+
+
+AiPatternMatch = Literal["any", "all"]
+
+
+class AiScanRequest(CustomScanRequest):
+    """The AI scanner's filter set: every Custom Scanner filter plus chart
+    patterns, which may be catalog scans (`SCAN_BY_ID`) or the extra shapes in
+    `scanners/chart_patterns.py`. `pattern_match` says whether a stock needs
+    any of them or all of them."""
+
+    patterns: list[str] = Field(default_factory=list, max_length=8)
+    pattern_match: AiPatternMatch = "any"
+    # "within 2% of resistance": overrides the near-resistance / ascending
+    # triangle default of 5%.
+    resistance_max_below_pct: float | None = Field(default=None, gt=0.0, le=25.0)
 
 
 class BandHistorySegment(BaseModel):

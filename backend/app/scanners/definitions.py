@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from app.services import close_history, ipo_listings
+from app.services import close_history, ipo_listings, quarterly_growth
 from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
@@ -2232,6 +2232,72 @@ def _raw_near_high_distance(snapshot: StockSnapshot, period: str) -> float:
     return snapshot.pct_from_ath
 
 
+QUARTERLY_FILTER_FIELDS = (
+    "min_sales_growth_yoy_pct",
+    "max_sales_growth_yoy_pct",
+    "min_profit_growth_yoy_pct",
+    "max_profit_growth_yoy_pct",
+    "min_eps_growth_yoy_pct",
+    "min_sales_growth_qoq_pct",
+    "min_profit_growth_qoq_pct",
+    "min_sales_growth_ttm_pct",
+    "min_profit_growth_ttm_pct",
+    "min_operating_margin_pct",
+    "max_operating_margin_pct",
+    "min_net_margin_pct",
+    "min_operating_margin_change_yoy_pp",
+)
+
+
+def _within(value: float | None, low: float | None, high: float | None) -> bool:
+    if low is None and high is None:
+        return True
+    if value is None:
+        return False
+    if low is not None and value < low:
+        return False
+    if high is not None and value > high:
+        return False
+    return True
+
+
+def _passes_quarterly_filters(snapshot: StockSnapshot, request: CustomScanRequest) -> bool:
+    """BSE quarterly-result filters. A stock with no current filing fails any
+    filter that is set — an unknown figure must never pass a growth floor."""
+    active = [name for name in QUARTERLY_FILTER_FIELDS if getattr(request, name, None) is not None]
+    require_profit = bool(getattr(request, "require_quarterly_profit", False))
+    if not active and not require_profit:
+        return True
+    growth = quarterly_growth.for_symbol(snapshot.symbol)
+    if growth is None:
+        return False
+    if require_profit and not (growth.latest_net_profit_crore is not None and growth.latest_net_profit_crore > 0):
+        return False
+
+    quarters = max(1, min(4, int(getattr(request, "growth_quarters", 1) or 1)))
+    for series, low, high in (
+        (growth.sales_growth_yoy_series, request.min_sales_growth_yoy_pct, request.max_sales_growth_yoy_pct),
+        (growth.profit_growth_yoy_series, request.min_profit_growth_yoy_pct, request.max_profit_growth_yoy_pct),
+    ):
+        if low is None and high is None:
+            continue
+        window = list(series[:quarters])
+        if len(window) < quarters or not all(_within(value, low, high) for value in window):
+            return False
+
+    checks = (
+        (growth.eps_growth_yoy_pct, request.min_eps_growth_yoy_pct, None),
+        (growth.sales_growth_qoq_pct, request.min_sales_growth_qoq_pct, None),
+        (growth.profit_growth_qoq_pct, request.min_profit_growth_qoq_pct, None),
+        (growth.sales_growth_ttm_pct, request.min_sales_growth_ttm_pct, None),
+        (growth.profit_growth_ttm_pct, request.min_profit_growth_ttm_pct, None),
+        (growth.operating_margin_pct, request.min_operating_margin_pct, request.max_operating_margin_pct),
+        (growth.net_margin_pct, request.min_net_margin_pct, None),
+        (growth.operating_margin_change_yoy_pp, request.min_operating_margin_change_yoy_pp, None),
+    )
+    return all(_within(value, low, high) for value, low, high in checks)
+
+
 def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) -> bool:
     if request.min_price is not None and snapshot.last_price < request.min_price:
         return False
@@ -2389,6 +2455,9 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
         val = getattr(snapshot, "pe_ratio", None)
         if val is None or val > max_pe_ratio:
             return False
+
+    if not _passes_quarterly_filters(snapshot, request):
+        return False
 
     # Guru & Setup filters
     if _request_filter_value(request, "minervini_trend_template", False):

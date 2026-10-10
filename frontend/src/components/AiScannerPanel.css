@@ -1,0 +1,228 @@
+/* ==========================================================================
+   AI scanner. One hero (the question box), then what was understood as
+   editable chips, then the table. Tokens only, so it reads in both designs
+   and both themes; selected states are inverse ink, never an accent tint.
+   ========================================================================== */
+
+.aiscan { width: 100%; max-width: 1280px; margin: 0 auto; padding-bottom: 24px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* Flex children default to min-width: auto, so the wide results table would
+   stretch the whole page past a phone's width instead of scrolling in its box. */
+.aiscan > * { min-width: 0; }
+
+.aiscan-eyebrow {
+  margin: 0 0 3px;
+  font-family: var(--font-caption, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.aiscan-head h2 { margin: 0; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; color: var(--text); }
+.aiscan-sub { margin: 6px 0 0; font-size: 14px; color: var(--text-muted); }
+
+.aiscan-ask {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--card-flat);
+  box-shadow: var(--ring, 0 0 0 1px var(--line));
+}
+.aiscan-ask textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-flat);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.aiscan-ask textarea:focus { outline: none; border-color: var(--text-muted); box-shadow: var(--focus-ring); }
+.aiscan-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--inverse, var(--text));
+  color: var(--inverse-ink, var(--card-flat));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.aiscan-go:disabled { opacity: 0.5; cursor: default; }
+
+.aiscan-examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.aiscan-examples button {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card-flat);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+.aiscan-examples button:hover { background: var(--muted-bg, var(--surface-soft)); border-color: var(--line-strong); }
+
+.aiscan-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--negative) 9%, transparent);
+  color: var(--negative);
+  font-size: 13px;
+}
+
+.aiscan-plan, .aiscan-results {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--card-flat);
+  box-shadow: var(--ring, 0 0 0 1px var(--line));
+}
+.aiscan-summary { margin: 0 0 10px; font-size: 15px; color: var(--text); }
+
+.aiscan-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.aiscan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 11px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 13px;
+  color: var(--text);
+}
+.aiscan-chip.is-fundamental { box-shadow: inset 3px 0 0 var(--viz-green, #66c398), inset 0 0 0 1px var(--line); }
+.aiscan-chip.is-pattern { box-shadow: inset 3px 0 0 var(--viz-purple, #958dfc), inset 0 0 0 1px var(--line); }
+.aiscan-chip-text { border: 0; background: none; padding: 0; color: inherit; font: inherit; }
+button.aiscan-chip-text { cursor: text; text-decoration: underline dotted var(--line-strong); text-underline-offset: 3px; }
+.aiscan-chip-x {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.aiscan-chip-x:hover { background: var(--muted-bg, var(--line)); color: var(--text); }
+.aiscan-chip.is-editing { gap: 6px; padding-right: 6px; }
+.aiscan-chip.is-editing input {
+  width: 70px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card-flat);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.aiscan-match { display: inline-flex; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.aiscan-match button {
+  padding: 4px 10px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.aiscan-match button.active { background: var(--inverse, var(--text)); color: var(--inverse-ink, var(--card-flat)); }
+
+.aiscan-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 9px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.aiscan-add select { border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+
+.aiscan-unsupported {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--viz-orange, #fc6200) 9%, transparent);
+  font-size: 13px;
+  color: var(--text);
+}
+.aiscan-unsupported strong { font-weight: 500; }
+.aiscan-unsupported ul { margin: 6px 0 0; padding-left: 18px; }
+.aiscan-unsupported em { color: var(--text-muted); font-style: normal; }
+
+.aiscan-notes { margin: 10px 0 0; padding-left: 18px; font-size: 12px; color: var(--text-muted); }
+.aiscan-muted { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+.aiscan-results-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.aiscan-results-head p { margin: 0; font-size: 13px; color: var(--text-muted); }
+.aiscan-results-head strong { font-size: 18px; font-weight: 500; color: var(--text); }
+.aiscan-caveat { margin: 6px 0 0; font-size: 12px; color: var(--text-muted); }
+
+.aiscan-table-wrap { margin-top: 10px; overflow-x: auto; }
+.aiscan-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.aiscan-table th {
+  position: sticky;
+  top: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card-flat);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.aiscan-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--text); }
+.aiscan-table .num { text-align: right; white-space: nowrap; }
+.aiscan-table tbody tr { cursor: pointer; }
+.aiscan-table tbody tr:hover td { background: var(--surface-soft); }
+.aiscan-table .pos { color: var(--positive); }
+.aiscan-table .neg { color: var(--negative); }
+.aiscan-sym { display: block; font-weight: 500; }
+.aiscan-name, .aiscan-sector { display: block; font-size: 11px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aiscan-why { min-width: 240px; font-size: 12px; color: var(--text-muted); }
+.aiscan-tag {
+  display: inline-block;
+  margin: 0 6px 2px 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--viz-purple, #958dfc) 14%, transparent);
+  color: var(--text);
+  font-size: 11px;
+}
+
+.aiscan-spin { animation: aiscan-rotate 0.9s linear infinite; }
+@keyframes aiscan-rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .aiscan-spin { animation: none; } }
+
+@media (max-width: 640px) {
+  .aiscan-head h2 { font-size: 22px; }
+  .aiscan-ask { flex-direction: column; }
+  .aiscan-go { justify-content: center; min-height: 40px; }
+  .aiscan-plan, .aiscan-results { padding: 12px; }
+  .aiscan-why { min-width: 180px; }
+}

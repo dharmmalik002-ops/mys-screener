@@ -18,6 +18,7 @@ from app.models.market import (
     IndustryGroupsResponse,
     CompanyFundamentals,
     ConsolidatingScanRequest,
+    AiScanRequest,
     CustomScanRequest,
     DemandZoneScanRequest,
     IndexPeHistoryResponse,
@@ -493,6 +494,29 @@ def build_router(service):
     ):
         return await resolve_service(market).get_custom_scan_results(request, include_sector_summaries=include_sector_summaries)
 
+    # --- AI scanner -----------------------------------------------------
+    # parse: sentence -> filters (the only step that calls the model).
+    # run: filters -> stocks, no model involved, so edited criteria re-run free.
+    @router.post("/ai-scanner/parse")
+    async def ai_scanner_parse(payload: dict, market: str = Query(default="india")):
+        query = str(payload.get("query") or "").strip()
+        if not query:
+            raise HTTPException(status_code=400, detail="query is required")
+        result = await resolve_service(market).ai_scanner_parse(query)
+        if result.get("error"):
+            raise HTTPException(status_code=503, detail=result["error"])
+        return result
+
+    @router.post("/ai-scanner/run")
+    async def ai_scanner_run(request: AiScanRequest, market: str = Query(default="india")):
+        return await resolve_service(market).ai_scanner_run(request)
+
+    @router.get("/ai-scanner/catalog")
+    async def ai_scanner_catalog():
+        from app.services import ai_scanner
+
+        return ai_scanner.catalog_payload()
+
     @router.get("/gap-up-openers")
     async def gap_up_openers(
         market: str = Query(default="india"),
@@ -923,6 +947,14 @@ def build_router(service):
         include_sector_summaries: bool = Query(default=False),
     ):
         return await resolve_service(market_name).get_custom_scan_results(request, include_sector_summaries=include_sector_summaries)
+
+    @router.post("/{market_name}/ai-scanner/parse")
+    async def namespaced_ai_scanner_parse(market_name: str, payload: dict):
+        return await ai_scanner_parse(payload, market=market_name)
+
+    @router.post("/{market_name}/ai-scanner/run")
+    async def namespaced_ai_scanner_run(market_name: str, request: AiScanRequest):
+        return await resolve_service(market_name).ai_scanner_run(request)
 
     @router.get("/{market_name}/gap-up-openers")
     async def namespaced_gap_up_openers(
