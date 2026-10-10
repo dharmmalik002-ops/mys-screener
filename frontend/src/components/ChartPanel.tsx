@@ -16,6 +16,7 @@ import {
   fetchIndexOverlay,
   isOverlayIndexSymbol,
   loadIndexOverlaySettings,
+  placeIndexAboveBars,
   resolveIndexChoice,
   saveIndexOverlaySettings,
   type IndexOverlaySeries,
@@ -2307,9 +2308,20 @@ export function ChartPanel({
     // The page behind must not scroll under the overlay on touch.
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // `position: fixed` is measured against the nearest ancestor with a
+    // transform, filter or backdrop-filter, not the window. `.workspace` keeps
+    // its fade-in transform for good (fill-mode both), so on a page the full
+    // screen chart started under the header and its bottom 80px (the volume)
+    // ran off the screen. Neutralise every such ancestor while it is open.
+    const ancestors: HTMLElement[] = [];
+    for (let el = stageRef.current?.closest(".chart-panel")?.parentElement ?? null; el; el = el.parentElement) {
+      el.classList.add("chart-fs-ancestor");
+      ancestors.push(el);
+    }
     return () => {
       window.removeEventListener("keydown", handleKey);
       document.body.style.overflow = previousOverflow;
+      for (const el of ancestors) el.classList.remove("chart-fs-ancestor");
     };
   }, [chartFullscreen]);
 
@@ -2416,8 +2428,8 @@ export function ChartPanel({
   /** The index close carried onto each of the stock's own bar times. A point at
    *  a time the stock has no bar for would add a slot to the shared time axis
    *  and open a gap in the candles, so the index is sampled, never merged. */
-  const indexOverlayData = useMemo(() => {
-    if (!indexOverlayActive || !indexOverlaySeries || activeBars.length < 2) return [];
+  const indexOverlayPlaced = useMemo(() => {
+    if (!indexOverlayActive || !indexOverlaySeries || activeBars.length < 2) return { points: [], scale: 1 };
     const indexBars = sanitizeChartBars(indexOverlaySeries.bars);
     const points: Array<{ time: UTCTimestamp; value: number }> = [];
     let j = 0;
@@ -2429,8 +2441,12 @@ export function ChartPanel({
       }
       if (last !== null) points.push({ time: bar.time as UTCTimestamp, value: last });
     }
-    return points;
+    return placeIndexAboveBars(activeBars, points);
   }, [activeBars, indexOverlayActive, indexOverlaySeries]);
+  const indexOverlayData = indexOverlayPlaced.points as Array<{ time: UTCTimestamp; value: number }>;
+  // Drawn values are the index times this factor; the hover legend divides it out.
+  const indexOverlayScaleRef = useRef(1);
+  indexOverlayScaleRef.current = indexOverlayPlaced.scale;
   /** How extended price is from its moving averages, measured in the stock's
    *  OWN average daily range rather than in rupees or raw percent. "3 ADR above
    *  the 10 EMA" is a sizing decision; "34 rupees above" is not, because the
@@ -3425,7 +3441,9 @@ export function ChartPanel({
       const indexSeries = indexOverlaySeriesRef.current;
       if (indexSeries) {
         const seriesData = param.seriesData?.get?.(indexSeries) as { value?: number } | undefined;
-        if (seriesData?.value !== undefined) indexPoint = { time: hoveredTime, value: Number(seriesData.value) };
+        if (seriesData?.value !== undefined) {
+          indexPoint = { time: hoveredTime, value: Number(seriesData.value) / (indexOverlayScaleRef.current || 1) };
+        }
       }
 
       return { bar, rsPoint, indexPoint, tradeMarkers };
@@ -3795,9 +3813,10 @@ export function ChartPanel({
     }
   }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize, chartFullscreen, shortViewport, phoneViewport, paneHeight]);
 
-  // ── E5b: index line along the top (MarketSmith style) ────────────────────
-  // Its own hidden price scale, squeezed into the band above the candles (price
-  // starts ~22% down), so it never rescales the stock's axis.
+  // ── E5b: index line above the candles (MarketSmith style) ────────────────
+  // On the candles' own price scale, in the stock's units (see
+  // placeIndexAboveBars), so it moves with every drag and zoom of the price
+  // axis. It is left out of autoscale, so it never squeezes the candles.
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -3815,15 +3834,14 @@ export function ChartPanel({
     let series = indexOverlaySeriesRef.current;
     if (!series) {
       series = chart.addLineSeries({
-        priceScaleId: "index-overlay",
         lineWidth: 2,
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false,
+        autoscaleInfoProvider: () => null,
       });
       indexOverlaySeriesRef.current = series;
     }
-    series.priceScale().applyOptions({ visible: false, scaleMargins: { top: 0.03, bottom: 0.81 } });
     series.applyOptions({ color: withOpacity(indexOverlay.color, indexOverlay.opacity) });
     series.setData(indexOverlayData);
   }, [chartEpoch, indexOverlayData, indexOverlay.color, indexOverlay.opacity]);
