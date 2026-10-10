@@ -36,9 +36,41 @@
   outline-offset: -2px;
 }
 
-.mk-disclosure-title {
+/* Numbered badge: the sections are a reading order, not a pile. */
+.mk-disclosure-step {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text-soft);
+  font-size: var(--fs-tiny);
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-disclosure-text {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The answer wraps under the question rather than squeezing beside it, so the
+   closed row stays legible at phone width. */
+.mk-disclosure-answer {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.mk-disclosure-answer.pos { color: var(--positive); }
+.mk-disclosure-answer.neg { color: var(--negative); }
+
+.mk-disclosure-title {
   font-size: var(--fs-base);
   font-weight: 500;
   color: var(--text);
@@ -76,4 +108,8 @@
   .mk-disclosure-chevron {
     transition: none;
   }
+}
+
+@media (max-width: 600px) {
+  .mk-disclosure-hint { display: none; }
 }

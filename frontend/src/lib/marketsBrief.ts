@@ -220,3 +220,79 @@ export function longDate(iso: string | null | undefined): string | null {
 export function barDate(time: number): string {
   return new Date(time * 1000).toISOString().slice(0, 10);
 }
+
+// ---------------------------------------------------------------------------
+// Section answers.
+//
+// Below the brief, the page is a numbered list of the questions an analyst asks
+// in order — trend, breadth, breakouts, leadership, global, your plan, method.
+// Each collapsed row carries a one-line answer, so the closed page already reads
+// as a summary top to bottom and a section is opened only to see the working.
+// Same rules as the brief: R3 (null when the figure is missing, so the row shows
+// no answer rather than a dash) and R4 (a thin sample is not a reading).
+// ---------------------------------------------------------------------------
+
+export type SectionAnswer = { text: string; tone?: Tone };
+
+const UPTREND_STATES = new Set(["Confirmed Uptrend", "Attempting Recovery"]);
+
+/** 1 · Trend — each index's trend state, smallest caps first (the hunting ground). */
+export function trendAnswer(indices: Array<{ label: string; state: string }>): SectionAnswer | null {
+  if (!indices.length) return null;
+  const up = indices.filter((i) => UPTREND_STATES.has(i.state)).length;
+  return {
+    text: indices.map((i) => `${i.label}: ${i.state}`).join(" · "),
+    tone: up === indices.length ? "pos" : up === 0 ? "neg" : "neu",
+  };
+}
+
+/** 2 · Breadth — share above the 50-day first, then today's advance/decline. */
+export function breadthAnswer(
+  env: MarketEnvironmentResponse | null,
+  fallbackAbove50: number | null = null,
+): SectionAnswer | null {
+  const posture = env?.posture;
+  const above50 = posture?.above_sma50_pct ?? fallbackAbove50;
+  const parts: string[] = [];
+  if (above50 !== null && above50 !== undefined && Number.isFinite(above50)) {
+    parts.push(`${Math.round(above50)}% of stocks above their 50-day`);
+  }
+  if (posture && posture.advances + posture.declines > 0) {
+    parts.push(`${posture.advances.toLocaleString("en-IN")} up, ${posture.declines.toLocaleString("en-IN")} down today`);
+  }
+  if (!parts.length) return null;
+  const tone: Tone | undefined =
+    above50 === null || above50 === undefined ? undefined : above50 >= 55 ? "pos" : above50 < 40 ? "neg" : "neu";
+  return { text: parts.join(" · "), tone };
+}
+
+/** 3 · Breakouts — are recent base breakouts holding their pivots? */
+export function breakoutAnswer(env: MarketEnvironmentResponse | null): SectionAnswer | null {
+  const structural = env?.today?.structural;
+  const held = structural?.held_pct;
+  const events = structural?.events ?? 0;
+  if (held === null || held === undefined || !Number.isFinite(held)) return null;
+  if (events < MIN_SAMPLE) return { text: `Too few recent base breakouts to read (${events})`, tone: "neu" };
+  const read = held >= 65 ? "being paid" : held >= 45 ? "mixed" : "failing";
+  return {
+    text: `${Math.round(held)}% of ${events} recent base breakouts still above their pivot — ${read}`,
+    tone: held >= 65 ? "pos" : held >= 45 ? "neu" : "neg",
+  };
+}
+
+/** 4 · Leadership — where the last week's money went, by sector median. */
+export function leadershipAnswer(env: MarketEnvironmentResponse | null): SectionAnswer | null {
+  const top = env?.week_review?.top_sectors ?? [];
+  const bottom = env?.week_review?.bottom_sectors ?? [];
+  if (!top.length && !bottom.length) return null;
+  const parts: string[] = [];
+  if (top.length) parts.push(`Leading: ${top.slice(0, 2).map((s) => s.sector).join(", ")}`);
+  if (bottom.length) parts.push(`Lagging: ${bottom.slice(0, 2).map((s) => s.sector).join(", ")}`);
+  return { text: `${parts.join(" · ")} (last 5 sessions)` };
+}
+
+/** 6 · Your plan — what is open and what is on the list. */
+export function planAnswer(openPositions: number, focusNames: number): SectionAnswer {
+  const positions = openPositions === 0 ? "No open positions synced" : `${openPositions} open position${openPositions === 1 ? "" : "s"}`;
+  return { text: `${positions} · ${focusNames} name${focusNames === 1 ? "" : "s"} on the focus list` };
+}

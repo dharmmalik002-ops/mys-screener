@@ -4,6 +4,11 @@ import "./Disclosure.css";
 type Props = {
   id: string;
   summary: string;
+  /** Position in the page's reading order, shown as a numbered badge. */
+  step?: number;
+  /** One-line answer to the section's question, readable while it is closed. */
+  answer?: string | null;
+  answerTone?: "pos" | "neu" | "neg";
   hint?: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
@@ -42,7 +47,7 @@ function persistOpenSet(open: Set<string>) {
  * avoid. Children therefore render only after the section has been opened at
  * least once, and stay mounted after that so reopening is instant.
  */
-export function Disclosure({ id, summary, hint, defaultOpen = false, children }: Props) {
+export function Disclosure({ id, summary, step, answer, answerTone, hint, defaultOpen = false, children }: Props) {
   const [open, setOpen] = useState(defaultOpen);
   const [hasOpened, setHasOpened] = useState(defaultOpen);
   const restored = useRef(false);
@@ -72,7 +77,15 @@ export function Disclosure({ id, summary, hint, defaultOpen = false, children }:
   return (
     <details className="mk-disclosure" open={open} onToggle={handleToggle}>
       <summary>
-        <span className="mk-disclosure-title">{summary}</span>
+        {step !== undefined ? (
+          <span className="mk-disclosure-step" aria-hidden>
+            {step}
+          </span>
+        ) : null}
+        <span className="mk-disclosure-text">
+          <span className="mk-disclosure-title">{summary}</span>
+          {answer ? <span className={`mk-disclosure-answer ${answerTone ?? ""}`}>{answer}</span> : null}
+        </span>
         {hint ? <span className="mk-disclosure-hint">{hint}</span> : null}
         <span className="mk-disclosure-chevron" aria-hidden>
           ▾
