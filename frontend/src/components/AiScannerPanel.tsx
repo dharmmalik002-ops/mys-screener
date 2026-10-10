@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import {
   getAiScanCatalog,
@@ -17,17 +17,30 @@ import {
   formatMetric,
   isEditable,
   isSignedColumn,
+  listColumn,
   sortRows,
   withCriterionValue,
   withoutPattern,
   withPattern,
   type SortKey,
 } from "../lib/aiScanner";
+import { ResearchStockList, type ResearchListRow } from "./ResearchStockList";
+import { ScreenerLayoutToggle, type ScreenerLayout } from "./ScreenerLayoutToggle";
 import "./AiScannerPanel.css";
 
 type Props = {
   market?: MarketKey;
   onOpenChartWithList: (symbol: string, symbols: string[]) => void;
+  /** "research" = stock list | chart | fundamentals, like the Screener; "classic" = the results table. */
+  layout?: ScreenerLayout;
+  onLayoutChange?: (next: ScreenerLayout) => void;
+  selectedSymbol?: string | null;
+  onSelectSymbol?: (symbol: string) => void;
+  onPrefetchSymbol?: (symbol: string) => void;
+  /** The results in the order shown, so App can select the first and walk them with the arrow keys. */
+  onResultsChange?: (symbols: string[]) => void;
+  /** The chart and fundamentals panes, owned by App (they share its chart and fundamentals state). */
+  workspace?: ReactNode;
 };
 
 const STORAGE_KEY = "mr-malik-ai-scanner:v1";
@@ -71,7 +84,17 @@ function errorText(error: unknown): string {
  * or remove, and anything the AI could not express is listed as NOT applied,
  * so a result is never quietly narrower or wider than the sentence implied.
  */
-export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props) {
+export function AiScannerPanel({
+  market = "india",
+  onOpenChartWithList,
+  layout = "research",
+  onLayoutChange,
+  selectedSymbol = null,
+  onSelectSymbol,
+  onPrefetchSymbol,
+  onResultsChange,
+  workspace,
+}: Props) {
   const saved = useRef(readSaved()).current;
   const [query, setQuery] = useState(saved.query);
   const [parse, setParse] = useState<AiScanParseResult | null>(saved.parse);
@@ -85,6 +108,10 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
   const [sort, setSort] = useState<SortKey>(null);
   const [catalog, setCatalog] = useState<AiScanPatternRef[]>([]);
   const runSeq = useRef(0);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  // A new question (not a chip edit) brings the result panes into view, the
+  // way the Screener's research layout fills the page.
+  const revealOnNextResult = useRef(false);
 
   const run = async (next: AiScanRequest) => {
     const seq = ++runSeq.current;
@@ -128,6 +155,7 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
       const parsed = await parseAiScan(trimmed, market);
       setParse(parsed);
       setRequest(parsed.request);
+      revealOnNextResult.current = true;
       setSort(null);
       writeSaved({ query: trimmed, parse: parsed, request: parsed.request });
       await run(parsed.request);
@@ -142,6 +170,37 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
   const patterns: AiScanPatternRef[] = result?.patterns ?? parse?.patterns ?? [];
   const rows = useMemo(() => sortRows(result?.items ?? [], sort), [result, sort]);
   const symbols = useMemo(() => rows.map((row) => row.symbol), [rows]);
+  const symbolsKey = symbols.join(",");
+  useEffect(() => {
+    onResultsChange?.(symbolsKey ? symbolsKey.split(",") : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbolsKey]);
+  const research = layout === "research" && Boolean(workspace) && Boolean(onSelectSymbol);
+  const showGrid = Boolean(result && research && rows.length);
+  useEffect(() => {
+    if (!showGrid || !revealOnNextResult.current || !gridRef.current) return;
+    revealOnNextResult.current = false;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    gridRef.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [showGrid, result]);
+  const extraColumn = useMemo(() => listColumn(result?.columns ?? []), [result]);
+  const listRows: ResearchListRow[] = useMemo(
+    () =>
+      rows.map((row) => {
+        const value = extraColumn ? row.metrics?.[extraColumn.id] : row.rs_rating ?? null;
+        const signed = extraColumn ? isSignedColumn(extraColumn.id) : false;
+        return {
+          symbol: row.symbol,
+          name: row.name,
+          last: row.last_price,
+          changePct: row.change_pct,
+          rvol: row.relative_volume,
+          extraText: extraColumn ? formatMetric(value, extraColumn) : value == null ? "—" : String(value),
+          extraTone: signed && typeof value === "number" ? (value > 0 ? "up" : value < 0 ? "down" : null) : null,
+        };
+      }),
+    [rows, extraColumn],
+  );
   const hasFundamentals = criteria.some((c) => c.group === "fundamental");
   // RS is always shown, once: as its own column unless an RS filter already added it.
   const showRs = !(result?.columns ?? []).some((column) => column.id === "rs");
@@ -154,7 +213,7 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
   const sortMark = (id: string) => (sort?.id === id ? (sort.dir === "desc" ? " ↓" : " ↑") : "");
 
   return (
-    <div className="aiscan">
+    <div className={showGrid ? "aiscan is-research" : "aiscan"}>
       <header className="aiscan-head">
         <p className="aiscan-eyebrow">AI scanner</p>
         <h2>Describe the stocks you want</h2>
@@ -322,7 +381,10 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
               {result.hit_count > result.items.length ? ` · showing ${result.items.length}` : ""}
               {result.session_date ? ` · close of ${result.session_date}` : ""}
             </p>
-            {running ? <RefreshCw size={14} className="aiscan-spin" aria-label="Updating" /> : null}
+            <span className="aiscan-results-tools">
+              {running ? <RefreshCw size={14} className="aiscan-spin" aria-label="Updating" /> : null}
+              {onLayoutChange && !research ? <ScreenerLayoutToggle value={layout} onChange={onLayoutChange} /> : null}
+            </span>
           </div>
           {hasFundamentals ? (
             <p className="aiscan-caveat">
@@ -331,7 +393,7 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
             </p>
           ) : null}
 
-          {rows.length ? (
+          {research && rows.length ? null : rows.length ? (
             <div className="aiscan-table-wrap">
               <table className="aiscan-table">
                 <thead>
@@ -390,6 +452,32 @@ export function AiScannerPanel({ market = "india", onOpenChartWithList }: Props)
             <p className="aiscan-muted">No stock matches every criterion today. Remove or loosen a chip above to widen the search.</p>
           )}
         </section>
+      ) : null}
+
+      {result && showGrid ? (
+        <div className="screener-research-grid aiscan-research" ref={gridRef}>
+          <ResearchStockList
+            head={
+              <div className="aiscan-list-head">
+                <p>
+                  <strong>{rows.length.toLocaleString("en-IN")}</strong> {rows.length === 1 ? "match" : "matches"}
+                </p>
+                {patterns.length ? <span>{patterns.map((p) => p.name).join(request?.pattern_match === "all" ? " + " : " / ")}</span> : null}
+              </div>
+            }
+            ariaLabel="AI scanner results"
+            extraLabel={extraColumn?.short ?? "RS"}
+            emptyText="No stock matches every criterion today."
+            rows={listRows}
+            loading={running}
+            selectedSymbol={selectedSymbol}
+            onSelect={onSelectSymbol!}
+            onPrefetch={onPrefetchSymbol}
+            onLayoutChange={onLayoutChange ?? (() => undefined)}
+            sessionLabel={result.session_date}
+          />
+          {workspace}
+        </div>
       ) : null}
     </div>
   );

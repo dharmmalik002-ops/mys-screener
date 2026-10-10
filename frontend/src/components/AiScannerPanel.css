@@ -226,3 +226,27 @@ button.aiscan-chip-text { cursor: text; text-decoration: underline dotted var(--
   .aiscan-plan, .aiscan-results { padding: 12px; }
   .aiscan-why { min-width: 180px; }
 }
+
+/* Research layout: the Screener's list | chart | fundamentals grid
+   (ResearchStockList.css), headed by this scan's match count. */
+.aiscan-results-tools { display: inline-flex; align-items: center; gap: 10px; }
+.aiscan > .aiscan-research { scroll-margin-top: 72px; }
+/* Results take the full width, like the Screener's research layout. */
+.aiscan.is-research { max-width: none; }
+.aiscan-list-head p { margin: 0; }
+.aiscan-research .research-list-cols span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aiscan-list-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.aiscan-list-head strong { font-size: 16px; font-weight: 500; color: var(--text); }
+.aiscan-list-head span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}

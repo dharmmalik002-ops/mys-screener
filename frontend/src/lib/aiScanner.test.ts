@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AiScanRequest, AiScanRow } from "./api";
-import { clearCriterion, editLabel, formatMetric, sortRows, withCriterionValue, withPattern, withoutPattern } from "./aiScanner";
+import { clearCriterion, editLabel, formatMetric, listColumn, sortRows, withCriterionValue, withPattern, withoutPattern } from "./aiScanner";
 
 const base: AiScanRequest = {
   patterns: ["vcp"],
@@ -51,5 +51,17 @@ describe("AI scanner table", () => {
     const rows = [row("A", 10), row("B", null), row("C", 30)];
     expect(sortRows(rows, { id: "sales_yoy", dir: "desc" }).map((r) => r.symbol)).toEqual(["C", "A", "B"]);
     expect(sortRows(rows, { id: "sales_yoy", dir: "asc" }).map((r) => r.symbol)).toEqual(["A", "C", "B"]);
+  });
+});
+
+describe("AI scanner research list", () => {
+  it("shows the first thing asked about that the list does not already carry", () => {
+    const columns = [
+      { id: "price", label: "Price", format: "price" as const },
+      { id: "market_cap", label: "M cap", format: "crore" as const },
+      { id: "sales_yoy", label: "Sales YoY", format: "pct" as const },
+    ];
+    expect(listColumn(columns)).toMatchObject({ id: "sales_yoy", short: "Sales" });
+    expect(listColumn(columns.slice(0, 2))).toBeNull();
   });
 });

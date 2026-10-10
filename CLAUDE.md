@@ -95,7 +95,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 - `components/CatalystsTab.tsx`: the Catalysts tab in `ResearchFundamentals` — overall stance, reasons to own / avoid, watch next, then every catalyst newest first with what happened, effect on the company and the analyst view, filterable to tailwinds or headwinds. Polls while the server rebuilds.
 - `components/LivePanel.tsx`: Streaming intraday watch — quotes flow browser-side, the backend is not involved.
 - AI surfaces: the journal (`/api/ai/swing-analysis`, `/ai/journal-review`, `/ai/learnings-review`, reached from
-  `TradeJournalPanel`) and the **AI Scanner** page (`components/AiScannerPanel.tsx`, Scan group). The old Gemini
+  `TradeJournalPanel`) and the **AI Scanner** page (`components/AiScannerPanel.tsx`, Scan group). Its results open in the Screener's research layout (`ResearchStockList` | `ChartPanel` | `ResearchFundamentals`, the same App state via `researchView`), or as a table under Classic (`mr-malik-ai-layout:v1`). The old Gemini
   screener and chat window were removed in `0d84f790`; `AIAnalysisService.parse_natural_language_scan` is its
   uncalled leftover and is not what the AI Scanner uses.
 - `components/MutualFundsPanel.tsx`: Funds page — screener table (sortable, with category rank as a first-class column), category leaderboard, and manual portfolio with XIRR + stock-level look-through.

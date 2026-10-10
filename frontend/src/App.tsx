@@ -315,6 +315,7 @@ const HEADER_NAV_GROUPS: NavGroup<AppPage>[] = NAV_GROUPS.map((group) => ({
 
 type ResultSortMode = "change" | "rs";
 const SCREENER_LAYOUT_KEY = "mr-malik-screener-layout:v1";
+const AI_LAYOUT_KEY = "mr-malik-ai-layout:v1";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
 type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "momentum-burst">;
@@ -2066,6 +2067,20 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   });
   const [researchFundPane, setResearchFundPane] = useState<HTMLDivElement | null>(null);
   const researchLayout = activePage === "screener" && screenerLayout === "research";
+  // The AI Scanner shows its results the same way once it has some: list |
+  // chart | fundamentals, on the same chart and fundamentals state.
+  const [aiLayout, setAiLayout] = useState<"research" | "classic">(() => {
+    try {
+      return window.localStorage.getItem(AI_LAYOUT_KEY) === "classic" ? "classic" : "research";
+    } catch {
+      return "research";
+    }
+  });
+  const [aiResultSymbols, setAiResultSymbols] = useState<string[]>([]);
+  const aiResearch = activePage === "ai" && aiLayout === "research" && aiResultSymbols.length > 0;
+  // Everything that makes the research layout behave (fundamentals loaded for
+  // the selection, no chart popup on click, neighbours prefetched, peers).
+  const researchView = researchLayout || aiResearch;
   const [resultSortMode, setResultSortMode] = useState<ResultSortMode>("rs");
   const [customFilters, setCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.customFilters);
   const [appliedCustomFilters, setAppliedCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.appliedCustomFilters);
@@ -3457,7 +3472,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   useEffect(() => {
     if (
       !selectedSymbol ||
-      (chartPanelTab !== "fundamentals" && !researchLayout) ||
+      (chartPanelTab !== "fundamentals" && !researchView) ||
       (activePage === "home" && !chartOpen) ||
       (activePage === "journal" && !chartOpen)
     ) {
@@ -3503,7 +3518,22 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     return () => {
       active = false;
     };
-  }, [activeMarket, activePage, chartOpen, chartPanelTab, fundamentalsBySymbol, researchLayout, selectedSymbol]);
+  }, [activeMarket, activePage, chartOpen, chartPanelTab, fundamentalsBySymbol, researchView, selectedSymbol]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AI_LAYOUT_KEY, aiLayout);
+    } catch {
+      // storage is a convenience
+    }
+  }, [aiLayout]);
+
+  // AI results arrive (or change): put the first one on the chart, unless the
+  // stock already shown is one of them.
+  useEffect(() => {
+    if (!aiResearch) return;
+    setSelectedSymbol((current) => (current && aiResultSymbols.includes(current) ? current : aiResultSymbols[0] ?? current));
+  }, [aiResearch, aiResultSymbols]);
 
   useEffect(() => {
     try {
@@ -3884,7 +3914,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         ? scanVisibleOrder
         : visibleScanItems.map((item) => item.symbol);
   const pageVisibleSymbols =
-    activePage === "screener" && activeScanner === "improving-rs"
+    activePage === "ai"
+      ? aiResultSymbols
+      : activePage === "screener" && activeScanner === "improving-rs"
       ? (improvingRsData?.items ?? []).map((item) => item.symbol)
       : activePage === "groups"
           ? groupsVisibleSymbols
@@ -4804,7 +4836,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const shouldHandleListNavigation = activePage === "screener" || activePage === "watchlists";
+      const shouldHandleListNavigation = activePage === "screener" || activePage === "watchlists" || activePage === "ai";
       const shouldHandleGroupsNavigation = activePage === "groups" && !chartOpen && Boolean(chartNavigationSymbolsRef.current?.length);
       const shouldHandleChartContextNavigation =
         chartOpen &&
@@ -5281,7 +5313,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     chartNavigationSymbolsRef.current = null;
     setSelectedSymbol(symbol);
     // The research layout already shows the chart and fundamentals in place.
-    if (researchLayout && !chartOpen) return;
+    if (researchView && !chartOpen) return;
     setChartOpen(true);
   };
 
@@ -6277,9 +6309,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // Like the chart prewarm: fetch the neighbours' fundamentals so stepping
   // through the list finds them already there (and starts their full builds).
   const fundamentalsPrefetchedRef = useRef<Set<string>>(new Set());
-  const screenerNavKey = screenerNavSymbols.join(",");
+  const screenerNavKey = (aiResearch ? aiResultSymbols : screenerNavSymbols).join(",");
   useEffect(() => {
-    if (!researchLayout || !selectedSymbol) return;
+    if (!researchView || !selectedSymbol) return;
     const order = screenerNavKey ? screenerNavKey.split(",") : [];
     const index = order.indexOf(selectedSymbol);
     if (index < 0) return;
@@ -6299,17 +6331,17 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       }
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [activeMarket, fundamentalsBySymbol, researchLayout, screenerNavKey, selectedSymbol]);
+  }, [activeMarket, fundamentalsBySymbol, researchView, screenerNavKey, selectedSymbol]);
 
   // The Peers tab reads group membership from the groups payload.
   const [researchGroupsFailed, setResearchGroupsFailed] = useState(false);
   useEffect(() => {
-    if (researchLayout && !groupsData) {
+    if (researchView && !groupsData) {
       setResearchGroupsFailed(false);
       void ensureGroupsDataLoaded().catch(() => setResearchGroupsFailed(true));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [researchLayout, groupsData]);
+  }, [researchView, groupsData]);
 
   const researchPeers = useMemo(() => {
     if (researchGroupsFailed && !groupsData) return "unavailable" as const;
@@ -6646,7 +6678,46 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         {activePage === "ai" ? (
           <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading`: it runs its own scan request. */}
-            <AiScannerPanel market={activeMarket} onOpenChartWithList={handleOpenChartWithList} />
+            <AiScannerPanel
+              market={activeMarket}
+              onOpenChartWithList={handleOpenChartWithList}
+              layout={aiLayout}
+              onLayoutChange={setAiLayout}
+              selectedSymbol={selectedSymbol}
+              onSelectSymbol={handlePickSymbol}
+              onPrefetchSymbol={handlePrefetchSymbol}
+              onResultsChange={setAiResultSymbols}
+              workspace={
+                aiResearch ? (
+                  <>
+                    {freezeBehindChartModal("ai-research", (
+                      <ChartPanel
+                        key={activeChartKey ?? "empty-chart"}
+                        {...pageChartPanelProps}
+                        {...fullscreenPane("ai")}
+                        splitFundamentals
+                        fundamentalsTarget={researchFundPane}
+                        expanded
+                      />
+                    ))}
+                    <div className="research-fund-pane" aria-label="Fundamentals">
+                      <ResearchFundamentals
+                        symbol={selectedSymbol}
+                        fundamentals={activeFundamentals}
+                        loading={fundamentalsLoading}
+                        error={fundamentalsError}
+                        summary={displayedChart?.summary ?? null}
+                        market={activeMarket}
+                        peers={researchPeers}
+                        onSelectSymbol={handlePickSymbol}
+                        onDetailsMount={setResearchFundPane}
+                      />
+                    </div>
+                    <SplitResizer storageKey="ai-research" boundary={1} minPx={300} label="Resize chart and fundamentals" />
+                  </>
+                ) : null
+              }
+            />
           </PageSuspense>
         ) : null}
         {activePage === "lookalikes" ? (

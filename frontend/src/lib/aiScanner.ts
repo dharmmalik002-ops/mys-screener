@@ -94,3 +94,31 @@ export function sortRows(rows: AiScanRow[], sort: SortKey): AiScanRow[] {
     return (left - right) * factor;
   });
 }
+
+const SHORT_LABELS: Record<string, string> = {
+  from_52w_high: "Off high",
+  from_52w_low: "Off low",
+  from_ath: "Off ATH",
+  gap: "Gap",
+  rvol: "RVol",
+  adr: "ADR",
+  rs: "RS",
+  return: "Return",
+  sales_yoy: "Sales",
+  profit_yoy: "Profit",
+  sales_qoq: "Sales Q",
+  profit_qoq: "Profit Q",
+  sales_ttm: "Sales TTM",
+  profit_ttm: "PAT TTM",
+  op_margin: "OPM",
+  net_margin: "NPM",
+  margin_change: "OPM Δ",
+};
+
+/** The one figure the research list has room for: the first thing the user
+    asked about that is not already in the list (price and change are). */
+export function listColumn(columns: AiScanColumn[]): (AiScanColumn & { short: string }) | null {
+  const skip = new Set(["price", "change", "market_cap", "turnover"]);
+  const column = columns.find((item) => !skip.has(item.id) && SHORT_LABELS[item.id]);
+  return column ? { ...column, short: SHORT_LABELS[column.id] } : null;
+}
