@@ -9899,6 +9899,20 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
 
    Heights are dvh throughout, for the reason in the Zen note above. */
 
+/* Set by ChartPanel on every ancestor while a chart is full screen: any of
+   these properties makes the ancestor, not the window, the box the fixed
+   panel is placed in (`.workspace` keeps its fade-in transform for good). */
+.chart-fs-ancestor {
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  perspective: none !important;
+  contain: none !important;
+  will-change: auto !important;
+}
+
 .chart-panel.chart-fullscreen {
   position: fixed;
   inset: 0;

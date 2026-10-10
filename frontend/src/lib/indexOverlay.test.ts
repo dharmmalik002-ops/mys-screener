@@ -5,6 +5,7 @@ import {
   indexCandidates,
   isOverlayIndexSymbol,
   normalizeIndexOverlaySettings,
+  placeIndexAboveBars,
   resolveIndexChoice,
 } from "./indexOverlay";
 
@@ -73,5 +74,35 @@ describe("normalizeIndexOverlaySettings", () => {
     const repaired = normalizeIndexOverlaySettings({ enabled: "yes", choice: "nasdaq", color: "red", opacity: 7 });
     expect(repaired).toEqual({ enabled: true, choice: "auto", color: DEFAULT_INDEX_OVERLAY.color, opacity: 1 });
     expect(normalizeIndexOverlaySettings({ opacity: 0 }).opacity).toBe(0.1);
+  });
+});
+
+describe("placeIndexAboveBars", () => {
+  const stock = [
+    { time: 1, high: 100 },
+    { time: 2, high: 110 },
+    { time: 3, high: 105 },
+  ];
+  const index = [
+    { time: 1, value: 20_000 },
+    { time: 2, value: 20_000 },
+    { time: 3, value: 21_000 },
+  ];
+
+  it("runs just above every recent candle and touches the gap at the closest one", () => {
+    const { points, scale } = placeIndexAboveBars(stock, index, { gap: 0.04 });
+    points.forEach((point, i) => expect(point.value).toBeGreaterThanOrEqual(stock[i].high * 1.04 - 1e-9));
+    expect(points[1].value).toBeCloseTo(110 * 1.04, 6);
+    expect(points[2].value / scale).toBeCloseTo(21_000, 6);
+  });
+
+  it("keeps the index's own shape", () => {
+    const { points } = placeIndexAboveBars(stock, index);
+    expect(points[2].value / points[0].value).toBeCloseTo(21_000 / 20_000, 9);
+  });
+
+  it("draws nothing without data", () => {
+    expect(placeIndexAboveBars([], index).points).toEqual([]);
+    expect(placeIndexAboveBars(stock, []).points).toEqual([]);
   });
 });

@@ -151,3 +151,35 @@ export function fetchIndexOverlay(
   });
   return promise;
 }
+
+/** Gap between the index line and the highest candle it passes over. */
+export const INDEX_LINE_GAP = 0.04;
+/** Placement looks at the most recent year, which is what the chart opens on. */
+export const INDEX_LINE_LOOKBACK = 250;
+
+/**
+ * The index drawn in the stock's own price units, so it lives on the candles'
+ * scale and moves with every drag and zoom of that axis. Multiplying by one
+ * factor keeps its shape exactly (on a log axis it is a plain vertical shift).
+ * The factor puts the line INDEX_LINE_GAP above the highest candle-to-index
+ * ratio of the recent bars, so it runs just above the candles without crossing
+ * them. `scale` turns a drawn value back into the index's real value.
+ */
+export function placeIndexAboveBars(
+  stockBars: Array<{ time: number; high: number }>,
+  indexCloses: Array<{ time: number; value: number }>,
+  options: { gap?: number; lookback?: number } = {},
+): { points: Array<{ time: number; value: number }>; scale: number } {
+  const gap = options.gap ?? INDEX_LINE_GAP;
+  const lookback = options.lookback ?? INDEX_LINE_LOOKBACK;
+  if (!indexCloses.length || !stockBars.length) return { points: [], scale: 1 };
+  const highByTime = new Map(stockBars.map((bar) => [bar.time, bar.high]));
+  let ratio = 0;
+  for (const point of indexCloses.slice(-lookback)) {
+    const high = highByTime.get(point.time);
+    if (high && high > 0 && point.value > 0) ratio = Math.max(ratio, high / point.value);
+  }
+  if (!(ratio > 0)) return { points: [], scale: 1 };
+  const scale = ratio * (1 + gap);
+  return { points: indexCloses.map((point) => ({ time: point.time, value: point.value * scale })), scale };
+}
