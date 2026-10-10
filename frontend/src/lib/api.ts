@@ -3471,7 +3471,26 @@ export type CatalystsResponse = {
   refreshed_on?: string;
   refreshed_at?: string;
   concall?: { id: string; date: string; title: string; link: string | null; read: boolean } | null;
-  sources?: Record<string, { ok: boolean; count?: number; error?: string | null; date?: string | null; read?: boolean; found?: boolean }>;
+  sources?: {
+    news?: {
+      ok: boolean;
+      count?: number;
+      error?: string | null;
+      /** How the stories narrowed: found -> from a reputed outlet -> about this company. */
+      funnel?: { found?: number; reputed?: number; about_company?: number; generic?: number };
+      sources?: Record<string, { ok: boolean; added?: number; error?: string | null }>;
+    };
+    concall?: { ok: boolean; found?: boolean; error?: string | null; date?: string | null; read?: boolean };
+  };
+  /** Every reputed-outlet story found, newest first, with what became of it. */
+  news_feed?: Array<{
+    id: string;
+    date: string;
+    source: string;
+    title: string;
+    link: string | null;
+    status: "catalyst" | "kept" | "dropped" | "pending";
+  }>;
   pending_ai?: boolean;
   ai_error?: string | null;
 };

@@ -103,11 +103,20 @@ export function CatalystsTab({ symbol }: { symbol: string }) {
 
   const overall = data.overall;
   const sources = data.sources ?? {};
+  const newsFeed = data.news_feed ?? [];
+  const otherNews = newsFeed.filter((n) => n.status !== "catalyst");
+  const newsCount = sources.news?.count ?? newsFeed.length;
+  const searchesDown = Object.entries(sources.news?.sources ?? {}).filter(([key, s]) => !key.startsWith("feed:") && !s.ok).length;
   const sourceBits: string[] = [];
-  if (sources.news?.ok) sourceBits.push("news from reputed outlets (ET, Mint, Business Standard, Moneycontrol, Reuters, Bloomberg and others)");
+  if (sources.news?.ok) {
+    sourceBits.push(
+      `${newsCount} ${newsCount === 1 ? "story" : "stories"} from reputed outlets (ET, Mint, Business Standard, Moneycontrol, Reuters, Bloomberg and others) in the last 60 days`,
+    );
+  }
   if (data.concall?.date) sourceBits.push(`the earnings call of ${fmtDate(data.concall.date)}${data.concall.read ? "" : " (transcript not readable)"}`);
   const failed: string[] = [];
   if (sources.news && !sources.news.ok) failed.push("News");
+  else if (searchesDown) failed.push(`${searchesDown} of the news searches`);
   if (sources.concall && !sources.concall.ok) failed.push("The earnings-call transcript (BSE)");
 
   return (
@@ -230,6 +239,32 @@ export function CatalystsTab({ symbol }: { symbol: string }) {
             : "No company-specific catalyst in recent news from reputed outlets or the latest earnings call. Market wraps, stock-tip lists and other outlets are left out on purpose."}
         </div>
       )}
+
+      {otherNews.length ? (
+        <details className="cat-news" open={!items.length}>
+          <summary>
+            Other recent news from reputed outlets <span className="rf-muted">· {otherNews.length}, judged not to change the business</span>
+          </summary>
+          <ul className="cat-news-list">
+            {otherNews.map((n) => (
+              <li key={n.id}>
+                {n.link ? (
+                  <a className="rf-link" href={n.link} target="_blank" rel="noreferrer">
+                    {n.title}
+                  </a>
+                ) : (
+                  n.title
+                )}
+                <span className="rf-muted">
+                  {" "}
+                  · {n.source} · {fmtDate(n.date)}
+                  {n.status === "pending" ? " · not yet analysed" : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       <div className="cat-foot">
         {sourceBits.length ? `Read from ${sourceBits.join(", ")}. ` : ""}

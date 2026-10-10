@@ -44,6 +44,7 @@ import re
 import threading
 import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
@@ -56,7 +57,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 IST = timezone(timedelta(hours=5, minutes=30))
-VERSION = 2  # v2: BSE filings no longer become catalysts; v1 records are rebuilt
+VERSION = 3  # v3: wider news sources and a looser news rule; earlier "dropped" verdicts are re-judged
 BSE_ANN_URL = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
 BSE_ATTACH_URL = "https://www.bseindia.com/xml-data/corpfiling/AttachLive/{name}"
 BSE_ATTACH_HIS_URL = "https://www.bseindia.com/xml-data/corpfiling/AttachHis/{name}"
@@ -67,13 +68,31 @@ BSE_HEADERS = {
     "Origin": "https://www.bseindia.com",
 }
 NEWS_URL = "https://news.google.com/rss/search?q={q}&hl=en-IN&gl=IN&ceid=IN:en"
+BING_NEWS_URL = "https://www.bing.com/news/search?q={q}&format=rss&mkt=en-IN"
+# The outlets' own RSS feeds: only today's headlines, but read straight from the
+# publisher, so the tab still has news if a search engine refuses the server.
+# Shared by every stock and cached for PUBLISHER_FEED_TTL seconds.
+PUBLISHER_FEEDS: tuple[tuple[str, str], ...] = (
+    ("economictimes.indiatimes.com", "https://economictimes.indiatimes.com/markets/stocks/news/rssfeeds/2146842.cms"),
+    ("economictimes.indiatimes.com", "https://economictimes.indiatimes.com/industry/rssfeeds/13352306.cms"),
+    ("livemint.com", "https://www.livemint.com/rss/companies"),
+    ("livemint.com", "https://www.livemint.com/rss/markets"),
+    ("business-standard.com", "https://www.business-standard.com/rss/companies-101.rss"),
+    ("moneycontrol.com", "https://www.moneycontrol.com/rss/business.xml"),
+    ("moneycontrol.com", "https://www.moneycontrol.com/rss/results.xml"),
+    ("financialexpress.com", "https://www.financialexpress.com/business/feed/"),
+    ("thehindubusinessline.com", "https://www.thehindubusinessline.com/companies/feeder/default.rss"),
+)
+PUBLISHER_FEED_TTL = 1800
 
 NEWS_LOOKBACK_DAYS = 60
 MAX_NEWS_ITEMS = 50
 CONCALL_LOOKBACK_DAYS = 200
 KEEP_DAYS = 365
 MAX_CATALYSTS = 60
-MAX_NEW_PER_CALL = 40
+MAX_NEW_PER_CALL = 45  # news judged per refresh, in batches of NEWS_BATCH
+NEWS_BATCH = 15
+NEWS_FEED_SHOWN = 30
 TRANSCRIPT_MAX_CHARS = 60_000
 TRANSCRIPT_MAX_PAGES = 45
 WATCHLIST_REFRESH_MAX = 80
@@ -303,36 +322,123 @@ def fetch_bse_announcements(bse_code: str, days: int, session: requests.Session 
     return sorted(items.values(), key=lambda i: i["date"], reverse=True)
 
 
-def news_matches_company(title: str, name: str, symbol: str) -> bool:
+# A first word too common to identify one company on its own.
+_COMMON_FIRST_WORDS = {
+    "india", "indian", "bharat", "national", "hindustan", "state", "the", "new", "global", "united", "first",
+    "great", "shree", "shri", "sri", "general", "central", "southern", "eastern", "western", "northern", "steel",
+    "power", "capital", "finance", "asian", "modern", "standard", "premier", "jai", "om", "royal", "super",
+    "tata", "adani", "bajaj", "mahindra", "birla", "jindal", "godrej", "reliance", "hdfc", "icici", "kotak",
+}
+_ACRONYM_STOPWORDS = {"and", "of", "the", "&", "co", "co."}
+
+
+def name_acronyms(name: str) -> list[str]:
+    """'Hindustan Aeronautics Limited' -> HAL, HA; 'Larsen & Toubro Limited' -> L&T, LTL, LT."""
+    words = [w for w in re.split(r"[\s.,()-]+", name or "") if w]
+    out: list[str] = []
+    core = [w for w in words if w.lower() not in _ACRONYM_STOPWORDS]
+    if len(core) >= 2:
+        full = "".join(w[0].upper() for w in core)
+        out.append(full)
+        if core[-1].lower() in {"limited", "ltd"}:
+            out.append(full[:-1])
+    short = short_name(name)
+    if "&" in short:
+        parts = [p.strip() for p in short.split("&") if p.strip()]
+        if len(parts) == 2:
+            out.append(f"{parts[0][0].upper()}&{parts[1][0].upper()}")
+    return [a for a in dict.fromkeys(out) if len(a) >= 3 or "&" in a]
+
+
+def news_matches_company(title: str, name: str, symbol: str, loose: bool = False) -> bool:
+    """Whether a headline is about this company.
+
+    `loose` also accepts the name's first distinctive word ("Reliance", "Infosys"),
+    for search results where the engine already matched the full name in the story.
+    """
     low = title.lower()
     short = short_name(name).lower()
     if short and short in low:
         return True
-    if symbol and re.search(rf"\b{re.escape(symbol.lower())}\b", low):
+    if symbol and len(symbol) >= 3 and re.search(rf"\b{re.escape(symbol.lower())}\b", low):
         return True
-    # "Larsen & Toubro" also appears as "L&T"; accept the first two words of a long name.
     words = [w for w in re.split(r"\s+", short) if len(w) > 2]
-    return len(words) >= 2 and " ".join(words[:2]) in low
+    if len(words) >= 2 and " ".join(words[:2]) in low:
+        return True
+    for acronym in name_acronyms(name):
+        if re.search(rf"(?<![A-Za-z]){re.escape(acronym)}(?![A-Za-z])", title):
+            return True
+    if loose and words:
+        first = words[0]
+        if len(first) >= 4 and first not in _COMMON_FIRST_WORDS and re.search(rf"\b{re.escape(first)}\b", low):
+            return True
+    return False
 
 
-def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[dict[str, Any]]:
+def _host(url: str) -> str:
+    host = re.sub(r"^https?://", "", (url or "").strip().lower()).split("/")[0]
+    return host[4:] if host.startswith("www.") else host
+
+
+def _bing_target(link: str) -> str:
+    """Bing wraps each story in an apiclick redirect; the real article is its `url` parameter."""
+    from urllib.parse import parse_qs, urlparse
+
+    query = parse_qs(urlparse(link).query)
+    return (query.get("url") or [link])[0]
+
+
+def parse_feed(
+    xml_bytes: bytes,
+    name: str,
+    symbol: str,
+    days: int,
+    kind: str = "google",
+    domain: str | None = None,
+    stats: dict[str, int] | None = None,
+) -> list[dict[str, Any]]:
+    """Reputed-outlet stories about the company from one RSS feed.
+
+    kind: "google" (outlet from <source url>), "bing" (outlet from the article url),
+    or "publisher" (an outlet's own feed, `domain`; stricter headline match because
+    no search engine has already matched the company name). Raises ValueError when
+    the body is not a feed at all (a consent or block page), so the caller can say so.
+    """
+    stats = stats if stats is not None else {}
     try:
         root = ET.fromstring(xml_bytes)
-    except ET.ParseError:
-        return []
+    except ET.ParseError as exc:
+        raise ValueError(f"not a news feed ({exc})") from exc
+    if root.find(".//channel") is None and root.tag != "channel":
+        raise ValueError("not a news feed")
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     out: dict[str, dict[str, Any]] = {}
     for item in root.iter("item"):
-        raw_title = unescape((item.findtext("title") or "").strip())
+        stats["found"] = stats.get("found", 0) + 1
+        title = unescape((item.findtext("title") or "").strip())
         link = (item.findtext("link") or "").strip()
-        source_el = item.find("source")
-        publisher = (source_el.text or "").strip() if source_el is not None and source_el.text else ""
-        outlet = reputed_outlet(source_el.get("url", "") if source_el is not None else "", publisher)
+        publisher = ""
+        source_url = ""
+        if kind == "google":
+            source_el = item.find("source")
+            if source_el is not None:
+                publisher = (source_el.text or "").strip()
+                source_url = source_el.get("url", "")
+        elif kind == "bing":
+            link = _bing_target(link)
+            source_url = link
+            for child in item:
+                if child.tag.split("}")[-1].lower() == "source":
+                    publisher = (child.text or "").strip()
+        else:
+            source_url = f"https://{domain}" if domain else ""
+        outlet = reputed_outlet(source_url, publisher)
         if outlet is None:
             continue
-        title = raw_title
-        if publisher and title.endswith(f" - {publisher}"):
-            title = title[: -len(publisher) - 3].strip()
+        stats["reputed"] = stats.get("reputed", 0) + 1
+        suffix = publisher or outlet
+        if suffix and title.endswith(f" - {suffix}"):
+            title = title[: -len(suffix) - 3].strip()
         if not title or not link:
             continue
         try:
@@ -343,10 +449,13 @@ def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[
             continue
         if published < cutoff:
             continue
-        if GENERIC_NEWS_RE.search(title) or not news_matches_company(title, name, symbol):
+        if not news_matches_company(title, name, symbol, loose=kind != "publisher"):
             continue
-        key = re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
-        news_id = "news:" + hashlib.sha1(key.encode()).hexdigest()[:16]
+        if GENERIC_NEWS_RE.search(title):
+            stats["generic"] = stats.get("generic", 0) + 1
+            continue
+        stats["about_company"] = stats.get("about_company", 0) + 1
+        news_id = news_id_for(title)
         if news_id in out:
             continue
         desc = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", item.findtext("description") or ""))).strip()
@@ -356,10 +465,23 @@ def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[
             "source": publisher or outlet,
             "source_type": "news",
             "title": title,
-            "details": desc[:400] if desc and desc.lower() != title.lower() else "",
+            "details": desc[:400] if desc and desc.lower() != title.lower() and not desc.lower().startswith(title.lower()) else "",
             "link": link,
         }
     return sorted(out.values(), key=lambda i: i["date"], reverse=True)
+
+
+def news_id_for(title: str) -> str:
+    key = re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+    return "news:" + hashlib.sha1(key.encode()).hexdigest()[:16]
+
+
+def parse_news_rss(xml_bytes: bytes, name: str, symbol: str, days: int) -> list[dict[str, Any]]:
+    """A Google News search feed; an unreadable body reads as no stories."""
+    try:
+        return parse_feed(xml_bytes, name, symbol, days, kind="google")
+    except ValueError:
+        return []
 
 
 def news_queries(name: str, days: int) -> list[str]:
@@ -368,21 +490,71 @@ def news_queries(name: str, days: int) -> list[str]:
     return [f"{quoted} when:{days}d", f"{quoted} ({sites}) when:{days}d"]
 
 
-def fetch_news(name: str, symbol: str, days: int) -> list[dict[str, Any]]:
-    """Reputed-outlet stories about the company, newest first. Raises only if every search failed."""
+_FEED_CACHE: dict[str, tuple[float, bytes]] = {}
+_FEED_LOCK = threading.Lock()
+_HEADERS = {"User-Agent": BSE_HEADERS["User-Agent"], "Accept": "application/rss+xml, application/xml, text/xml, */*"}
+
+
+def _publisher_feed(url: str) -> bytes:
+    now = time.time()
+    with _FEED_LOCK:
+        hit = _FEED_CACHE.get(url)
+        if hit and now - hit[0] < PUBLISHER_FEED_TTL:
+            return hit[1]
+    resp = requests.get(url, headers=_HEADERS, timeout=12)
+    resp.raise_for_status()
+    with _FEED_LOCK:
+        _FEED_CACHE[url] = (now, resp.content)
+    return resp.content
+
+
+def fetch_news(name: str, symbol: str, days: int, stats: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Reputed-outlet stories about the company, newest first, from three kinds of source.
+
+    Google News (two searches), Bing News, and the outlets' own feeds. Each source
+    may fail on its own; `stats` records what every one returned so the page can say
+    where the news came from. Raises only if every source failed.
+    """
+    stats = stats if stats is not None else {}
+    funnel: dict[str, int] = {}
+    per_source: dict[str, dict[str, Any]] = {}
     merged: dict[str, dict[str, Any]] = {}
-    errors: list[str] = []
-    for query in news_queries(name, days):
+    jobs: list[tuple[str, str, str, str | None]] = [
+        (f"google:{i}", NEWS_URL.format(q=quote_plus(q)), "google", None) for i, q in enumerate(news_queries(name, days))
+    ]
+    jobs.append(("bing", BING_NEWS_URL.format(q=quote_plus(f'"{short_name(name)}"')), "bing", None))
+    jobs += [(f"feed:{domain}:{i}", url, "publisher", domain) for i, (domain, url) in enumerate(PUBLISHER_FEEDS)]
+    def run(job: tuple[str, str, str, str | None]) -> tuple[str, list[dict[str, Any]] | None, str | None, dict[str, int]]:
+        key, url, kind, domain = job
+        local: dict[str, int] = {}
         try:
-            resp = requests.get(NEWS_URL.format(q=quote_plus(query)), headers={"User-Agent": BSE_HEADERS["User-Agent"]}, timeout=15)
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            errors.append(str(exc))
+            if kind == "publisher":
+                body = _publisher_feed(url)
+            else:
+                resp = requests.get(url, headers=_HEADERS, timeout=15)
+                resp.raise_for_status()
+                body = resp.content
+            return key, parse_feed(body, name, symbol, days, kind=kind, domain=domain, stats=local), None, local
+        except (requests.RequestException, ValueError) as exc:
+            return key, None, str(exc)[:120], local
+
+    # In parallel, so one slow or blocked host cannot stretch the refresh.
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(run, jobs))
+    for key, items, error, local in results:  # in job order, so the merge is deterministic
+        for k, v in local.items():
+            funnel[k] = funnel.get(k, 0) + v
+        if items is None:
+            per_source[key] = {"ok": False, "error": error}
             continue
-        for item in parse_news_rss(resp.content, name, symbol, days):
+        before = len(merged)
+        for item in items:
             merged.setdefault(item["id"], item)
-    if errors and not merged and len(errors) == len(news_queries(name, days)):
-        raise RuntimeError(errors[0])
+        per_source[key] = {"ok": True, "added": len(merged) - before}
+    stats["sources"] = per_source
+    stats["funnel"] = funnel
+    if per_source and not any(v["ok"] for v in per_source.values()):
+        raise RuntimeError(next(iter(per_source.values()))["error"])
     return sorted(merged.values(), key=lambda i: i["date"], reverse=True)[:MAX_NEWS_ITEMS]
 
 
@@ -487,10 +659,13 @@ def build_prompt(
         "\n".join(ctx),
         "",
         "Rules:",
-        "- keep=true ONLY for items that change the company's revenue, margins, earnings, balance sheet, risk or "
-        "management. keep=false for generic or routine items: share-price moves with no business reason, market "
-        "wraps, 'stocks to watch' lists, broker target-price notes, AGM/record-date notices, routine compliance "
-        "news, and duplicates (when several outlets report the same event, keep the one with the most detail).",
+        "- keep=true for any news item specifically about THIS company's business: results and their numbers, orders "
+        "and contracts, capacity and capex, launches, approvals, deals and stake sales, management changes, guidance, "
+        "credit ratings, fund raising, promoter buying, selling or pledges, legal, tax or regulatory action, and "
+        "analyst or broker views that give a business reason. keep=false only for: stories mainly about a different "
+        "company (including another company of the same group), market wraps and stock lists, share-price moves "
+        "with no stated business reason, and duplicates (when several outlets report the same event, keep the one "
+        "with the most detail). When unsure whether a company-specific story matters, keep it and rate it low impact.",
         "- The items are news headlines from reputed outlets, sometimes with a short summary. Explain only what the "
         "headline and summary support; do not invent details of the deal, order or event.",
         "- Include NEGATIVE catalysts as readily as positive ones: penalties, tax demands, regulatory action, plant "
@@ -543,7 +718,8 @@ def build_prompt(
         '              "reasons_to_own": ["short point", ...], "reasons_to_avoid": ["short point", ...],',
         '              "watch_next": ["what would confirm or break the story", ...]}',
         "}",
-        "Every id in NEW ITEMS must appear once in items. Leave concall empty when no transcript is given. "
+        "Every id in NEW ITEMS must appear once in items; for keep=false give only id and keep. "
+        "Leave items empty when no NEW ITEMS are given, and concall empty when no transcript is given. "
         "'quiet' means there is no meaningful catalyst either way.",
     ]
     return "\n".join(lines)
@@ -822,13 +998,17 @@ class CatalystService:
                 lookup_error = str(exc)[:160]
         else:
             lookup_error = "no BSE code on record"
+        news_stats: dict[str, Any] = {}
         try:
-            news = self._fetch_headlines(name, symbol, NEWS_LOOKBACK_DAYS)
-            sources["news"] = {"ok": True, "count": len(news)}
+            if self._fetch_headlines is fetch_news:
+                news = fetch_news(name, symbol, NEWS_LOOKBACK_DAYS, stats=news_stats)
+            else:
+                news = self._fetch_headlines(name, symbol, NEWS_LOOKBACK_DAYS)
+            sources["news"] = {"ok": True, "count": len(news), **news_stats}
         except Exception as exc:
             logger.info("news for %s failed: %s", symbol, exc)
             news = []
-            sources["news"] = {"ok": False, "error": str(exc)[:160]}
+            sources["news"] = {"ok": False, "error": str(exc)[:160], **news_stats}
 
         transcripts = [f for f in filings if f.get("attachment") and TRANSCRIPT_DOC_RE.search(f"{f['title']} {f.get('bse_category', '')}")]
         latest_transcript = transcripts[0] if transcripts else None
@@ -852,39 +1032,47 @@ class CatalystService:
                               "date": (concall_meta or {}).get("date"), "read": bool((concall_meta or {}).get("read"))}
 
         overall = previous.get("overall")
-        pending_ai = False
         ai_error = None
-        if new_items or transcript:
+        # The transcript is read on its own and the news is judged in small
+        # batches: one call carrying a 60k-character transcript and forty
+        # headlines buried the headlines and risked a truncated reply.
+        calls: list[tuple[list[dict[str, Any]], dict[str, Any] | None]] = []
+        if transcript:
+            calls.append(([], transcript))
+        calls += [(new_items[i:i + NEWS_BATCH], None) for i in range(0, len(new_items), NEWS_BATCH)]
+        unanalysed: list[dict[str, Any]] = []
+        for batch, call_transcript in calls:
+            if not self.ai_available:
+                unanalysed += batch
+                continue
             known = sorted((c for c in catalysts.values() if c.get("ai")), key=lambda c: c["date"], reverse=True)
-            if self.ai_available:
-                try:
-                    raw = self._ai(build_prompt(company, new_items, transcript, known))
-                    kept, judged, concall, new_overall = parse_ai_reply(raw, new_items, transcript)
-                    for item in new_items:
-                        if item["id"] in judged:
-                            seen[item["id"]] = "kept" if any(k["id"] == item["id"] for k in kept) else "dropped"
-                            catalysts.pop(item["id"], None)
-                    for c in kept + concall:
-                        catalysts[c["id"]] = c
-                    if transcript:
-                        # The previous call's points are replaced by the newer call's.
-                        for cid in [k for k, v in catalysts.items() if v.get("source_type") == "concall" and not k.startswith(transcript["id"] + "#")]:
-                            catalysts.pop(cid)
-                    if new_overall:
-                        overall = new_overall
-                    unjudged = [i for i in new_items if i["id"] not in judged]
-                    for item in unjudged:
-                        catalysts.setdefault(item["id"], classify_by_rule(item))
-                    pending_ai = bool(unjudged)
-                except Exception as exc:
-                    ai_error = str(exc)[:200]
-                    logger.warning("catalyst AI for %s failed: %s", symbol, exc)
-            if not self.ai_available or ai_error:
-                pending_ai = True
-                for item in new_items:
-                    catalysts.setdefault(item["id"], classify_by_rule(item))
-                if transcript:
+            try:
+                raw = self._ai(build_prompt(company, batch, call_transcript, known))
+            except Exception as exc:
+                ai_error = str(exc)[:200]
+                logger.warning("catalyst AI for %s failed: %s", symbol, exc)
+                unanalysed += batch
+                if call_transcript:
                     concall_meta = {**concall_meta, "read": False}  # not analysed: read it again next time
+                continue
+            kept, judged, concall, new_overall = parse_ai_reply(raw, batch, call_transcript)
+            kept_ids = {k["id"] for k in kept}
+            for item in batch:
+                if item["id"] in judged:
+                    seen[item["id"]] = "kept" if item["id"] in kept_ids else "dropped"
+                    catalysts.pop(item["id"], None)
+            for c in kept + concall:
+                catalysts[c["id"]] = c
+            if call_transcript:
+                # The previous call's points are replaced by the newer call's.
+                for cid in [k for k, v in catalysts.items() if v.get("source_type") == "concall" and not k.startswith(call_transcript["id"] + "#")]:
+                    catalysts.pop(cid)
+            if new_overall:
+                overall = new_overall
+            unanalysed += [i for i in batch if i["id"] not in judged]
+        for item in unanalysed:
+            catalysts.setdefault(item["id"], classify_by_rule(item))
+        pending_ai = bool(unanalysed)
         live_ids = {c["id"] for c in candidates}
         # A keyword-classified item that has left the sources' window can no
         # longer be sent to the AI; drop it rather than retry it forever.
@@ -911,6 +1099,13 @@ class CatalystService:
             "ai_error": ai_error,
             # Remember judgements only while their items can still come back from the sources.
             "seen": {k: v for k, v in seen.items() if k in live_ids or k in catalysts},
+            # Every reputed-outlet story found, with what became of it, so the page
+            # can show recent news even when the AI judged it not a catalyst.
+            "news_feed": [
+                {**_public_fields(n), "status": "catalyst" if n["id"] in catalysts and catalysts[n["id"]].get("ai")
+                 else seen.get(n["id"], "pending")}
+                for n in news[:NEWS_FEED_SHOWN]
+            ],
         }
         self._save(record)
         return record

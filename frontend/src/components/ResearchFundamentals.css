@@ -542,3 +542,24 @@
   font-size: var(--fs-tiny, 11px);
   line-height: 1.5;
 }
+
+.cat-news {
+  margin-top: 14px;
+  font-size: var(--fs-small, 13px);
+}
+
+.cat-news summary {
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cat-news-list {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  line-height: 1.45;
+}
+
+.cat-news-list li + li {
+  margin-top: 6px;
+}

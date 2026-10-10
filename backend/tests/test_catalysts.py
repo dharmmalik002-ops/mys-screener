@@ -198,37 +198,113 @@ def test_route_returns_at_once_and_reports_the_build(tmp_path):
     assert client.get("/api/catalysts/..%2Fetc").status_code in (400, 404)
 
 
-def test_both_news_searches_merge_and_one_failure_is_tolerated(monkeypatch):
+class _Resp:
+    def __init__(self, body: bytes):
+        self.content = body
+
+    def raise_for_status(self):
+        pass
+
+
+def _google_feed(title, url, outlet):
     now = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    return f"""<rss><channel><item><title>{title} - {outlet}</title><link>https://news.google.com/a/{abs(hash(title))}</link>
+    <pubDate>{now}</pubDate><source url="{url}">{outlet}</source></item></channel></rss>""".encode()
 
-    def feed(title, url, outlet):
-        return f"""<rss><channel><item><title>{title} - {outlet}</title><link>https://a/{abs(hash(title))}</link>
-        <pubDate>{now}</pubDate><source url="{url}">{outlet}</source></item></channel></rss>""".encode()
 
-    class Resp:
-        def __init__(self, body):
-            self.content = body
+def _bing_feed(title, article_url, outlet):
+    now = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    link = "http://www.bing.com/news/apiclick.aspx?ref=FexRss&amp;url=" + article_url.replace(":", "%3a").replace("/", "%2f") + "&amp;c=1"
+    return f"""<rss xmlns:News="https://www.bing.com/news/search?q=x&amp;format=rss" version="2.0"><channel>
+    <item><title>{title}</title><link>{link}</link><pubDate>{now}</pubDate><News:Source>{outlet}</News:Source></item>
+    </channel></rss>""".encode()
 
-        def raise_for_status(self):
-            pass
 
-    calls = []
+def _publisher_feed(title):
+    now = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    return f"""<rss><channel><item><title>{title}</title><link>https://www.livemint.com/x</link>
+    <pubDate>{now}</pubDate></item></channel></rss>""".encode()
+
+
+EMPTY_FEED = b"<rss><channel></channel></rss>"
+
+
+def test_every_source_merges_and_one_failure_is_tolerated(monkeypatch):
+    C._FEED_CACHE.clear()
 
     def fake_get(url, **kw):
-        calls.append(url)
-        if len(calls) == 1:
-            return Resp(feed("Reliance Industries wins solar order", "https://www.livemint.com", "Mint"))
-        return Resp(feed("Reliance Industries faces GST demand", "https://www.reuters.com", "Reuters"))
+        if "news.google.com" in url and "site%3A" not in url:
+            return _Resp(_google_feed("Reliance Industries wins solar order", "https://www.livemint.com", "Mint"))
+        if "news.google.com" in url:
+            return _Resp(_google_feed("Reliance Industries faces GST demand", "https://www.reuters.com", "Reuters"))
+        if "bing.com" in url:
+            return _Resp(_bing_feed("RIL to list Jio next year", "https://www.business-standard.com/companies/x", "Business Standard"))
+        if "livemint.com/rss/companies" in url:
+            return _Resp(_publisher_feed("Reliance Industries plans new refinery unit"))
+        return _Resp(EMPTY_FEED)
 
     monkeypatch.setattr(C.requests, "get", fake_get)
-    items = C.fetch_news("Reliance Industries Limited", "RELIANCE", 60)
-    assert len(calls) == 2 and "site%3A" in calls[1]
-    assert {i["source"] for i in items} == {"Mint", "Reuters"}
+    stats: dict = {}
+    items = C.fetch_news("Reliance Industries Limited", "RELIANCE", 60, stats=stats)
+    assert {i["source"] for i in items} == {"Mint", "Reuters", "Business Standard"}
+    bing = next(i for i in items if i["source"] == "Business Standard")
+    assert bing["link"].startswith("https://www.business-standard.com/")  # the article, not Bing's redirect
+    assert len(items) == 4 and stats["funnel"]["about_company"] == 4
+    assert all(v["ok"] for v in stats["sources"].values())
 
-    def half_down(url, **kw):
-        if "site%3A" in url:
-            raise C.requests.ConnectionError("blocked")
-        return Resp(feed("Reliance Industries wins solar order", "https://www.livemint.com", "Mint"))
+    C._FEED_CACHE.clear()
 
-    monkeypatch.setattr(C.requests, "get", half_down)
-    assert [i["source"] for i in C.fetch_news("Reliance Industries Limited", "RELIANCE", 60)] == ["Mint"]
+    def google_blocked(url, **kw):
+        if "news.google.com" in url:
+            return _Resp(b"<html><body>Before you continue to Google</body></html>")  # consent page
+        if "bing.com" in url:
+            return _Resp(_bing_feed("RIL to list Jio next year", "https://www.business-standard.com/x", "Business Standard"))
+        raise C.requests.ConnectionError("blocked")
+
+    monkeypatch.setattr(C.requests, "get", google_blocked)
+    stats = {}
+    items = C.fetch_news("Reliance Industries Limited", "RELIANCE", 60, stats=stats)
+    assert [i["source"] for i in items] == ["Business Standard"]
+    # A page that is not a feed is reported as a failed source, never as "no news".
+    assert stats["sources"]["google:0"]["ok"] is False and "not a news feed" in stats["sources"]["google:0"]["error"]
+
+    def all_down(url, **kw):
+        raise C.requests.ConnectionError("blocked")
+
+    C._FEED_CACHE.clear()
+    monkeypatch.setattr(C.requests, "get", all_down)
+    try:
+        C.fetch_news("Reliance Industries Limited", "RELIANCE", 60)
+        raise AssertionError("expected every source failing to raise")
+    except RuntimeError:
+        pass
+
+
+def test_headlines_using_short_forms_match():
+    assert C.news_matches_company("L&T bags mega order from NHAI", "Larsen & Toubro Limited", "LT")
+    assert C.news_matches_company("HAL signs Rs 62,000 crore deal", "Hindustan Aeronautics Limited", "HAL")
+    assert C.news_matches_company("RIL to spin off new energy unit", "Reliance Industries Limited", "RELIANCE")
+    assert C.news_matches_company("Infosys wins $1.5 billion deal", "Infosys Limited", "INFY")
+    # A group name alone is not enough, even in a search result.
+    assert not C.news_matches_company("Tata Steel Q2 profit doubles", "Tata Motors Limited", "TATAMOTORS", loose=True)
+    # The first distinctive word counts only where a search already matched the full name.
+    assert C.news_matches_company("Dixon shares jump on Q2 beat", "Dixon Technologies (India) Limited", "DIXON", loose=True)
+    assert not C.news_matches_company("Kaynes order book swells", "Kaynes Technology India Limited", "KAYNESX")
+    assert C.news_matches_company("Kaynes order book swells", "Kaynes Technology India Limited", "KAYNESX", loose=True)
+
+
+def test_news_is_judged_apart_from_the_transcript_and_in_batches(tmp_path):
+    t = _filing("6", "Transcript of Earnings Call for Q1 FY27", days_ago=3, attachment="t.pdf")
+    news = [_news(str(n), f"Reliance wins order {n}", days_ago=1) for n in range(20)]
+    ai = FakeAI(keep={"news:3"})
+    svc, _ = _service(tmp_path, [t], news=news, ai=ai)
+    record = svc.refresh("RELIANCE")
+    assert len(ai.prompts) == 3  # the transcript alone, then two batches of headlines
+    assert "<transcript>" in ai.prompts[0] and "- id=" not in ai.prompts[0]
+    assert all("<transcript>" not in p for p in ai.prompts[1:])
+    assert sum(p.count("- id=") for p in ai.prompts[1:]) == 20
+    ids = [c["id"] for c in record["catalysts"]]
+    assert "news:3" in ids and "bse:6#0" in ids
+    # Every story found stays visible with its verdict, kept or not.
+    feed = {n["id"]: n["status"] for n in record["news_feed"]}
+    assert feed["news:3"] == "catalyst" and feed["news:4"] == "dropped" and len(feed) == 20
