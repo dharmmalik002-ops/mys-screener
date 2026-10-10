@@ -1129,7 +1129,7 @@ export function HomePanel({
   useEffect(() => {
     let active = true;
     getMarketOverview(activeMarket)
-      .then((res) => { if (active) setMacroItems(res.items); })
+      .then((res) => { if (active) setMacroItems(Array.isArray(res?.items) ? res.items : []); })
       .catch(() => {});
     return () => { active = false; };
   }, [activeMarket, dashboard?.generated_at]);

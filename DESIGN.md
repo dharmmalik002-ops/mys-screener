@@ -108,7 +108,7 @@ card titles 16px / 500, card values 22–32px, body 14–15px, buttons and label
 | **Header rail** | `components/NavGroups.tsx` | Four groups (Market / Scan / Journal / Research), dropdowns with icon + one-line blurb. Phones use the flat bottom tab bar. |
 | **Sliding tab pill** | `components/GlidePill.tsx` | `<GlidePill activeSelector=".active" watch={tab} />` inside any tab container; add `has-glide-pill` to the container. Copies the active tab's own fill, so it needs no colours of its own. |
 | **Editorial briefing** | `HomePanel` `.homepro-briefing` | Mono kicker, serif sentence up to 46px, a hairline, then a row of small `dt`/`dd` figures. |
-| **Bento summary** | `HomePanel` `.homepro-kpis.is-bento` | The XP dial is the large tile spanning two rows; counts beside it. Collapses to one column of tiles on phones. |
+| **Bento summary** | `HomePanel` `.homepro-kpis.is-bento` | The XP dial is the large tile spanning three rows; Advancing, Declining and Market session sit beside it as slim strips (label + 24px value left, tick meter + foot right, ~80px tall). Collapses to one column on phones. |
 | **Hero figure card** | Journal `.tj-kpi-hero` | One large number on a 8–9% positive/negative tint, with 2–3 supporting figures under a hairline. |
 | **Meter card** | `HomePanel` `MeterCard` + `.ol-tick-meter` | Label, value, foot line, tick meter in a data colour. |
 | **Chart marks** | `.ol-chip`, `.ol-tip`, `--hatch-*` | Axis chips, the inverse tooltip pill, hatch textures. Shared by both designs. |

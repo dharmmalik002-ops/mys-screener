@@ -1860,3 +1860,97 @@ html:root .homepro-briefing-link:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* =========================================================
+   Compact counts: Advancing, Declining and Market session are three
+   facts, not three heroes. They were 186px boxes with 32px numerals,
+   which made the summary row ~390px tall. In the bento they are slim
+   horizontal strips stacked beside the XP dial — label and value on
+   the left, tick meter and foot on the right — and the dial shrinks
+   to match. Titles stay 16px per DESIGN.md; values drop to 24px
+   (inside its 22–32px range). `html:root` outranks the design files'
+   `html:root[data-design=…] .homepro-kpi-value` in both designs.
+   ========================================================= */
+html:root .homepro-kpis > .ol-meter-card {
+  min-height: 0;
+  padding: 14px 16px;
+  gap: 10px;
+}
+html:root .homepro-kpis > .ol-meter-card .ol-meter-head {
+  gap: 6px;
+}
+html:root .homepro-kpis > .ol-meter-card .homepro-kpi-value {
+  font-size: 24px;
+}
+html:root .homepro-kpis > .ol-meter-card .ol-meter-bottom {
+  gap: 6px;
+}
+html:root .homepro-kpis > .ol-meter-card .ol-meter-foot {
+  font-size: 12.5px;
+}
+html:root .homepro-kpis > .ol-meter-card .ol-tick-meter {
+  height: 16px;
+}
+html:root .homepro-kpis > .ol-meter-card .ol-tick-meter > span {
+  height: 12px;
+}
+html:root .homepro-kpis > .ol-meter-card .ol-tick-meter > span.on {
+  height: 16px;
+}
+
+/* Bento: the dial on the left spanning three rows, one strip per row. */
+html:root .homepro-kpis.is-bento {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  grid-template-rows: repeat(3, auto);
+  gap: 12px;
+}
+html:root .homepro-kpis.is-bento > .homepro-xp-hero {
+  grid-row: 1 / span 3;
+  padding: 16px;
+}
+html:root .homepro-kpis.is-bento > :last-child {
+  grid-column: auto;
+}
+html:root .homepro-kpis.is-bento .homepro-xp-hero .homepro-xp-gauge {
+  width: min(100%, 250px);
+}
+html:root .homepro-kpis.is-bento > .ol-meter-card {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 2fr);
+  align-items: center;
+  column-gap: 20px;
+  padding: 12px 16px;
+}
+html:root .homepro-kpis.is-bento > .ol-meter-card .ol-meter-head {
+  gap: 4px;
+}
+
+@media (max-width: 900px) {
+  html:root .homepro-kpis.is-bento {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  html:root .homepro-kpis.is-bento > .homepro-xp-hero {
+    grid-row: auto;
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  html:root .homepro-kpis > .ol-meter-card {
+    min-height: 0;
+  }
+}
+
+/* Phones: the right-hand foot figure repeats the value ("1342/2594" beside
+   1,342) and pushed the caption onto two lines. */
+@media (max-width: 540px) {
+  html:root .homepro-kpis.is-bento > .ol-meter-card {
+    grid-template-columns: minmax(104px, auto) minmax(0, 1fr);
+    column-gap: 14px;
+  }
+  html:root .homepro-kpis.is-bento > .ol-meter-card .ol-meter-foot > span:last-child {
+    display: none;
+  }
+}
