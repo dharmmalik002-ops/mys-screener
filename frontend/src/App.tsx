@@ -31,6 +31,9 @@ import type {
   IndicatorKey,
 } from "./components/ChartPanel";
 import type { GroupsView } from "./components/GroupsPanel";
+import { PageSuspense } from "./components/SectionBoundary";
+import { DataFreshnessBadge } from "./components/DataFreshnessBadge";
+import { MobileNavGroups } from "./components/MobileNavGroups";
 import type { GroupStocksContext } from "./components/GroupStocksModal";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import "./components/ResearchStockList.css";
@@ -291,7 +294,7 @@ const NAV_PAGES: NavPage[] = [
 
 /* The desktop header groups the twelve pages the way SaaS navigation does —
    one tab per job rather than one per page — so the bar reads at a glance and
-   the search keeps its width. Phones keep the flat NAV_PAGES tab bar. */
+   the search keeps its width. Phones get the same groups as a bottom bar (MobileNavGroups). */
 const NAV_GROUPS: { id: string; label: string; pages: AppPage[] }[] = [
   { id: "market", label: "Market", pages: ["today", "home", "markets", "groups"] },
   { id: "scan", label: "Scan", pages: ["screener", "watchlists", "live", "lookalikes"] },
@@ -6457,6 +6460,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <strong>{snapshotDateLabel}</strong>
           </span>
 
+          <DataFreshnessBadge />
+
           <button
             type="button"
             className={refreshing ? "icon-btn is-spinning" : "icon-btn"}
@@ -6490,24 +6495,16 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         </div>
       </header>
 
-      {/* Phone navigation. The header pill row is hidden below 768px (it needed
-          a hidden horizontal scroll to fit seven tabs); this is the same list
-          as a thumb-reachable fixed bar. Hidden from desktop via CSS only, so
-          there is one source of truth for which page is active. */}
-      <nav className="mobile-tabbar" aria-label="Primary">
-        {NAV_PAGES.map(({ page, short, Icon }) => (
-          <button
-            key={`tabbar-${page}`}
-            type="button"
-            className={activePage === page ? "mobile-tab is-active" : "mobile-tab"}
-            onClick={() => handleNavigate(page)}
-            aria-current={activePage === page ? "page" : undefined}
-          >
-            <Icon size={18} strokeWidth={2.1} aria-hidden="true" />
-            <span>{short}</span>
-          </button>
-        ))}
-      </nav>
+      {/* Phone navigation. The header menu is hidden below 768px; this is the
+          same four groups as a thumb-reachable fixed bar, each opening a sheet
+          of its pages (thirteen flat tabs were ~28px wide each). Hidden from
+          desktop via CSS only, so there is one source of truth for the page. */}
+      <MobileNavGroups
+        groups={HEADER_NAV_GROUPS}
+        activePage={activePage}
+        onNavigate={handleNavigate}
+        onPrefetch={prefetchPageModules}
+      />
 
       <CommandPalette
         open={commandPaletteOpen}
@@ -6586,7 +6583,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         ) : null}
 
         {activePage === "home" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             <HomePanel
               activeMarket={activeMarket}
               dashboard={dashboard}
@@ -6597,29 +6594,30 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               onOpenGroups={(options) => {
                 void openGroupsView(options);
               }}
+              onOpenMarkets={() => handleNavigate("markets")}
             />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {!loading && activePage === "live" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             <LivePanel watchlists={watchlists} onOpenSymbolChart={handleJournalOpenSymbolChart} />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {!loading && activePage === "markets" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} onOpenChartWithList={handleOpenChartWithList} xpBreadth={dashboard?.xp_breadth ?? null} />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {activePage === "funds" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Holdings link straight into the equity chart, which is the
                 point of building this inside the scanner rather than reading
                 a fund website. */}
             <MutualFundsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {activePage === "today" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Not gated on `loading`: every section degrades on its own, and a
                 routine that waits for the full dashboard is not a routine. */}
             <TodayPanel
@@ -6628,23 +6626,23 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               groupsData={groupsData}
               onOpenSymbolChart={handleJournalOpenSymbolChart}
             />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {activePage === "study" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Deliberately not gated on `loading`: the drill reads its own
                 deck file and needs nothing from the dashboard fetch. */}
             <StudyPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {activePage === "lookalikes" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading`: reads its own committed scan file. */}
             <LookalikesPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {activePage === "course" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading`: reads its own static course file. */}
             <CoursePanel
               onOpenScanner={(mode) => {
@@ -6653,18 +6651,18 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                 window.scrollTo({ top: 0 });
               }}
             />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {activePage === "bot" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading` for the same reason as Chart Gym: the bot
                 reads its own committed backtest artifact and needs nothing
                 from the dashboard fetch. */}
             <BotPanel />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {!loading && activePage === "journal" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
               market={activeMarket}
               addRequest={journalAddRequest}
@@ -6673,10 +6671,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               groupsData={groupsData}
               xpBreadth={dashboard?.xp_breadth ?? null}
             />
-          </Suspense>
+          </PageSuspense>
         ) : null}
         {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "lookalikes" && activePage !== "course" && activePage !== "bot" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder compact />}>
+          <PageSuspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             {researchLayout ? null : <section className="page-metrics-strip">
               {activePage === "screener" ? (
@@ -7374,7 +7372,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               />
             </section>
             </>
-          </Suspense>
+          </PageSuspense>
         ) : null}
 
       {groupStocksContext ? (

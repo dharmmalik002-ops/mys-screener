@@ -1,0 +1,77 @@
+/* The phone page sheet (MobileNavGroups.tsx). The bar itself keeps its
+   .mobile-tabbar / .mobile-tab styling in styles/mobile.css; it is hidden on
+   desktop there, and the sheet can only open from it. */
+.mobile-nav-sheet {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--tabbar-h, 58px) + env(safe-area-inset-bottom) + 8px);
+  z-index: 61; /* just above the bar (60), below every modal (9999) */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--line);
+  background: var(--surface, var(--bg));
+  color: var(--text);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+}
+
+.mobile-nav-sheet-title {
+  padding: 4px 10px 8px;
+  font-size: var(--fs-tiny, 11px);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mobile-nav-item {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-md, 12px);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-nav-item span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mobile-nav-item strong {
+  font-size: var(--fs-base, 15px);
+  font-weight: 500;
+}
+
+.mobile-nav-item small {
+  font-size: var(--fs-small, 13px);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-nav-item.is-current {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mobile-nav-item:active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.mobile-nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

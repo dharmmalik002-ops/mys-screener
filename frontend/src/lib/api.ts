@@ -6532,3 +6532,55 @@ export function saveCourseProgress(progress: CourseProgress, allowShrink = false
     body: JSON.stringify({ ...progress, allowShrink }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Data freshness (header badge) and watchlist alert status
+// ---------------------------------------------------------------------------
+
+export type FreshnessStatus = "ok" | "late" | "stale" | "unknown";
+
+export type FreshnessFeed = {
+  key: string;
+  label: string;
+  used_by: string;
+  as_of: string | null;
+  sessions_behind: number | null;
+  status: FreshnessStatus;
+  error: string | null;
+};
+
+export type DataFreshnessReport = {
+  expected_session: string | null;
+  checked_at: string | null;
+  status: FreshnessStatus;
+  feeds: FreshnessFeed[];
+};
+
+function readFreshnessStatus(value: unknown): FreshnessStatus {
+  return value === "ok" || value === "late" || value === "stale" ? value : "unknown";
+}
+
+export function normalizeDataFreshness(raw: unknown): DataFreshnessReport {
+  const root = isRecord(raw) ? raw : {};
+  return {
+    expected_session: typeof root.expected_session === "string" ? root.expected_session : null,
+    checked_at: typeof root.checked_at === "string" ? root.checked_at : null,
+    status: readFreshnessStatus(root.status),
+    feeds: mapArray(root.feeds, (item) => {
+      const r = isRecord(item) ? item : {};
+      return {
+        key: readString(r.key),
+        label: readString(r.label),
+        used_by: readString(r.used_by),
+        as_of: typeof r.as_of === "string" ? r.as_of : null,
+        sessions_behind: readNullableNumber(r.sessions_behind),
+        status: readFreshnessStatus(r.status),
+        error: typeof r.error === "string" ? r.error : null,
+      };
+    }).filter((feed) => feed.key),
+  };
+}
+
+export function getDataFreshness() {
+  return request<DataFreshnessReport>("/api/data-freshness", undefined, { timeoutMs: 20_000 }, normalizeDataFreshness);
+}

@@ -1954,3 +1954,34 @@ html:root .homepro-kpis.is-bento > .ol-meter-card .ol-meter-head {
     display: none;
   }
 }
+
+/* The condition word — the site's one verdict, shared with the Markets page. */
+.homepro-briefing-condition {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.14em;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+button.homepro-briefing-condition {
+  cursor: pointer;
+}
+button.homepro-briefing-condition:hover {
+  text-decoration-color: currentColor;
+}
+button.homepro-briefing-condition:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.homepro-briefing-condition.tone-pos { color: var(--positive); }
+.homepro-briefing-condition.tone-neg { color: var(--negative); }
+.homepro-briefing-condition.tone-neu { color: var(--amber, var(--text)); }
+.homepro-briefing-condition.is-pending {
+  color: var(--text-muted);
+  text-decoration: none;
+}

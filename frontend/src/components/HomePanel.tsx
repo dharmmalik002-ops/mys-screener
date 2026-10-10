@@ -7,6 +7,7 @@ import {
   getChart,
   getGroupRankHistory,
   getMarketOverview,
+  getMarketsExposure,
   type BreadthDayCounts,
   type ChartBar,
   type DashboardResponse,
@@ -15,10 +16,11 @@ import {
   type IndustryGroupRankItem,
   type MarketKey,
   type MarketMacroItem,
+  type MarketsExposure,
   type ScanMatch,
   type XpBreadthScore,
 } from "../lib/api";
-import { barDate } from "../lib/marketsBrief";
+import { barDate, siteCondition } from "../lib/marketsBrief";
 
 import { Sparkline } from "./Sparkline";
 
@@ -32,6 +34,8 @@ type HomePanelProps = {
   snapshotTimeLabel: string;
   onPickSymbol: (symbol: string) => void;
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
+  /** Opens the Markets page, where the condition word is explained. */
+  onOpenMarkets?: () => void;
 };
 
 type NiftyTimeframe = "6M" | "1Y" | "3Y";
@@ -1104,6 +1108,7 @@ export function HomePanel({
   snapshotTimeLabel,
   onPickSymbol,
   onOpenGroups,
+  onOpenMarkets,
 }: HomePanelProps) {
   const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
   const [niftyBars, setNiftyBars] = useState<ChartBar[]>([]);
@@ -1123,6 +1128,22 @@ export function HomePanel({
     return () => {
       active = false;
     };
+  }, [activeMarket]);
+
+  // The exposure verdict that names the market on the Markets page. Home leads
+  // with the same word (lib/marketsBrief.ts, R1), so the two pages can never
+  // describe the market in different vocabularies. `exposureSettled` holds the
+  // word back until the verdict has answered, so the headline does not flash
+  // the XP stand-in and then change.
+  const [exposure, setExposure] = useState<MarketsExposure | null>(null);
+  const [exposureSettled, setExposureSettled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    getMarketsExposure(activeMarket)
+      .then((resp) => { if (active) setExposure(resp); })
+      .catch(() => { if (active) setExposure(null); })
+      .finally(() => { if (active) setExposureSettled(true); });
+    return () => { active = false; };
   }, [activeMarket]);
 
   // Fetch macro strip
@@ -1250,7 +1271,7 @@ export function HomePanel({
       const sessions = history.length - i;
       conditionAge = `held ${sessions} session${sessions === 1 ? "" : "s"}`;
     }
-    return { xp, breadth, improving, topGroups, conditionAge };
+    return { xp, breadth, improving, topGroups, conditionAge, site: siteCondition(exposure, xp) };
   })();
 
   return (
@@ -1261,31 +1282,51 @@ export function HomePanel({
           {/* One plain-English sentence first, the way an editorial page leads
               with its headline; the numbers it summarises sit under it. */}
           <h2 className="homepro-briefing-headline">
-            {briefing.xp ? (
-              <>
-                The market reads{" "}
-                <span
-                  className="homepro-briefing-regime"
-                  style={{ "--regime-color": briefing.xp.regime_color || "var(--text)" } as CSSProperties}
+            {/* The same word, from the same rule, as the top of the Markets
+                page — never the XP label, which reads in a vocabulary of its own. */}
+            The market is{" "}
+            {exposureSettled ? (
+              onOpenMarkets ? (
+                <button
+                  type="button"
+                  className={`homepro-briefing-condition tone-${briefing.site.condition.tone}`}
+                  onClick={onOpenMarkets}
+                  title="Why: open the Markets page"
                 >
-                  {briefing.xp.regime}
+                  {briefing.site.condition.word}
+                </button>
+              ) : (
+                <span className={`homepro-briefing-condition tone-${briefing.site.condition.tone}`}>
+                  {briefing.site.condition.word}
                 </span>
-                .{" "}
-              </>
-            ) : null}
-            {briefing.breadth && briefing.breadth.total > 0 ? (
-              <span className="homepro-briefing-headline-soft">
-                {briefing.breadth.advances.toLocaleString("en-IN")} stocks rose and{" "}
-                {briefing.breadth.declines.toLocaleString("en-IN")} fell.
-              </span>
-            ) : null}
+              )
+            ) : (
+              <span className="homepro-briefing-condition is-pending" aria-label="loading">…</span>
+            )}
+            .{" "}
+            <span className="homepro-briefing-headline-soft">
+              {exposureSettled && briefing.site.size
+                ? `${briefing.site.size}${briefing.site.direction ? `, ${briefing.site.direction}` : ""}. `
+                : null}
+              {briefing.breadth && briefing.breadth.total > 0
+                ? `${briefing.breadth.advances.toLocaleString("en-IN")} stocks rose and ${briefing.breadth.declines.toLocaleString("en-IN")} fell.`
+                : null}
+            </span>
           </h2>
           <dl className="homepro-briefing-stats">
             {briefing.xp ? (
               <div>
-                <dt>XP score</dt>
+                {/* A supporting reading, named as one: the breadth model's own
+                    label, shown beside the verdict rather than as it. */}
+                <dt>XP breadth</dt>
                 <dd>
-                  {briefing.xp.xp_score.toFixed(1)}
+                  {briefing.xp.xp_score.toFixed(1)}{" "}
+                  <span
+                    className="homepro-briefing-regime"
+                    style={{ "--regime-color": briefing.xp.regime_color || "var(--text)" } as CSSProperties}
+                  >
+                    {briefing.xp.regime}
+                  </span>
                   {briefing.conditionAge ? <small> · {briefing.conditionAge}</small> : null}
                 </dd>
               </div>

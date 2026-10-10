@@ -296,3 +296,42 @@ export function planAnswer(openPositions: number, focusNames: number): SectionAn
   const positions = openPositions === 0 ? "No open positions synced" : `${openPositions} open position${openPositions === 1 ? "" : "s"}`;
   return { text: `${positions} · ${focusNames} name${focusNames === 1 ? "" : "s"} on the focus list` };
 }
+
+// ---------------------------------------------------------------------------
+// One vocabulary across the site.
+//
+// Home used to headline the XP regime ("The market reads Avoid Longs") while
+// Markets headlined the exposure rule ("The market is Cautious") — two words for
+// the same market on two pages. Both now lead with `readCondition` (R1); the XP
+// label is shown as a supporting reading, named as such, never as the verdict.
+// ---------------------------------------------------------------------------
+
+export type SiteCondition = {
+  condition: Condition;
+  /** "50% of full size", when the exposure rule produced the word. */
+  size: string | null;
+  /** "improving" / "deteriorating" / "steady", when known. */
+  direction: string | null;
+  /** The XP regime as a supporting reading, e.g. "XP breadth 6.0 · Avoid Longs". */
+  supporting: string | null;
+};
+
+export function siteCondition(exposure: MarketsExposure | null, xp: XpBreadthScore | null): SiteCondition {
+  const condition = readCondition(exposure, xp);
+  const verdict = exposure?.available && exposure.verdict?.available ? exposure.verdict : null;
+  const size =
+    condition.basis === "exposure" && verdict && verdict.exposure_pct !== null && verdict.exposure_pct !== undefined
+      ? `${verdict.exposure_pct}% of full size`
+      : null;
+  const direction =
+    verdict && verdict.direction !== "unknown"
+      ? verdict.direction === "stable"
+        ? "steady"
+        : verdict.direction
+      : null;
+  const supporting =
+    xp && Number.isFinite(xp.xp_score) && condition.basis !== "breadth"
+      ? `XP breadth ${xp.xp_score.toFixed(1)} · ${xp.regime}`
+      : null;
+  return { condition, size, direction, supporting };
+}

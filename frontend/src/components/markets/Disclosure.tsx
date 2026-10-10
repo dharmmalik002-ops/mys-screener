@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SectionBoundary } from "../SectionBoundary";
 import "./Disclosure.css";
 
 type Props = {
@@ -91,7 +92,13 @@ export function Disclosure({ id, summary, step, answer, answerTone, hint, defaul
           ▾
         </span>
       </summary>
-      <div className="mk-disclosure-body">{hasOpened ? children : null}</div>
+      <div className="mk-disclosure-body">
+        {hasOpened ? (
+          <SectionBoundary label={summary.split(" — ")[0]} compact>
+            {children}
+          </SectionBoundary>
+        ) : null}
+      </div>
     </details>
   );
 }

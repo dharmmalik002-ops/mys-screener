@@ -1,0 +1,61 @@
+/* Shown in place of a section whose render threw (SectionBoundary.tsx).
+   Quiet on purpose: it is a notice, not an alarm, and it must read in both
+   designs and both themes using only shared tokens. */
+.section-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-strong, var(--line));
+  border-radius: var(--radius-md, 12px);
+  background: var(--card-flat, transparent);
+  color: var(--text);
+}
+
+.section-boundary.is-compact {
+  margin: 8px 0;
+  padding: 10px 12px;
+}
+
+.section-boundary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--fs-small, 13px);
+  line-height: 1.45;
+}
+
+.section-boundary-text strong {
+  font-size: var(--fs-base, 15px);
+  font-weight: 500;
+}
+
+.section-boundary-text span {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.section-boundary-retry {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong, var(--line));
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-small, 13px);
+  cursor: pointer;
+}
+
+.section-boundary-retry:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.section-boundary-retry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

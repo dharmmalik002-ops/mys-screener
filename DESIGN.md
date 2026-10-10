@@ -105,9 +105,10 @@ card titles 16px / 500, card values 22–32px, body 14–15px, buttons and label
 
 | Pattern | Where | Notes |
 |---|---|---|
-| **Header rail** | `components/NavGroups.tsx` | Four groups (Market / Scan / Journal / Research), dropdowns with icon + one-line blurb. Phones use the flat bottom tab bar. |
+| **Header rail** | `components/NavGroups.tsx` | Four groups (Market / Scan / Journal / Research), dropdowns with icon + one-line blurb. |
+| **Phone tab bar** | `components/MobileNavGroups.tsx` | The same four groups as bottom tabs; a group of one is a plain tab, the others open a sheet of their pages (icon, name, blurb). The active group's tab shows the page you are on. |
 | **Sliding tab pill** | `components/GlidePill.tsx` | `<GlidePill activeSelector=".active" watch={tab} />` inside any tab container; add `has-glide-pill` to the container. Copies the active tab's own fill, so it needs no colours of its own. |
-| **Editorial briefing** | `HomePanel` `.homepro-briefing` | Mono kicker, serif sentence up to 46px, a hairline, then a row of small `dt`/`dd` figures. |
+| **Editorial briefing** | `HomePanel` `.homepro-briefing` | Mono kicker, serif sentence up to 46px, a hairline, then a row of small `dt`/`dd` figures. The sentence leads with the site's one condition word (`siteCondition`, the same word as the Markets page), linked to Markets; the XP label sits in the figures as a supporting reading. |
 | **Bento summary** | `HomePanel` `.homepro-kpis.is-bento` | The XP dial is the large tile spanning three rows; Advancing, Declining and Market session sit beside it as slim strips (label + 24px value left, tick meter + foot right, ~80px tall). Collapses to one column on phones. |
 | **Hero figure card** | Journal `.tj-kpi-hero` | One large number on a 8–9% positive/negative tint, with 2–3 supporting figures under a hairline. |
 | **Meter card** | `HomePanel` `MeterCard` + `.ol-tick-meter` | Label, value, foot line, tick meter in a data colour. |
@@ -116,6 +117,8 @@ card titles 16px / 500, card values 22–32px, body 14–15px, buttons and label
 | **Hold to confirm** | `components/HoldToConfirmButton.tsx` | For destructive actions on data the user cannot get back. Replaces `window.confirm()`. |
 | **Big price charts** | `ChartPanel` | White paper in both themes, no grid lines. |
 | **Resizable splits** | `components/SplitResizer.tsx` | Drag seam between side-by-side panes; ratio per `storageKey`. |
+| **Data freshness badge** | `components/DataFreshnessBadge.tsx` | Header icon button with a status dot (green / amber / red / grey for not yet checked); opens a portal list of every feed with its session date and how far behind it is. |
+| **Section error** | `components/SectionBoundary.tsx` | Dashed-outline notice with "Try again" in place of a section that failed to render. Every page and every Markets section is wrapped; one failure never blanks the app. |
 
 ---
 
