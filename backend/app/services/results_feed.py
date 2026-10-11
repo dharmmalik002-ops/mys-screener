@@ -383,9 +383,12 @@ def build_quarterly(snapshots: list[Any], date_from: date, date_to: date) -> dic
             if entry:
                 items.append(entry)
     items.sort(key=lambda item: (item["declared_at"], item["market_cap_crore"] or 0), reverse=True)
+    listed = {item["symbol"] for item in items}
     pending = sorted(
+        # A company BSE has no figures for may have them from NSE already
+        # (insurers, NBFCs): then it has a card and is not "awaiting".
         symbol for symbol, periods in (feed.get("pending") or {}).items()
-        if symbol in by_symbol and any(
+        if symbol in by_symbol and symbol not in listed and any(
             date_from <= (when.date() if (when := _parse_stamp(s)) else date.min) <= date_to
             for s in periods.values()
         )

@@ -167,6 +167,20 @@ def test_the_page_lists_results_declared_in_the_range(files):
     assert [(i["symbol"], i["period"], i["declared_at"]) for i in july["items"]] == [("ABC", "Jun 2026", "2026-07-20T15:30")]
 
 
+
+def test_a_company_bse_has_no_figures_for_gets_its_card_from_nse(files):
+    # CANHLIFE, 9 Oct 2026: BSE publishes no line items for an insurer, so its
+    # filing stays pending there; NSE's filing has the figures.
+    files.feed.write_text(json.dumps({"declared": {}, "quarters": {},
+                                      "pending": {"INS": {"Sep 2026": "2026-10-09T16:45"}}}))
+    (files.dir / "consolidated_results.json").write_text(json.dumps({"symbols": {"INS": {"standalone": [
+        {"period": "Sep 2026", "sales_crore": 2553.16, "net_profit_crore": 43.05, "eps": 0.45, "filed": "2026-10-09T16:48"}]}}}))
+    page = rf.build_quarterly([_snap("INS", 13065.0)], date(2026, 10, 1), date(2026, 10, 11))
+    assert [(i["symbol"], i["declared_at"]) for i in page["items"]] == [("INS", "2026-10-09T16:48")]
+    assert page["items"][0]["standalone"]["metrics"]["net_profit"]["value"] == 43.05
+    assert page["awaiting_figures"] == []
+
+
 def test_growth_on_a_loss_base_is_measured_against_its_size(files):
     # As results trackers print it: from a -3 loss to a +2 profit is +166.67%,
     # from -1 to +2 is +300%; a deeper loss reads negative.
