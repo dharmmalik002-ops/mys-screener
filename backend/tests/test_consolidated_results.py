@@ -557,8 +557,10 @@ def test_every_window_is_listed_again_in_rotation_and_a_short_one_is_retried(fil
     doc = json.loads((files / "consolidated_results.json").read_text())
     # The window least recently listed comes first in the rotation, and the
     # filing it had missed before is queued.
+    # ...asked for in 5-day pieces.
     rotation = calls[1:]
-    assert rotation.index(("2026-07-10", "2026-07-24")) < rotation.index(("2025-01-01", "2025-01-15"))
+    assert rotation.index(("2026-07-10", "2026-07-14")) < rotation.index(("2025-01-01", "2025-01-05"))
+    assert ("2026-07-10", "2026-07-24") not in rotation
     assert [q["symbol"] for q in doc["queue"]] == ["DMART"]
     # One row against 1,120 before: far short, so it is listed again next run.
     assert [["2026-07-10", "2026-07-14"], ["2026-07-15", "2026-07-19"], ["2026-07-20", "2026-07-24"]] == [g for g in doc["relist_gaps"] if g[0].startswith("2026-07")]

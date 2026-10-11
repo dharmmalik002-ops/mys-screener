@@ -340,10 +340,23 @@ def main() -> int:
     grid = windows(FIRST_LISTING, today)
     rotation = sorted((w for w in grid if w not in set(main_windows) | set(earlier)),
                       key=lambda w: str((seen_windows.get(w[0].isoformat()) or {}).get("at") or ""))
-    todo = main_windows + earlier + rotation
+    # The rotation asks in RETRY_DAYS pieces too: a fortnight NSE answers short
+    # as one request is the case it exists for.
+    piece_of = {piece: window for window in rotation for piece in windows(window[0], window[1], RETRY_DAYS)}
+    todo = main_windows + earlier + list(piece_of)
     print(f"listing NSE integrated filings: {len(main_windows)} new, {len(earlier)} earlier and "
           f"{len(rotation)} in rotation", flush=True)
     listed, left, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
+    # A rotation window counts as listed only when all its pieces were.
+    pieces_left = {piece for piece in left if piece in piece_of}
+    left = [w for w in left if w not in piece_of]
+    for piece, window in piece_of.items():
+        if piece in listed:
+            rows = listed.pop(piece)
+            if window not in {piece_of[p] for p in pieces_left}:
+                listed.setdefault(window, []).extend(rows)
+            else:
+                listed.setdefault(("partial",) + window, []).extend(rows)
     gap_set = set(gaps)
     rotation_set = set(rotation)
     from_gaps = {window for window in listed if window not in main_windows and window in gap_set}
@@ -351,9 +364,9 @@ def main() -> int:
     new_relist = [w for w in left if w not in gap_set and w not in main_windows and w not in rotation_set]
     stamp_now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for window, rows in listed.items():
-        key = window[0].isoformat()
         if window not in set(grid):
             continue
+        key = window[0].isoformat()
         best = int((seen_windows.get(key) or {}).get("max") or 0)
         if best >= 20 and len(rows) < 0.9 * best and window not in new_relist and window not in new_gaps:
             new_relist.extend(windows(window[0], window[1], RETRY_DAYS))
