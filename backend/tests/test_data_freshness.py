@@ -58,6 +58,7 @@ def test_report_reads_each_feed_and_takes_the_worst(tmp_path):
     # Picks last published a week earlier: five sessions behind.
     _write(tmp_path, "lookalike_picks.json", {"calendar": {"2026-09-30": {}, "2026-10-02": {}}})
     _write(tmp_path, "mf_universe.json", {"as_of": "2026-10-09"})
+    _write(tmp_path, "results_feed.json", {"filings_through": "2026-10-10"})
 
     report = df.build_report(tmp_path, now=_ist(2026, 10, 10, 12))
     by_key = {f["key"]: f for f in report["feeds"]}
@@ -69,6 +70,9 @@ def test_report_reads_each_feed_and_takes_the_worst(tmp_path):
     assert by_key["lookalikes"]["as_of"] == "2026-10-02"
     assert by_key["lookalikes"]["sessions_behind"] == 5
     assert by_key["lookalikes"]["status"] == "stale"
+    # Results are filed on Saturdays too: a feed read through Saturday is
+    # ahead of the weekday session, not behind it.
+    assert by_key["results"]["status"] == "ok"
     assert report["status"] == "stale"
 
 

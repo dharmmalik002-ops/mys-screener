@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   BookOpen,
+  FileSpreadsheet,
   Bot,
   GraduationCap,
   ScanSearch,
@@ -165,6 +166,7 @@ const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then
 const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
 const SimilarChartsModal = lazy(() => import("./components/LookalikeModals").then((module) => ({ default: module.SimilarChartsModal })));
 const AiScannerPanel = lazy(() => import("./components/AiScannerPanel").then((module) => ({ default: module.AiScannerPanel })));
+const ResultsPanel = lazy(() => import("./components/ResultsPanel").then((module) => ({ default: module.ResultsPanel })));
 const LookalikesPanel = lazy(() => import("./components/LookalikesPanel").then((module) => ({ default: module.LookalikesPanel })));
 const CoursePanel = lazy(() => import("./components/CoursePanel").then((module) => ({ default: module.CoursePanel })));
 const BotPanel = lazy(() => import("./components/BotPanel").then((module) => ({ default: module.BotPanel })));
@@ -260,7 +262,7 @@ const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const GROUPS_REVALIDATE_MS = 5 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "today" | "home" | "screener" | "ai" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "course" | "bot";
+type AppPage = "today" | "home" | "screener" | "ai" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "course" | "bot" | "results";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -282,6 +284,7 @@ const NAV_PAGES: NavPage[] = [
   { page: "screener", label: "Screener", short: "Screen", blurb: "Technical scanners and custom scans", Icon: Radar },
   { page: "ai", label: "AI Scanner", short: "AI", blurb: "Describe the stocks you want in plain words", Icon: Sparkles },
   { page: "groups", label: "Groups", short: "Groups", blurb: "Industry group rankings and rotation", Icon: Layers },
+  { page: "results", label: "Results", short: "Results", blurb: "Quarterly results as companies declare them", Icon: FileSpreadsheet },
   { page: "watchlists", label: "Watchlists", short: "Lists", blurb: "Your saved lists", Icon: Star },
   { page: "markets", label: "Markets", short: "Markets", blurb: "Exposure verdict and market regime", Icon: Globe },
   { page: "funds", label: "Funds", short: "Funds", blurb: "Mutual fund screener and portfolio", Icon: Landmark },
@@ -299,7 +302,7 @@ const NAV_PAGES: NavPage[] = [
    one tab per job rather than one per page — so the bar reads at a glance and
    the search keeps its width. Phones get the same groups as a bottom bar (MobileNavGroups). */
 const NAV_GROUPS: { id: string; label: string; pages: AppPage[] }[] = [
-  { id: "market", label: "Market", pages: ["today", "home", "markets", "groups"] },
+  { id: "market", label: "Market", pages: ["today", "home", "markets", "groups", "results"] },
   { id: "scan", label: "Scan", pages: ["screener", "ai", "watchlists", "live", "lookalikes"] },
   { id: "journal", label: "Journal", pages: ["journal"] },
   // Last deliberately, for the reason the bot sits last in NAV_PAGES.
@@ -2380,6 +2383,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
     if (page === "course") {
       void import("./components/CoursePanel");
+      return;
+    }
+
+    if (page === "results") {
+      void import("./components/ResultsPanel");
       return;
     }
   };
@@ -5439,6 +5447,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     setActivePage("journal");
   };
 
+  const resultsWatchlistSymbols = useMemo(
+    () => [...new Set(watchlists.flatMap((watchlist) => watchlist.symbols))],
+    [watchlists],
+  );
+
   const handleJournalOpenSymbolChart = (symbol: string) => {
     const stripped = normalizeJournalChartSymbol(symbol);
     if (!stripped) return;
@@ -6776,6 +6789,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <LookalikesPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </PageSuspense>
         ) : null}
+        {activePage === "results" ? (
+          <PageSuspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Ungated on `loading`: reads its own endpoint, not the dashboard. */}
+            <ResultsPanel watchlistSymbols={resultsWatchlistSymbols} onOpenChart={handleOpenChartWithList} />
+          </PageSuspense>
+        ) : null}
         {activePage === "course" ? (
           <PageSuspense fallback={<DeferredPanelPlaceholder />}>
             {/* Ungated on `loading`: reads its own static course file. */}
@@ -6808,7 +6827,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </PageSuspense>
         ) : null}
-        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "ai" && activePage !== "lookalikes" && activePage !== "course" && activePage !== "bot" ? (
+        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "ai" && activePage !== "lookalikes" && activePage !== "course" && activePage !== "bot" && activePage !== "results" ? (
           <PageSuspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             {researchLayout ? null : <section className="page-metrics-strip">

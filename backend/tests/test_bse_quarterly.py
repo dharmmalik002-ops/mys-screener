@@ -85,7 +85,7 @@ class ArtifactTests(unittest.TestCase):
             path = Path(tmp) / "quarterly_summary.json"
             path.write_text(json.dumps({"generated_at": "2026-09-29", "symbols": {
                 "ABC": {"bse": "1", "quarters": [{"period": "Jun 2026", "sales_crore": 10.0}]}}}))
-            with mock.patch.object(bq, "ARTIFACT_PATH", path), mock.patch.object(bq, "_cache", None):
+            with mock.patch.object(bq, "ARTIFACT_PATH", path), mock.patch.object(bq, "FEED_PATH", Path(tmp) / "none.json"):
                 self.assertEqual(bq.results_for("abc")[0]["sales_crore"], 10.0)
                 self.assertEqual(bq.results_for("MISSING"), [])
 
@@ -98,10 +98,30 @@ class ArtifactTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             path = Path(tmp) / "quarterly_summary.json"
             path.write_text(json.dumps({"symbols": {"RELIANCE": {"bse": "500325", "quarters": [stored]}}}))
-            with mock.patch.object(bq, "ARTIFACT_PATH", path), mock.patch.object(bq, "_cache", None):
+            with mock.patch.object(bq, "ARTIFACT_PATH", path), mock.patch.object(bq, "FEED_PATH", Path(tmp) / "none.json"):
                 row = bq.results_for("RELIANCE")[0]
         self.assertIn("Code=500325&qtr=130.00", row["result_document_url"])
         self.assertNotIn("qtr", row)
+
+    def test_the_evening_feed_adds_quarters_the_summary_lacks(self):
+        # The bhavcopy job's summary lags results declared after 4:23 PM; the
+        # evening feed's quarters are laid over it, newest first.
+        with TemporaryDirectory() as tmp:
+            summary = Path(tmp) / "quarterly_summary.json"
+            feed = Path(tmp) / "results_feed.json"
+            summary.write_text(json.dumps({"generated_at": "2026-10-10T10:00:00+00:00", "symbols": {
+                "ABC": {"bse": "1", "quarters": [{"period": "Jun 2026", "sales_crore": 10.0, "qtr": "130.00"}]}}}))
+            feed.write_text(json.dumps({"generated_at": "2026-10-10T14:00:00+00:00", "quarters": {
+                "ABC": {"bse": "1", "quarters": [{"period": "Sep 2026", "sales_crore": 12.0, "qtr": "131.00"}]},
+                "NEW": {"bse": "2", "quarters": [{"period": "Sep 2026", "sales_crore": 5.0, "qtr": "131.00"}]}}}))
+            with mock.patch.object(bq, "ARTIFACT_PATH", summary), mock.patch.object(bq, "FEED_PATH", feed):
+                rows = bq.results_for("ABC")
+                self.assertEqual([r["period"] for r in rows], ["Sep 2026", "Jun 2026"])
+                self.assertIn("Code=1&qtr=131.00", rows[0]["result_document_url"])
+                self.assertEqual(bq.results_for("NEW")[0]["sales_crore"], 5.0)
+                self.assertEqual(bq.symbols(), {"ABC", "NEW"})
+                # Caches over results_for key on the newer of the two builds.
+                self.assertEqual(bq.artifact_date(), "2026-10-10T14:00:00+00:00")
 
 
 if __name__ == "__main__":

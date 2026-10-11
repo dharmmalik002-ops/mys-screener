@@ -143,23 +143,40 @@ def quarter_codes(listing: dict[str, Any]) -> list[tuple[str, str, str | None]]:
     return sorted(seen.values(), key=sort_key, reverse=True)
 
 
+# The evening results feed (scripts/update_results_feed.py): quarters filed
+# after the 4:23 PM bhavcopy run, and the date each quarter was declared. A
+# separate file because the bhavcopy job rewrites the summary, and two jobs
+# committing one file collide on push (see services/results_feed.py).
+FEED_PATH = ARTIFACT_PATH.with_name("results_feed.json")
+
 _lock = threading.Lock()
-_cache: tuple[float, dict[str, Any]] | None = None
+_caches: dict[Path, tuple[float, dict[str, Any]]] = {}
 
 
-def _load() -> dict[str, Any]:
-    global _cache
+def read_cached(path: Path) -> dict[str, Any]:
+    """A JSON object file, parsed once per mtime ({} when missing or bad)."""
     try:
-        mtime = ARTIFACT_PATH.stat().st_mtime
+        mtime = path.stat().st_mtime
     except OSError:
         return {}
     with _lock:
-        if _cache is None or _cache[0] != mtime:
+        cached = _caches.get(path)
+        if cached is None or cached[0] != mtime:
             try:
-                _cache = (mtime, json.loads(ARTIFACT_PATH.read_text(encoding="utf-8")))
+                payload = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, ValueError):
-                _cache = (mtime, {})
-        return _cache[1]
+                payload = {}
+            cached = (mtime, payload if isinstance(payload, dict) else {})
+            _caches[path] = cached
+        return cached[1]
+
+
+def _load() -> dict[str, Any]:
+    return read_cached(ARTIFACT_PATH)
+
+
+def load_feed() -> dict[str, Any]:
+    return read_cached(FEED_PATH)
 
 
 RESULT_URL = "https://www.bseindia.com/corporates/results.aspx?Code={code}&qtr={qtr}&RType="
@@ -175,14 +192,34 @@ def compact_row(row: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _period_key(label: str) -> tuple[int, int]:
+    try:
+        month, year = str(label).split(" ")
+        return int(year), list(_MONTHS.values()).index(month)
+    except ValueError:
+        return 0, 0
+
+
+def stored_quarters(symbol: str) -> tuple[str | None, list[dict[str, Any]]]:
+    """(BSE code, compact rows newest first): the summary's quarters with the
+    evening feed's laid over them, a period in both taken from the feed."""
+    key = symbol.upper()
+    entry = (_load().get("symbols") or {}).get(key) or {}
+    extra = (load_feed().get("quarters") or {}).get(key) or {}
+    by_period: dict[str, dict[str, Any]] = {}
+    for stored in list(extra.get("quarters") or []) + list(entry.get("quarters") or []):
+        period = stored.get("period")
+        if period and period not in by_period:
+            by_period[period] = stored
+    rows = sorted(by_period.values(), key=lambda row: _period_key(row["period"]), reverse=True)
+    return entry.get("bse") or extra.get("bse"), rows[:QUARTERS_KEPT]
+
+
 def results_for(symbol: str) -> list[dict[str, Any]]:
-    """Newest-first quarterly rows for `symbol`, or [] when not in the file."""
-    entry = (_load().get("symbols") or {}).get(symbol.upper())
-    if not entry:
-        return []
-    code = entry.get("bse")
+    """Newest-first quarterly rows for `symbol`, or [] when not in either file."""
+    code, stored_rows = stored_quarters(symbol)
     rows = []
-    for stored in entry.get("quarters") or []:
+    for stored in stored_rows:
         row = {k: v for k, v in stored.items() if k != "qtr"}
         qtr = stored.get("qtr")
         row["result_document_url"] = RESULT_URL.format(code=code, qtr=qtr) if code and qtr else None
@@ -190,5 +227,12 @@ def results_for(symbol: str) -> list[dict[str, Any]]:
     return rows
 
 
+def symbols() -> set[str]:
+    return set(_load().get("symbols") or {}) | set(load_feed().get("quarters") or {})
+
+
 def artifact_date() -> str | None:
-    return _load().get("generated_at")
+    """The newer of the summary's and the evening feed's build times — what
+    caches over `results_for` key on."""
+    stamps = [s for s in (_load().get("generated_at"), load_feed().get("generated_at")) if s]
+    return max(stamps) if stamps else None

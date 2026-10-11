@@ -1,0 +1,98 @@
+name: Quarterly Results (evening)
+
+# The Results page: every company that declared results today, by 7 PM IST.
+# Reads BSE's "Result" filings since the last run, fetches the new quarters'
+# figures and the minute each was declared, and commits
+# backend/data/results_feed.json. Two later runs pick up late filers (many
+# boards meet into the evening). Results are declared on Saturdays too, so it
+# runs every day.
+#
+# The Space is not redeployed: it pulls the feed itself every 15 minutes from
+# 19:00 to midnight IST and whenever the page is opened (results_feed.py), and
+# the commit carries [skip ci]. It writes ONLY results_feed.json — the 4:23 PM
+# bhavcopy job owns quarterly_summary.json, and two jobs rewriting one file
+# would collide on push.
+on:
+  schedule:
+    - cron: "30 13 * * *"   # 7:00 PM IST
+    - cron: "0 16 * * *"    # 9:30 PM IST
+    - cron: "15 18 * * *"   # 11:45 PM IST
+  # GitHub runs this repository's schedules HOURS late (gotcha 143), so the
+  # cron lines alone are not a 7 PM job. The Space's watchdog
+  # (main.py::trigger_github_results_if_stale) sends this event at :10 and :40
+  # past each hour from 19:10 IST until a run has read the filings since the
+  # latest slot.
+  repository_dispatch:
+    types: [results-trigger]
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/quarterly-results.yml"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Look back this many days (0 = since the last run)"
+        type: number
+        default: 0
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quarterly-results
+  cancel-in-progress: false
+
+jobs:
+  results:
+    name: Fetch, date and publish the day's results
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        # curl_cffi: BSE's Akamai refuses plain requests by TLS fingerprint (gotcha 159).
+        run: pip install requests curl_cffi
+
+      - name: Fetch the day's results from BSE
+        env:
+          DAYS: ${{ github.event.inputs.days || '0' }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -uo pipefail
+          # Scheduled and dispatched runs skip once a run has already read the
+          # filings since the latest evening slot; push and manual runs always go.
+          FLAGS=""
+          if [ "$EVENT" = "schedule" ] || [ "$EVENT" = "repository_dispatch" ]; then FLAGS="--if-due"; fi
+          if [ "$DAYS" != "0" ]; then FLAGS="$FLAGS --days $DAYS"; fi
+          timeout 1500 python backend/scripts/update_results_feed.py $FLAGS
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add backend/data/results_feed.json
+          if git diff --cached --quiet; then
+            echo "nothing new to publish"
+            exit 0
+          fi
+          git commit -m "data: quarterly results through $(TZ=Asia/Kolkata date '+%F %H:%M') IST [skip ci]"
+          # Other data jobs push around the same time; retry on top of whatever
+          # landed first. Only this job writes results_feed.json, so the rebase
+          # never conflicts.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((attempt * 10))
+            git pull --rebase origin main
+          done
+          echo "push failed after 5 attempts"
+          exit 1
