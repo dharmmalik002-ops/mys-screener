@@ -186,12 +186,27 @@ def _listing_row(symbol, end, filed, nature="Consolidated"):
             "xbrl": f"https://nsearchives.nseindia.com/corporate/xbrl/{symbol}_{end}.xml"}
 
 
+def _fake_windows(job, monkeypatch, listed_by_day=None, short=(), dead=()):
+    """list_window replaced: rows whose filing day falls in the window,
+    `short` windows come back incomplete, `dead` ones unanswered."""
+    calls: list[tuple[str, str]] = []
+
+    def fake(start, stop):
+        calls.append((start.isoformat(), stop.isoformat()))
+        if start.isoformat() in dead:
+            return None
+        rows = [row for day, row in (listed_by_day or []) if start <= day <= stop]
+        return rows, start.isoformat() not in short
+
+    monkeypatch.setattr(job, "list_window", fake)
+    return calls
+
+
 def test_the_job_stores_every_column_of_both_bases(files, job, monkeypatch):
-    listed = [_listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10"),
-              _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:40:00", nature="Non-Consolidated"),
-              _listing_row("NOTOURS", "30-Sep-2026", "09-Oct-2026 17:00:00")]
-    calls: list[str] = []
-    monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append(f"{start}"), (list(listed), []))[1])
+    listed = [(date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10")),
+              (date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:40:00", nature="Non-Consolidated")),
+              (date(2026, 10, 9), _listing_row("NOTOURS", "30-Sep-2026", "09-Oct-2026 17:00:00"))]
+    calls = _fake_windows(job, monkeypatch, listed)
     fetched: list[str] = []
 
     def fake_fetch(url):
@@ -202,7 +217,8 @@ def test_the_job_stores_every_column_of_both_bases(files, job, monkeypatch):
     monkeypatch.setattr(job, "_fetch_archive", fake_fetch)
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
-    assert calls == ["2025-01-01"]  # first run: from the start of integrated filing
+    assert calls[0] == ("2025-01-01", "2025-01-15")  # first run: from the start of integrated filing
+    assert all((date.fromisoformat(b) - date.fromisoformat(a)).days < job.WINDOW_DAYS for a, b in calls)
     rows = doc["symbols"]["TCS"]["quarters"]
     # The filing's own quarter and its previous-quarter column.
     assert [(r["period"], r["sales_crore"]) for r in rows] == [("Sep 2026", 73188.0), ("Jun 2026", 72275.0)]
@@ -210,12 +226,75 @@ def test_the_job_stores_every_column_of_both_bases(files, job, monkeypatch):
     # The standalone filing's XBRL said Consolidated: not stored as standalone,
     # remembered, and not fetched again.
     assert "standalone" not in doc["symbols"]["TCS"]
-    assert doc["queue"] == [] and doc["listed_through"] == "2026-10-10"
+    assert doc["queue"] == [] and doc["listed_through"] == "2026-10-10" and doc["listing_gaps"] == []
     assert len(fetched) == 2
 
+    calls.clear()
     assert job.main() == 0
-    assert calls[-1] == "2026-10-09"
+    assert calls == [("2026-10-09", "2026-10-10")]
     assert len(fetched) == 2  # neither filing downloaded again
+
+
+def test_nothing_listed_is_thrown_away_when_a_window_gets_no_answer(files, job, monkeypatch):
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "symbols": {}, "listed_through": "2026-09-20", "harvest_version": job.HARVEST_VERSION}))
+    listed = [(date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10"))]
+    # 2026-09-19 .. 2026-10-03 does not answer; the window after it does.
+    _fake_windows(job, monkeypatch, listed, dead={"2026-09-19"})
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: instance())
+    assert job.main() == 1  # red, so it is seen
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"  # the answered window was used
+    assert doc["listing_gaps"] == [["2026-09-19", "2026-10-03"]]
+    assert doc["listed_through"] == "2026-10-10"
+
+    calls = _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    assert ("2026-09-19", "2026-10-03") in calls
+    assert json.loads((files / "consolidated_results.json").read_text())["listing_gaps"] == []
+
+
+def test_listing_stops_at_its_share_of_the_budget_and_keeps_the_rest(files, job, monkeypatch):
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "symbols": {}, "listed_through": "2026-10-09", "harvest_version": job.HARVEST_VERSION,
+        "listing_gaps": [["2026-01-01", "2026-03-31"]]}))
+    clock = {"t": 0.0}
+    monkeypatch.setattr(job.time, "monotonic", lambda: clock["t"])
+
+    def slow(start, stop):
+        clock["t"] += 200.0  # each window takes 200 s; listing may use 45% of 1200 s
+        return [], True
+
+    monkeypatch.setattr(job, "list_window", slow)
+    monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--max-seconds", "1200"])
+    assert job.main() == 0
+    gaps = json.loads((files / "consolidated_results.json").read_text())["listing_gaps"]
+    # The new window and two gap windows (newest first) were listed; the rest wait.
+    assert gaps and gaps[0][0] < "2026-03-01" and len(gaps) == len(job.windows(date(2026, 1, 1), date(2026, 3, 31))) - 2
+
+
+def test_an_old_file_reads_its_history_again_over_several_runs(files, job, monkeypatch):
+    (files / "consolidated_results.json").write_text(json.dumps({"listed_through": "2026-10-09", "symbols": {
+        "TCS": {"quarters": [{"period": "Sep 2026", "sales_crore": 73188.0, "filed": "2026-10-09T17:42"}]}}}))
+    listed = [(date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10"))]
+    calls = _fake_windows(job, monkeypatch, listed, short={"2025-01-01"})
+    fetched: list[str] = []
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: (fetched.append(url), instance())[1])
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    # The history was listed (new window first, then newest gap first) and the
+    # stored TCS filing fetched again for its comparative columns.
+    assert calls[0] == ("2026-10-08", "2026-10-10") and calls[1][0] > calls[-1][0]
+    assert len(fetched) == 1 and doc["symbols"]["TCS"]["quarters"][1]["period"] == "Jun 2026"
+    # One window came back short: still harvesting until it is listed in full.
+    assert doc["harvesting"] is True and doc["listing_gaps"] == [["2025-01-01", "2025-01-15"]]
+    assert doc["harvest_version"] != job.HARVEST_VERSION
+
+    calls = _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert ("2025-01-01", "2025-01-15") in calls
+    assert doc["harvesting"] is False and doc["harvest_version"] == job.HARVEST_VERSION
 
 
 def test_a_filing_never_overrides_a_quarter_s_own_report():
@@ -246,22 +325,6 @@ def test_every_quarter_column_of_a_filing_is_read():
     assert parsed["quarter_end"] == date(2026, 9, 30)
     assert {end: row["sales_crore"] for end, row in parsed["periods"].items()} == {
         date(2026, 9, 30): 73188.0, date(2026, 6, 30): 72275.0}
-
-
-def test_an_unreachable_instance_stays_queued_and_a_failed_listing_does_not_advance(files, job, monkeypatch):
-    monkeypatch.setattr(job, "fetch_listing", lambda start, end: ([_listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10")], []))
-    monkeypatch.setattr(job, "_fetch_archive", lambda url: None)
-    assert job.main() == 0
-    doc = json.loads((files / "consolidated_results.json").read_text())
-    assert [q["symbol"] for q in doc["queue"]] == ["TCS"] and doc["queue"][0]["attempts"] == 1
-
-    monkeypatch.setattr(job, "fetch_listing", lambda start, end: None)
-    monkeypatch.setattr(job, "_fetch_archive", lambda url: instance())
-    assert job.main() == 1
-    doc = json.loads((files / "consolidated_results.json").read_text())
-    # The queued filing was still taken; the listing date did not move.
-    assert doc["queue"] == [] and doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"
-    assert doc["listed_through"] == "2026-10-10"
 
 
 def test_archive_downloads_are_paced_http11_and_back_off(job, monkeypatch):
@@ -310,26 +373,18 @@ def test_an_empty_page_short_of_the_total_is_retried_not_taken_as_the_end(job, m
     assert not complete and len(rows) == 1
 
 
-def test_short_windows_are_listed_again_and_old_files_relist_once(files, job, monkeypatch):
-    (files / "consolidated_results.json").write_text(json.dumps({"symbols": {}, "listed_through": "2026-10-09"}))
-    calls: list[tuple[str, str]] = []
 
-    def fake_listing(start, end):
-        calls.append((start.isoformat(), end.isoformat()))
-        short = [(date(2026, 4, 1), date(2026, 6, 29))] if start == date(2025, 1, 1) else []
-        return [], short
 
-    monkeypatch.setattr(job, "fetch_listing", fake_listing)
+def test_an_unreachable_instance_stays_queued_with_its_attempts_counted(files, job, monkeypatch):
+    listed = [(date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10"))]
+    _fake_windows(job, monkeypatch, listed)
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: None)
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
-    # No listing_version yet: the whole history is listed again, then since the last run.
-    assert calls == [("2025-01-01", "2026-10-09"), ("2026-10-08", "2026-10-10")]
-    assert doc["listing_version"] == job.LISTING_VERSION
-    assert doc["listing_gaps"] == [["2026-04-01", "2026-06-29"]]
+    assert [(q["symbol"], q["attempts"]) for q in doc["queue"]] == [("TCS", 1)]
 
-    calls.clear()
-    monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append((start.isoformat(), end.isoformat())), ([], []))[1])
+    _fake_windows(job, monkeypatch, [])
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: instance())
     assert job.main() == 0
-    # The short window is listed again first; once complete it is dropped.
-    assert calls == [("2026-04-01", "2026-06-29"), ("2026-10-09", "2026-10-10")]
-    assert json.loads((files / "consolidated_results.json").read_text())["listing_gaps"] == []
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert doc["queue"] == [] and doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"

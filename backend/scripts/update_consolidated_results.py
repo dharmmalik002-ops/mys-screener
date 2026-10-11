@@ -41,7 +41,11 @@ HEADERS = {
 }
 IST = timezone(timedelta(hours=5, minutes=30))
 FIRST_LISTING = date(2025, 1, 1)
-WINDOW_DAYS = 90  # NSE silently truncates wide windows
+# NSE silently truncates wide windows: a 90-day window once listed 120 filings
+# for a whole results season. Fifteen days keeps every window small.
+WINDOW_DAYS = 15
+# Listing may use this share of --max-seconds; the rest is for downloads.
+LIST_BUDGET_SHARE = 0.45
 MAX_ATTEMPTS = 5  # per queued filing, across runs
 
 _local = threading.local()
@@ -62,6 +66,9 @@ def _session():
 
 
 def _get(url: str, params: dict | None = None, *, expect_json: bool) -> object | None:
+    """NSE's API stops answering a session after some minutes of paging (the
+    third live run lost its listing at ~10 min), so a failure backs off and
+    starts a fresh session, cookies and all."""
     for attempt in range(3):
         try:
             response = _session().get(url, params=params, timeout=40)
@@ -73,7 +80,9 @@ def _get(url: str, params: dict | None = None, *, expect_json: bool) -> object |
                     return response.json()
         except Exception:  # noqa: BLE001 - one bad call must not stop the run
             pass
-        time.sleep(2 * (attempt + 1))
+        if hasattr(_local, "session"):
+            del _local.session
+        time.sleep((5, 15, 30)[attempt])
     return None
 
 
@@ -84,7 +93,7 @@ def _get(url: str, params: dict | None = None, *, expect_json: bool) -> object |
 # window still short afterwards is kept in `listing_gaps` and listed again on
 # the next run.
 LISTING_VERSION = 2
-LIST_PAGE_GAP = 0.5
+LIST_PAGE_GAP = 1.0
 LIST_EMPTY_RETRIES = 3
 LIST_BACKOFF = 6.0
 
@@ -121,25 +130,46 @@ def list_window(start: date, stop: date) -> tuple[list[dict], bool] | None:
     return rows, False
 
 
-def fetch_listing(start: date, end: date) -> tuple[list[dict], list[tuple[date, date]]] | None:
-    """(rows, windows that came back short) for [start, end], or None if any
-    window got no answer — a failed listing must not advance `listed_through`."""
-    rows: list[dict] = []
-    short: list[tuple[date, date]] = []
+def windows(start: date, end: date) -> list[tuple[date, date]]:
+    """[start, end] in WINDOW_DAYS pieces, oldest first."""
+    out: list[tuple[date, date]] = []
     cursor = start
     while cursor <= end:
         stop = min(end, cursor + timedelta(days=WINDOW_DAYS - 1))
-        result = list_window(cursor, stop)
-        if result is None:
-            return None
-        got, complete = result
-        rows.extend(got)
-        if not complete:
-            short.append((cursor, stop))
-        print(f"  integrated filings {cursor} .. {stop}: {len(got)}{'' if complete else ' (SHORT, kept for next run)'}",
-              flush=True)
+        out.append((cursor, stop))
         cursor = stop + timedelta(days=1)
-    return rows, short
+    return out
+
+
+def list_windows(todo: list[tuple[date, date]], stop_at: float) -> tuple[dict, list[tuple[date, date]], bool]:
+    """List each window in order until `stop_at` (monotonic). Returns
+    ({window: rows}, windows still to list, whether any got no answer).
+
+    Nothing listed is thrown away: a window NSE does not answer, or answers
+    short of its totalCount, is handed back to be listed on the next run —
+    the third live run lost ~12,000 listed filings because one window late in
+    a long re-list got no answer and the whole re-list was discarded."""
+    done: dict = {}
+    left: list[tuple[date, date]] = []
+    failed = False
+    for index, (start, stop) in enumerate(todo):
+        if time.monotonic() >= stop_at:
+            left.extend(todo[index:])
+            print(f"  listing time used up: {len(todo) - index} windows kept for the next run", flush=True)
+            break
+        result = list_window(start, stop)
+        if result is None:
+            failed = True
+            left.append((start, stop))
+            print(f"  integrated filings {start} .. {stop}: NO ANSWER, kept for the next run", flush=True)
+            continue
+        rows, complete = result
+        done[(start, stop)] = rows
+        if not complete:
+            left.append((start, stop))
+        print(f"  integrated filings {start} .. {stop}: {len(rows)}{'' if complete else ' (SHORT, kept for next run)'}",
+              flush=True)
+    return done, left, failed
 
 
 # nsearchives is not the API host and wants different handling (measured
@@ -217,7 +247,7 @@ def queue_key(item: dict) -> str:
 # Version 2 reads every column of a filing (the previous and year-ago
 # quarters, not just its own), and standalone filings too. Filings stored
 # before it are fetched once more to collect their columns.
-HARVEST_VERSION = 2
+HARVEST_VERSION = 3
 
 
 def main() -> int:
@@ -241,7 +271,9 @@ def main() -> int:
     harvest_again = doc.get("harvest_version") != HARVEST_VERSION
     samples: list = list(doc.get("unparsed_samples") or [])[-10:]
     # Filings read and found unusable: not downloaded again unless revised.
-    skipped_filings: dict = dict(doc.get("skipped_filings") or {}) if not harvest_again else {}
+    # (Cleared when a re-read of the history starts: the new reader may read
+    # what the old one could not.)
+    skipped_filings: dict = {} if harvest_again and not doc.get("harvesting") else dict(doc.get("skipped_filings") or {})
 
     universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
     known = {str(r["symbol"]).upper() for r in universe if r.get("symbol")}
@@ -249,28 +281,27 @@ def main() -> int:
     today = _now().date()
     through = doc.get("listed_through")
     start = date.fromisoformat(through) - timedelta(days=1) if through else FIRST_LISTING
-    gaps = [(date.fromisoformat(a), date.fromisoformat(b)) for a, b in doc.get("listing_gaps") or []]
-    if (doc.get("listing_version") != LISTING_VERSION or harvest_again) and through:
-        # Listed before short pages were caught: list the history once more.
-        gaps.append((FIRST_LISTING, date.fromisoformat(through)))
-    listing: list[dict] = []
-    new_gaps: list[tuple[date, date]] = []
-    listed_ok = True
-    for gap_start, gap_end in gaps:
-        print(f"re-listing a short window {gap_start} .. {gap_end}", flush=True)
-        result = fetch_listing(gap_start, gap_end)
-        if result is None:
-            new_gaps.append((gap_start, gap_end))
-            continue
-        listing.extend(result[0])
-        new_gaps.extend(result[1])
-    print(f"listing NSE integrated filings {start} .. {today}", flush=True)
-    result = fetch_listing(start, today)
-    if result is None:
-        listed_ok = False
-    else:
-        listing.extend(result[0])
-        new_gaps.extend(result[1])
+    gaps = [w for a, b in doc.get("listing_gaps") or []
+            for w in windows(date.fromisoformat(a), date.fromisoformat(b))]
+    harvesting = bool(doc.get("harvesting"))
+    if harvest_again and through and not harvesting:
+        # Read every column of filings stored before: list the history again,
+        # spread over runs, and queue its filings whether stored or not.
+        gaps.extend(windows(FIRST_LISTING, date.fromisoformat(through)))
+        harvesting = True
+    main_windows = windows(start, today)
+    # Tonight's filings first, then the gaps newest first: recent seasons fill
+    # before old ones.
+    todo = main_windows + sorted(set(gaps) - set(main_windows), reverse=True)
+    print(f"listing NSE integrated filings: {len(main_windows)} new and {len(todo) - len(main_windows)} earlier "
+          f"windows", flush=True)
+    listed, new_gaps, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
+    from_gaps = {window for window in listed if window not in main_windows}
+    listing = [(row, window in from_gaps) for window, rows in listed.items() for row in rows]
+    listed_ok = not listing_failed
+    reread_gaps = harvesting  # this run's gap windows are queued even if stored
+    if harvesting and not new_gaps:
+        harvesting = False  # the history has been listed in full: done
 
     def stored_filed(symbol: str, period: str, basis: str) -> str:
         for row in (symbols.get(symbol) or {}).get(cr.ROW_KEYS[basis]) or []:
@@ -279,12 +310,13 @@ def main() -> int:
         return ""
 
     added = 0
-    for raw in listing:
+    for raw, from_gap in listing:
         item = cr.listing_row(raw)
         if item is None or item["symbol"] not in known:
             continue
         period = cr.period_label(date.fromisoformat(item["period_end"]))
-        if not harvest_again and stored_filed(item["symbol"], period, item["basis"]) >= item["filed"]:
+        rereading = from_gap and reread_gaps
+        if not rereading and stored_filed(item["symbol"], period, item["basis"]) >= item["filed"]:
             continue  # already have this filing (or a later revision)
         key = queue_key(item)
         if str(skipped_filings.get(key) or "") >= item["filed"]:
@@ -347,11 +379,14 @@ def main() -> int:
     stamp = datetime.now(timezone.utc).isoformat()
     out = {
         "generated_at": stamp,
-        "listed_through": today.isoformat() if listed_ok else doc.get("listed_through"),
+        # Every window not listed in full is in listing_gaps, so the date
+        # moves on whatever this run managed.
+        "listed_through": today.isoformat(),
         # Any window not yet listed in full is in listing_gaps, so the
         # one-off re-list is recorded as done whatever this run managed.
         "listing_version": LISTING_VERSION,
-        "harvest_version": HARVEST_VERSION,
+        "harvest_version": doc.get("harvest_version") if harvesting else HARVEST_VERSION,
+        "harvesting": harvesting,
         "listing_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_gaps],
         "source": ("NSE Integrated Filing XBRL (Rs / 1e7 = crore): 'quarters' consolidated, 'standalone' standalone; "
                    "each filing's own quarter ('filed') and its comparative columns ('via'); "
