@@ -102,9 +102,69 @@ def fetch_listing(start: date, end: date) -> list[dict] | None:
     return rows
 
 
+# nsearchives is not the API host and wants different handling (measured
+# 2026-10-01 by the india-xbrl-filings project, and on our first run, where
+# 312 of 522 downloads failed in bursts):
+# - HTTP/2 fails there (curl INTERNAL_ERROR), and a Chrome-impersonating
+#   curl_cffi session speaks HTTP/2 — so plain `requests` (HTTP/1.1) with a
+#   browser User-Agent;
+# - requests 0.6 s apart failed 8 of 20; 6 s apart per worker with an
+#   escalating, jittered backoff succeeded every time. NSE holds connections
+#   ~30 s, so throughput comes from workers, not from a shorter gap.
+ARCHIVE_HEADERS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
+    "Accept": "application/xml, text/xml, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+ARCHIVE_MIN_INTERVAL = 6.0
+ARCHIVE_BACKOFF = 6.0
+ARCHIVE_ATTEMPTS = 3
+_statuses: dict[str, int] = {}
+# Past this, no new attempt or backoff starts: the file must be written before
+# the workflow's hard `timeout` kills the step, or the whole run is lost.
+_deadline = float("inf")
+_status_lock = threading.Lock()
+
+
+def _count(status: str) -> None:
+    with _status_lock:
+        _statuses[status] = _statuses.get(status, 0) + 1
+
+
+def _fetch_archive(url: str) -> bytes | None:
+    import random
+
+    import requests
+
+    if not hasattr(_local, "archive"):
+        _local.archive = requests.Session()
+        _local.archive.headers.update(ARCHIVE_HEADERS)
+        _local.last = 0.0
+    for attempt in range(ARCHIVE_ATTEMPTS):
+        if time.monotonic() >= _deadline:
+            return None
+        wait = ARCHIVE_MIN_INTERVAL - (time.monotonic() - _local.last)
+        if wait > 0:
+            time.sleep(wait)
+        _local.last = time.monotonic()
+        try:
+            response = _local.archive.get(url, timeout=45)
+            _count(str(response.status_code))
+            if response.status_code == 200 and response.content.lstrip().startswith(b"<"):
+                return response.content
+            if response.status_code == 404:
+                return None
+        except Exception as exc:  # noqa: BLE001 - one bad file must not stop the run
+            _count(type(exc).__name__)
+        backoff = ARCHIVE_BACKOFF * (attempt + 1)
+        time.sleep(backoff + random.uniform(0, backoff * 0.25))
+    return None
+
+
 def download(item: dict) -> tuple[dict, dict | None, bool]:
     """(queue item, parsed row or None, reached NSE)."""
-    body = _get(item["xbrl"], expect_json=False)
+    body = _fetch_archive(item["xbrl"])
     if body is None:
         return item, None, False
     expect = date.fromisoformat(item["period_end"])
@@ -114,9 +174,11 @@ def download(item: dict) -> tuple[dict, dict | None, bool]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-seconds", type=float, default=1200)
-    parser.add_argument("--workers", type=int, default=6)
+    parser.add_argument("--workers", type=int, default=12)
     args = parser.parse_args()
     started = time.monotonic()
+    global _deadline
+    _deadline = started + args.max_seconds
 
     path = cr.ARTIFACT_PATH
     doc: dict = {}
@@ -199,7 +261,7 @@ def main() -> int:
             n = stored + skipped + failed
             if n % 200 == 0:
                 print(f"  {n} done: stored={stored} skipped={skipped} failed={failed} "
-                      f"({time.monotonic() - started:.0f}s)", flush=True)
+                      f"({time.monotonic() - started:.0f}s) responses={_statuses}", flush=True)
 
     stamp = datetime.now(timezone.utc).isoformat()
     out = {
@@ -211,7 +273,7 @@ def main() -> int:
     }
     path.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
     print(f"wrote {path.name}: {len(symbols)} companies, stored={stored} skipped={skipped} failed={failed}, "
-          f"{len(queue)} still queued, {path.stat().st_size / 1024:.0f} KB", flush=True)
+          f"{len(queue)} still queued, {path.stat().st_size / 1024:.0f} KB; responses={_statuses}", flush=True)
     return 0 if listed_ok else 1
 
 

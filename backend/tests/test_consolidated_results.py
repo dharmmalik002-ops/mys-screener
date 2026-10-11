@@ -191,11 +191,11 @@ def test_the_job_queues_downloads_and_stores_consolidated_quarters(files, job, m
     calls: list[str] = []
     monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append(f"{start}"), list(listed))[1])
 
-    def fake_get(url, params=None, *, expect_json):
-        assert not expect_json and "TCS" in url
+    def fake_fetch(url):
+        assert "TCS" in url
         return instance()
 
-    monkeypatch.setattr(job, "_get", fake_get)
+    monkeypatch.setattr(job, "_fetch_archive", fake_fetch)
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
     assert calls == ["2025-01-01"]  # first run: from the start of integrated filing
@@ -204,22 +204,43 @@ def test_the_job_queues_downloads_and_stores_consolidated_quarters(files, job, m
     assert doc["queue"] == [] and doc["listed_through"] == "2026-10-10"
 
     # Next run: overlap of one day; the same filing is not fetched again.
-    monkeypatch.setattr(job, "_get", lambda *a, **k: pytest.fail("already stored"))
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: pytest.fail("already stored"))
     assert job.main() == 0
     assert calls[-1] == "2026-10-09"
 
 
 def test_an_unreachable_instance_stays_queued_and_a_failed_listing_does_not_advance(files, job, monkeypatch):
     monkeypatch.setattr(job, "fetch_listing", lambda start, end: [_listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10")])
-    monkeypatch.setattr(job, "_get", lambda *a, **k: None)
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: None)
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
     assert [q["symbol"] for q in doc["queue"]] == ["TCS"] and doc["queue"][0]["attempts"] == 1
 
     monkeypatch.setattr(job, "fetch_listing", lambda start, end: None)
-    monkeypatch.setattr(job, "_get", lambda *a, **k: instance())
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: instance())
     assert job.main() == 1
     doc = json.loads((files / "consolidated_results.json").read_text())
     # The queued filing was still taken; the listing date did not move.
     assert doc["queue"] == [] and doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"
     assert doc["listed_through"] == "2026-10-10"
+
+
+def test_archive_downloads_are_paced_http11_and_back_off(job, monkeypatch):
+    """nsearchives refuses HTTP/2 and rate-limits close requests: plain
+    `requests`, a gap per worker, and an escalating backoff on failure."""
+    import requests
+
+    sleeps: list[float] = []
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(job.time, "monotonic", lambda: clock["t"])
+    monkeypatch.setattr(job.time, "sleep", lambda s: (sleeps.append(s), clock.__setitem__("t", clock["t"] + s)))
+    replies = iter([SimpleNamespace(status_code=403, content=b"denied"), SimpleNamespace(status_code=200, content=instance())])
+    monkeypatch.setattr(requests.Session, "get", lambda self, url, timeout: next(replies))
+    if hasattr(job._local, "archive"):
+        del job._local.archive
+    body = job._fetch_archive("https://nsearchives.nseindia.com/corporate/xbrl/X.xml")
+    assert body == instance()
+    assert isinstance(job._local.archive, requests.Session)
+    # A 403 backs off at least ARCHIVE_BACKOFF before the retry.
+    assert any(s >= job.ARCHIVE_BACKOFF for s in sleeps)
+    assert job._statuses.get("403", 0) >= 1
