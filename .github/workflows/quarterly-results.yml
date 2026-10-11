@@ -86,7 +86,7 @@ jobs:
         continue-on-error: true
         run: |
           set -uo pipefail
-          timeout 1200 python backend/scripts/update_consolidated_results.py --max-seconds 900
+          timeout 1200 python backend/scripts/update_consolidated_results.py --max-seconds 840
 
       - name: Commit and push
         run: |
