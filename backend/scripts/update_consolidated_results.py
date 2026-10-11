@@ -78,28 +78,69 @@ def _get(url: str, params: dict | None = None, *, expect_json: bool) -> object |
     return None
 
 
-def fetch_listing(start: date, end: date) -> list[dict] | None:
-    """Every Integrated Filing row filed in [start, end], or None if any page
-    failed — a partial listing must not advance `listed_through`."""
+# A rate-limited page can come back as an empty `data` list, which reads
+# exactly like the end of the listing. The first live run lost most of two
+# quarters that way (40 filings listed for Apr-Jun 2026). So a page is only the
+# end when the rows add up to `totalCount`; short of that it is retried, and a
+# window still short afterwards is kept in `listing_gaps` and listed again on
+# the next run.
+LISTING_VERSION = 2
+LIST_PAGE_GAP = 0.5
+LIST_EMPTY_RETRIES = 3
+LIST_BACKOFF = 6.0
+
+
+def list_window(start: date, stop: date) -> tuple[list[dict], bool] | None:
+    """(rows, complete) for one window, or None if NSE did not answer."""
     rows: list[dict] = []
+    total: int | None = None
+    page = 1
+    empty_retries = 0
+    while page < 2000:
+        payload = _get(LIST_URL, {"index": "equities", "from_date": start.strftime("%d-%m-%Y"),
+                                  "to_date": stop.strftime("%d-%m-%Y"), "page": str(page)}, expect_json=True)
+        if not isinstance(payload, dict):
+            return None
+        count = payload.get("totalCount")
+        if isinstance(count, int):
+            total = count
+        batch = [r for r in payload.get("data") or [] if isinstance(r, dict)]
+        if batch:
+            rows.extend(batch)
+            page += 1
+            empty_retries = 0
+            if total is not None and len(rows) >= total:
+                return rows, True
+            time.sleep(LIST_PAGE_GAP)
+            continue
+        if total is None or len(rows) >= total:
+            return rows, True
+        if empty_retries >= LIST_EMPTY_RETRIES:
+            return rows, False
+        empty_retries += 1
+        time.sleep(LIST_BACKOFF * empty_retries)
+    return rows, False
+
+
+def fetch_listing(start: date, end: date) -> tuple[list[dict], list[tuple[date, date]]] | None:
+    """(rows, windows that came back short) for [start, end], or None if any
+    window got no answer — a failed listing must not advance `listed_through`."""
+    rows: list[dict] = []
+    short: list[tuple[date, date]] = []
     cursor = start
     while cursor <= end:
         stop = min(end, cursor + timedelta(days=WINDOW_DAYS - 1))
-        got = 0
-        for page in range(1, 2000):
-            payload = _get(LIST_URL, {"index": "equities", "from_date": cursor.strftime("%d-%m-%Y"),
-                                      "to_date": stop.strftime("%d-%m-%Y"), "page": str(page)}, expect_json=True)
-            if not isinstance(payload, dict):
-                return None
-            batch = [r for r in payload.get("data") or [] if isinstance(r, dict)]
-            rows.extend(batch)
-            got += len(batch)
-            total = payload.get("totalCount")
-            if not batch or (isinstance(total, int) and got >= total):
-                break
-        print(f"  integrated filings {cursor} .. {stop}: {got}", flush=True)
+        result = list_window(cursor, stop)
+        if result is None:
+            return None
+        got, complete = result
+        rows.extend(got)
+        if not complete:
+            short.append((cursor, stop))
+        print(f"  integrated filings {cursor} .. {stop}: {len(got)}{'' if complete else ' (SHORT, kept for next run)'}",
+              flush=True)
         cursor = stop + timedelta(days=1)
-    return rows
+    return rows, short
 
 
 # nsearchives is not the API host and wants different handling (measured
@@ -196,9 +237,28 @@ def main() -> int:
     today = _now().date()
     through = doc.get("listed_through")
     start = date.fromisoformat(through) - timedelta(days=1) if through else FIRST_LISTING
+    gaps = [(date.fromisoformat(a), date.fromisoformat(b)) for a, b in doc.get("listing_gaps") or []]
+    if doc.get("listing_version") != LISTING_VERSION and through:
+        # Listed before short pages were caught: list the history once more.
+        gaps.append((FIRST_LISTING, date.fromisoformat(through)))
+    listing: list[dict] = []
+    new_gaps: list[tuple[date, date]] = []
+    listed_ok = True
+    for gap_start, gap_end in gaps:
+        print(f"re-listing a short window {gap_start} .. {gap_end}", flush=True)
+        result = fetch_listing(gap_start, gap_end)
+        if result is None:
+            new_gaps.append((gap_start, gap_end))
+            continue
+        listing.extend(result[0])
+        new_gaps.extend(result[1])
     print(f"listing NSE integrated filings {start} .. {today}", flush=True)
-    listing = fetch_listing(start, today)
-    listed_ok = listing is not None
+    result = fetch_listing(start, today)
+    if result is None:
+        listed_ok = False
+    else:
+        listing.extend(result[0])
+        new_gaps.extend(result[1])
 
     def stored_filed(symbol: str, period: str) -> str:
         for row in (symbols.get(symbol) or {}).get("quarters") or []:
@@ -207,7 +267,7 @@ def main() -> int:
         return ""
 
     added = 0
-    for raw in listing or []:
+    for raw in listing:
         item = cr.listing_row(raw)
         if item is None or item["symbol"] not in known:
             continue
@@ -267,6 +327,10 @@ def main() -> int:
     out = {
         "generated_at": stamp,
         "listed_through": today.isoformat() if listed_ok else doc.get("listed_through"),
+        # Any window not yet listed in full is in listing_gaps, so the
+        # one-off re-list is recorded as done whatever this run managed.
+        "listing_version": LISTING_VERSION,
+        "listing_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_gaps],
         "source": "NSE Integrated Filing XBRL, consolidated (Rs / 1e7 = crore); net profit attributable to owners",
         "queue": sorted(queue.values(), key=lambda q: q["filed"], reverse=True),
         "symbols": dict(sorted(symbols.items())),
