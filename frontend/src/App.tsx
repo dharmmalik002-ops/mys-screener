@@ -442,7 +442,10 @@ const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string;
 };
 
 const DEFAULT_WATCHLIST_COLORS = ["#4f8cff", "#00a389", "#ff9f1c", "#ef476f", "#7c5cff", "#06b6d4", "#84cc16", "#f97316"];
-const MAX_PERSISTED_CHART_RESPONSES = 8;
+// localStorage copies for an instant first paint after a reload; the IndexedDB
+// store (lib/chartStore.ts) keeps hundreds. A five-year chart is ~150 KB of
+// JSON, so eight of them would crowd the ~5 MB quota every other cache shares.
+const MAX_PERSISTED_CHART_RESPONSES = 4;
 
 function DeferredPanelPlaceholder({ className = "workspace-pad", compact = false }: { className?: string; compact?: boolean }) {
   const blockClassName = compact ? "skeleton-block skeleton-block-sm" : "skeleton-block skeleton-block-lg";
@@ -2443,12 +2446,51 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     return { payload, fresh };
   };
 
+  // Saving a chart to IndexedDB and localStorage runs after it is drawn, not
+  // before: with five years of bars the localStorage copy alone is ~0.6 MB of
+  // JSON.stringify per chart, and it sat between the response and the paint.
+  // A prewarm burst or fast stepping coalesces into one write.
+  const chartPersistTimerRef = useRef<number | null>(null);
+  const chartPersistPendingRef = useRef<{ markets: Set<MarketKey>; store: Map<string, ChartResponse> }>({
+    markets: new Set(),
+    store: new Map(),
+  });
+  const flushChartPersistence = () => {
+    if (chartPersistTimerRef.current !== null) {
+      window.clearTimeout(chartPersistTimerRef.current);
+      chartPersistTimerRef.current = null;
+    }
+    const pending = chartPersistPendingRef.current;
+    for (const [cacheKey, payload] of pending.store) {
+      putStoredChart(cacheKey, payload);
+    }
+    pending.store.clear();
+    for (const market of pending.markets) {
+      try {
+        window.localStorage.setItem(
+          marketScopedKey(CHART_RESPONSE_CACHE_KEY, market),
+          JSON.stringify(persistedChartCacheRef.current[market]),
+        );
+      } catch {
+        // Ignore cache persistence failures so chart loading never breaks on quota limits.
+      }
+    }
+    pending.markets.clear();
+  };
+  const flushChartPersistenceRef = useRef(flushChartPersistence);
+  flushChartPersistenceRef.current = flushChartPersistence;
+  useEffect(() => {
+    const flush = () => flushChartPersistenceRef.current();
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
+
   const storeCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe, payload: ChartResponse) => {
     const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
     chartResponseCacheRef.current[cacheKey] = payload;
-    if (shouldPersistChartResponse(chartTimeframe)) {
-      putStoredChart(cacheKey, payload);
-    }
     if (chartTimeframe === "1D" || chartTimeframe === "1W") {
       const newest = lastBarDate(payload);
       if (newest && (!newestServedBarDateRef.current || newest > newestServedBarDateRef.current)) {
@@ -2458,21 +2500,23 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     if (!shouldPersistChartResponse(chartTimeframe)) {
       return;
     }
-    const nextPersisted = prunePersistedChartCache({
+    persistedChartCacheRef.current[market] = prunePersistedChartCache({
       ...persistedChartCacheRef.current[market],
       [cacheKey]: {
         saved_at: new Date().toISOString(),
         payload,
       },
     });
-    persistedChartCacheRef.current[market] = nextPersisted;
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem(marketScopedKey(CHART_RESPONSE_CACHE_KEY, market), JSON.stringify(nextPersisted));
-      } catch {
-        // Ignore cache persistence failures so chart loading never breaks on quota limits.
-      }
+    if (typeof window === "undefined") {
+      return;
     }
+    const pending = chartPersistPendingRef.current;
+    pending.store.set(cacheKey, payload);
+    pending.markets.add(market);
+    if (chartPersistTimerRef.current !== null) {
+      window.clearTimeout(chartPersistTimerRef.current);
+    }
+    chartPersistTimerRef.current = window.setTimeout(flushChartPersistence, 800);
   };
 
   const restoreCachedChart = (market: MarketKey, symbol: string | null, chartTimeframe: ChartTimeframe) => {
@@ -6624,18 +6668,22 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
         {activePage === "home" ? (
           <PageSuspense fallback={<DeferredPanelPlaceholder />}>
-            <HomePanel
-              activeMarket={activeMarket}
-              dashboard={dashboard}
-              groups={groupsData}
-              snapshotDateLabel={snapshotDateLabel}
-              snapshotTimeLabel={snapshotTimeLabel}
-              onPickSymbol={handlePickSymbol}
-              onOpenGroups={(options) => {
-                void openGroupsView(options);
-              }}
-              onOpenMarkets={() => handleNavigate("markets")}
-            />
+            {/* Frozen like the other pages: Home re-rendered behind the chart
+                modal on every "next stock", ~40 ms of its charts' labels. */}
+            {freezeBehindChartModal("home", (
+              <HomePanel
+                activeMarket={activeMarket}
+                dashboard={dashboard}
+                groups={groupsData}
+                snapshotDateLabel={snapshotDateLabel}
+                snapshotTimeLabel={snapshotTimeLabel}
+                onPickSymbol={handlePickSymbol}
+                onOpenGroups={(options) => {
+                  void openGroupsView(options);
+                }}
+                onOpenMarkets={() => handleNavigate("markets")}
+              />
+            ))}
           </PageSuspense>
         ) : null}
         {!loading && activePage === "live" ? (
@@ -6645,7 +6693,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         ) : null}
         {!loading && activePage === "markets" ? (
           <PageSuspense fallback={<DeferredPanelPlaceholder />}>
-            <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} onOpenChartWithList={handleOpenChartWithList} xpBreadth={dashboard?.xp_breadth ?? null} />
+            {freezeBehindChartModal("markets", (
+              <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} onOpenChartWithList={handleOpenChartWithList} xpBreadth={dashboard?.xp_breadth ?? null} />
+            ))}
           </PageSuspense>
         ) : null}
         {activePage === "funds" ? (

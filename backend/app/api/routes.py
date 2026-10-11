@@ -3,7 +3,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 
 from app.services import study_deck as sd
 from app.services.dashboard_service import JournalShrinkRefused
@@ -45,6 +45,12 @@ def build_router(service):
 
     def default_index_symbols(market: str | None) -> list[str]:
         return ["^NSEI", "^BSESN", "^NSEBANK"]
+
+    def chart_json(chart: ChartResponse) -> Response:
+        # pydantic's own serializer: a five-year chart is ~150 KB of JSON, and
+        # FastAPI's default path (dump to dicts, then json.dumps) takes several
+        # times longer to produce the same document.
+        return Response(content=chart.model_dump_json(), media_type="application/json")
 
     def resolve_service(market: str):
         normalized_market = str(market or "india").strip().lower()
@@ -314,12 +320,12 @@ def build_router(service):
         end: str = Query(...),
         market: str = Query(default="india"),
     ):
-        """Daily bars for an explicit past window — /chart keeps only ~500 sessions.
+        """Daily bars for an explicit past window — /chart keeps only five years.
 
         Cheapest source first, so a page of dozens of example charts loads
         without queueing on Yahoo: (1) a window stored earlier; (2) the Space's
         own chart_cache, warmed for the whole universe after every boot (about
-        two years of bars, which covers the newest examples the page shows
+        five years of bars, which covers the newest examples the page shows
         first); (3) the provider's chart, the path the main chart uses; then,
         only for older windows, (4) Yahoo for the exact window and (5) the full
         history. Whatever answers is stored for next time.
@@ -353,7 +359,7 @@ def build_router(service):
         if document.get("bars"):
             return document
         # Last resort: the provider's own downloader for the whole history,
-        # bypassing chart_cache (which holds only ~2 years and would otherwise
+        # bypassing chart_cache (which holds only ~5 years and would otherwise
         # answer for an old window with nothing in it).
         raw = await asyncio.to_thread(_provider_max_history, resolve_service(market), ticker)
         full = await asyncio.to_thread(bars_in_window, raw, lo, hi)
@@ -771,7 +777,7 @@ def build_router(service):
         market: str = Query(default="india"),
         timeframe: str = Query(default="1D"),
     ):
-        return await resolve_service(market).get_chart(symbol=symbol.upper(), timeframe=timeframe)
+        return chart_json(await resolve_service(market).get_chart(symbol=symbol.upper(), timeframe=timeframe))
 
     @router.get("/chart/{symbol}/stage")
     async def chart_stage(symbol: str, market: str = Query(default="india")):
@@ -785,7 +791,7 @@ def build_router(service):
         market: str = Query(default="india"),
         timeframe: str = Query(default="1D"),
     ):
-        return await resolve_service(market).get_chart_history(symbol=symbol.upper(), timeframe=timeframe)
+        return chart_json(await resolve_service(market).get_chart_history(symbol=symbol.upper(), timeframe=timeframe))
 
     @router.get("/chart-grid", response_model=ChartGridResponse)
     async def chart_grid(
@@ -1116,7 +1122,7 @@ def build_router(service):
         symbol: str,
         timeframe: str = Query(default="1D"),
     ):
-        return await resolve_service(market_name).get_chart(symbol=symbol.upper(), timeframe=timeframe)
+        return chart_json(await resolve_service(market_name).get_chart(symbol=symbol.upper(), timeframe=timeframe))
 
     @router.get("/{market_name}/chart/{symbol}/stage")
     async def namespaced_chart_stage(market_name: str, symbol: str):
@@ -1128,7 +1134,7 @@ def build_router(service):
         symbol: str,
         timeframe: str = Query(default="1D"),
     ):
-        return await resolve_service(market_name).get_chart_history(symbol=symbol.upper(), timeframe=timeframe)
+        return chart_json(await resolve_service(market_name).get_chart_history(symbol=symbol.upper(), timeframe=timeframe))
 
     @router.get("/{market_name}/chart-grid", response_model=ChartGridResponse)
     async def namespaced_chart_grid(

@@ -1086,7 +1086,9 @@ app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(NoCacheMiddleware)
 # A 1D chart is ~68 KB of JSON and compresses ~6x; uncompressed it was most of
 # the time a chart switch spent on the wire.
-app.add_middleware(GZipMiddleware, minimum_size=1024)
+# Level 6 (zlib's default) instead of Starlette's 9: half the CPU on a
+# five-year chart (~150 KB of JSON) for under 1% more bytes.
+app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.frontend_origins,

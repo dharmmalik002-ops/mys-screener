@@ -3,9 +3,9 @@ the learner's saved progress.
 
 Bars
 ----
-The case studies are real trades from 2021-2026. `/api/chart` keeps ~500 daily
-bars whatever the timeframe (CLAUDE.md gotcha 149), so it cannot draw January
-2021. `fetch_bars` asks Yahoo for an explicit date window instead (`.NS`, then
+The case studies are real trades from 2021-2026. `/api/chart` keeps five years
+of daily bars (CLAUDE.md gotchas 149, 160), so the oldest windows fall outside
+it. `fetch_bars` asks Yahoo for an explicit date window instead (`.NS`, then
 `.BO`) and keeps the answer on disk: a window that ended more than a week ago
 can never change, so it is cached for good, and a window still running is
 refetched after `OPEN_WINDOW_TTL_S`.

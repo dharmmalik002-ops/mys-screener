@@ -8,12 +8,14 @@ import logging
 import re
 import time
 from bisect import bisect_left, bisect_right
+from collections import deque
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import httpx
 import pandas as pd
+from pydantic import TypeAdapter
 
 from app.core.config import Settings
 from app.models.market import (
@@ -78,6 +80,7 @@ from app.models.market import (
     WatchlistsStateResponse,
 )
 from app.providers.base import MarketDataProvider
+from app.providers.free import CHART_DAILY_HISTORY_BARS
 from app.scanners.definitions import (
     SCAN_BY_ID,
     _minervini_5m,
@@ -117,6 +120,9 @@ logger = logging.getLogger(__name__)
 # that must be rebuildable before the counts are reported at all.
 HISTORY_MISSING_RETRY_SECONDS = 300.0
 HISTORY_MIN_COVERAGE = 0.5
+# Built chart responses kept in memory per worker (see get_chart).
+CHART_RESPONSE_CACHE_MAX = 150
+_CHART_LINE_POINTS_ADAPTER = TypeAdapter(list[ChartLinePoint])
 
 # Bound on fetching index bars for the Markets context tiles. The verdict
 # itself never waits on them.
@@ -421,12 +427,10 @@ class DashboardService:
 
     @staticmethod
     def _chart_bar_limit(timeframe: str) -> int:
-        # Initial chart payload is intentionally lean: enough for 200dma /
-        # 52-week-high / 1y RS-line context, with the "Load Full History"
-        # button extending to ~5 years on demand. Cuts initial response
-        # size and Yahoo fetch time roughly in half vs the prior 1300.
+        # Five years of daily bars, which is what the provider downloads and
+        # keeps in its chart cache anyway; "Load Full History" goes beyond it.
         if timeframe == "1D":
-            return 600
+            return CHART_DAILY_HISTORY_BARS
         if timeframe == "1W":
             return 260
         if timeframe == "1h":
@@ -467,8 +471,30 @@ class DashboardService:
 
     async def _snapshots(self):
         snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-        return self._with_earnings_metrics(snapshots)
+        # The provider hands back the same list until its snapshot changes, and
+        # merging the earnings metrics copies a few hundred models — ~8 ms that
+        # every chart open used to pay. Reuse the merge while neither input
+        # moved; callers get their own list so none can reorder the shared one.
+        metrics_mtime = self._earnings_metrics_mtime()
+        memo = self._snapshots_with_metrics_memo
+        if memo is not None and memo[0] is snapshots and memo[1] == metrics_mtime:
+            return list(memo[2])
+        merged = self._with_earnings_metrics(snapshots)
+        self._snapshots_with_metrics_memo = (snapshots, metrics_mtime, merged)
+        return list(merged)
 
+    def _earnings_metrics_mtime(self) -> float | None:
+        backend_root = getattr(self.provider, "backend_root", None)
+        if backend_root is None:
+            return None
+        try:
+            from app.services.earnings_metrics import metrics_file_path
+
+            return metrics_file_path(backend_root).stat().st_mtime
+        except Exception:
+            return None
+
+    _snapshots_with_metrics_memo: tuple[list[StockSnapshot], float | None, list[StockSnapshot]] | None = None
     _upcoming_calendar_cache: tuple[float, dict[str, str]] | None = None
 
     def _upcoming_earnings_date(self, symbol: str) -> str | None:
@@ -4715,7 +4741,12 @@ class DashboardService:
             band_change_markers=self._build_band_change_markers(symbol, bars),
             band_history=self._build_band_history(symbol),
         )
+        self._chart_response_cache.pop(cache_key, None)
         self._chart_response_cache[cache_key] = (now, snapshot_updated_at, response)
+        # A five-year chart is a few MB of objects; keep the most recently built
+        # ones only, or a day of browsing holds every chart ever opened.
+        while len(self._chart_response_cache) > CHART_RESPONSE_CACHE_MAX:
+            del self._chart_response_cache[next(iter(self._chart_response_cache))]
         return response
 
     async def get_stock_stage(self, symbol: str) -> dict:
@@ -8065,8 +8096,14 @@ class DashboardService:
         if not ordered_scores or len(daily_bars) < 253:
             return [], []
 
-        daily_ratings: list[ChartLinePoint] = []
-        daily_markers: list[ChartLineMarker] = []
+        # Five years of bars is ~1,000 ratings, so this loop stays linear: the
+        # 52-week high of the rating is a sliding-window max (monotonic deque)
+        # rather than a 252-element rescan per bar, and the points are built in
+        # one validator call rather than one model at a time.
+        daily_times: list[int] = []
+        daily_values: list[float] = []
+        marker_by_time: dict[int, tuple[float, str]] = {}
+        window: deque[tuple[int, float]] = deque()
         closes = [float(bar.close) for bar in daily_bars]
         for index, daily_bar in enumerate(daily_bars):
             score = self._weighted_rs_score_for_index(closes, index)
@@ -8074,55 +8111,57 @@ class DashboardService:
                 continue
 
             rating = self._score_to_rs_rating(score, ordered_scores)
-            daily_ratings.append(ChartLinePoint(time=daily_bar.time, value=rating))
+            position = len(daily_values)
+            if position >= 252:
+                while window[0][0] < position - 252:
+                    window.popleft()
+                if rating > window[0][1]:
+                    marker_by_time[int(daily_bar.time)] = (rating, f"RS {int(rating)} 52W high")
+            daily_times.append(int(daily_bar.time))
+            daily_values.append(rating)
+            while window and window[-1][1] <= rating:
+                window.pop()
+            window.append((position, rating))
 
-            prior_52w_ratings = [point.value for point in daily_ratings[-253:-1]]
-            if len(prior_52w_ratings) >= 252 and rating > max(prior_52w_ratings):
-                daily_markers.append(
-                    ChartLineMarker(
-                        time=daily_bar.time,
-                        value=rating,
-                        label=f"RS {int(rating)} 52W high",
-                        color="#39ff14",
-                    )
-                )
-
-        if not daily_ratings:
+        if not daily_values:
             return [], []
 
-        aligned_points: list[ChartLinePoint] = []
+        aligned_rows: list[dict[str, float]] = []
         aligned_markers: list[ChartLineMarker] = []
         cursor = 0
         latest_value: float | None = None
-        daily_times = [point.time for point in daily_ratings]
-        marker_times = {marker.time: marker for marker in daily_markers}
+        marker_times_sorted = sorted(marker_by_time)
         used_marker_times: set[int] = set()
 
         for bar in bars:
             bar_time = int(bar.time)
-            while cursor < len(daily_ratings) and daily_times[cursor] <= bar_time:
-                latest_value = daily_ratings[cursor].value
+            while cursor < len(daily_values) and daily_times[cursor] <= bar_time:
+                latest_value = daily_values[cursor]
                 cursor += 1
 
             if latest_value is None:
                 continue
 
-            aligned_points.append(ChartLinePoint(time=bar_time, value=latest_value))
+            aligned_rows.append({"time": bar_time, "value": latest_value})
 
-            matched_marker = marker_times.get(bar_time)
-            if matched_marker is None:
-                matched_marker = self._find_latest_marker_for_bar(marker_times, bar_time)
-            if matched_marker is not None and matched_marker.time not in used_marker_times:
-                used_marker_times.add(matched_marker.time)
-                aligned_markers.append(
-                    ChartLineMarker(
-                        time=bar_time,
-                        value=matched_marker.value,
-                        label=matched_marker.label,
-                        color=matched_marker.color,
+            matched_time: int | None = bar_time if bar_time in marker_by_time else None
+            if matched_time is None and marker_times_sorted:
+                # Latest marker at or before this bar, if it fell on the same day
+                # (intraday bars inherit that day's marker).
+                found = bisect_right(marker_times_sorted, bar_time) - 1
+                if found >= 0:
+                    candidate = marker_times_sorted[found]
+                    same_day = (
+                        datetime.fromtimestamp(candidate, tz=timezone.utc).date()
+                        == datetime.fromtimestamp(bar_time, tz=timezone.utc).date()
                     )
-                )
+                    matched_time = candidate if same_day else None
+            if matched_time is not None and matched_time not in used_marker_times:
+                used_marker_times.add(matched_time)
+                value, label = marker_by_time[matched_time]
+                aligned_markers.append(ChartLineMarker(time=bar_time, value=value, label=label, color="#39ff14"))
 
+        aligned_points = _CHART_LINE_POINTS_ADAPTER.validate_python(aligned_rows)
         return aligned_points, aligned_markers
 
     @staticmethod
@@ -8168,13 +8207,3 @@ class DashboardService:
         average_rank = (left + max(left, right)) / 2
         percentile = round((average_rank / (len(ordered_scores) - 1)) * 99)
         return float(max(1, min(99, percentile)))
-
-    @staticmethod
-    def _find_latest_marker_for_bar(marker_times: dict[int, ChartLineMarker], bar_time: int) -> ChartLineMarker | None:
-        candidates = [timestamp for timestamp in marker_times if timestamp <= bar_time]
-        if not candidates:
-            return None
-        latest_timestamp = max(candidates)
-        if datetime.fromtimestamp(latest_timestamp, tz=timezone.utc).date() != datetime.fromtimestamp(bar_time, tz=timezone.utc).date():
-            return None
-        return marker_times.get(latest_timestamp)

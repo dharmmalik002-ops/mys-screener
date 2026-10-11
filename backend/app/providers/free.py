@@ -12,6 +12,7 @@ import threading
 import time
 import uuid
 from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache, partial
 from html import unescape
 from pathlib import Path
 from typing import Any
@@ -24,7 +25,7 @@ import pandas as pd
 import yfinance as yf
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 IS_HF_SPACE = bool(
     os.getenv("SPACE_ID")
@@ -131,6 +132,30 @@ def _row_passes_universe_filter(row: dict, market_cap_min_crore: float) -> bool:
     days_since = (date.today() - listed).days
     return 0 <= days_since <= RECENT_IPO_BYPASS_DAYS
 SNAPSHOT_HISTORY_PERIOD = "3y"
+# Daily bars a chart carries: five years of NSE sessions (~248 a year). Every
+# path that writes the daily chart cache keeps this many, or a daily patch
+# would quietly cut five years back to two. Stay at or under 1300:
+# _fetch_chart_bars asks Yahoo for "max" above that, a far bigger download.
+CHART_DAILY_HISTORY_BARS = 1260
+# A cache short of the depth above that is not marked complete is re-downloaded
+# once; after a failed attempt the shallow cache is used for this long before
+# trying again, so a Yahoo outage never puts a download in front of every open.
+CHART_DEEPEN_RETRY_SECONDS = 6 * 60 * 60
+# One validator call for a whole cached bar list: ~1,260 separate model_validate
+# calls cost more than reading the file.
+_CHART_BAR_LIST_ADAPTER = TypeAdapter(list[ChartBar])
+
+
+# Bar timestamps repeat across every symbol (one per session), and a chart open
+# converts each one several times.
+@lru_cache(maxsize=65536)
+def _trade_date_for_bar_time(bar_time: int) -> date:
+    timestamp = datetime.fromtimestamp(bar_time, tz=timezone.utc)
+    if timestamp.hour == 0 and timestamp.minute == 0 and timestamp.second == 0:
+        return timestamp.date()
+    return timestamp.astimezone(IST).date()
+
+
 # Sources whose snapshot rows are trusted to carry valid avg_volume_20d /
 # avg_volume_30d / avg_volume_50d baselines. "bhavcopy_patch" is included
 # because the apply path does NOT recompute those baselines (it only
@@ -324,6 +349,7 @@ class FreeMarketDataProvider:
         self._completed_session_date_cache: tuple[float, date] | None = None
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
+        self._chart_deepen_failed_at: dict[str, float] = {}
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
         self._snapshot_request_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._background_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
@@ -955,10 +981,7 @@ class FreeMarketDataProvider:
 
     @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
-        timestamp = datetime.fromtimestamp(int(bar.time), tz=timezone.utc)
-        if timestamp.hour == 0 and timestamp.minute == 0 and timestamp.second == 0:
-            return timestamp.date()
-        return timestamp.astimezone(IST).date()
+        return _trade_date_for_bar_time(int(bar.time))
 
     def _values_fit_snapshot_session(self, symbol: str, values: list[Any]) -> bool:
         lower, upper = self._snapshot_session_bounds(symbol)
@@ -1013,7 +1036,7 @@ class FreeMarketDataProvider:
         )
 
     def _patch_daily_chart_cache_with_snapshot(self, symbol: str) -> None:
-        cached_bars = self._read_chart_cache(symbol, "1D", 520)
+        cached_bars = self._read_chart_cache(symbol, "1D", CHART_DAILY_HISTORY_BARS)
         if not cached_bars:
             return
 
@@ -1033,7 +1056,7 @@ class FreeMarketDataProvider:
         # before persisting, so the gap never re-appears on the fast cache path.
         patched_bars = self._with_daily_eod_gaps_filled(symbol, patched_bars)
 
-        self._write_chart_cache(symbol, "1D", patched_bars[-520:])
+        self._write_chart_cache(symbol, "1D", patched_bars[-CHART_DAILY_HISTORY_BARS:])
 
     def _load_recent_eod_bars(self) -> dict[str, dict[str, list]]:
         """Return authoritative recent EOD bars keyed ``{symbol: {date: [o,h,l,c,v]}}``.
@@ -1428,18 +1451,72 @@ class FreeMarketDataProvider:
             float(min(low_value, open_value, current_price)),
         )
 
-    def _write_chart_cache(self, symbol: str, timeframe: str, bars: list[ChartBar]) -> None:
+    def _write_chart_cache(
+        self,
+        symbol: str,
+        timeframe: str,
+        bars: list[ChartBar],
+        *,
+        history_complete: bool | None = None,
+    ) -> None:
+        """Persist a chart's bars.
+
+        ``history_complete`` (daily only) says the bars hold all the history we
+        want for the symbol: five years, or everything Yahoo has for a younger
+        listing. Left as None, a rewrite keeps the existing file's mark as long
+        as it did not drop older bars — a daily patch must not turn a complete
+        cache into one that gets downloaded again.
+        """
         if not bars:
             return
-        payload = {
+        normalized_timeframe = str(timeframe or "").strip().upper()
+        payload: dict[str, Any] = {
             "cache_version": CHART_CACHE_VERSION,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "symbol": str(symbol or "").strip().upper(),
-            "timeframe": str(timeframe or "").strip().upper(),
+            "timeframe": normalized_timeframe,
             "ticker": str(self._resolve_ticker(symbol)).strip().upper(),
-            "bars": [bar.model_dump(mode="json") for bar in bars],
         }
-        self._chart_cache_path(symbol, timeframe).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        if normalized_timeframe == "1D":
+            # A "Load Full History" download is served, not stored: files stay at five years.
+            bars = bars[-CHART_DAILY_HISTORY_BARS:]
+            if history_complete is None:
+                history_complete = self._daily_cache_stays_complete(symbol, bars)
+            payload["history_complete"] = bool(history_complete)
+        payload["bars"] = [bar.model_dump(mode="json") for bar in bars]
+        # Compact: a five-year file is ~30% smaller than indented and parses faster.
+        self._chart_cache_path(symbol, timeframe).write_text(
+            json.dumps(payload, separators=(",", ":")), encoding="utf-8"
+        )
+
+    def _daily_cache_stays_complete(self, symbol: str, bars: list[ChartBar]) -> bool:
+        if len(bars) >= CHART_DAILY_HISTORY_BARS:
+            return True
+        complete, first_time = self._daily_chart_cache_depth_mark(symbol)
+        return complete and first_time is not None and int(bars[0].time) <= first_time
+
+    def _daily_chart_cache_depth_mark(self, symbol: str) -> tuple[bool, int | None]:
+        """(history_complete, first bar time) of the daily cache file as stored."""
+        path = self._chart_cache_path(symbol, "1D")
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            first = payload["bars"][0]["time"] if payload.get("bars") else None
+            return bool(payload.get("history_complete")), (int(first) if first is not None else None)
+        except Exception:
+            return False, None
+
+    def _daily_cache_needs_deepening(self, symbol: str, cached_bar_count: int, requested_bars: int) -> bool:
+        """True when a cached daily series is shorter than a chart wants and not
+        known to be all there is (caches written before charts showed five years
+        held ~520 bars). Backs off after a failed download."""
+        wanted = min(int(requested_bars), CHART_DAILY_HISTORY_BARS)
+        if cached_bar_count >= wanted - 5:
+            return False
+        failed_at = self._chart_deepen_failed_at.get(str(symbol or "").strip().upper())
+        if failed_at is not None and time.monotonic() - failed_at < CHART_DEEPEN_RETRY_SECONDS:
+            return False
+        complete, _ = self._daily_chart_cache_depth_mark(symbol)
+        return not complete
 
     def _read_chart_cache(
         self,
@@ -1470,7 +1547,7 @@ class FreeMarketDataProvider:
         if not isinstance(bar_payload, list):
             return []
         try:
-            cached_bars = [ChartBar.model_validate(item) for item in bar_payload]
+            cached_bars = _CHART_BAR_LIST_ADAPTER.validate_python(bar_payload)
         except Exception:
             return []
         is_daily = str(timeframe or "").strip().upper() == "1D"
@@ -1496,13 +1573,25 @@ class FreeMarketDataProvider:
         return cached_bars[-bars:]
 
     def _seed_daily_chart_cache(self, symbol: str, history: pd.DataFrame) -> None:
-        series = history.dropna(subset=["Close"]).tail(520)
+        series = history.dropna(subset=["Close"]).tail(CHART_DAILY_HISTORY_BARS)
         if series.empty:
             return
-        self._write_chart_cache(symbol, "1D", self._history_to_chart_bars(series))
+        bars = self._history_to_chart_bars(series)
+        if not bars:
+            return
+        # The snapshot build downloads three years. Keep the cache's older bars in
+        # front when the two series meet at the same price, or every rebuild
+        # would cut five-year charts to three. A split in between moves the
+        # adjusted prices apart, so the seed is written alone and deepened later.
+        existing = self._read_chart_cache(symbol, "1D", CHART_DAILY_HISTORY_BARS, skip_scale_check=True)
+        first_time = int(bars[0].time)
+        meeting = next((bar for bar in existing if int(bar.time) == first_time), None)
+        if meeting is not None and bars[0].close and abs(float(meeting.close) / float(bars[0].close) - 1) <= 0.005:
+            bars = [bar for bar in existing if int(bar.time) < first_time] + bars
+        self._write_chart_cache(symbol, "1D", bars)
 
     def _patch_daily_chart_cache_with_quote(self, symbol: str, quote: dict[str, Any]) -> None:
-        cached_bars = self._read_chart_cache(symbol, "1D", 520)
+        cached_bars = self._read_chart_cache(symbol, "1D", CHART_DAILY_HISTORY_BARS)
         if not cached_bars:
             return
 
@@ -1556,7 +1645,7 @@ class FreeMarketDataProvider:
         else:
             patched_bars.append(next_bar)
 
-        self._write_chart_cache(symbol, "1D", patched_bars[-520:])
+        self._write_chart_cache(symbol, "1D", patched_bars[-CHART_DAILY_HISTORY_BARS:])
 
     def _snapshot_memory_signature(self) -> tuple[float, float]:
         snapshot_mtime = self.snapshot_cache_path.stat().st_mtime if self.snapshot_cache_path.exists() else -1.0
@@ -2011,8 +2100,8 @@ class FreeMarketDataProvider:
         cache_cold = not cached_bars
         try:
             async with self._chart_fetch_semaphore:
-                chart_bars = await asyncio.wait_for(
-                    asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
+                chart_bars, history_complete = await asyncio.wait_for(
+                    asyncio.to_thread(self._fetch_chart_bars_with_depth, symbol, timeframe, bars),
                     timeout=self._chart_fetch_timeout_seconds(timeframe, cache_cold=cache_cold),
                 )
             if len(chart_bars) < min_required_bars:
@@ -2028,7 +2117,10 @@ class FreeMarketDataProvider:
                 if len(stale_bars) >= min_required_bars:
                     logger.info("get_chart serving stale cache (scale check skipped) for %s/%s", symbol, timeframe)
                     return stale_bars
-            await asyncio.to_thread(self._write_chart_cache, symbol, timeframe, chart_bars)
+            await asyncio.to_thread(
+                partial(self._write_chart_cache, history_complete=history_complete),
+                symbol, timeframe, chart_bars,
+            )
             return chart_bars
         except Exception as exc:
             if cached_bars:
@@ -2078,18 +2170,18 @@ class FreeMarketDataProvider:
         return age_seconds < 24 * 60 * 60
 
     def _refresh_cached_daily_chart_from_quote(self, symbol: str, bars: int) -> list[ChartBar]:
-        cached_daily = self._read_chart_cache(symbol, "1D", max(bars, 520))
+        cached_daily = self._read_chart_cache(symbol, "1D", max(bars, CHART_DAILY_HISTORY_BARS))
         if not cached_daily:
             return []
 
         self._patch_daily_chart_cache_with_snapshot(symbol)
 
-        cached_daily = self._read_chart_cache(symbol, "1D", max(bars, 520))
+        cached_daily = self._read_chart_cache(symbol, "1D", max(bars, CHART_DAILY_HISTORY_BARS))
 
         return cached_daily[-bars:]
 
     def _refresh_cached_weekly_chart_from_daily_cache(self, symbol: str, bars: int) -> list[ChartBar]:
-        daily_bars = self._refresh_cached_daily_chart_from_quote(symbol, 520)
+        daily_bars = self._refresh_cached_daily_chart_from_quote(symbol, CHART_DAILY_HISTORY_BARS)
         if not daily_bars:
             return []
         weekly_bars = self._aggregate_weekly_chart_bars(daily_bars)
@@ -7653,8 +7745,15 @@ class FreeMarketDataProvider:
         return output[-bars:]
 
     def _fetch_chart_bars(self, symbol: str, timeframe: str, bars: int) -> list[ChartBar]:
+        return self._fetch_chart_bars_with_depth(symbol, timeframe, bars)[0]
+
+    def _fetch_chart_bars_with_depth(self, symbol: str, timeframe: str, bars: int) -> tuple[list[ChartBar], bool | None]:
+        """Bars plus, for daily charts, whether they are all the history wanted
+        (see _write_chart_cache). None for other timeframes."""
         if self.eod_only_mode and timeframe in {"15m", "30m", "1h"}:
             timeframe = "1D"
+        history_complete: bool | None = None
+        shallow_history: pd.DataFrame | None = None
         ticker = self._resolve_ticker(symbol)
         interval_map = {
             "15m": "15m",
@@ -7669,9 +7768,9 @@ class FreeMarketDataProvider:
             "1D": "max" if bars > 1300 else "5y",
         }
         if timeframe == "1W":
-            history = self._history_frame_from_cached_bars(symbol)
+            history = self._history_frame_from_cached_bars(symbol, CHART_DAILY_HISTORY_BARS)
             if not self._history_has_minimum_bars(history):
-                history = self._history_frame_from_cached_bars(symbol, allow_legacy=True)
+                history = self._history_frame_from_cached_bars(symbol, CHART_DAILY_HISTORY_BARS, allow_legacy=True)
             if self._history_has_minimum_bars(history):
                 history = history.copy()
             else:
@@ -7684,10 +7783,19 @@ class FreeMarketDataProvider:
             interval = interval_map.get(timeframe, "1d")
             period = period_map.get(timeframe, "max")
             history = pd.DataFrame()
-            if timeframe == "1D":
+            # Above the cached depth ("Load Full History") the cache can only
+            # answer with what a normal chart already shows: download instead.
+            if timeframe == "1D" and bars <= CHART_DAILY_HISTORY_BARS:
                 history = self._history_frame_from_cached_bars(symbol, bars, allow_legacy=True)
                 if self._history_has_minimum_bars(history):
-                    history = self._apply_snapshot_row_to_daily_history(symbol, history)
+                    cached_count = len(history.dropna(subset=["Close"]))
+                    if self._daily_cache_needs_deepening(symbol, cached_count, bars):
+                        # Written when charts kept ~2 years: fetch the full five once.
+                        shallow_history = history
+                        history = pd.DataFrame()
+                    else:
+                        history_complete = True
+                        history = self._apply_snapshot_row_to_daily_history(symbol, history)
                 # The previous fallback to _chart_bars_from_snapshot_points
                 # synthesised bars with open=high=low=close from the snapshot's
                 # close-only chart_grid_points, which rendered as wickless
@@ -7696,7 +7804,21 @@ class FreeMarketDataProvider:
                 # real OHLC.
 
             if history.empty:
-                history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
+                try:
+                    history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
+                except Exception:
+                    if shallow_history is None:
+                        raise
+                    history = pd.DataFrame()
+                if shallow_history is not None:
+                    if self._history_has_minimum_bars(history) and len(history) >= len(shallow_history):
+                        history_complete = True
+                    else:
+                        self._chart_deepen_failed_at[str(symbol or "").strip().upper()] = time.monotonic()
+                        history_complete = False
+                        history = self._apply_snapshot_row_to_daily_history(symbol, shallow_history)
+                elif timeframe == "1D":
+                    history_complete = True
             if timeframe == "1D":
                 history = self._split_adjusted_history(history)
                 if not self.eod_only_mode:
@@ -7708,10 +7830,12 @@ class FreeMarketDataProvider:
                     index_fallback = self._download_nse_index_chart_history(symbol)
                     if not index_fallback.empty and len(index_fallback) > len(history):
                         history = index_fallback
+                        history_complete = False
                 if symbol.upper() in {"CL=F", "BZ=F"} and (history.empty or len(history) < min(120, bars)):
                     commodity_fallback = self._download_fred_wti_history()
                     if not commodity_fallback.empty and len(commodity_fallback) > len(history):
                         history = commodity_fallback
+                        history_complete = False
 
         if history.empty:
             raise RuntimeError(f"No chart history for {symbol}")
@@ -7723,7 +7847,7 @@ class FreeMarketDataProvider:
             chart_bars = self._with_daily_eod_gaps_filled(symbol, chart_bars)
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
-        return chart_bars
+        return chart_bars, history_complete
 
     def _download_nse_index_chart_history(self, symbol: str) -> pd.DataFrame:
         index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
