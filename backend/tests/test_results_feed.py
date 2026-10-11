@@ -285,6 +285,46 @@ def test_if_due_skips_a_slot_already_run(files, job, monkeypatch):
     assert job.main() == 0
 
 
+def test_the_season_that_just_closed_is_dated_from_bse_in_stretches(files, job, monkeypatch):
+    # The evening slot already ran, but filings before Sep 29 were never read:
+    # each run reads one earlier stretch until the June quarter's season
+    # (from Jul 1) is covered, then stops.
+    files.feed.write_text(json.dumps({"filings_checked_at": "2026-10-10T13:35:00+00:00", "filings_through": "2026-10-10",
+                                      "filings_from": "2026-09-29", "declared": {}, "pending": {}, "quarters": {}}))
+    reads: list[tuple[date, date]] = []
+
+    def fake_filings(start, end):
+        reads.append((start, end))
+        return [("500002", datetime(2026, 8, 12, 16, 5))] if start <= date(2026, 8, 12) <= end else []
+
+    monkeypatch.setattr(job, "fetch_filings", fake_filings)
+    monkeypatch.setattr(job, "_get", lambda url, params: {"Table": [{"Q1": "Jun-26;X;130.00;"}]})
+    monkeypatch.setattr(sys, "argv", ["update_results_feed.py", "--if-due", "--workers", "2"])
+    for _ in range(6):
+        assert job.main() == 0
+    assert reads[0] == (date(2026, 9, 1), date(2026, 9, 28))
+    assert reads[-1][0] == date(2026, 7, 1) and len(reads) == 4  # then nothing left to read
+    feed = json.loads(files.feed.read_text())
+    assert feed["filings_from"] == "2026-07-01"
+    assert feed["declared"]["XYZ"] == {"Jun 2026": "2026-08-12T16:05"}
+    # A backfill alone does not count as the evening's read.
+    assert feed["filings_checked_at"] == "2026-10-10T13:35:00+00:00"
+
+
+def test_a_schedule_the_parser_cannot_read_is_recorded(files, job, monkeypatch):
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [("500001", datetime(2026, 10, 9, 17, 42))])
+
+    def fake_get(url, params):
+        if "CorprateResultbeta" in url:
+            return {"Table": [{"Q2": "Sep-26;X;131.00;", "Q1": "Jun-26;X;130.00;"}]}
+        return {"table1": [{"fld_desc": "Interest Income", "Value": "900"}, {"fld_desc": "Net Profit", "Value": "120"}]}
+
+    monkeypatch.setattr(job, "_get", fake_get)
+    assert job.main() == 0
+    feed = json.loads(files.feed.read_text())
+    assert feed["unparsed_samples"] == [{"symbol": "ABC", "names": ["Interest Income", "Net Profit"]}]
+
+
 def test_nse_standalone_columns_fill_quarters_bse_lacks(files):
     # A recent listing: BSE holds only its quarters since listing; NSE's
     # filing carries the year-ago and previous quarters as columns.

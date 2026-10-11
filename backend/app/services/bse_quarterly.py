@@ -34,6 +34,7 @@ _MONTHS = {
 _SALES_KEYS = (
     "net sales/revenue from operations",
     "revenue from operations",
+    "total revenue from operations",
     "interest earned/net income from sales/services",
     "interest earned",
     "net sales",

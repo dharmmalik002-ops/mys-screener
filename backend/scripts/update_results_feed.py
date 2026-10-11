@@ -49,6 +49,11 @@ HEADERS = {
 IST = timezone(timedelta(hours=5, minutes=30))
 FIRST_RUN_DAYS = 45
 MAX_LOOKBACK_DAYS = 45
+# Beside the day's read, each run reads one earlier stretch until every filing
+# since the previous quarter's season began has been read, so the season that
+# just closed is dated from BSE itself even where the calendar has holes (it
+# missed most of September 2026 while BSE refused the runners, gotcha 159).
+BACKFILL_CHUNK_DAYS = 28
 WINDOW_DAYS = 14  # BSE's announcement search answers at most a fortnight
 
 _local = threading.local()
@@ -113,12 +118,29 @@ def fetch_filings(start: date, end: date) -> list[tuple[str, datetime]] | None:
     return out
 
 
-def process(symbol: str, code: str, filings: list[datetime], feed: dict, known: set[str]) -> tuple[str, list[dict], dict[str, int], bool]:
+def backfill_window(feed: dict, today: date) -> tuple[date, date] | None:
+    """The next earlier stretch to read, or None once every filing since the
+    previous quarter's season began has been read (`filings_from`)."""
+    current = rf.season_start(today)
+    target = rf.season_start(current - timedelta(days=1))
+    read_from = feed.get("filings_from")
+    if read_from is None:
+        through = feed.get("filings_through")
+        if through is None:
+            return None  # the first run reads its own look-back first
+        read_from = (date.fromisoformat(through) - timedelta(days=1)).isoformat()
+    first = date.fromisoformat(read_from)
+    if first <= target:
+        return None
+    return max(target, first - timedelta(days=BACKFILL_CHUNK_DAYS)), first - timedelta(days=1)
+
+
+def process(symbol: str, code: str, filings: list[datetime], feed: dict, known: set[str]) -> tuple[str, list[dict], dict[str, int], bool, list[str]]:
     """List the company's quarters, fetch missing ones, and decide each filing.
     Works on a private copy of the symbol's feed slices; merged by the caller."""
     listing = _get(API + "CorprateResultbeta/w", {"scripcode": code})
     if listing is None:
-        return symbol, [], {}, False
+        return symbol, [], {}, False, []
     wanted = bq.quarter_codes(listing)[: bq.QUARTERS_KEPT]
     listed = {period for period, _qtr, _url in wanted}
     outcome: dict[str, int] = {}
@@ -126,6 +148,7 @@ def process(symbol: str, code: str, filings: list[datetime], feed: dict, known: 
         verdict = rf.apply_filing(feed, symbol, filed, listed)
         outcome[verdict] = outcome.get(verdict, 0) + 1
     rows: list[dict] = []
+    unparsed: list[str] = []
     # The newest eight quarters cover QoQ, YoY and both trailing years for PE.
     for period, quarter_code, url in wanted[:8]:
         if period in known:
@@ -133,13 +156,18 @@ def process(symbol: str, code: str, filings: list[datetime], feed: dict, known: 
         detail = _get(API + "Corp_detailedResult_Transpose_ng/w", {"Scrip_cd": code, "Qtr": quarter_code})
         if detail is None:
             continue
-        parsed = bq.parse_quarter(detail.get("table1") or [], period, url)
+        table = detail.get("table1") or []
+        parsed = bq.parse_quarter(table, period, url)
+        if parsed is None and table and not unparsed:
+            # A schedule the parser does not read (no revenue line it knows):
+            # its line names are kept so the schedule can be added.
+            unparsed = [str(item.get("fld_desc") or "") for item in table][:60]
         if parsed is not None:
             parsed.pop("result_document_url", None)
             parsed["qtr"] = quarter_code
             parsed["v"] = 2
             rows.append(parsed)
-    return symbol, rows, outcome, True
+    return symbol, rows, outcome, True, unparsed
 
 
 def main() -> int:
@@ -157,11 +185,13 @@ def main() -> int:
         except ValueError:
             feed = {}
     now = _now()
-    if args.if_due and not rf.slot_due(feed.get("filings_checked_at"), now):
+    today = now.date()
+    due = not args.if_due or rf.slot_due(feed.get("filings_checked_at"), now)
+    backfill = backfill_window(feed, today)
+    if not due and backfill is None:
         print(f"not due: filings already checked at {feed.get('filings_checked_at')}")
         return 0
 
-    today = now.date()
     if args.days:
         start = today - timedelta(days=args.days)
     else:
@@ -174,9 +204,17 @@ def main() -> int:
     code_of = {sym: code for code, sym in by_code.items()}
     summary = (bq.read_cached(bq.ARTIFACT_PATH).get("symbols") or {})
 
-    print(f"reading BSE result filings {start} .. {today}", flush=True)
-    filings = fetch_filings(start, today)
+    filings: list[tuple[str, datetime]] | None = []
+    if due:
+        print(f"reading BSE result filings {start} .. {today}", flush=True)
+        filings = fetch_filings(start, today)
     read_ok = filings is not None
+    backfill_ok = False
+    if backfill is not None:
+        print(f"reading earlier filings {backfill[0]} .. {backfill[1]} (season backfill)", flush=True)
+        earlier = fetch_filings(*backfill)
+        backfill_ok = earlier is not None
+        filings = (filings or []) + (earlier or [])
     per_symbol: dict[str, list[datetime]] = {}
     for code, when in filings or []:
         symbol = by_code.get(code)
@@ -214,9 +252,12 @@ def main() -> int:
             }
             local_of[pool.submit(process, symbol, code, times, local, known_periods(symbol))] = local
         for n, future in enumerate(as_completed(local_of), start=1):
-            symbol, rows, outcome, ok = future.result()
+            symbol, rows, outcome, ok, unparsed = future.result()
             local = local_of[future]
             with lock:
+                if unparsed:
+                    samples = [x for x in feed.get("unparsed_samples") or [] if x.get("symbol") != symbol]
+                    feed["unparsed_samples"] = (samples + [{"symbol": symbol, "names": unparsed}])[-10:]
                 if not ok:
                     failed += 1
                     continue
@@ -246,18 +287,23 @@ def main() -> int:
     rf.prune(feed, summary, today)
     stamp = datetime.now(timezone.utc).isoformat()
     feed["generated_at"] = stamp
-    if read_ok:
+    if read_ok and due:
         feed["filings_checked_at"] = stamp
         feed["filings_through"] = today.isoformat()
+        if start.isoformat() < str(feed.get("filings_from") or "9999"):
+            feed["filings_from"] = start.isoformat()
+    if backfill is not None and backfill_ok:
+        feed["filings_from"] = backfill[0].isoformat()
     feed["source"] = "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)"
-    ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "source") if key in feed}
+    ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
+                                          "source", "unparsed_samples") if key in feed}
     for key in ("declared", "pending", "quarters"):
         ordered[key] = dict(sorted((feed.get(key) or {}).items()))
     path.write_text(json.dumps(ordered, separators=(",", ":"), sort_keys=False), encoding="utf-8")
     print(f"wrote {path.name}: {len(ordered['declared'])} companies dated, "
           f"{len(ordered['pending'])} awaiting figures, {len(ordered['quarters'])} with fresh quarters, "
           f"{path.stat().st_size / 1024:.0f} KB", flush=True)
-    return 0 if read_ok else 1
+    return 0 if read_ok and (backfill is None or backfill_ok) else 1
 
 
 if __name__ == "__main__":

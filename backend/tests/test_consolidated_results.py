@@ -33,7 +33,7 @@ def _fact(name, ctx, value, unit="INR"):
     return f'<in-capmkt:{name} contextRef="{ctx}" unitRef="{unit}" decimals="-5">{value}</in-capmkt:{name}>'
 
 
-def instance(nature="Consolidated", revenue=True) -> bytes:
+def instance(nature="Consolidated", revenue=True, owners_profit="138840000000") -> bytes:
     """Shaped like a real Integrated Filing: the quarter, the year to date, the
     previous quarter, a segment context for the same quarter, an instant."""
     facts = [
@@ -45,7 +45,7 @@ def instance(nature="Consolidated", revenue=True) -> bytes:
         _fact("FinanceCosts", "OneD", "2000000000"),
         _fact("ProfitBeforeTax", "OneD", "185000000000"),
         _fact("ProfitLossForPeriod", "OneD", "140000000000"),
-        _fact("ProfitOrLossAttributableToOwnersOfParent", "OneD", "138840000000"),
+        _fact("ProfitOrLossAttributableToOwnersOfParent", "OneD", owners_profit),
         _fact("BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations", "OneD", "38.35", unit="INRPerShare"),
         # Year to date: must never be read as the quarter.
         _fact("RevenueFromOperations", "FourD", "1454630000000"),
@@ -71,6 +71,25 @@ def instance(nature="Consolidated", revenue=True) -> bytes:
 
 
 # ── parsing ─────────────────────────────────────────────────────────────────
+
+
+def test_an_owners_profit_tagged_zero_does_not_hide_the_period_profit():
+    # One filing in eight leaves the attributable line 0 beside a real
+    # profit (ANGELONE Mar 2025 read 0.0 on a Rs 236 cr pre-tax profit).
+    row = cr.parse_instance(instance(owners_profit="0"))
+    assert row["net_profit_crore"] == 14000.0
+
+
+def test_a_stored_zero_profit_beside_a_real_pre_tax_profit_reads_as_unknown(files):
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    doc["symbols"]["ANGELONE"] = {"quarters": [
+        {"period": "Mar 2025", "sales_crore": 1056.01, "profit_before_tax_crore": 235.73, "net_profit_crore": 0.0, "eps": 19.33},
+        {"period": "Dec 2024", "sales_crore": 1000.0, "profit_before_tax_crore": 0.2, "net_profit_crore": 0.0, "eps": 0.0}]}
+    (files / "consolidated_results.json").write_text(json.dumps(doc))
+    rows = cr.results_for("ANGELONE")
+    assert rows[0]["net_profit_crore"] is None
+    assert rows[1]["net_profit_crore"] == 0.0  # a genuine break-even quarter stays 0
+
 
 def test_reads_the_quarter_not_the_year_to_date_or_a_segment():
     row = cr.parse_instance(instance())
@@ -294,6 +313,25 @@ def test_an_old_file_reads_its_history_again_over_several_runs(files, job, monke
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
     assert ("2025-01-01", "2025-01-15") in calls
+    assert doc["harvesting"] is False and doc["harvest_version"] == job.HARVEST_VERSION
+
+
+def test_a_new_reader_restarts_a_re_read_already_under_way(files, job, monkeypatch):
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "symbols": {}, "listed_through": "2026-10-09", "harvest_version": job.HARVEST_VERSION - 1,
+        "harvesting": True, "listing_gaps": [["2025-01-01", "2025-01-15"]],
+        "skipped_filings": {"X|2025-06-30|consolidated": "2025-08-01T10:00"}}))
+    calls = _fake_windows(job, monkeypatch, [], short={"2025-01-01"})
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    # The whole history was listed again, not just the one gap left over.
+    assert len(calls) > 30 and doc["harvesting"] is True and doc["harvest_target"] == job.HARVEST_VERSION
+    assert doc["skipped_filings"] == {}
+    # The next run carries on rather than starting over a second time.
+    calls = _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert ("2025-01-01", "2025-01-15") in calls and len(calls) <= 3
     assert doc["harvesting"] is False and doc["harvest_version"] == job.HARVEST_VERSION
 
 
