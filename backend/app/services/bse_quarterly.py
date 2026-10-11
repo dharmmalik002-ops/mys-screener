@@ -88,6 +88,11 @@ def parse_quarter(table: list[dict[str, Any]], period: str, document_url: str | 
         return None if value is None else round(value / MILLION_PER_CRORE, 2)
 
     sales = _find(rows, _SALES_KEYS)
+    if sales is None and rows.get("total income") is not None:
+        # BSE leaves out lines that are nil: a company with no revenue line
+        # beside Total Income and Other Income has revenue from operations of
+        # their difference (GRANDOAK files exactly these lines).
+        sales = rows["total income"] - (rows.get("other income") or 0.0)
     if sales is None:
         return None
     expenditure = rows.get("expenditure")

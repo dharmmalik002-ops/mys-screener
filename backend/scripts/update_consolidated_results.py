@@ -247,7 +247,7 @@ def queue_key(item: dict) -> str:
 # Version 2 reads every column of a filing (the previous and year-ago
 # quarters, not just its own), and standalone filings too. Filings stored
 # before it are fetched once more to collect their columns.
-HARVEST_VERSION = 4  # 4: a zero owners' profit no longer hides the period profit
+HARVEST_VERSION = 5  # 4: a zero owners' profit no longer hides the period profit; 5: insurers' schedules
 
 
 def main() -> int:

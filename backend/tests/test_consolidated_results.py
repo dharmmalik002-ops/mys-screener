@@ -80,6 +80,40 @@ def test_an_owners_profit_tagged_zero_does_not_hide_the_period_profit():
     assert row["net_profit_crore"] == 14000.0
 
 
+
+def _insurer(facts: list[tuple[str, str]]) -> bytes:
+    body = "".join([_ctx("OneD", "2026-04-01", "2026-06-30"),
+                    _fact("NatureOfReportStandaloneConsolidated", "OneD", "Standalone", unit=None)
+                    .replace(' unitRef="None"', "").replace(' decimals="-5"', ""),
+                    *[_fact(name, "OneD", value) for name, value in facts]])
+    return ('<?xml version="1.0" encoding="UTF-8"?><xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" '
+            'xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:in-capmkt="http://www.sebi.gov.in/xbrl/2025-01-31">'
+            f'{body}</xbrli:xbrl>').encode()
+
+
+def test_a_life_insurer_reads_net_premium_and_profit_after_tax():
+    # Element names as LICI / SBILIFE / HDFCLIFE file them.
+    row = cr.parse_instance(_insurer([
+        ("NetPremiumIncome", "1200000000000"), ("Expenses", "900000000000"),
+        ("ProfitLossBeforeTax", "110000000000"), ("ProfitLossAfterTaxAndExtraordinaryItems", "100000000000"),
+        ("BasicAndDilutedEPSAfterExtraordinaryItemsNetOfTaxExpenseForThePeriodNotToBeAnnualized", "15.81")]),
+        basis="standalone")
+    assert row["sales_crore"] == 120000.0 and row["net_profit_crore"] == 10000.0 and row["eps"] == 15.81
+    assert row["profit_before_tax_crore"] == 11000.0
+    assert row["operating_profit_crore"] is None  # no such line; never derived from policyholder expenses
+
+
+def test_a_general_insurer_reads_premium_earned_and_its_operating_profit():
+    # Element names as GICRE / NIACL / GODIGIT file them.
+    row = cr.parse_instance(_insurer([
+        ("PremiumEarned", "90000000000"), ("NetPremiumWritten", "95000000000"),
+        ("OperatingProfitOrLoss", "8000000000"), ("ProfitOrLossBeforeTax", "12000000000"),
+        ("ProfitLossAfterTax", "9000000000"),
+        ("BasicAndDilutedEPSAfterExtraordinaryItemsNetOfTaxExpenseForThePeriodNotToBeAnnualized", "5.13")]),
+        basis="standalone")
+    assert (row["sales_crore"], row["operating_profit_crore"], row["net_profit_crore"], row["eps"]) == (9000.0, 800.0, 900.0, 5.13)
+
+
 def test_a_stored_zero_profit_beside_a_real_pre_tax_profit_reads_as_unknown(files):
     doc = json.loads((files / "consolidated_results.json").read_text())
     doc["symbols"]["ANGELONE"] = {"quarters": [

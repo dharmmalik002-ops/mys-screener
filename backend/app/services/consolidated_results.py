@@ -41,20 +41,29 @@ _XBRLI = "{http://www.xbrl.org/2003/instance}"
 
 # First present wins. Names from SEBI's in-capmkt taxonomy (2025-01-31).
 REVENUE = ("RevenueFromOperations", "InterestEarned", "TotalInterestEarned")
+# Insurers file IRDAI schedules (names read from LICI, SBILIFE, HDFCLIFE,
+# GICRE, NIACL, GODIGIT filings, 2026-10-11): life insurers' revenue is net
+# premium income, general insurers' is premium earned; only general insurers
+# report an operating profit line. Expenses on these schedules are not an
+# operating cost base, so operating profit is never derived for them.
+INSURANCE_REVENUE = ("NetPremiumIncome", "PremiumEarned")
+INSURANCE_OPERATING = ("OperatingProfitOrLoss",)
 EXPENSES = ("Expenses",)
 DEPRECIATION = ("DepreciationDepletionAndAmortisationExpense",)
 FINANCE = ("FinanceCosts",)
-PROFIT_BEFORE_TAX = ("ProfitBeforeTax", "ProfitLossBeforeTax")
+PROFIT_BEFORE_TAX = ("ProfitBeforeTax", "ProfitLossBeforeTax", "ProfitOrLossBeforeTax")
 # Owners of the parent: what EPS and PE are measured on. A consolidated
 # profit including minority interests would overstate a group with partly
 # owned subsidiaries.
 NET_PROFIT = ("ProfitOrLossAttributableToOwnersOfParent", "ProfitLossForPeriod", "NetProfitLossForThePeriod",
-              "ProfitLossForThePeriod")
+              "ProfitLossForThePeriod", "ProfitLossAfterTaxAndExtraordinaryItems", "ProfitLossAfterTax")
 EPS = (
     "BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations",
     "BasicEarningsLossPerShareFromContinuingOperations",
     "BasicEarningsPerShareBeforeExtraordinaryItems",
     "BasicEarningsLossPerShareBeforeExtraordinaryItems",
+    "BasicAndDilutedEPSAfterExtraordinaryItemsNetOfTaxExpenseForThePeriodNotToBeAnnualized",
+    "BasicAndDilutedEPSBeforeExtraordinaryItemsNetOfTaxExpenseForThePeriodNotToBeAnnualized",
 )
 NATURE = "NatureOfReportStandaloneConsolidated"
 
@@ -117,11 +126,14 @@ def _row(values: dict[str, float], quarter_end: date) -> dict[str, Any] | None:
         return None if value is None else round(value / RUPEES_PER_CRORE, 2)
 
     sales = first(REVENUE)
+    insurer = sales is None and first(INSURANCE_REVENUE) is not None
+    if insurer:
+        sales = first(INSURANCE_REVENUE)
     if sales is None:
         return None
-    operating = first(BANK_OPERATING)
+    operating = first(INSURANCE_OPERATING) if insurer else first(BANK_OPERATING)
     expenses = first(EXPENSES)
-    if operating is None and expenses is not None:
+    if operating is None and expenses is not None and not insurer:
         # The same definition as the standalone rows: expenses before
         # depreciation and interest.
         operating = sales - (abs(expenses) - abs(first(DEPRECIATION) or 0.0) - abs(first(FINANCE) or 0.0))

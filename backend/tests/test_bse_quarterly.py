@@ -202,3 +202,15 @@ class SummaryRefetchTests(unittest.TestCase):
             calls.clear()
             _sym, rows, fetched = job.update_company("SBIN", "500112", rows, refresh=False)
             self.assertEqual(fetched, 0)
+
+
+def test_no_revenue_line_reads_total_income_less_other_income():
+    # GRANDOAK's schedule as BSE serves it: nil lines are left out, so there is
+    # no revenue line, only Total Income and Other Income.
+    table = [{"fld_desc": "Other Income", "Value": "25"}, {"fld_desc": "Total Income", "Value": "1225"},
+             {"fld_desc": "Expenditure", "Value": "1000"}, {"fld_desc": "Net Profit", "Value": "150"},
+             {"fld_desc": "Basic EPS for continuing operation", "Value": "3.1"}]
+    row = bq.parse_quarter(table, "Jun 2026")
+    assert row["sales_crore"] == 120.0 and row["net_profit_crore"] == 15.0
+    # A schedule with no line items at all (BSE serves NBFCs this way) stays unread.
+    assert bq.parse_quarter([{"fld_desc": "Type", "Value": None}], "Jun 2026") is None
