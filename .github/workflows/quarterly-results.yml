@@ -9,10 +9,12 @@ name: Quarterly Results (evening)
 #
 # The Space is not redeployed: it pulls the feed itself every 15 minutes from
 # 19:00 to midnight IST and whenever the page is opened (results_feed.py), and
-# the commit carries [skip ci]. It writes ONLY results_feed.json — the 4:23 PM
-# bhavcopy job owns quarterly_summary.json, and two jobs rewriting one file
-# would collide on push. Consolidated figures come from NSE's Integrated
-# Filing XBRL (consolidated_results.json), written by the second step.
+# the commit carries [skip ci]. It writes ONLY results_feed.json and
+# consolidated_results.json — the 4:23 PM bhavcopy job owns
+# quarterly_summary.json, and two jobs rewriting one file would collide on
+# push. Consolidated figures (and standalone ones BSE does not publish, such as
+# NBFCs' and insurers') come from NSE's Integrated Filing XBRL, written by the
+# second step.
 on:
   schedule:
     - cron: "30 13 * * *"   # 7:00 PM IST

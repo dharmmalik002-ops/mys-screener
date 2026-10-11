@@ -50,6 +50,7 @@ LIST_BUDGET_SHARE = 0.45
 # rather than dropped: a dropped filing was never listed again, so a company
 # could stay without its quarter for good.
 MAX_ATTEMPTS = 5  # per queued filing, across runs
+RECENT_DAYS = 45  # "reported this season": a filing within this many days
 
 _local = threading.local()
 
@@ -335,7 +336,17 @@ def main() -> int:
 
     # Newest filings first: tonight's results before last year's backfill.
     pending = sorted(queue.values(), key=lambda q: q["filed"], reverse=True)
-    pending.sort(key=lambda q: int(q.get("attempts") or 0) >= MAX_ATTEMPTS)  # stable: newest first within each
+    # Companies that reported this season first, all their filings: a card on
+    # the page needs the previous and year-ago quarters as well as the new one
+    # (ANANDRATHI declared 2026-10-09 and showed no YoY while its Sep 2025
+    # filing waited behind 5,000 others). Filings that keep failing go last.
+    recent_cut = (today - timedelta(days=RECENT_DAYS)).isoformat()
+    recent = {q["symbol"] for q in queue.values() if q["filed"] >= recent_cut}
+    for symbol, entry in symbols.items():
+        for field in cr.ROW_KEYS.values():
+            if any(str(row.get("filed") or "") >= recent_cut for row in entry.get(field) or []):
+                recent.add(symbol)
+    pending.sort(key=lambda q: (int(q.get("attempts") or 0) >= MAX_ATTEMPTS, q["symbol"] not in recent))
     stored = skipped = failed = 0
     budget = args.max_seconds
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
