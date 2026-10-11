@@ -31,7 +31,6 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.services import bse_quarterly as bq  # noqa: E402
 from app.services import consolidated_results as cr  # noqa: E402
 from app.services.exchange_http import browser_session  # noqa: E402
 
@@ -204,12 +203,21 @@ def _fetch_archive(url: str) -> bytes | None:
 
 
 def download(item: dict) -> tuple[dict, dict | None, bool]:
-    """(queue item, parsed row or None, reached NSE)."""
+    """(queue item, parsed filing or None, reached NSE)."""
     body = _fetch_archive(item["xbrl"])
     if body is None:
         return item, None, False
-    expect = date.fromisoformat(item["period_end"])
-    return item, cr.parse_instance(body, expect_end=expect), True
+    return item, cr.parse_filing(body), True
+
+
+def queue_key(item: dict) -> str:
+    return f"{item['symbol']}|{item['period_end']}|{item.get('basis', 'consolidated')}"
+
+
+# Version 2 reads every column of a filing (the previous and year-ago
+# quarters, not just its own), and standalone filings too. Filings stored
+# before it are fetched once more to collect their columns.
+HARVEST_VERSION = 2
 
 
 def main() -> int:
@@ -229,7 +237,11 @@ def main() -> int:
         except ValueError:
             doc = {}
     symbols: dict = doc.setdefault("symbols", {})
-    queue: dict = {f"{q['symbol']}|{q['period_end']}": q for q in doc.get("queue") or []}
+    queue: dict = {queue_key(q): q for q in doc.get("queue") or []}
+    harvest_again = doc.get("harvest_version") != HARVEST_VERSION
+    samples: list = list(doc.get("unparsed_samples") or [])[-10:]
+    # Filings read and found unusable: not downloaded again unless revised.
+    skipped_filings: dict = dict(doc.get("skipped_filings") or {}) if not harvest_again else {}
 
     universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
     known = {str(r["symbol"]).upper() for r in universe if r.get("symbol")}
@@ -238,7 +250,7 @@ def main() -> int:
     through = doc.get("listed_through")
     start = date.fromisoformat(through) - timedelta(days=1) if through else FIRST_LISTING
     gaps = [(date.fromisoformat(a), date.fromisoformat(b)) for a, b in doc.get("listing_gaps") or []]
-    if doc.get("listing_version") != LISTING_VERSION and through:
+    if (doc.get("listing_version") != LISTING_VERSION or harvest_again) and through:
         # Listed before short pages were caught: list the history once more.
         gaps.append((FIRST_LISTING, date.fromisoformat(through)))
     listing: list[dict] = []
@@ -260,8 +272,8 @@ def main() -> int:
         listing.extend(result[0])
         new_gaps.extend(result[1])
 
-    def stored_filed(symbol: str, period: str) -> str:
-        for row in (symbols.get(symbol) or {}).get("quarters") or []:
+    def stored_filed(symbol: str, period: str, basis: str) -> str:
+        for row in (symbols.get(symbol) or {}).get(cr.ROW_KEYS[basis]) or []:
             if row.get("period") == period:
                 return str(row.get("filed") or "")
         return ""
@@ -272,13 +284,15 @@ def main() -> int:
         if item is None or item["symbol"] not in known:
             continue
         period = cr.period_label(date.fromisoformat(item["period_end"]))
-        if stored_filed(item["symbol"], period) >= item["filed"]:
+        if not harvest_again and stored_filed(item["symbol"], period, item["basis"]) >= item["filed"]:
             continue  # already have this filing (or a later revision)
-        key = f"{item['symbol']}|{item['period_end']}"
+        key = queue_key(item)
+        if str(skipped_filings.get(key) or "") >= item["filed"]:
+            continue
         if key not in queue or queue[key]["filed"] < item["filed"]:
             queue[key] = {**item, "attempts": 0}
             added += 1
-    print(f"{added} consolidated filings queued, {len(queue)} waiting", flush=True)
+    print(f"{added} filings queued (consolidated and standalone), {len(queue)} waiting", flush=True)
 
     # Newest filings first: tonight's results before last year's backfill.
     pending = sorted(queue.values(), key=lambda q: q["filed"], reverse=True)
@@ -294,21 +308,28 @@ def main() -> int:
         while futures:
             done = next(as_completed(futures))
             futures.discard(done)
-            item, row, reached = done.result()
-            key = f"{item['symbol']}|{item['period_end']}"
-            if row is not None:
-                row["filed"] = item["filed"]
-                entry = symbols.setdefault(item["symbol"], {"quarters": []})
-                entry["quarters"] = sorted(
-                    [r for r in entry["quarters"] if r.get("period") != row["period"]] + [row],
-                    key=lambda r: bq._period_key(r["period"]),
-                    reverse=True,
-                )[: cr.QUARTERS_KEPT]
+            item, parsed, reached = done.result()
+            key = queue_key(item)
+            basis = item.get("basis", "consolidated")
+            nature = str((parsed or {}).get("nature") or "").strip().lower()
+            if parsed is not None and parsed["periods"] and (not nature or nature == basis):
+                entry = symbols.setdefault(item["symbol"], {})
+                field = cr.ROW_KEYS[basis]
+                entry[field] = cr.merge_filing(entry.get(field) or [], parsed["periods"],
+                                               date.fromisoformat(item["period_end"]), item["filed"])
                 queue.pop(key, None)
                 stored += 1
             elif reached:
-                queue.pop(key, None)  # not a usable consolidated quarter (bank schedule, no revenue)
+                # Not a readable quarter (an unknown schedule, no revenue
+                # line): keep its element names so the schedule can be added.
+                queue.pop(key, None)
                 skipped += 1
+                skipped_filings[key] = item["filed"]
+                if parsed is not None:
+                    names = [n for n in parsed["names"]
+                             if any(w in n for w in ("Revenue", "Income", "Interest", "Profit", "Expense", "Earnings"))]
+                    samples.append({"symbol": item["symbol"], "basis": basis, "xbrl": item["xbrl"],
+                                    "nature": parsed.get("nature"), "names": names[:60]})
             else:
                 item["attempts"] = int(item.get("attempts") or 0) + 1
                 if item["attempts"] >= MAX_ATTEMPTS:
@@ -330,8 +351,13 @@ def main() -> int:
         # Any window not yet listed in full is in listing_gaps, so the
         # one-off re-list is recorded as done whatever this run managed.
         "listing_version": LISTING_VERSION,
+        "harvest_version": HARVEST_VERSION,
         "listing_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_gaps],
-        "source": "NSE Integrated Filing XBRL, consolidated (Rs / 1e7 = crore); net profit attributable to owners",
+        "source": ("NSE Integrated Filing XBRL (Rs / 1e7 = crore): 'quarters' consolidated, 'standalone' standalone; "
+                   "each filing's own quarter ('filed') and its comparative columns ('via'); "
+                   "consolidated net profit attributable to owners"),
+        "unparsed_samples": samples[-10:],
+        "skipped_filings": dict(sorted(skipped_filings.items())),
         "queue": sorted(queue.values(), key=lambda q: q["filed"], reverse=True),
         "symbols": dict(sorted(symbols.items())),
     }

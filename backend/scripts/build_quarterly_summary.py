@@ -35,6 +35,7 @@ from app.services.exchange_http import browser_session  # noqa: E402
 
 API = "https://api.bseindia.com/BseIndiaAPI/api/"
 _local = threading.local()
+PARSE_VERSION = 2
 
 
 def _session():
@@ -66,8 +67,13 @@ def update_company(symbol: str, code: str, existing: list[dict], refresh: bool) 
     rows: list[dict] = []
     fetched = 0
     for period, quarter_code, url in wanted:
-        if period in have:
-            rows.append(have[period])
+        kept = have.get(period)
+        # A row stored before banks' operating profit and a 0.00 EPS were read
+        # (no "v") and missing either is fetched once more; every row parsed
+        # now carries v=2.
+        complete = kept is not None and kept.get("operating_profit_crore") is not None and kept.get("eps") is not None
+        if kept is not None and (complete or kept.get("v") == PARSE_VERSION):
+            rows.append(kept)
             continue
         detail = _get("Corp_detailedResult_Transpose_ng/w", {"Scrip_cd": code, "Qtr": quarter_code})
         fetched += 1
@@ -77,7 +83,10 @@ def update_company(symbol: str, code: str, existing: list[dict], refresh: bool) 
         if parsed is not None:
             parsed.pop("result_document_url", None)
             parsed["qtr"] = quarter_code
+            parsed["v"] = PARSE_VERSION
             rows.append(parsed)
+        elif kept is not None:
+            rows.append(kept)
     return symbol, rows, fetched
 
 

@@ -47,7 +47,7 @@ jobs:
   results:
     name: Fetch, date and publish the day's results
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,7 +86,7 @@ jobs:
         continue-on-error: true
         run: |
           set -uo pipefail
-          timeout 1200 python backend/scripts/update_consolidated_results.py --max-seconds 840
+          timeout 2280 python backend/scripts/update_consolidated_results.py --max-seconds 1800
 
       - name: Commit and push
         run: |

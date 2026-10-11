@@ -261,6 +261,28 @@ def valuation(rows: list[dict[str, Any]], market_cap_crore: float | None) -> tup
     return pe, peg
 
 
+def change_pct(current: float | None, prior: float | None) -> float | None:
+    """Growth as results trackers print it: against the size of the base, so
+    a loss narrowing from -7.6 to -2.0 is +73.7% and a swing from -7.6 to
+    +3.5 is +145.3%. Only a zero base has no growth. (The scanners' filters
+    keep `quarterly_growth.growth_pct`, which refuses a loss base so a
+    turnaround cannot pass a "growth above 20%" filter.)"""
+    if current is None or prior is None or prior == 0:
+        return None
+    return round((current - prior) / abs(prior) * 100, 2)
+
+
+def standalone_rows(symbol: str) -> list[dict[str, Any]]:
+    """BSE's standalone quarters, with NSE's standalone filings (their own
+    quarters and comparative columns) filling the quarters BSE lacks — a
+    recent listing's year-ago quarter, a quarter BSE never structured.
+    Where both have a quarter, BSE's is kept."""
+    by_period = {row["period"]: row for row in bse_quarterly.results_for(symbol) if row.get("period")}
+    for row in consolidated_results.results_for(symbol, "standalone"):
+        by_period.setdefault(row["period"], row)
+    return sorted(by_period.values(), key=lambda row: bse_quarterly._period_key(row["period"]), reverse=True)
+
+
 def _metric_block(by_period: dict[str, dict[str, Any]], period: str, key: str) -> dict[str, Any]:
     prev_label, year_label = _shift(period, -3), _shift(period, -12)
     current = (by_period.get(period) or {}).get(key)
@@ -270,8 +292,8 @@ def _metric_block(by_period: dict[str, dict[str, Any]], period: str, key: str) -
         "value": current,
         "prev": prev,
         "year_ago": year_ago,
-        "yoy_pct": growth_pct(current, year_ago),
-        "qoq_pct": growth_pct(current, prev),
+        "yoy_pct": change_pct(current, year_ago),
+        "qoq_pct": change_pct(current, prev),
     }
 
 
@@ -336,12 +358,13 @@ def build_quarterly(snapshots: list[Any], date_from: date, date_to: date) -> dic
     items: list[dict[str, Any]] = []
     # A quarter declared inside the range ended at most MAX_DAYS before it.
     oldest_end = date_from - timedelta(days=MAX_DAYS_AFTER_QUARTER)
-    consolidated_symbols = set((consolidated_results.load().get("symbols") or {}))
-    for symbol in sorted(bse_quarterly.symbols() | consolidated_symbols):
+    nse_symbols = consolidated_results.load().get("symbols") or {}
+    consolidated_symbols = {s for s, e in nse_symbols.items() if e.get("quarters")}
+    for symbol in sorted(bse_quarterly.symbols() | set(nse_symbols)):
         snapshot = by_symbol.get(symbol)
         if snapshot is None:
             continue
-        rows = bse_quarterly.results_for(symbol)
+        rows = standalone_rows(symbol)
         cons = consolidated_results.results_for(symbol) if symbol in consolidated_symbols else []
         periods: list[str] = []
         for row in rows[:3] + cons[:3]:
@@ -421,7 +444,7 @@ def build_upcoming(snapshots: list[Any], today: date, days: int = 30) -> dict[st
             "market_cap_crore": snapshot.market_cap_crore,
             "cap_bucket": buckets.get(snapshot.symbol.upper()),
             "date": day.isoformat(),
-            "standalone": _last_quarter(bse_quarterly.results_for(symbol), snapshot.market_cap_crore),
+            "standalone": _last_quarter(standalone_rows(symbol), snapshot.market_cap_crore),
             "consolidated": _last_quarter(consolidated_results.results_for(symbol), snapshot.market_cap_crore),
         })
     items.sort(key=lambda item: (item["date"], -(item["market_cap_crore"] or 0)))

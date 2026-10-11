@@ -167,11 +167,15 @@ def test_the_page_lists_results_declared_in_the_range(files):
     assert [(i["symbol"], i["period"], i["declared_at"]) for i in july["items"]] == [("ABC", "Jun 2026", "2026-07-20T15:30")]
 
 
-def test_growth_on_a_loss_base_is_not_a_percentage(files):
+def test_growth_on_a_loss_base_is_measured_against_its_size(files):
+    # As results trackers print it: from a -3 loss to a +2 profit is +166.67%,
+    # from -1 to +2 is +300%; a deeper loss reads negative.
     rows = [_q("Sep 2026", 10.0, 1.0, 2.0, 0.2, "1"), _q("Jun 2026", 10.0, 1.0, -1.0, -0.1, "2"),
             _q("Sep 2025", 10.0, 1.0, -3.0, -0.3, "3")]
     block = rf._metric_block({r["period"]: r for r in rows}, "Sep 2026", "net_profit_crore")
-    assert block["yoy_pct"] is None and block["qoq_pct"] is None
+    assert (block["yoy_pct"], block["qoq_pct"]) == (166.67, 300.0)
+    assert rf.change_pct(-5.0, -2.0) == -150.0
+    assert rf.change_pct(1.0, 0.0) is None
     # No trailing year of profit, no PE.
     assert rf.valuation(rows, 100.0) == (None, None)
 
@@ -279,3 +283,17 @@ def test_if_due_skips_a_slot_already_run(files, job, monkeypatch):
     monkeypatch.setattr(job, "fetch_filings", lambda start, end: pytest.fail("should not read BSE"))
     monkeypatch.setattr(sys, "argv", ["update_results_feed.py", "--if-due"])
     assert job.main() == 0
+
+
+def test_nse_standalone_columns_fill_quarters_bse_lacks(files):
+    # A recent listing: BSE holds only its quarters since listing; NSE's
+    # filing carries the year-ago and previous quarters as columns.
+    (files.dir / "consolidated_results.json").write_text(json.dumps({"symbols": {"XYZ": {"standalone": [
+        {"period": "Sep 2026", "sales_crore": 999.0, "net_profit_crore": 9.0, "filed": "2026-10-10T18:10"},
+        {"period": "Sep 2025", "sales_crore": 40.0, "net_profit_crore": 1.5, "via": "2026-10-10T18:10"},
+    ]}}}))
+    rows = {r["period"]: r for r in rf.standalone_rows("XYZ")}
+    assert rows["Sep 2026"]["sales_crore"] == 50.0  # BSE's own figure is kept
+    assert rows["Sep 2025"]["sales_crore"] == 40.0  # the gap is filled
+    block = rf.basis_block(rf.standalone_rows("XYZ"), "Sep 2026", 100.0)
+    assert block["metrics"]["sales"]["yoy_pct"] == 25.0

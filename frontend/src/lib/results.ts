@@ -26,8 +26,19 @@ export type ShownUpcoming = Omit<UpcomingResultEntry, "standalone" | "consolidat
 
 const OTHER: Record<ResultsBasis, ResultsBasis> = { consolidated: "standalone", standalone: "consolidated" };
 
+/* A basis can only be compared when it holds the previous or the year-ago
+   quarter. While a company's consolidated history is still being collected,
+   its consolidated card would be one column of figures and a row of dashes,
+   so the other basis is shown instead (tagged) until both can compare. */
+function comparable(block: ResultBasisBlock | null): boolean {
+  const sales = block?.metrics?.sales;
+  return Boolean(sales && (sales.prev != null || sales.year_ago != null));
+}
+
 export function showBasis(item: QuarterlyResultEntry, basis: ResultsBasis): ShownResult | null {
-  const pick = item[basis] ? basis : item[OTHER[basis]] ? OTHER[basis] : null;
+  const other = OTHER[basis];
+  let pick: ResultsBasis | null = item[basis] ? basis : item[other] ? other : null;
+  if (pick === basis && !comparable(item[basis]) && comparable(item[other])) pick = other;
   if (!pick) return null;
   const { standalone: _s, consolidated: _c, ...rest } = item;
   return { ...rest, ...(item[pick] as ResultBasisBlock), shown_basis: pick };

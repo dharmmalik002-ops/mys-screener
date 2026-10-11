@@ -98,11 +98,19 @@ def parse_quarter(table: list[dict[str, Any]], period: str, document_url: str | 
         # operating profit is comparable with the rows it used to serve.
         expenses = abs(expenditure) - abs(depreciation or 0.0) - abs(finance or 0.0)
     operating_profit = sales - expenses if expenses is not None else None
+    if operating_profit is None:
+        # Banks file a different schedule with no "Expenditure" line; their
+        # operating profit is the pre-provision line every bank reports.
+        operating_profit = _find(rows, ("operating profit before provision",))
     pbt = _find(rows, ("profit (+)/ loss (-) from ordinary activities before tax", "profit before tax"))
     net_profit = rows.get("net profit")
     if net_profit is None:
         net_profit = _find(rows, ("net profit (+)/ loss (-) from ordinary activities after tax", "net profit"))
+    # Prefer a non-zero line (some filers leave the continuing-ops line 0.00
+    # beside the real one), but a company whose EPS rounds to 0.00 has 0.00.
     eps = _find(rows, _EPS_KEYS, nonzero=True)
+    if eps is None:
+        eps = _find(rows, _EPS_KEYS)
 
     return {
         "period": period,
@@ -220,7 +228,7 @@ def results_for(symbol: str) -> list[dict[str, Any]]:
     code, stored_rows = stored_quarters(symbol)
     rows = []
     for stored in stored_rows:
-        row = {k: v for k, v in stored.items() if k != "qtr"}
+        row = {k: v for k, v in stored.items() if k not in ("qtr", "v")}
         qtr = stored.get("qtr")
         row["result_document_url"] = RESULT_URL.format(code=code, qtr=qtr) if code and qtr else None
         rows.append(row)

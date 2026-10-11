@@ -96,8 +96,8 @@ function BasisTag({ shown, wanted }: { shown: ResultsBasis | null; wanted: Resul
     shown === wanted
       ? undefined
       : shown === "standalone"
-        ? "No consolidated filing for this quarter (no subsidiaries, or not on NSE yet): standalone figures shown"
-        : "Filed consolidated on NSE only: consolidated figures shown";
+        ? "Consolidated figures for this quarter and the quarters it is compared with are not available yet (or the company has no subsidiaries): standalone figures shown"
+        : "Standalone figures for this quarter and its comparisons are not available: consolidated figures shown";
   return (
     <span className={`results-basis${shown === wanted ? "" : " is-fallback"}`} title={title}>
       {BASIS_LABEL[shown]}

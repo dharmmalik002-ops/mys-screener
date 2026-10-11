@@ -59,6 +59,17 @@ class ParseQuarterTests(unittest.TestCase):
         self.assertEqual(q["eps"], 12.38)
         self.assertIsNone(q["operating_margin_pct"])  # no expenditure line: unknown, not zero
 
+    def test_a_bank_s_operating_profit_is_its_pre_provision_line(self):
+        q = bq.parse_quarter(BANK_Q + [_row("Operating Profit before Provisions and contingencies", "312000.0000")],
+                             "Jun 2026")
+        self.assertEqual(q["operating_profit_crore"], 31200.0)
+        self.assertAlmostEqual(q["operating_margin_pct"], 39.31, places=2)
+
+    def test_an_eps_that_rounds_to_zero_is_zero_not_missing(self):
+        q = bq.parse_quarter([_row("Revenue from Operations", "100"), _row("Net Profit", "0.1"),
+                              _row("Basic EPS for continuing operation", "0.0000")], "Jun 2026")
+        self.assertEqual(q["eps"], 0.0)
+
     def test_no_revenue_line_means_no_row(self):
         self.assertIsNone(bq.parse_quarter([_row("Net Profit", "10")], "Jun 2026"))
 
@@ -163,3 +174,31 @@ class EarningsEndpointFallbackTests(unittest.TestCase):
         latest = payload["quarterly_results"][0]
         self.assertEqual(latest["period"], "Jun 2026")
         self.assertEqual(latest["sales_yoy_pct"], 25.0)
+
+
+class SummaryRefetchTests(unittest.TestCase):
+    """Rows stored before banks' operating profit was read are fetched once
+    more; rows parsed since carry v=2 and are left alone."""
+
+    def test_rows_missing_operating_profit_are_refetched_once(self):
+        import sys
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        import build_quarterly_summary as job
+
+        listing = {"Table": [{"Q1": "Jun-26;JQ;130.00;", "Q2": None, "Q3": None, "Q4": None}]}
+        detail = {"table1": BANK_Q + [_row("Operating Profit before Provisions and Contingencies", "312000")]}
+        calls: list[str] = []
+
+        def fake_get(endpoint, params):
+            calls.append(endpoint)
+            return listing if endpoint.startswith("CorprateResultbeta") else detail
+
+        with mock.patch.object(job, "_get", fake_get):
+            old = {"period": "Jun 2026", "sales_crore": 79362.78, "operating_profit_crore": None, "qtr": "130.00"}
+            _sym, rows, fetched = job.update_company("SBIN", "500112", [old], refresh=False)
+            self.assertEqual((fetched, rows[0]["operating_profit_crore"], rows[0]["v"]), (1, 31200.0, 2))
+
+            calls.clear()
+            _sym, rows, fetched = job.update_company("SBIN", "500112", rows, refresh=False)
+            self.assertEqual(fetched, 0)
