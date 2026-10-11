@@ -46,6 +46,9 @@ FIRST_LISTING = date(2025, 1, 1)
 WINDOW_DAYS = 15
 # Listing may use this share of --max-seconds; the rest is for downloads.
 LIST_BUDGET_SHARE = 0.45
+# A filing that failed this many downloads is tried after everything else
+# rather than dropped: a dropped filing was never listed again, so a company
+# could stay without its quarter for good.
 MAX_ATTEMPTS = 5  # per queued filing, across runs
 
 _local = threading.local()
@@ -332,6 +335,7 @@ def main() -> int:
 
     # Newest filings first: tonight's results before last year's backfill.
     pending = sorted(queue.values(), key=lambda q: q["filed"], reverse=True)
+    pending.sort(key=lambda q: int(q.get("attempts") or 0) >= MAX_ATTEMPTS)  # stable: newest first within each
     stored = skipped = failed = 0
     budget = args.max_seconds
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
@@ -380,8 +384,6 @@ def main() -> int:
                                     "nature": parsed.get("nature"), "names": names[:120]})
             else:
                 item["attempts"] = int(item.get("attempts") or 0) + 1
-                if item["attempts"] >= MAX_ATTEMPTS:
-                    queue.pop(key, None)
                 failed += 1
             if time.monotonic() - started < budget:
                 nxt = next(it, None)

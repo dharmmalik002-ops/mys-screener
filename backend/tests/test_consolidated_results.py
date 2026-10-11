@@ -460,3 +460,23 @@ def test_an_unreachable_instance_stays_queued_with_its_attempts_counted(files, j
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
     assert doc["queue"] == [] and doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"
+
+
+def test_a_filing_that_keeps_failing_is_tried_last_never_dropped(files, job, monkeypatch):
+    listed = [(date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10")),
+              (date(2026, 10, 9), _listing_row("INFY", "30-Sep-2026", "08-Oct-2026 17:00:00"))]
+    _fake_windows(job, monkeypatch, listed)
+    tried: list[str] = []
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: tried.append(url))
+    for _ in range(job.MAX_ATTEMPTS + 1):
+        assert job.main() == 0
+        _fake_windows(job, monkeypatch, [])
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert sorted((q["symbol"], q["attempts"]) for q in doc["queue"]) == [("INFY", 6), ("TCS", 6)]
+
+    # A newer filing goes ahead of ones that have failed MAX_ATTEMPTS times.
+    _fake_windows(job, monkeypatch, [(date(2026, 10, 10), _listing_row("TCS", "30-Jun-2026", "07-Oct-2026 10:00:00"))])
+    tried.clear()
+    monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--workers", "1"])
+    assert job.main() == 0
+    assert "30-Jun-2026" in tried[0]
