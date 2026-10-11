@@ -107,9 +107,9 @@ def _contexts(root: ET.Element) -> dict[str, tuple[date, date]]:
 
 
 def _row(values: dict[str, float], quarter_end: date) -> dict[str, Any] | None:
-    def first(keys: tuple[str, ...]) -> float | None:
+    def first(keys: tuple[str, ...], *, nonzero: bool = False) -> float | None:
         for key in keys:
-            if key in values:
+            if key in values and (values[key] != 0 or not nonzero):
                 return values[key]
         return None
 
@@ -125,14 +125,22 @@ def _row(values: dict[str, float], quarter_end: date) -> dict[str, Any] | None:
         # The same definition as the standalone rows: expenses before
         # depreciation and interest.
         operating = sales - (abs(expenses) - abs(first(DEPRECIATION) or 0.0) - abs(first(FINANCE) or 0.0))
-    eps = first(EPS)
+    # Many filers tag the "attributable to owners" line 0 (one in eight
+    # filings read) and carry the profit in the period line, so a zero only
+    # stands when no line says otherwise. The same for EPS.
+    net_profit = first(NET_PROFIT, nonzero=True)
+    if net_profit is None:
+        net_profit = first(NET_PROFIT)
+    eps = first(EPS, nonzero=True)
+    if eps is None:
+        eps = first(EPS)
     return {
         "period": period_label(quarter_end),
         "sales_crore": crore(sales),
         "operating_profit_crore": crore(operating),
         "operating_margin_pct": round(operating / sales * 100, 2) if operating is not None and sales else None,
         "profit_before_tax_crore": crore(first(PROFIT_BEFORE_TAX)),
-        "net_profit_crore": crore(first(NET_PROFIT)),
+        "net_profit_crore": crore(net_profit),
         "eps": round(eps, 2) if eps is not None else None,
     }
 
@@ -313,6 +321,12 @@ def results_for(symbol: str, basis: str = "consolidated") -> list[dict[str, Any]
     """Newest-first rows of one basis from NSE's filings, [] when none."""
     entry = (load().get("symbols") or {}).get(symbol.upper()) or {}
     rows = [dict(row) for row in entry.get(ROW_KEYS[basis]) or [] if row.get("period")]
+    for row in rows:
+        # Read before the parser preferred a non-zero line: a zero profit
+        # beside a real pre-tax profit is an untagged line, not a fact. Shown
+        # as unknown until the filing is read again.
+        if row.get("net_profit_crore") == 0 and abs(row.get("profit_before_tax_crore") or 0) >= 0.5:
+            row["net_profit_crore"] = None
     return sorted(rows, key=lambda row: bse_quarterly._period_key(row["period"]), reverse=True)
 
 

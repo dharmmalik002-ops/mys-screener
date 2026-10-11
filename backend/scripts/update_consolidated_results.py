@@ -247,7 +247,7 @@ def queue_key(item: dict) -> str:
 # Version 2 reads every column of a filing (the previous and year-ago
 # quarters, not just its own), and standalone filings too. Filings stored
 # before it are fetched once more to collect their columns.
-HARVEST_VERSION = 3
+HARVEST_VERSION = 4  # 4: a zero owners' profit no longer hides the period profit
 
 
 def main() -> int:
@@ -274,7 +274,10 @@ def main() -> int:
     # Filings read and found unusable: not downloaded again unless revised.
     # (Cleared when a re-read of the history starts: the new reader may read
     # what the old one could not.)
-    skipped_filings: dict = {} if harvest_again and not doc.get("harvesting") else dict(doc.get("skipped_filings") or {})
+    # A re-read already under way for an older reader starts over, or the
+    # filings it stored before this reader existed would keep the old reading.
+    restart = harvest_again and (not doc.get("harvesting") or doc.get("harvest_target") != HARVEST_VERSION)
+    skipped_filings: dict = {} if restart else dict(doc.get("skipped_filings") or {})
 
     universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
     known = {str(r["symbol"]).upper() for r in universe if r.get("symbol")}
@@ -285,7 +288,7 @@ def main() -> int:
     gaps = [w for a, b in doc.get("listing_gaps") or []
             for w in windows(date.fromisoformat(a), date.fromisoformat(b))]
     harvesting = bool(doc.get("harvesting"))
-    if harvest_again and through and not harvesting:
+    if restart and through:
         # Read every column of filings stored before: list the history again,
         # spread over runs, and queue its filings whether stored or not.
         gaps.extend(windows(FIRST_LISTING, date.fromisoformat(through)))
@@ -367,10 +370,14 @@ def main() -> int:
                 skipped += 1
                 skipped_filings[key] = item["filed"]
                 if parsed is not None:
+                    # Cash-flow lines say nothing about the schedule; without
+                    # them the profit and premium lines fit (insurers, gotcha 163).
                     names = [n for n in parsed["names"]
-                             if any(w in n for w in ("Revenue", "Income", "Interest", "Profit", "Expense", "Earnings"))]
+                             if any(w in n for w in ("Revenue", "Income", "Interest", "Profit", "Expense", "Earnings",
+                                                     "Premium", "Surplus"))
+                             and not any(w in n for w in ("Classified", "Adjustments", "Cash", "Description"))]
                     samples.append({"symbol": item["symbol"], "basis": basis, "xbrl": item["xbrl"],
-                                    "nature": parsed.get("nature"), "names": names[:60]})
+                                    "nature": parsed.get("nature"), "names": names[:120]})
             else:
                 item["attempts"] = int(item.get("attempts") or 0) + 1
                 if item["attempts"] >= MAX_ATTEMPTS:
@@ -396,6 +403,7 @@ def main() -> int:
         "listing_version": LISTING_VERSION,
         "harvest_version": doc.get("harvest_version") if harvesting else HARVEST_VERSION,
         "harvesting": harvesting,
+        "harvest_target": HARVEST_VERSION if harvesting else None,
         "listing_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_gaps],
         "source": ("NSE Integrated Filing XBRL (Rs / 1e7 = crore): 'quarters' consolidated, 'standalone' standalone; "
                    "each filing's own quarter ('filed') and its comparative columns ('via'); "
