@@ -325,14 +325,37 @@ def main() -> int:
     # Tonight's filings first, then the gaps newest first: recent seasons fill
     # before old ones.
     earlier = sorted((set(gaps) | set(relist)) - set(main_windows), reverse=True)
-    todo = main_windows + earlier
-    print(f"listing NSE integrated filings: {len(main_windows)} new and {len(todo) - len(main_windows)} earlier "
-          f"windows", flush=True)
+    # NSE's listing is not a complete answer: the same fortnight came back
+    # with 440 filings on one run and 1,120 on the next (and 3,087 then 220),
+    # each time with a totalCount that agreed. So every window is listed again
+    # in rotation, least recently listed first, with whatever listing time is
+    # left; only filings not yet stored are queued, so the union of listings
+    # fills in. A window far below the most it has ever returned is retried
+    # on the next run.
+    seen_windows: dict = dict(doc.get("window_seen") or {})
+    grid = windows(FIRST_LISTING, today)
+    rotation = sorted((w for w in grid if w not in set(main_windows) | set(earlier)),
+                      key=lambda w: str((seen_windows.get(w[0].isoformat()) or {}).get("at") or ""))
+    todo = main_windows + earlier + rotation
+    print(f"listing NSE integrated filings: {len(main_windows)} new, {len(earlier)} earlier and "
+          f"{len(rotation)} in rotation", flush=True)
     listed, left, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
     gap_set = set(gaps)
+    rotation_set = set(rotation)
     from_gaps = {window for window in listed if window not in main_windows and window in gap_set}
     new_gaps = [w for w in left if w in gap_set or w in main_windows]
-    new_relist = [w for w in left if w not in gap_set and w not in main_windows]
+    new_relist = [w for w in left if w not in gap_set and w not in main_windows and w not in rotation_set]
+    stamp_now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    for window, rows in listed.items():
+        key = window[0].isoformat()
+        if window not in set(grid):
+            continue
+        best = int((seen_windows.get(key) or {}).get("max") or 0)
+        if best >= 20 and len(rows) < 0.9 * best and window not in new_relist and window not in new_gaps:
+            new_relist.append(window)
+            print(f"  {window[0]} .. {window[1]}: {len(rows)} against {best} before, listed again next run",
+                  flush=True)
+        seen_windows[key] = {"at": stamp_now, "max": max(best, len(rows))}
     listing = [(row, window in from_gaps) for window, rows in listed.items() for row in rows]
     listed_ok = not listing_failed
     reread_gaps = harvesting  # this run's gap windows are queued even if stored
@@ -346,9 +369,15 @@ def main() -> int:
         return ""
 
     added = 0
+    rejected: list = list(doc.get("rejected_listing_samples") or [])[-10:]
     for raw, from_gap in listing:
         item = cr.listing_row(raw)
-        if item is None or item["symbol"] not in known:
+        if item is None:
+            # A listed filing the reader cannot use: kept so it can be seen.
+            if str(raw.get("symbol") or "").upper() in known and len(rejected) < 20:
+                rejected.append({k: raw.get(k) for k in ("symbol", "consolidated", "qe_Date", "creation_Date", "xbrl")})
+            continue
+        if item["symbol"] not in known:
             continue
         period = cr.period_label(date.fromisoformat(item["period_end"]))
         rereading = from_gap and reread_gaps
@@ -447,6 +476,8 @@ def main() -> int:
         "harvest_target": HARVEST_VERSION if harvesting else None,
         "listing_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_gaps],
         "relist_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_relist],
+        "window_seen": dict(sorted(seen_windows.items())),
+        "rejected_listing_samples": rejected[-20:],
         "source": ("NSE Integrated Filing XBRL (Rs / 1e7 = crore): 'quarters' consolidated, 'standalone' standalone; "
                    "each filing's own quarter ('filed') and its comparative columns ('via'); "
                    "consolidated net profit attributable to owners"),
