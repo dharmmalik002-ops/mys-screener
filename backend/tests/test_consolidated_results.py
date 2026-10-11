@@ -226,7 +226,7 @@ def job(files, monkeypatch):
 
     root = files / "root"
     (root / "data").mkdir(parents=True)
-    (root / "data" / "free_universe.json").write_text(json.dumps([{"symbol": "TCS"}, {"symbol": "INFY"}]))
+    (root / "data" / "free_universe.json").write_text(json.dumps([{"symbol": "TCS"}, {"symbol": "INFY"}, {"symbol": "DMART"}]))
     (files / "consolidated_results.json").write_text(json.dumps({"symbols": {}}))
     monkeypatch.setattr(module, "BACKEND_ROOT", root)
     monkeypatch.setattr(module, "_now", lambda: datetime(2026, 10, 10, 20, 0, tzinfo=IST))
@@ -284,7 +284,8 @@ def test_the_job_stores_every_column_of_both_bases(files, job, monkeypatch):
 
     calls.clear()
     assert job.main() == 0
-    assert calls == [("2026-10-09", "2026-10-10")]
+    # Tonight's window first; the rest is the rotation through the history.
+    assert calls[0] == ("2026-10-09", "2026-10-10")
     assert len(fetched) == 2  # neither filing downloaded again
 
 
@@ -365,7 +366,8 @@ def test_a_new_reader_restarts_a_re_read_already_under_way(files, job, monkeypat
     calls = _fake_windows(job, monkeypatch, [])
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
-    assert ("2025-01-01", "2025-01-15") in calls and len(calls) <= 3
+    # The window left over goes right after tonight's, ahead of the rotation.
+    assert calls[1] == ("2025-01-01", "2025-01-15")
     assert doc["harvesting"] is False and doc["harvest_version"] == job.HARVEST_VERSION
 
 
@@ -479,7 +481,8 @@ def test_a_new_lister_lists_every_window_again_without_re_downloading(files, job
     # Next run lists only what is left.
     calls = _fake_windows(job, monkeypatch, [])
     assert job.main() == 0
-    assert ("2025-01-01", "2025-01-15") in calls and len(calls) <= 3
+    # The window left over goes right after tonight's, ahead of the rotation.
+    assert calls[1] == ("2025-01-01", "2025-01-15")
     assert json.loads((files / "consolidated_results.json").read_text())["relist_gaps"] == []
 
 
@@ -533,3 +536,29 @@ def test_a_company_that_just_reported_gets_its_older_filings_first(files, job, m
     monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--workers", "1"])
     assert job.main() == 0
     assert tried[0].endswith("TCS_sep25.xml")
+
+
+
+def test_every_window_is_listed_again_in_rotation_and_a_short_one_is_retried(files, job, monkeypatch):
+    # NSE answered one fortnight with 440 filings on one run and 1,120 on the
+    # next: the union of repeated listings is what fills in.
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "symbols": {}, "listed_through": "2026-10-10", "harvest_version": job.HARVEST_VERSION,
+        "listing_version": job.LISTING_VERSION,
+        "window_seen": {"2026-07-10": {"at": "2026-10-09T00:00:00+00:00", "max": 1120},
+                        "2025-01-01": {"at": "2026-10-11T00:00:00+00:00", "max": 5}}}))
+    july = (date(2026, 7, 10), date(2026, 7, 24))
+    assert july in job.windows(job.FIRST_LISTING, date(2026, 10, 10))
+    late = [(date(2026, 7, 14), _listing_row("DMART", "30-Jun-2026", "14-Jul-2026 17:00:00"))]
+    calls = _fake_windows(job, monkeypatch, late)
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: None)
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    # The window least recently listed comes first in the rotation, and the
+    # filing it had missed before is queued.
+    rotation = calls[1:]
+    assert rotation.index(("2026-07-10", "2026-07-24")) < rotation.index(("2025-01-01", "2025-01-15"))
+    assert [q["symbol"] for q in doc["queue"]] == ["DMART"]
+    # One row against 1,120 before: far short, so it is listed again next run.
+    assert ["2026-07-10", "2026-07-24"] in doc["relist_gaps"]
+    assert doc["window_seen"]["2026-07-10"]["max"] == 1120
