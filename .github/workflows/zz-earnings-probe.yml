@@ -30,4 +30,4 @@ jobs:
           for row in octo[:60]: print("  ", row)
           PY
       - name: Quarterly results sample (2 min)
-        run: timeout 120 python backend/scripts/build_quarterly_summary.py --workers 4 || true
+        run: timeout 150 python backend/scripts/build_quarterly_summary.py --workers 4 --limit 40 || true

@@ -501,6 +501,14 @@ def _bse_codes_by_isin(trade_date: date) -> dict[str, str]:
     return {isin: scrip["code"] for isin, scrip in _bse_scrips(trade_date).items()}
 
 
+def _bse_api_session():
+    """A session BSE's API answers: Akamai refuses ``requests`` by its TLS
+    fingerprint (every call 403 from the runners since 2026-09-23), not by IP."""
+    from app.services.exchange_http import browser_session
+
+    return browser_session(BSE_API_HEADERS)
+
+
 def _bse_api_json(session: requests.Session, endpoint: str, params: dict, attempts: int = 4) -> object | None:
     """GET a BSE API call, retried with backoff (the same schedule
     build_quarterly_summary uses). The API is behind Akamai and refuses
@@ -534,8 +542,7 @@ def _bse_mainboard_ipos(trade_date: date) -> dict[str, dict] | None:
     years = sorted({trade_date.year, (trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS)).year})
     found: dict[str, dict] = {}
     read_any = False
-    with requests.Session() as session:
-        session.headers.update(BSE_API_HEADERS)
+    with _bse_api_session() as session:
         for year in years:
             table = _bse_api_json(
                 session, "MoreCompanyN/w", {"Fromdt": str(year), "company": "", "flag": "1", "type": "2"}
@@ -602,8 +609,7 @@ def _attach_listing_reference(result: dict[str, dict], trade_date: date) -> int:
         return 0
     codes = {} if all(result[sym].get("bse_code") for sym in wanting) else _bse_codes_by_isin(trade_date)
     filled = 0
-    with requests.Session() as session:
-        session.headers.update(BSE_API_HEADERS)
+    with _bse_api_session() as session:
         for sym in sorted(wanting, key=lambda s: result[s]["listing_date"], reverse=True)[:REFERENCE_FETCH_BUDGET]:
             code = result[sym].get("bse_code") or codes.get(str(result[sym]["isin"]).upper())
             if not code:
