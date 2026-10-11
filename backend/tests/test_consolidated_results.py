@@ -189,7 +189,7 @@ def test_the_job_queues_downloads_and_stores_consolidated_quarters(files, job, m
               _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:40:00", nature="Non-Consolidated"),
               _listing_row("NOTOURS", "30-Sep-2026", "09-Oct-2026 17:00:00")]
     calls: list[str] = []
-    monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append(f"{start}"), list(listed))[1])
+    monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append(f"{start}"), (list(listed), []))[1])
 
     def fake_fetch(url):
         assert "TCS" in url
@@ -210,7 +210,7 @@ def test_the_job_queues_downloads_and_stores_consolidated_quarters(files, job, m
 
 
 def test_an_unreachable_instance_stays_queued_and_a_failed_listing_does_not_advance(files, job, monkeypatch):
-    monkeypatch.setattr(job, "fetch_listing", lambda start, end: [_listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10")])
+    monkeypatch.setattr(job, "fetch_listing", lambda start, end: ([_listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10")], []))
     monkeypatch.setattr(job, "_fetch_archive", lambda url: None)
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
@@ -244,3 +244,53 @@ def test_archive_downloads_are_paced_http11_and_back_off(job, monkeypatch):
     # A 403 backs off at least ARCHIVE_BACKOFF before the retry.
     assert any(s >= job.ARCHIVE_BACKOFF for s in sleeps)
     assert job._statuses.get("403", 0) >= 1
+
+
+def test_an_empty_page_short_of_the_total_is_retried_not_taken_as_the_end(job, monkeypatch):
+    """A rate-limited page comes back as an empty list, which reads exactly
+    like the end of the listing; the first live run lost two quarters so."""
+    monkeypatch.setattr(job.time, "sleep", lambda s: None)
+    pages = {1: [{"n": 1}, {"n": 2}], 2: [], 3: [{"n": 3}]}
+    seen = {2: 0}
+
+    def fake_get(url, params=None, *, expect_json):
+        page = int(params["page"])
+        if page == 2 and seen[2] == 0:  # throttled once
+            seen[2] += 1
+            return {"data": [], "totalCount": 3}
+        return {"data": pages.get(page if page != 2 else 3, []), "totalCount": 3}
+
+    monkeypatch.setattr(job, "_get", fake_get)
+    rows, complete = job.list_window(date(2026, 7, 1), date(2026, 9, 28))
+    assert complete and [r["n"] for r in rows] == [1, 2, 3]
+
+    # Still short after the retries: kept as incomplete, never silently done.
+    monkeypatch.setattr(job, "_get", lambda url, params=None, *, expect_json:
+                        {"data": [{"n": 1}] if params["page"] == "1" else [], "totalCount": 5})
+    rows, complete = job.list_window(date(2026, 7, 1), date(2026, 9, 28))
+    assert not complete and len(rows) == 1
+
+
+def test_short_windows_are_listed_again_and_old_files_relist_once(files, job, monkeypatch):
+    (files / "consolidated_results.json").write_text(json.dumps({"symbols": {}, "listed_through": "2026-10-09"}))
+    calls: list[tuple[str, str]] = []
+
+    def fake_listing(start, end):
+        calls.append((start.isoformat(), end.isoformat()))
+        short = [(date(2026, 4, 1), date(2026, 6, 29))] if start == date(2025, 1, 1) else []
+        return [], short
+
+    monkeypatch.setattr(job, "fetch_listing", fake_listing)
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    # No listing_version yet: the whole history is listed again, then since the last run.
+    assert calls == [("2025-01-01", "2026-10-09"), ("2026-10-08", "2026-10-10")]
+    assert doc["listing_version"] == job.LISTING_VERSION
+    assert doc["listing_gaps"] == [["2026-04-01", "2026-06-29"]]
+
+    calls.clear()
+    monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append((start.isoformat(), end.isoformat())), ([], []))[1])
+    assert job.main() == 0
+    # The short window is listed again first; once complete it is dropped.
+    assert calls == [("2026-04-01", "2026-06-29"), ("2026-10-09", "2026-10-10")]
+    assert json.loads((files / "consolidated_results.json").read_text())["listing_gaps"] == []
