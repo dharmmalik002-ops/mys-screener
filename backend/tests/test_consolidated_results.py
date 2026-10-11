@@ -310,7 +310,7 @@ def test_nothing_listed_is_thrown_away_when_a_window_gets_no_answer(files, job, 
 def test_listing_stops_at_its_share_of_the_budget_and_keeps_the_rest(files, job, monkeypatch):
     (files / "consolidated_results.json").write_text(json.dumps({
         "symbols": {}, "listed_through": "2026-10-09", "harvest_version": job.HARVEST_VERSION,
-        "listing_gaps": [["2026-01-01", "2026-03-31"]]}))
+        "listing_version": job.LISTING_VERSION, "listing_gaps": [["2026-01-01", "2026-03-31"]]}))
     clock = {"t": 0.0}
     monkeypatch.setattr(job.time, "monotonic", lambda: clock["t"])
 
@@ -445,6 +445,42 @@ def test_an_empty_page_short_of_the_total_is_retried_not_taken_as_the_end(job, m
     assert not complete and len(rows) == 1
 
 
+
+
+def test_a_row_repeated_across_pages_counts_once(job, monkeypatch):
+    # NSE's pages overlap. Counting raw rows reached totalCount with filings
+    # still unseen (late July 2026: DMART's June quarter never got queued).
+    monkeypatch.setattr(job.time, "sleep", lambda s: None)
+    pages = {1: [{"n": 1}, {"n": 2}], 2: [{"n": 2}, {"n": 3}], 3: [{"n": 4}], 4: []}
+    monkeypatch.setattr(job, "_get", lambda url, params=None, *, expect_json:
+                        {"data": pages[int(params["page"])], "totalCount": 4})
+    rows, complete = job.list_window(date(2026, 7, 10), date(2026, 7, 24))
+    assert complete and [r["n"] for r in rows] == [1, 2, 3, 4]
+    # Pages run out with filings still missing: incomplete, listed again next run.
+    pages[3] = []
+    rows, complete = job.list_window(date(2026, 7, 10), date(2026, 7, 24))
+    assert not complete and [r["n"] for r in rows] == [1, 2, 3]
+
+
+def test_a_new_lister_lists_every_window_again_without_re_downloading(files, job, monkeypatch):
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "listed_through": "2026-10-09", "harvest_version": job.HARVEST_VERSION, "listing_version": job.LISTING_VERSION - 1,
+        "symbols": {"TCS": {"quarters": [{"period": "Sep 2026", "sales_crore": 1.0, "filed": "2026-10-09T17:42"}]}}}))
+    listed = [(date(2026, 7, 20), _listing_row("INFY", "30-Jun-2026", "20-Jul-2026 18:00:00")),
+              (date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:00"))]
+    calls = _fake_windows(job, monkeypatch, listed, short={"2025-01-01"})
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: None)
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert len(calls) > 30 and doc["listing_version"] == job.LISTING_VERSION
+    # The filing the old lister missed is queued; the one already stored is not.
+    assert [q["symbol"] for q in doc["queue"]] == ["INFY"]
+    assert doc["relist_gaps"] == [["2025-01-01", "2025-01-15"]] and doc["listing_gaps"] == []
+    # Next run lists only what is left.
+    calls = _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    assert ("2025-01-01", "2025-01-15") in calls and len(calls) <= 3
+    assert json.loads((files / "consolidated_results.json").read_text())["relist_gaps"] == []
 
 
 def test_an_unreachable_instance_stays_queued_with_its_attempts_counted(files, job, monkeypatch):

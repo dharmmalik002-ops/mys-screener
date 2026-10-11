@@ -96,7 +96,7 @@ def _get(url: str, params: dict | None = None, *, expect_json: bool) -> object |
 # end when the rows add up to `totalCount`; short of that it is retried, and a
 # window still short afterwards is kept in `listing_gaps` and listed again on
 # the next run.
-LISTING_VERSION = 2
+LISTING_VERSION = 3  # 3: distinct rows count toward totalCount; every window listed again
 LIST_PAGE_GAP = 1.0
 LIST_EMPTY_RETRIES = 3
 LIST_BACKOFF = 6.0
@@ -105,9 +105,11 @@ LIST_BACKOFF = 6.0
 def list_window(start: date, stop: date) -> tuple[list[dict], bool] | None:
     """(rows, complete) for one window, or None if NSE did not answer."""
     rows: list[dict] = []
+    seen: set[str] = set()
     total: int | None = None
     page = 1
     empty_retries = 0
+    repeats = 0
     while page < 2000:
         payload = _get(LIST_URL, {"index": "equities", "from_date": start.strftime("%d-%m-%Y"),
                                   "to_date": stop.strftime("%d-%m-%Y"), "page": str(page)}, expect_json=True)
@@ -118,20 +120,36 @@ def list_window(start: date, stop: date) -> tuple[list[dict], bool] | None:
             total = count
         batch = [r for r in payload.get("data") or [] if isinstance(r, dict)]
         if batch:
-            rows.extend(batch)
+            # NSE's pages overlap: a row can come back on two pages, so only
+            # distinct filings count toward totalCount. Counting raw rows
+            # ended windows early and left late July 2026 mostly unlisted
+            # (DMART, CANFINHOME, POONAWALLA had no June quarter queued).
+            fresh = [r for r in batch if _row_id(r) not in seen]
+            repeats += len(batch) - len(fresh)
+            for r in fresh:
+                seen.add(_row_id(r))
+            rows.extend(fresh)
             page += 1
             empty_retries = 0
             if total is not None and len(rows) >= total:
-                return rows, True
+                break
             time.sleep(LIST_PAGE_GAP)
             continue
-        if total is None or len(rows) >= total:
-            return rows, True
-        if empty_retries >= LIST_EMPTY_RETRIES:
-            return rows, False
+        if total is None or len(rows) >= total or empty_retries >= LIST_EMPTY_RETRIES:
+            break
         empty_retries += 1
         time.sleep(LIST_BACKOFF * empty_retries)
-    return rows, False
+        continue
+    else:
+        return rows, False
+    if repeats:
+        print(f"    {start} .. {stop}: {len(rows)} distinct of {total} ({repeats} repeated rows)", flush=True)
+    return rows, total is None or len(rows) >= total
+
+
+def _row_id(row: dict) -> str:
+    """A repeated row comes back identical, field for field."""
+    return json.dumps(row, sort_keys=True, default=str)
 
 
 def windows(start: date, end: date) -> list[tuple[date, date]]:
@@ -297,14 +315,24 @@ def main() -> int:
         # spread over runs, and queue its filings whether stored or not.
         gaps.extend(windows(FIRST_LISTING, date.fromisoformat(through)))
         harvesting = True
+    # Windows listed again because the lister changed (LISTING_VERSION): their
+    # new filings are queued, stored ones are not downloaded again.
+    relist = [w for a, b in doc.get("relist_gaps") or []
+              for w in windows(date.fromisoformat(a), date.fromisoformat(b))]
+    if doc.get("listing_version") != LISTING_VERSION and through:
+        relist = windows(FIRST_LISTING, date.fromisoformat(through))
     main_windows = windows(start, today)
     # Tonight's filings first, then the gaps newest first: recent seasons fill
     # before old ones.
-    todo = main_windows + sorted(set(gaps) - set(main_windows), reverse=True)
+    earlier = sorted((set(gaps) | set(relist)) - set(main_windows), reverse=True)
+    todo = main_windows + earlier
     print(f"listing NSE integrated filings: {len(main_windows)} new and {len(todo) - len(main_windows)} earlier "
           f"windows", flush=True)
-    listed, new_gaps, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
-    from_gaps = {window for window in listed if window not in main_windows}
+    listed, left, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
+    gap_set = set(gaps)
+    from_gaps = {window for window in listed if window not in main_windows and window in gap_set}
+    new_gaps = [w for w in left if w in gap_set or w in main_windows]
+    new_relist = [w for w in left if w not in gap_set and w not in main_windows]
     listing = [(row, window in from_gaps) for window, rows in listed.items() for row in rows]
     listed_ok = not listing_failed
     reread_gaps = harvesting  # this run's gap windows are queued even if stored
@@ -418,6 +446,7 @@ def main() -> int:
         "harvesting": harvesting,
         "harvest_target": HARVEST_VERSION if harvesting else None,
         "listing_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_gaps],
+        "relist_gaps": [[a.isoformat(), b.isoformat()] for a, b in new_relist],
         "source": ("NSE Integrated Filing XBRL (Rs / 1e7 = crore): 'quarters' consolidated, 'standalone' standalone; "
                    "each filing's own quarter ('filed') and its comparative columns ('via'); "
                    "consolidated net profit attributable to owners"),
