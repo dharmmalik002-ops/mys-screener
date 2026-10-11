@@ -25,22 +25,23 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services import bse_quarterly as bq  # noqa: E402
 from app.services.earnings_metrics import BSE_HEADERS  # noqa: E402
+from app.services.exchange_http import browser_session  # noqa: E402
 
 API = "https://api.bseindia.com/BseIndiaAPI/api/"
 _local = threading.local()
 
 
-def _session() -> requests.Session:
+def _session():
+    # One per thread (curl_cffi sessions are not thread-safe). A browser TLS
+    # fingerprint, because BSE's Akamai refuses plain requests from runners.
     if not hasattr(_local, "session"):
-        _local.session = requests.Session()
-        _local.session.headers.update(BSE_HEADERS)
+        _local.session = browser_session(BSE_HEADERS)
     return _local.session
 
 

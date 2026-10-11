@@ -14,7 +14,10 @@ from app.models.market import StockSnapshot
 from app.scanners.definitions import current_earnings_season_start, make_positive_earnings_evaluator
 from app.services.earnings_metrics import (
     _compute_one,
+    compute_metrics,
     load_calendar_file,
+    merge_upcoming_calendar,
+    parse_nse_event_calendar,
     load_metrics_file,
     save_calendar_file,
     save_metrics_file,
@@ -211,6 +214,105 @@ class ComputeOneReactionTests(unittest.TestCase):
         assert metrics is not None
         self.assertEqual(metrics.source, "bse-calendar")
         self.assertEqual(metrics.earnings_date, event_date)
+
+
+    def test_nse_calendar_anchors_a_stock_bse_does_not_name(self) -> None:
+        # BSE refused the runner (gotcha: Akamai 403 from 2026-09-23): no
+        # filings and no BSE calendar. NSE's event calendar alone must still
+        # put a reported stock on the scanner.
+        bars, event_date = self._synthetic_bars()
+        universe = [
+            {"symbol": "TEST", "ticker": "TEST.NS", "bse_code": "500001"},
+            {"symbol": "NSEONLY", "ticker": "NSEONLY.NS"},
+            {"symbol": "QUIET", "ticker": "QUIET.NS", "bse_code": "500003"},
+        ]
+        results = compute_metrics(
+            universe,
+            bars_loader=lambda _s, _t: bars,
+            bse_filing_dates={},
+            calendar_dates={},
+            symbol_calendar_dates={"TEST": event_date, "NSEONLY": event_date},
+            only_anchored=True,
+            use_yfinance_dates=False,
+        )
+        self.assertEqual(set(results), {"TEST", "NSEONLY"})
+        self.assertEqual(results["TEST"]["earnings_date"], event_date.isoformat())
+
+    def test_a_future_bse_meeting_does_not_hide_a_held_nse_one(self) -> None:
+        bars, event_date = self._synthetic_bars()
+        results = compute_metrics(
+            [{"symbol": "TEST", "ticker": "TEST.NS", "bse_code": "500001"}],
+            bars_loader=lambda _s, _t: bars,
+            calendar_dates={"500001": date.today() + timedelta(days=20)},
+            symbol_calendar_dates={"TEST": event_date},
+            only_anchored=True,
+            use_yfinance_dates=False,
+        )
+        self.assertEqual(results["TEST"]["earnings_date"], event_date.isoformat())
+
+
+class ExchangeCalendarTests(unittest.TestCase):
+    def test_only_results_meetings_are_kept(self) -> None:
+        rows = [
+            {"symbol": "ADROITIND", "purpose": "Financial Results", "date": "12-Oct-2026"},
+            {"symbol": "VIVIANA", "purpose": "Fund Raising/Other business matters", "date": "15-Oct-2026"},
+            {"bm_symbol": "MRPL", "bm_purpose": "Financial Results/Dividend", "bm_date": "14-OCT-2026"},
+            {"symbol": "LTM", "purpose": "Other", "bm_desc": "to approve the financial results for the quarter", "date": "16-Oct-2026"},
+            {"symbol": "BAD", "purpose": "Financial Results", "date": "not a date"},
+            "junk",
+        ]
+        events = parse_nse_event_calendar(rows)
+        self.assertEqual(events["ADROITIND"], [date(2026, 10, 12)])
+        self.assertEqual(events["MRPL"], [date(2026, 10, 14)])
+        self.assertIn("LTM", events)
+        self.assertNotIn("VIVIANA", events)
+        self.assertNotIn("BAD", events)
+        self.assertEqual(parse_nse_event_calendar({"error": "x"}), {})
+
+    def test_merge_takes_the_nearest_future_date_from_either_exchange(self) -> None:
+        today = date(2026, 10, 11)
+        bse = {"HDFCBANK": [date(2026, 10, 17)], "OLDCO": [date(2026, 10, 2)]}
+        nse = {"HDFCBANK": [date(2026, 7, 18), date(2026, 10, 18)], "KOTAKBANK": [date(2026, 10, 24)]}
+        existing = {
+            "TCS": "2026-10-08",       # past: dropped
+            "INFY": "2026-10-23",      # future, named by no source this run: kept
+            "KOTAKBANK": "2026-10-30",  # superseded by a source
+        }
+        merged = merge_upcoming_calendar((bse, nse), existing, today)
+        self.assertEqual(merged["HDFCBANK"], "2026-10-17")
+        self.assertEqual(merged["KOTAKBANK"], "2026-10-24")
+        self.assertEqual(merged["INFY"], "2026-10-23")
+        self.assertNotIn("TCS", merged)
+        self.assertNotIn("OLDCO", merged)
+
+
+class ExchangeSessionTests(unittest.TestCase):
+    def test_session_has_the_requests_call_shape(self) -> None:
+        from app.services.exchange_http import browser_session
+
+        session = browser_session({"Referer": "https://www.bseindia.com/", "User-Agent": "x"})
+        for attr in ("get", "headers"):
+            self.assertTrue(hasattr(session, attr))
+        self.assertEqual(session.headers.get("Referer"), "https://www.bseindia.com/")
+
+    def test_falls_back_to_requests_without_curl_cffi(self) -> None:
+        import builtins
+        from unittest import mock
+
+        import requests
+        from app.services.exchange_http import browser_session
+
+        real_import = builtins.__import__
+
+        def no_cffi(name, *args, **kwargs):
+            if name.startswith("curl_cffi"):
+                raise ImportError(name)
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch("builtins.__import__", side_effect=no_cffi):
+            session = browser_session({"User-Agent": "UA"})
+        self.assertIsInstance(session, requests.Session)
+        self.assertEqual(session.headers["User-Agent"], "UA")
 
 
 class MetricsFileTests(unittest.TestCase):
