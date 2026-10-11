@@ -44,6 +44,7 @@ FIRST_LISTING = date(2025, 1, 1)
 # NSE silently truncates wide windows: a 90-day window once listed 120 filings
 # for a whole results season. Fifteen days keeps every window small.
 WINDOW_DAYS = 15
+RETRY_DAYS = 5
 # Listing may use this share of --max-seconds; the rest is for downloads.
 LIST_BUDGET_SHARE = 0.45
 # A filing that failed this many downloads is tried after everything else
@@ -152,12 +153,13 @@ def _row_id(row: dict) -> str:
     return json.dumps(row, sort_keys=True, default=str)
 
 
-def windows(start: date, end: date) -> list[tuple[date, date]]:
-    """[start, end] in WINDOW_DAYS pieces, oldest first."""
+def windows(start: date, end: date, days: int | None = None) -> list[tuple[date, date]]:
+    """[start, end] in WINDOW_DAYS (or `days`) pieces, oldest first."""
     out: list[tuple[date, date]] = []
     cursor = start
+    step = days or WINDOW_DAYS
     while cursor <= end:
-        stop = min(end, cursor + timedelta(days=WINDOW_DAYS - 1))
+        stop = min(end, cursor + timedelta(days=step - 1))
         out.append((cursor, stop))
         cursor = stop + timedelta(days=1)
     return out
@@ -317,8 +319,10 @@ def main() -> int:
         harvesting = True
     # Windows listed again because the lister changed (LISTING_VERSION): their
     # new filings are queued, stored ones are not downloaded again.
+    # A window retried for coming back short is asked for in RETRY_DAYS pieces:
+    # 10-24 Jul 2026 came back short three runs running as one fortnight.
     relist = [w for a, b in doc.get("relist_gaps") or []
-              for w in windows(date.fromisoformat(a), date.fromisoformat(b))]
+              for w in windows(date.fromisoformat(a), date.fromisoformat(b), RETRY_DAYS)]
     if doc.get("listing_version") != LISTING_VERSION and through:
         relist = windows(FIRST_LISTING, date.fromisoformat(through))
     main_windows = windows(start, today)
@@ -352,7 +356,7 @@ def main() -> int:
             continue
         best = int((seen_windows.get(key) or {}).get("max") or 0)
         if best >= 20 and len(rows) < 0.9 * best and window not in new_relist and window not in new_gaps:
-            new_relist.append(window)
+            new_relist.extend(windows(window[0], window[1], RETRY_DAYS))
             print(f"  {window[0]} .. {window[1]}: {len(rows)} against {best} before, listed again next run",
                   flush=True)
         seen_windows[key] = {"at": stamp_now, "max": max(best, len(rows))}

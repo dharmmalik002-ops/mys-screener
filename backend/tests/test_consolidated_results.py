@@ -482,7 +482,8 @@ def test_a_new_lister_lists_every_window_again_without_re_downloading(files, job
     calls = _fake_windows(job, monkeypatch, [])
     assert job.main() == 0
     # The window left over goes right after tonight's, ahead of the rotation.
-    assert calls[1] == ("2025-01-01", "2025-01-15")
+    # Retried in 5-day pieces, right after tonight's window.
+    assert calls[1:4] == [("2025-01-11", "2025-01-15"), ("2025-01-06", "2025-01-10"), ("2025-01-01", "2025-01-05")]
     assert json.loads((files / "consolidated_results.json").read_text())["relist_gaps"] == []
 
 
@@ -560,5 +561,5 @@ def test_every_window_is_listed_again_in_rotation_and_a_short_one_is_retried(fil
     assert rotation.index(("2026-07-10", "2026-07-24")) < rotation.index(("2025-01-01", "2025-01-15"))
     assert [q["symbol"] for q in doc["queue"]] == ["DMART"]
     # One row against 1,120 before: far short, so it is listed again next run.
-    assert ["2026-07-10", "2026-07-24"] in doc["relist_gaps"]
+    assert [["2026-07-10", "2026-07-14"], ["2026-07-15", "2026-07-19"], ["2026-07-20", "2026-07-24"]] == [g for g in doc["relist_gaps"] if g[0].startswith("2026-07")]
     assert doc["window_seen"]["2026-07-10"]["max"] == 1120
