@@ -2,9 +2,44 @@
    formats, kept apart from the component so they can be tested. Figures are
    standalone, in crore, as BSE files them (backend services/results_feed.py). */
 
-import type { QuarterlyResultEntry, ResultMetricKey, ResultsCapBucket } from "./api";
+import type {
+  QuarterlyResultEntry,
+  ResultBasisBlock,
+  ResultMetricKey,
+  ResultsBasis,
+  ResultsCapBucket,
+  UpcomingLastQuarter,
+  UpcomingResultEntry,
+} from "./api";
 
 export type ResultsSort = "latest" | ResultMetricKey;
+
+/* A result as the page shows it: one basis's figures, and which basis that
+   is. Consolidated is the default, as on most results trackers; a company
+   with no subsidiaries files standalone only and is shown standalone, marked
+   so, rather than dropped. */
+export type ShownResult = Omit<QuarterlyResultEntry, "standalone" | "consolidated"> &
+  ResultBasisBlock & { shown_basis: ResultsBasis };
+
+export type ShownUpcoming = Omit<UpcomingResultEntry, "standalone" | "consolidated"> &
+  UpcomingLastQuarter & { shown_basis: ResultsBasis | null };
+
+const OTHER: Record<ResultsBasis, ResultsBasis> = { consolidated: "standalone", standalone: "consolidated" };
+
+export function showBasis(item: QuarterlyResultEntry, basis: ResultsBasis): ShownResult | null {
+  const pick = item[basis] ? basis : item[OTHER[basis]] ? OTHER[basis] : null;
+  if (!pick) return null;
+  const { standalone: _s, consolidated: _c, ...rest } = item;
+  return { ...rest, ...(item[pick] as ResultBasisBlock), shown_basis: pick };
+}
+
+const NO_LAST_QUARTER: UpcomingLastQuarter = { last_period: null, last_sales_yoy_pct: null, last_profit_yoy_pct: null, pe: null, peg: null };
+
+export function showUpcomingBasis(item: UpcomingResultEntry, basis: ResultsBasis): ShownUpcoming {
+  const pick = item[basis] ? basis : item[OTHER[basis]] ? OTHER[basis] : null;
+  const { standalone: _s, consolidated: _c, ...rest } = item;
+  return { ...rest, ...(pick ? (item[pick] as UpcomingLastQuarter) : NO_LAST_QUARTER), shown_basis: pick };
+}
 export type ResultsScope = "all" | "watchlist";
 
 export type ResultsFilters = {
@@ -55,7 +90,7 @@ export function filterResults<T extends Filterable>(items: T[], filters: Results
 /* Latest: newest declaration first, larger companies first within a minute.
    A growth sort is highest first; a result whose growth cannot be measured
    (a loss a year ago, or no year-ago quarter) goes to the end, not the top. */
-export function sortResults(items: QuarterlyResultEntry[], sort: ResultsSort): QuarterlyResultEntry[] {
+export function sortResults(items: ShownResult[], sort: ResultsSort): ShownResult[] {
   const copy = [...items];
   if (sort === "latest") {
     return copy.sort((a, b) =>

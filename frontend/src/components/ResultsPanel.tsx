@@ -4,10 +4,9 @@ import { CalendarDays, ExternalLink, RefreshCw, Search } from "lucide-react";
 import {
   getQuarterlyResults,
   getUpcomingResults,
-  type QuarterlyResultEntry,
+  type ResultsBasis,
   type QuarterlyResultsResponse,
   type ResultMetricKey,
-  type UpcomingResultEntry,
   type UpcomingResultsResponse,
 } from "../lib/api";
 import {
@@ -27,7 +26,11 @@ import {
   rangePresets,
   sectorCounts,
   seasonStart,
+  showBasis,
+  showUpcomingBasis,
   sortResults,
+  type ShownResult,
+  type ShownUpcoming,
   todayIst,
   type ResultsFilters,
 } from "../lib/results";
@@ -59,7 +62,7 @@ const METRIC_ROWS: { key: ResultMetricKey; label: string }[] = [
   { key: "eps", label: "EPS" },
 ];
 
-type Saved = { view: ResultsView; filters: ResultsFilters };
+type Saved = { view: ResultsView; filters: ResultsFilters; basis: ResultsBasis };
 
 function readSaved(): Saved {
   try {
@@ -68,12 +71,13 @@ function readSaved(): Saved {
       return {
         view: raw.view === "upcoming" ? "upcoming" : "quarterly",
         filters: { ...DEFAULT_FILTERS, ...(raw.filters ?? {}), search: "" },
+        basis: raw.basis === "standalone" ? "standalone" : "consolidated",
       };
     }
   } catch {
     /* private window or blocked storage: defaults */
   }
-  return { view: "quarterly", filters: DEFAULT_FILTERS };
+  return { view: "quarterly", filters: DEFAULT_FILTERS, basis: "consolidated" };
 }
 
 function toggle<T>(list: T[], value: T): T[] {
@@ -84,7 +88,24 @@ function Growth({ value }: { value: number | null }) {
   return <span className={`results-growth is-${growthTone(value)}`}>{formatPct(value)}</span>;
 }
 
-function ResultCard({ item, onOpen }: { item: QuarterlyResultEntry; onOpen: (symbol: string) => void }) {
+const BASIS_LABEL: Record<ResultsBasis, string> = { consolidated: "Consolidated", standalone: "Standalone" };
+
+function BasisTag({ shown, wanted }: { shown: ResultsBasis | null; wanted: ResultsBasis }) {
+  if (!shown) return null;
+  const title =
+    shown === wanted
+      ? undefined
+      : shown === "standalone"
+        ? "No consolidated filing for this quarter (no subsidiaries, or not on NSE yet): standalone figures shown"
+        : "Filed consolidated on NSE only: consolidated figures shown";
+  return (
+    <span className={`results-basis${shown === wanted ? "" : " is-fallback"}`} title={title}>
+      {BASIS_LABEL[shown]}
+    </span>
+  );
+}
+
+function ResultCard({ item, basis, onOpen }: { item: ShownResult; basis: ResultsBasis; onOpen: (symbol: string) => void }) {
   return (
     <article className="results-card">
       <header className="results-card-head">
@@ -93,13 +114,14 @@ function ResultCard({ item, onOpen }: { item: QuarterlyResultEntry; onOpen: (sym
             {item.name}
           </button>
           <span className="results-symbol">{item.symbol}</span>
+          <BasisTag shown={item.shown_basis} wanted={basis} />
           <span className="results-declared" title="When the result was filed on BSE (IST)">
             {formatDeclared(item.declared_at)}
           </span>
         </div>
         <dl className="results-valuation">
           <div><dt>M Cap</dt><dd>{formatMarketCap(item.market_cap_crore)}</dd></div>
-          <div><dt title="Market cap over the last four quarters' standalone net profit">PE</dt><dd>{formatRatio(item.pe)}</dd></div>
+          <div><dt title={`Market cap over the last four quarters' ${item.shown_basis} net profit`}>PE</dt><dd>{formatRatio(item.pe)}</dd></div>
           <div><dt title="PE over the growth of trailing net profit on the year before">PEG</dt><dd>{formatRatio(item.peg)}</dd></div>
         </dl>
       </header>
@@ -145,7 +167,7 @@ function ResultCard({ item, onOpen }: { item: QuarterlyResultEntry; onOpen: (sym
   );
 }
 
-function UpcomingDay({ date, items, onOpen }: { date: string; items: UpcomingResultEntry[]; onOpen: (symbol: string) => void }) {
+function UpcomingDay({ date, items, basis, onOpen }: { date: string; items: ShownUpcoming[]; basis: ResultsBasis; onOpen: (symbol: string) => void }) {
   return (
     <section className="results-day">
       <h3 className="results-day-head">
@@ -171,6 +193,7 @@ function UpcomingDay({ date, items, onOpen }: { date: string; items: UpcomingRes
                     {item.name}
                   </button>
                   <span className="results-symbol">{item.symbol}</span>
+                  <BasisTag shown={item.shown_basis} wanted={basis} />
                 </th>
                 <td>{formatMarketCap(item.market_cap_crore)}</td>
                 <td>{item.last_period ?? "—"}</td>
@@ -190,6 +213,7 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
   const saved = useMemo(readSaved, []);
   const [view, setView] = useState<ResultsView>(saved.view);
   const [filters, setFilters] = useState<ResultsFilters>(saved.filters);
+  const [basis, setBasis] = useState<ResultsBasis>(saved.basis);
   const today = todayIst();
   const [range, setRange] = useState(() => ({ from: seasonStart(today), to: today }));
   const [quarterly, setQuarterly] = useState<QuarterlyResultsResponse | null>(null);
@@ -202,11 +226,11 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ view, filters: { ...filters, search: "" } }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ view, basis, filters: { ...filters, search: "" } }));
     } catch {
       /* storage blocked: the page still works, it just forgets */
     }
-  }, [view, filters]);
+  }, [view, basis, filters]);
 
   const load = useCallback(
     async (quiet = false) => {
@@ -251,13 +275,16 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
   const sourceItems: { sector: string | null }[] = view === "quarterly" ? quarterly?.items ?? [] : upcoming?.items ?? [];
   const sectors = useMemo(() => sectorCounts(sourceItems), [sourceItems]);
 
-  const quarterlyShown = useMemo(
-    () => sortResults(filterResults(quarterly?.items ?? [], filters, watchlist), filters.sort),
-    [quarterly, filters, watchlist],
+  const quarterlyShown = useMemo(() => {
+    const shownItems = (quarterly?.items ?? []).map((item) => showBasis(item, basis)).filter((item): item is ShownResult => item !== null);
+    return sortResults(filterResults(shownItems, filters, watchlist), filters.sort);
+  }, [quarterly, basis, filters, watchlist]);
+  const upcomingShown = useMemo(
+    () => filterResults((upcoming?.items ?? []).map((item) => showUpcomingBasis(item, basis)), filters, watchlist),
+    [upcoming, basis, filters, watchlist],
   );
-  const upcomingShown = useMemo(() => filterResults(upcoming?.items ?? [], filters, watchlist), [upcoming, filters, watchlist]);
   const upcomingDays = useMemo(() => {
-    const days: { date: string; items: UpcomingResultEntry[] }[] = [];
+    const days: { date: string; items: ShownUpcoming[] }[] = [];
     for (const item of upcomingShown) {
       const last = days[days.length - 1];
       if (last && last.date === item.date) last.items.push(item);
@@ -289,7 +316,7 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
         <div>
           <h2 className="results-title">{view === "quarterly" ? "Latest Quarterly Results" : "Upcoming Results"}</h2>
           <p className="results-sub">
-            Standalone figures from BSE filings, in ₹ crore. Updated daily at 7:00 PM IST with that day's results; late filers follow at 9:30 PM and 11:45 PM.
+            Consolidated figures from NSE's XBRL filings, standalone from BSE, in ₹ crore. Updated daily at 7:00 PM IST with that day's results; late filers follow at 9:30 PM and 11:45 PM.
           </p>
         </div>
         <div className="results-tabs" role="tablist" aria-label="Results view">
@@ -325,6 +352,13 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
         ) : (
           <p className="results-range-note">Board meetings for results in the next 45 days, from the BSE and NSE calendars.</p>
         )}
+        <div className="results-basis-toggle" role="radiogroup" aria-label="Figures">
+          {(["consolidated", "standalone"] as const).map((key) => (
+            <button key={key} type="button" role="radio" aria-checked={basis === key} className={basis === key ? "is-active" : ""} onClick={() => setBasis(key)}>
+              {BASIS_LABEL[key]}
+            </button>
+          ))}
+        </div>
         <label className="results-search">
           <Search size={15} aria-hidden />
           <input
@@ -443,7 +477,7 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
                     </h3>
                   ) : null}
                   {group.items.map((item) => (
-                    <ResultCard key={`${item.symbol}-${item.period}`} item={item} onOpen={openChart} />
+                    <ResultCard key={`${item.symbol}-${item.period}`} item={item} basis={basis} onOpen={openChart} />
                   ))}
                 </section>
               ))}
@@ -462,7 +496,7 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
                 <p className="results-empty">{upcoming.items.length ? "No companies match these filters." : "No results board meetings announced yet."}</p>
               ) : null}
               {upcomingDays.map((day) => (
-                <UpcomingDay key={day.date} date={day.date} items={day.items} onOpen={openChart} />
+                <UpcomingDay key={day.date} date={day.date} items={day.items} basis={basis} onOpen={openChart} />
               ))}
             </>
           )}

@@ -6675,6 +6675,18 @@ export type ResultMetric = {
 
 export type ResultMetricKey = "sales" | "operating_profit" | "net_profit" | "eps";
 
+export type ResultsBasis = "consolidated" | "standalone";
+
+/* One basis's figures for a quarter: compared with that same basis's previous
+   and year-ago quarters, PE / PEG on its trailing four quarters. */
+export type ResultBasisBlock = {
+  metrics: Record<ResultMetricKey, ResultMetric>;
+  operating_margin_pct: number | null;
+  pe: number | null;
+  peg: number | null;
+  result_url: string | null;
+};
+
 export type QuarterlyResultEntry = {
   symbol: string;
   name: string;
@@ -6687,11 +6699,8 @@ export type QuarterlyResultEntry = {
   period: string;
   prev_period: string | null;
   year_ago_period: string | null;
-  metrics: Record<ResultMetricKey, ResultMetric>;
-  operating_margin_pct: number | null;
-  pe: number | null;
-  peg: number | null;
-  result_url: string | null;
+  standalone: ResultBasisBlock | null;
+  consolidated: ResultBasisBlock | null;
 };
 
 export type QuarterlyResultsResponse = {
@@ -6701,7 +6710,15 @@ export type QuarterlyResultsResponse = {
   awaiting_figures: { symbol: string; name: string }[];
   summary_generated_at: string | null;
   feed_checked_at: string | null;
-  basis: string;
+  consolidated_generated_at?: string | null;
+};
+
+export type UpcomingLastQuarter = {
+  last_period: string | null;
+  last_sales_yoy_pct: number | null;
+  last_profit_yoy_pct: number | null;
+  pe: number | null;
+  peg: number | null;
 };
 
 export type UpcomingResultEntry = {
@@ -6712,11 +6729,8 @@ export type UpcomingResultEntry = {
   market_cap_crore: number | null;
   cap_bucket: ResultsCapBucket | null;
   date: string;
-  last_period: string | null;
-  last_sales_yoy_pct: number | null;
-  last_profit_yoy_pct: number | null;
-  pe: number | null;
-  peg: number | null;
+  standalone: UpcomingLastQuarter | null;
+  consolidated: UpcomingLastQuarter | null;
 };
 
 export type UpcomingResultsResponse = {

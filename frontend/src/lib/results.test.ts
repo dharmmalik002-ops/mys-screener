@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { QuarterlyResultEntry } from "./api";
+import type { QuarterlyResultEntry, ResultsBasis } from "./api";
 import {
   DEFAULT_FILTERS,
   filterResults,
@@ -11,6 +11,9 @@ import {
   groupByDay,
   rangePresets,
   seasonStart,
+  showBasis,
+  showUpcomingBasis,
+  type ShownResult,
   sortResults,
   todayIst,
 } from "./results";
@@ -29,13 +32,22 @@ function entry(symbol: string, declared: string, cap: number, salesYoy: number |
     period: "Sep 2026",
     prev_period: "Jun 2026",
     year_ago_period: "Sep 2025",
-    metrics: { sales: metric(salesYoy), operating_profit: metric(null), net_profit: metric(null), eps: metric(null) },
-    operating_margin_pct: null,
-    pe: null,
-    peg: null,
-    result_url: null,
+    standalone: {
+      metrics: { sales: metric(salesYoy), operating_profit: metric(null), net_profit: metric(null), eps: metric(null) },
+      operating_margin_pct: null,
+      pe: null,
+      peg: null,
+      result_url: null,
+    },
+    consolidated: null,
     ...extra,
   };
+}
+
+function shown(item: QuarterlyResultEntry, basis: ResultsBasis = "consolidated"): ShownResult {
+  const out = showBasis(item, basis);
+  if (!out) throw new Error("no basis");
+  return out;
 }
 
 describe("results page rules", () => {
@@ -44,7 +56,7 @@ describe("results page rules", () => {
     entry("BBB", "2026-10-10T17:42", 100, null),
     entry("CCC", "2026-10-10T17:42", 900, 30, { cap_bucket: "mid", sector: "Banks" }),
     entry("DDD", "2026-10-09T10:00", 50, -12),
-  ];
+  ].map((item) => shown(item));
 
   it("lists the newest declaration first, larger companies first in a tie", () => {
     expect(sortResults(items, "latest").map((i) => i.symbol)).toEqual(["CCC", "BBB", "DDD", "AAA"]);
@@ -89,5 +101,31 @@ describe("results page rules", () => {
     expect(formatPct(-13.6)).toBe("-13.60%");
     expect(formatDeclared("2026-10-09T17:42")).toBe("9 Oct 2026 · 5:42 PM");
     expect(formatDeclared("2026-10-09T00:05")).toBe("9 Oct 2026 · 12:05 AM");
+  });
+
+  it("shows the chosen basis, and the other one only when a company does not file it", () => {
+    const base = entry("TCS", "2026-10-09T15:40", 800000, 11.2);
+    const metric = (value: number, yoy: number) => ({ value, prev: null, year_ago: null, yoy_pct: yoy, qoq_pct: null });
+    const consolidated = {
+      metrics: { sales: metric(73188, 11.23), operating_profit: metric(1, 1), net_profit: metric(1, 1), eps: metric(1, 1) },
+      operating_margin_pct: 25,
+      pe: 15.16,
+      peg: 2.05,
+      result_url: null,
+    };
+    const both = { ...base, consolidated };
+    expect(shown(both, "consolidated").shown_basis).toBe("consolidated");
+    expect(shown(both, "consolidated").metrics.sales.value).toBe(73188);
+    expect(shown(both, "standalone").metrics.sales.yoy_pct).toBe(11.2);
+    // No subsidiaries: standalone, marked as such.
+    expect(shown(base, "consolidated").shown_basis).toBe("standalone");
+    // Filed only on NSE: consolidated even when standalone was asked for.
+    expect(shown({ ...both, standalone: null }, "standalone").shown_basis).toBe("consolidated");
+    expect(showBasis({ ...base, standalone: null }, "consolidated")).toBeNull();
+
+    const upcoming = { symbol: "X", name: "X", sector: null, sub_sector: null, market_cap_crore: 1, cap_bucket: null, date: "2026-10-20",
+      standalone: { last_period: "Jun 2026", last_sales_yoy_pct: 5, last_profit_yoy_pct: 6, pe: 10, peg: null }, consolidated: null };
+    expect(showUpcomingBasis(upcoming, "consolidated")).toMatchObject({ shown_basis: "standalone", last_sales_yoy_pct: 5 });
+    expect(showUpcomingBasis({ ...upcoming, standalone: null }, "consolidated")).toMatchObject({ shown_basis: null, last_period: null });
   });
 });

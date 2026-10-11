@@ -38,7 +38,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from app.services import bse_quarterly
+from app.services import bse_quarterly, consolidated_results
 from app.services.quarterly_growth import growth_pct, period_end
 
 logger = logging.getLogger(__name__)
@@ -275,6 +275,25 @@ def _metric_block(by_period: dict[str, dict[str, Any]], period: str, key: str) -
     }
 
 
+def basis_block(rows: list[dict[str, Any]], period: str, market_cap: float | None) -> dict[str, Any] | None:
+    """One basis's figures for `period`: the four lines against the previous
+    and year-ago quarters of the SAME basis, and today's PE / PEG on it."""
+    by_period = {row["period"]: row for row in rows if row.get("period")}
+    current = by_period.get(period)
+    if current is None:
+        return None
+    # Today's valuation, whichever quarter the entry is: what PE means to a
+    # reader looking at the page now.
+    pe, peg = valuation(rows, market_cap)
+    return {
+        "metrics": {name: _metric_block(by_period, period, key) for name, key in METRICS},
+        "operating_margin_pct": current.get("operating_margin_pct"),
+        "pe": pe,
+        "peg": peg,
+        "result_url": current.get("result_document_url"),
+    }
+
+
 def result_entry(
     symbol: str,
     period: str,
@@ -282,15 +301,13 @@ def result_entry(
     rows: list[dict[str, Any]],
     snapshot: Any,
     bucket: str | None,
+    consolidated_rows: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
-    by_period = {row["period"]: row for row in rows if row.get("period")}
-    current = by_period.get(period)
-    if current is None:
-        return None
     market_cap = getattr(snapshot, "market_cap_crore", None)
-    # Today's valuation, whichever quarter the entry is: what PE means to a
-    # reader looking at the page now.
-    pe, peg = valuation(rows, market_cap)
+    standalone = basis_block(rows, period, market_cap)
+    consolidated = basis_block(consolidated_rows or [], period, market_cap)
+    if standalone is None and consolidated is None:
+        return None
     return {
         "symbol": symbol,
         "name": getattr(snapshot, "name", symbol),
@@ -303,11 +320,8 @@ def result_entry(
         "period": period,
         "prev_period": _shift(period, -3),
         "year_ago_period": _shift(period, -12),
-        "metrics": {name: _metric_block(by_period, period, key) for name, key in METRICS},
-        "operating_margin_pct": current.get("operating_margin_pct"),
-        "pe": pe,
-        "peg": peg,
-        "result_url": current.get("result_document_url"),
+        "standalone": standalone,
+        "consolidated": consolidated,
     }
 
 
@@ -322,20 +336,27 @@ def build_quarterly(snapshots: list[Any], date_from: date, date_to: date) -> dic
     items: list[dict[str, Any]] = []
     # A quarter declared inside the range ended at most MAX_DAYS before it.
     oldest_end = date_from - timedelta(days=MAX_DAYS_AFTER_QUARTER)
-    for symbol in sorted(bse_quarterly.symbols()):
+    consolidated_symbols = set((consolidated_results.load().get("symbols") or {}))
+    for symbol in sorted(bse_quarterly.symbols() | consolidated_symbols):
         snapshot = by_symbol.get(symbol)
         if snapshot is None:
             continue
         rows = bse_quarterly.results_for(symbol)
-        for row in rows[:3]:
-            period = row.get("period")
-            end = period_end(period) if period else None
+        cons = consolidated_results.results_for(symbol) if symbol in consolidated_symbols else []
+        periods: list[str] = []
+        for row in rows[:3] + cons[:3]:
+            if row.get("period") and row["period"] not in periods:
+                periods.append(row["period"])
+        for period in periods:
+            end = period_end(period)
             if end is None or end < oldest_end or end > date_to:
                 continue
-            declared = declared_at(symbol, period, feed)
+            # The BSE announcement dates it; NSE's consolidated filing time
+            # only when BSE gave nothing (it can trail the announcement).
+            declared = declared_at(symbol, period, feed) or consolidated_results.filed_at(symbol, period)
             if declared is None or not (date_from <= declared.date() <= date_to):
                 continue
-            entry = result_entry(symbol, period, declared, rows, snapshot, buckets.get(symbol))
+            entry = result_entry(symbol, period, declared, rows, snapshot, buckets.get(symbol), cons)
             if entry:
                 items.append(entry)
     items.sort(key=lambda item: (item["declared_at"], item["market_cap_crore"] or 0), reverse=True)
@@ -355,13 +376,29 @@ def build_quarterly(snapshots: list[Any], date_from: date, date_to: date) -> dic
         ],
         "summary_generated_at": bse_quarterly.read_cached(bse_quarterly.ARTIFACT_PATH).get("generated_at"),
         "feed_checked_at": feed.get("filings_checked_at"),
-        "basis": "standalone",
+        "consolidated_generated_at": consolidated_results.load().get("generated_at"),
+    }
+
+
+def _last_quarter(rows: list[dict[str, Any]], market_cap: float | None) -> dict[str, Any] | None:
+    if not rows:
+        return None
+    by_period = {row["period"]: row for row in rows if row.get("period")}
+    last = rows[0]["period"]
+    pe, peg = valuation(rows, market_cap)
+    return {
+        "last_period": last,
+        "last_sales_yoy_pct": _metric_block(by_period, last, "sales_crore")["yoy_pct"],
+        "last_profit_yoy_pct": _metric_block(by_period, last, "net_profit_crore")["yoy_pct"],
+        "pe": pe,
+        "peg": peg,
     }
 
 
 def build_upcoming(snapshots: list[Any], today: date, days: int = 30) -> dict[str, Any]:
     """Companies with a results board meeting ahead (BSE + NSE calendars,
-    `earnings_calendar.json`), each with its last reported quarter."""
+    `earnings_calendar.json`), each with its last reported quarter on both
+    bases."""
     payload = bse_quarterly.read_cached(UPCOMING_PATH)
     upcoming = payload.get("upcoming") or {}
     by_symbol = {s.symbol.upper(): s for s in snapshots}
@@ -376,10 +413,6 @@ def build_upcoming(snapshots: list[Any], today: date, days: int = 30) -> dict[st
             continue
         if snapshot is None or not (today <= day <= last_day):
             continue
-        rows = bse_quarterly.results_for(symbol)
-        last = rows[0] if rows else None
-        by_period = {row["period"]: row for row in rows if row.get("period")}
-        pe, peg = valuation(rows, snapshot.market_cap_crore)
         items.append({
             "symbol": snapshot.symbol,
             "name": snapshot.name,
@@ -388,11 +421,8 @@ def build_upcoming(snapshots: list[Any], today: date, days: int = 30) -> dict[st
             "market_cap_crore": snapshot.market_cap_crore,
             "cap_bucket": buckets.get(snapshot.symbol.upper()),
             "date": day.isoformat(),
-            "last_period": last.get("period") if last else None,
-            "last_sales_yoy_pct": _metric_block(by_period, last["period"], "sales_crore")["yoy_pct"] if last else None,
-            "last_profit_yoy_pct": _metric_block(by_period, last["period"], "net_profit_crore")["yoy_pct"] if last else None,
-            "pe": pe,
-            "peg": peg,
+            "standalone": _last_quarter(bse_quarterly.results_for(symbol), snapshot.market_cap_crore),
+            "consolidated": _last_quarter(consolidated_results.results_for(symbol), snapshot.market_cap_crore),
         })
     items.sort(key=lambda item: (item["date"], -(item["market_cap_crore"] or 0)))
     return {"items": items, "calendar_updated_at": payload.get("updated_at"), "days": days}
@@ -405,7 +435,8 @@ def feed_path() -> Path:
 def data_stamp() -> tuple[float, ...]:
     """mtimes of every file the page reads — what a cached payload keys on."""
     out = []
-    for path in (bse_quarterly.ARTIFACT_PATH, bse_quarterly.FEED_PATH, CALENDAR_PATH, UPCOMING_PATH):
+    for path in (bse_quarterly.ARTIFACT_PATH, bse_quarterly.FEED_PATH, CALENDAR_PATH, UPCOMING_PATH,
+                 consolidated_results.ARTIFACT_PATH):
         try:
             out.append(path.stat().st_mtime)
         except OSError:
@@ -423,11 +454,36 @@ _pull_lock = threading.Lock()
 _last_pull = 0.0
 
 
-def pull_latest_feed(force: bool = False) -> bool:
-    """Replace the local feed with the committed one when the committed one
-    checked filings more recently. True when a newer file was written."""
-    global _last_pull
+def _pull_one(raw_base: str, path: Path, required_key: str) -> bool:
     import requests
+
+    try:
+        local = str(bse_quarterly.read_cached(path).get("generated_at") or "")
+        response = requests.get(f"{raw_base}/{path.name}", timeout=40)
+        if response.status_code != 200:
+            logger.info("Results pull (%s): remote HTTP %s — keeping local %s", path.name, response.status_code, local or "<none>")
+            return False
+        remote = response.json()
+        stamp = str(remote.get("generated_at") or "") if isinstance(remote, dict) else ""
+        if not stamp or not isinstance(remote.get(required_key), dict):
+            logger.warning("Results pull (%s): remote payload invalid — keeping local", path.name)
+            return False
+        if local and stamp <= local:
+            return False
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(response.text, encoding="utf-8")
+        tmp.replace(path)
+        logger.info("Results pull (%s): %s (was %s)", path.name, stamp, local or "<none>")
+        return True
+    except Exception as exc:  # noqa: BLE001 - a failed pull keeps the local copy
+        logger.warning("Results pull (%s) failed: %s", path.name, exc)
+        return False
+
+
+def pull_latest_feed(force: bool = False) -> bool:
+    """Replace the local evening feed and consolidated file with the
+    committed ones when those are newer. True when either was written."""
+    global _last_pull
 
     with _pull_lock:
         now = time.monotonic()
@@ -438,28 +494,9 @@ def pull_latest_feed(force: bool = False) -> bool:
         os.environ.get("COMMITTED_DATA_RAW_BASE")
         or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data"
     ).strip().rstrip("/")
-    path = bse_quarterly.FEED_PATH
-    try:
-        local = str(bse_quarterly.load_feed().get("generated_at") or "")
-        response = requests.get(f"{raw_base}/{path.name}", timeout=25)
-        if response.status_code != 200:
-            logger.info("Results feed pull: remote HTTP %s — keeping local %s", response.status_code, local or "<none>")
-            return False
-        remote = response.json()
-        stamp = str(remote.get("generated_at") or "") if isinstance(remote, dict) else ""
-        if not stamp or not isinstance(remote.get("declared"), dict):
-            logger.warning("Results feed pull: remote payload invalid — keeping local")
-            return False
-        if local and stamp <= local:
-            return False
-        tmp = path.with_name(path.name + ".tmp")
-        tmp.write_text(response.text, encoding="utf-8")
-        tmp.replace(path)
-        logger.info("Results feed pull: %s (was %s)", stamp, local or "<none>")
-        return True
-    except Exception as exc:  # noqa: BLE001 - a failed pull keeps the local copy
-        logger.warning("Results feed pull failed: %s", exc)
-        return False
+    feed = _pull_one(raw_base, bse_quarterly.FEED_PATH, "declared")
+    consolidated = _pull_one(raw_base, consolidated_results.ARTIFACT_PATH, "symbols")
+    return feed or consolidated
 
 
 def pull_in_background() -> None:

@@ -15,6 +15,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.services import bse_quarterly as bq
+from app.services import consolidated_results as cr
 from app.services import results_feed as rf
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -56,6 +57,7 @@ def files(tmp_path, monkeypatch):
     monkeypatch.setattr(bq, "FEED_PATH", feed)
     monkeypatch.setattr(rf, "CALENDAR_PATH", calendar)
     monkeypatch.setattr(rf, "UPCOMING_PATH", tmp_path / "earnings_calendar.json")
+    monkeypatch.setattr(cr, "ARTIFACT_PATH", tmp_path / "consolidated_results.json")
     return SimpleNamespace(summary=summary, feed=feed, calendar=calendar, dir=tmp_path)
 
 
@@ -148,15 +150,16 @@ def test_the_page_lists_results_declared_in_the_range(files):
     assert item["name"] == "Abc Ltd"
     assert item["declared_at"] == "2026-10-09T17:42"
     assert (item["period"], item["prev_period"], item["year_ago_period"]) == ("Sep 2026", "Jun 2026", "Sep 2025")
-    sales = item["metrics"]["sales"]
+    sales = item["standalone"]["metrics"]["sales"]
     assert (sales["value"], sales["prev"], sales["year_ago"]) == (120.0, 110.0, 100.0)
     assert sales["yoy_pct"] == 20.0
     assert sales["qoq_pct"] == pytest.approx(9.09)
     # PE: market cap over the latest four quarters' profit (12 + 11 + 10.5 + 10).
-    assert item["pe"] == pytest.approx(360.0 / 43.5, abs=0.01)
+    assert item["standalone"]["pe"] == pytest.approx(360.0 / 43.5, abs=0.01)
     # PEG: PE over that profit's growth on the four quarters before (34).
-    assert item["peg"] == pytest.approx(round(360.0 / 43.5, 2) / round((43.5 / 34 - 1) * 100, 2), abs=0.01)
-    assert "Code=500001&qtr=131.00" in item["result_url"]
+    assert item["standalone"]["peg"] == pytest.approx(round(360.0 / 43.5, 2) / round((43.5 / 34 - 1) * 100, 2), abs=0.01)
+    assert "Code=500001&qtr=131.00" in item["standalone"]["result_url"]
+    assert item["consolidated"] is None  # files no consolidated results
     assert item["cap_bucket"] == "large"
 
     # The June quarter is dated from the calendar, so older seasons work too.
@@ -188,7 +191,8 @@ def test_upcoming_lists_board_meetings_ahead(files):
         "upcoming": {"ABC": "2026-10-20", "XYZ": "2026-10-08", "GONE": "2026-10-15"},
     }))
     page = rf.build_upcoming([_snap("ABC", 360.0), _snap("XYZ", 50.0)], date(2026, 10, 11))
-    assert [(i["symbol"], i["date"], i["last_period"]) for i in page["items"]] == [("ABC", "2026-10-20", "Jun 2026")]
+    assert [(i["symbol"], i["date"], i["standalone"]["last_period"]) for i in page["items"]] == [("ABC", "2026-10-20", "Jun 2026")]
+    assert page["items"][0]["consolidated"] is None
 
 
 def test_season_start():
