@@ -480,3 +480,20 @@ def test_a_filing_that_keeps_failing_is_tried_last_never_dropped(files, job, mon
     monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--workers", "1"])
     assert job.main() == 0
     assert "30-Jun-2026" in tried[0]
+
+
+def test_a_company_that_just_reported_gets_its_older_filings_first(files, job, monkeypatch):
+    # TCS reported this season; its year-ago filing goes ahead of INFY's newer one.
+    (files / "consolidated_results.json").write_text(json.dumps({"listed_through": "2026-10-10", "harvest_version": job.HARVEST_VERSION,
+        "symbols": {"TCS": {"quarters": [{"period": "Sep 2026", "sales_crore": 1.0, "filed": "2026-10-09T17:42"}]}},
+        "queue": [
+            {"symbol": "INFY", "basis": "consolidated", "period_end": "2026-03-31", "filed": "2026-04-17T18:00",
+             "xbrl": "https://x/INFY_mar.xml", "attempts": 0},
+            {"symbol": "TCS", "basis": "consolidated", "period_end": "2025-09-30", "filed": "2025-10-09T18:00",
+             "xbrl": "https://x/TCS_sep25.xml", "attempts": 0}]}))
+    _fake_windows(job, monkeypatch, [])
+    tried: list[str] = []
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: tried.append(url))
+    monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--workers", "1"])
+    assert job.main() == 0
+    assert tried[0].endswith("TCS_sep25.xml")

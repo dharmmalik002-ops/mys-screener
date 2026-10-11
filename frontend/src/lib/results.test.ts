@@ -132,6 +132,18 @@ describe("results page rules", () => {
     // ...but if neither can compare, the chosen basis stays.
     expect(shown({ ...base, standalone: { ...bare, metrics: { ...bare.metrics, sales: lone(60441) } }, consolidated: bare }, "consolidated").shown_basis).toBe("consolidated");
 
+    // ANANDRATHI, 9 Oct 2026: consolidated has QoQ but its Sep 2025 filing is
+    // not read yet, so no YoY; standalone has every figure and is shown.
+    const noYoy = (value: number, prev: number) => ({ value, prev, year_ago: null, yoy_pct: null, qoq_pct: 6.83 });
+    const consNoYoy = { ...consolidated, pe: null, peg: null,
+      metrics: { sales: noYoy(343.99, 321.99), operating_profit: noYoy(116.85, 108.65), net_profit: noYoy(88.96, 162.73), eps: noYoy(5.38, 9.82) } };
+    const full = (value: number, prev: number, yearAgo: number) => ({ value, prev, year_ago: yearAgo, yoy_pct: 1, qoq_pct: 1 });
+    const standFull = { metrics: { sales: full(333.54, 312.95, 286.07), operating_profit: full(116.15, 108.27, 133.84),
+      net_profit: full(88.29, 163.22, 97.16), eps: full(5.32, 9.83, 11.7) }, operating_margin_pct: 34.82, pe: 35.19, peg: 1.02, result_url: null };
+    expect(shown({ ...base, standalone: standFull, consolidated: consNoYoy }, "consolidated").shown_basis).toBe("standalone");
+    // Once consolidated is as complete, it is shown again.
+    expect(shown({ ...base, standalone: standFull, consolidated: { ...standFull, metrics: { ...standFull.metrics } } }, "consolidated").shown_basis).toBe("consolidated");
+
     const upcoming = { symbol: "X", name: "X", sector: null, sub_sector: null, market_cap_crore: 1, cap_bucket: null, date: "2026-10-20",
       standalone: { last_period: "Jun 2026", last_sales_yoy_pct: 5, last_profit_yoy_pct: 6, pe: 10, peg: null }, consolidated: null };
     expect(showUpcomingBasis(upcoming, "consolidated")).toMatchObject({ shown_basis: "standalone", last_sales_yoy_pct: 5 });

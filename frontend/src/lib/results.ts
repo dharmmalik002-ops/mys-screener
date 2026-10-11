@@ -30,15 +30,36 @@ const OTHER: Record<ResultsBasis, ResultsBasis> = { consolidated: "standalone", 
    quarter. While a company's consolidated history is still being collected,
    its consolidated card would be one column of figures and a row of dashes,
    so the other basis is shown instead (tagged) until both can compare. */
+// How much of a card a basis can fill: every value, comparison and growth
+// figure it has, plus PE and PEG.
+const METRIC_FIELDS = ["value", "prev", "year_ago", "yoy_pct", "qoq_pct"] as const;
+
 function comparable(block: ResultBasisBlock | null): boolean {
   const sales = block?.metrics?.sales;
   return Boolean(sales && (sales.prev != null || sales.year_ago != null));
 }
 
+function filled(block: ResultBasisBlock | null): number {
+  if (!block) return 0;
+  let n = (block.pe != null ? 1 : 0) + (block.peg != null ? 1 : 0);
+  for (const metric of Object.values(block.metrics ?? {})) {
+    for (const field of METRIC_FIELDS) if (metric?.[field] != null) n += 1;
+  }
+  return n;
+}
+
 export function showBasis(item: QuarterlyResultEntry, basis: ResultsBasis): ShownResult | null {
   const other = OTHER[basis];
   let pick: ResultsBasis | null = item[basis] ? basis : item[other] ? other : null;
-  if (pick === basis && !comparable(item[basis]) && comparable(item[other])) pick = other;
+  // While a company's consolidated history is still arriving (its year-ago
+  // quarter not yet read), the other basis is shown, tagged, if it fills more
+  // of the card; the chosen basis returns as soon as it is as complete.
+  // Standalone history is complete, so a standalone choice only falls back
+  // when it has nothing to compare at all.
+  const better = basis === "consolidated"
+    ? filled(item[other]) > filled(item[basis])
+    : !comparable(item[basis]) && comparable(item[other]);
+  if (pick === basis && better) pick = other;
   if (!pick) return null;
   const { standalone: _s, consolidated: _c, ...rest } = item;
   return { ...rest, ...(item[pick] as ResultBasisBlock), shown_basis: pick };
