@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ColorType, createChart, CrosshairMode, LineStyle, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
+import { ColorType, createChart, CrosshairMode, LineStyle, PriceScaleMode, type LineWidth, type UTCTimestamp } from "lightweight-charts";
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minimize2, Settings2, X } from "lucide-react";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
@@ -301,6 +301,11 @@ const VOLUME_MODES: Array<{ key: VolumeMode; label: string; title: string }> = [
   },
 ];
 type IndicatorColorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
+
+// The SMA200, RS line and index line: a touch heavier than the 1px averages so
+// they stand out, lighter than the 2px they used to be. Line series are drawn
+// at width x pixel ratio without rounding, so a half pixel is a real step.
+const THIN_EMPHASIS_LINE = 1.5 as LineWidth;
 
 const INDICATORS: Array<{ key: IndicatorKey; label: string; colorKey: IndicatorColorKey }> = [
   { key: "ema10", label: "EMA10", colorKey: "ema10" },
@@ -3702,7 +3707,7 @@ export function ChartPanel({
         existing ??
         chart.addLineSeries({
           color: chartColors[indicator.colorKey],
-          lineWidth: indicator.key === "ema200" ? 2 : 1,
+          lineWidth: indicator.key === "ema200" ? THIN_EMPHASIS_LINE : 1,
           priceLineVisible: false,
           lastValueVisible: false,
           crosshairMarkerVisible: false,
@@ -3750,7 +3755,7 @@ export function ChartPanel({
       if (!rsSeries) {
         rsSeries = chart.addLineSeries({
           color: chartColors.rsLine,
-          lineWidth: 2,
+          lineWidth: THIN_EMPHASIS_LINE,
           priceScaleId: "rs-rating",
           priceLineVisible: false,
           lastValueVisible: false,
@@ -3834,7 +3839,7 @@ export function ChartPanel({
     let series = indexOverlaySeriesRef.current;
     if (!series) {
       series = chart.addLineSeries({
-        lineWidth: 2,
+        lineWidth: THIN_EMPHASIS_LINE,
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false,
