@@ -46,7 +46,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install requests yfinance pandas
+        run: pip install requests yfinance pandas curl_cffi
 
       - name: Generate bhavcopy patch
         id: patch

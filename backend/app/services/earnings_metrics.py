@@ -34,8 +34,9 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 import pandas as pd
-import requests
 import yfinance as yf
+
+from app.services.exchange_http import browser_session
 
 BarsLoader = Callable[[str, str], list[dict[str, Any]]]
 
@@ -43,6 +44,11 @@ BSE_ANN_URL = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
 # Forthcoming board-meeting-for-results calendar ("which stocks declare results
 # in the coming days"). Same host as the announcements API; not geo-blocked.
 BSE_FORTHCOMING_URL = "https://api.bseindia.com/BseIndiaAPI/api/Corpforthresults/w"
+# NSE's corporate event calendar: board meetings with their purpose, past and
+# upcoming. A second, independent source for result dates, keyed by NSE symbol,
+# so a BSE outage no longer blanks the calendar and NSE-only names are covered.
+NSE_HOME_URL = "https://www.nseindia.com/"
+NSE_EVENT_CALENDAR_URL = "https://www.nseindia.com/api/event-calendar"
 BSE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -160,8 +166,7 @@ def fetch_bse_forthcoming_results() -> dict[str, date]:
     knows which names to track for a reaction, quarter after quarter.
     Failure returns an empty dict; the filings/yfinance anchors still work.
     """
-    session = requests.Session()
-    session.headers.update(BSE_HEADERS)
+    session = browser_session(BSE_HEADERS)
     try:
         session.get("https://www.bseindia.com/corporates/Forth_Results.html", timeout=15)
     except Exception:
@@ -192,6 +197,104 @@ def fetch_bse_forthcoming_results() -> dict[str, date]:
             calendar[scrip] = parsed
     LOGGER.info("BSE forthcoming results: %d scrips scheduled", len(calendar))
     return calendar
+
+
+def _is_results_event(row: dict[str, Any]) -> bool:
+    text = f"{row.get('purpose') or ''} {row.get('bm_purpose') or ''} {row.get('bm_desc') or ''}".lower()
+    return "financial result" in text
+
+
+def parse_nse_event_calendar(rows: Any) -> dict[str, list[date]]:
+    """``{SYMBOL: [meeting dates]}`` for the board meetings that consider
+    financial results. Rows whose purpose is something else (fund raising,
+    dividends alone, buy-backs) are dropped."""
+    events: dict[str, list[date]] = {}
+    if not isinstance(rows, list):
+        return events
+    for row in rows:
+        if not isinstance(row, dict) or not _is_results_event(row):
+            continue
+        symbol = str(row.get("symbol") or row.get("bm_symbol") or "").strip().upper()
+        raw = str(row.get("date") or row.get("bm_date") or "").strip()
+        if not symbol or not raw:
+            continue
+        parsed: date | None = None
+        for fmt in ("%d-%b-%Y", "%d-%m-%Y", "%Y-%m-%d"):
+            try:
+                parsed = datetime.strptime(raw[:11], fmt).date()
+                break
+            except ValueError:
+                continue
+        if parsed is None:
+            continue
+        bucket = events.setdefault(symbol, [])
+        if parsed not in bucket:
+            bucket.append(parsed)
+    for bucket in events.values():
+        bucket.sort()
+    return events
+
+
+def fetch_nse_results_calendar(from_date: date, to_date: date) -> dict[str, list[date]]:
+    """NSE's board-meeting calendar between two dates, results meetings only.
+
+    Returns ``{SYMBOL: [dates]}``; an empty dict when NSE could not be read,
+    so callers keep what they had rather than read an outage as "no results".
+    """
+    session = browser_session({"Referer": NSE_HOME_URL, "Accept": "application/json, text/plain, */*"})
+    try:
+        session.get(NSE_HOME_URL, timeout=20)  # sets the cookies the API wants
+    except Exception:
+        pass
+    attempts = (
+        {"index": "equities", "from_date": from_date.strftime("%d-%m-%Y"), "to_date": to_date.strftime("%d-%m-%Y")},
+        {},  # no range: NSE's default window of upcoming meetings
+    )
+    events: dict[str, list[date]] = {}
+    for params in attempts:
+        try:
+            response = session.get(NSE_EVENT_CALENDAR_URL, params=params, timeout=30)
+            response.raise_for_status()
+            parsed = parse_nse_event_calendar(response.json())
+        except Exception as exc:
+            LOGGER.warning("NSE event calendar fetch failed (%s): %s", params or "default", exc)
+            continue
+        for symbol, dates in parsed.items():
+            bucket = events.setdefault(symbol, [])
+            bucket.extend(d for d in dates if d not in bucket)
+            bucket.sort()
+    LOGGER.info("NSE event calendar: %d symbols with a results meeting", len(events))
+    return events
+
+
+def merge_upcoming_calendar(
+    sources: Iterable[dict[str, Iterable[date]]],
+    existing: dict[str, str],
+    today: date,
+) -> dict[str, str]:
+    """One upcoming result date per symbol from several sources.
+
+    Each symbol gets its nearest date on or after ``today`` from any source.
+    A still-future date already on file is kept when no source names the
+    symbol this run (one feed failing must not wipe the chart's next-result
+    chip); past dates on file are dropped.
+    """
+    nearest: dict[str, date] = {}
+    for source in sources:
+        for symbol, dates in source.items():
+            for value in dates:
+                if value >= today and (symbol not in nearest or value < nearest[symbol]):
+                    nearest[symbol] = value
+    merged = {sym: d.isoformat() for sym, d in nearest.items()}
+    for symbol, raw in existing.items():
+        if symbol in merged:
+            continue
+        try:
+            if date.fromisoformat(str(raw)[:10]) >= today:
+                merged[symbol] = str(raw)[:10]
+        except ValueError:
+            continue
+    return merged
 
 
 def _close_in_range_pct(open_: float, high: float, low: float, close: float) -> float | None:
@@ -258,8 +361,7 @@ def fetch_bse_result_filings(lookback_days: int = 60) -> dict[str, date]:
     today = datetime.now(timezone.utc).astimezone().date()
     cutoff = today - timedelta(days=lookback_days)
     filings: dict[str, date] = {}
-    session = requests.Session()
-    session.headers.update(BSE_HEADERS)
+    session = browser_session(BSE_HEADERS)
     # Prime cookies once; the API rejects bare requests sometimes.
     try:
         session.get("https://www.bseindia.com/corporates/ann.html", timeout=15)
@@ -695,6 +797,7 @@ def compute_metrics(
     max_workers: int = 4,
     bse_filing_dates: dict[str, date] | None = None,
     calendar_dates: dict[str, date] | None = None,
+    symbol_calendar_dates: dict[str, date] | None = None,
     only_anchored: bool = False,
     use_yfinance_dates: bool = True,
 ) -> dict[str, dict[str, Any]]:
@@ -704,6 +807,9 @@ def compute_metrics(
     scrip code as string), each stock's announcement date is sourced from
     BSE first and only falls through to yfinance / volume detection when
     BSE has no entry. Universe entries should include a `bse_code` field.
+    ``symbol_calendar_dates`` (keyed by NSE symbol — NSE's event calendar)
+    stands in for the BSE calendar when BSE has no meeting for the stock, and
+    anchors names that carry no BSE code at all.
 
     ``only_anchored=True`` restricts computation to symbols with a BSE
     filing or a passed calendar meeting — the CI mode, which avoids ~1600
@@ -723,15 +829,21 @@ def compute_metrics(
     results: dict[str, dict[str, Any]] = {}
     bse_map = bse_filing_dates or {}
     calendar_map = calendar_dates or {}
+    symbol_calendar_map = symbol_calendar_dates or {}
+    today = datetime.now(timezone.utc).astimezone().date()
+
+    def _calendar_date(symbol: str, bse_code: str) -> date | None:
+        scheduled = calendar_map.get(bse_code) if bse_code else None
+        if scheduled is not None and scheduled <= today:
+            return scheduled
+        return symbol_calendar_map.get(symbol) or scheduled
+
     if only_anchored:
-        today = datetime.now(timezone.utc).astimezone().date()
         triples = [
             (symbol, ticker, bse_code)
             for symbol, ticker, bse_code in triples
-            if bse_code and (
-                bse_code in bse_map
-                or (bse_code in calendar_map and calendar_map[bse_code] <= today)
-            )
+            if (bse_code and bse_code in bse_map)
+            or ((cal := _calendar_date(symbol, bse_code)) is not None and cal <= today)
         ]
         LOGGER.info("anchored-only mode: %d symbols have a result anchor", len(triples))
 
@@ -744,7 +856,7 @@ def compute_metrics(
                 bars_loader,
                 lookback_days,
                 bse_filing_date=bse_map.get(bse_code),
-                calendar_date=calendar_map.get(bse_code),
+                calendar_date=_calendar_date(symbol, bse_code),
                 use_yfinance_dates=use_yfinance_dates,
             ): symbol
             for symbol, ticker, bse_code in triples

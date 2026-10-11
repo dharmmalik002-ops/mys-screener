@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { ScreenerLayoutToggle, type ScreenerLayout } from "./ScreenerLayoutToggle";
 import { ALL_ITEMS, type ScreenerMode, type SavedSidebarScanner } from "./ScreenerSidebar";
@@ -12,14 +12,23 @@ export type ResearchListRow = {
   changePct: number | null;
   /** Relative volume (today vs the 20-day average); scans carry no raw volume. */
   rvol: number | null;
+  /** Shown in the fourth column instead of RVol when the list sets `extraLabel`. */
+  extraText?: string | null;
+  extraTone?: "up" | "down" | null;
 };
 
 type ResearchStockListProps = {
-  activeMode: ScreenerMode;
-  onModeChange: (mode: ScreenerMode) => void;
-  savedScanners: SavedSidebarScanner[];
-  activeSavedScannerId: string | null;
-  onLoadSavedScanner: (id: string) => void;
+  activeMode?: ScreenerMode;
+  onModeChange?: (mode: ScreenerMode) => void;
+  savedScanners?: SavedSidebarScanner[];
+  activeSavedScannerId?: string | null;
+  onLoadSavedScanner?: (id: string) => void;
+  /** Replaces the screener dropdown — the AI Scanner heads the list with its own query. */
+  head?: ReactNode;
+  /** Fourth column header; rows then show `extraText` instead of RVol. */
+  extraLabel?: string;
+  emptyText?: string;
+  ariaLabel?: string;
   rows: ResearchListRow[];
   loading: boolean;
   selectedSymbol: string | null;
@@ -50,11 +59,15 @@ function formatRvol(value: number | null) {
  * fundamentals pane beside it follow; nothing opens on top.
  */
 export function ResearchStockList({
-  activeMode,
+  activeMode = "custom-scan",
   onModeChange,
-  savedScanners,
-  activeSavedScannerId,
+  savedScanners = [],
+  activeSavedScannerId = null,
   onLoadSavedScanner,
+  head,
+  extraLabel,
+  emptyText = "No stocks match this screener.",
+  ariaLabel = "Screener stocks",
   rows,
   loading,
   selectedSymbol,
@@ -75,16 +88,17 @@ export function ResearchStockList({
   const selectValue = activeSavedScannerId ? `saved:${activeSavedScannerId}` : `mode:${activeMode}`;
 
   return (
-    <aside className="research-list" aria-label="Screener stocks">
+    <aside className="research-list" aria-label={ariaLabel}>
       <div className="research-list-head">
+        {head ?? (
         <select
           className="research-list-select"
           value={selectValue}
           aria-label="Choose a screener"
           onChange={(event) => {
             const value = event.target.value;
-            if (value.startsWith("saved:")) onLoadSavedScanner(value.slice(6));
-            else onModeChange(value.slice(5) as ScreenerMode);
+            if (value.startsWith("saved:")) onLoadSavedScanner?.(value.slice(6));
+            else onModeChange?.(value.slice(5) as ScreenerMode);
             event.currentTarget.blur();
           }}
         >
@@ -107,6 +121,7 @@ export function ResearchStockList({
             </optgroup>
           ) : null}
         </select>
+        )}
       </div>
       <div className="research-list-switch">
         <ScreenerLayoutToggle value="research" onChange={onLayoutChange} />
@@ -116,14 +131,14 @@ export function ResearchStockList({
         <span>Symbol</span>
         <span>Last</span>
         <span>Chg%</span>
-        <span>RVol</span>
+        <span>{extraLabel ?? "RVol"}</span>
       </div>
 
       <div className="research-list-body" ref={listRef} role="listbox" aria-label="Stocks">
         {loading && rows.length === 0 ? (
           <div className="research-list-empty">Loading…</div>
         ) : rows.length === 0 ? (
-          <div className="research-list-empty">No stocks match this screener.</div>
+          <div className="research-list-empty">{emptyText}</div>
         ) : (
           rows.map((row) => {
             const active = row.symbol === selectedSymbol;
@@ -146,7 +161,11 @@ export function ResearchStockList({
                 </span>
                 <span className="research-list-num">{formatPrice(row.last)}</span>
                 <span className={`research-list-num${tone}`}>{formatChange(row.changePct)}</span>
-                <span className="research-list-num muted">{formatRvol(row.rvol)}</span>
+                {extraLabel ? (
+                  <span className={`research-list-num${row.extraTone ? ` ${row.extraTone}` : " muted"}`}>{row.extraText ?? "—"}</span>
+                ) : (
+                  <span className="research-list-num muted">{formatRvol(row.rvol)}</span>
+                )}
               </button>
             );
           })

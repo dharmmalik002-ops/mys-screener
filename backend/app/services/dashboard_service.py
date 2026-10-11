@@ -35,6 +35,7 @@ from app.models.market import (
     CompanyQuestionResponse,
     CompanyFundamentals,
     ConsolidatingScanRequest,
+    AiScanRequest,
     CustomScanRequest,
     DashboardResponse,
     DemandZoneScanRequest,
@@ -93,7 +94,7 @@ from app.scanners.definitions import (
     scanner_sector_label,
     sparkline_closes,
 )
-from app.services import bse_quarterly, close_history
+from app.services import ai_scanner, bse_quarterly, close_history
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.market_environment import (
     build_focus_list,
@@ -4631,6 +4632,36 @@ class DashboardService:
             historical_runner=lambda historical_snapshots: _drop_low_band(run_custom_scan(request, historical_snapshots)),
             include_sector_summaries=include_sector_summaries,
         )
+
+    async def ai_scanner_parse(self, query: str) -> dict:
+        """Sentence -> validated filter set. The model only translates; the
+        stocks come from `ai_scanner_run` (services/ai_scanner.py)."""
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is None or not ai.available:
+            return {"error": "AI is not configured (ANTHROPIC_API_KEY or GEMINI_API_KEY missing)."}
+        try:
+            return await ai_scanner.parse_with(ai._generate_json, query)
+        except Exception as error:  # surfaced to the page, which keeps the last criteria
+            logger.warning("AI scanner parse failed: %s", error)
+            return {"error": f"The AI could not read that request ({error})."}
+
+    async def ai_scanner_run(self, request: AiScanRequest) -> dict:
+        snapshots = self._scan_eligible_snapshots(await self._snapshots())
+        payload = await asyncio.to_thread(ai_scanner.run, request, snapshots)
+        if request.hide_low_band:
+            bands = (self._load_price_bands() or {}).get("bands") or {}
+            low_band = {
+                str(sym).upper()
+                for sym, val in bands.items()
+                if isinstance(val, (int, float)) and float(val) <= 5
+            }
+            if low_band:
+                kept = [row for row in payload["items"] if str(row.get("symbol", "")).upper() not in low_band]
+                payload["hit_count"] -= len(payload["items"]) - len(kept)
+                payload["items"] = kept
+        sessions = [s.history_session_date for s in snapshots if getattr(s, "history_session_date", None)]
+        payload["session_date"] = max(sessions).isoformat() if sessions else None
+        return payload
 
     async def get_chart(self, symbol: str, timeframe: str):
         snapshot_updated_at = self._snapshot_updated_at()

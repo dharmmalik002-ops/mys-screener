@@ -23,19 +23,18 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-import requests
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.earnings_metrics import BSE_ANN_URL, BSE_HEADERS  # noqa: E402
+from app.services.exchange_http import browser_session  # noqa: E402
 
 SAME_QUARTER_DAYS = 25
 
 
-def _session() -> requests.Session:
-    s = requests.Session()
-    s.headers.update(BSE_HEADERS)
+def _session():
+    s = browser_session(BSE_HEADERS)  # Akamai refuses plain requests from runners
     try:
         s.get("https://www.bseindia.com/corporates/ann.html", timeout=15)
     except Exception:  # noqa: BLE001 - priming only
@@ -43,7 +42,7 @@ def _session() -> requests.Session:
     return s
 
 
-def fetch_window(s: requests.Session, start: date) -> list[tuple[str, str]] | None:
+def fetch_window(s, start: date) -> list[tuple[str, str]] | None:
     """(scrip code, filing datetime) for one 14-day window, or None on failure."""
     end = start + timedelta(days=13)
     base = {"strCat": "Result", "strPrevDate": start.strftime("%Y%m%d"),

@@ -2527,6 +2527,82 @@ export function getScanResults(scanId: string, market: MarketKey, options?: Scan
   );
 }
 
+/* ---- AI scanner ----------------------------------------------------------
+   parse: sentence -> validated filter set (the only call that uses the model).
+   run: filter set -> stocks, no model, so edited criteria re-run instantly.
+   The request is the backend's AiScanRequest, kept as a plain record: the page
+   only ever edits keys the server itself returned. */
+export type AiScanRequest = Record<string, unknown> & {
+  patterns: string[];
+  pattern_match: "any" | "all";
+};
+
+export type AiScanCriterion = {
+  key: string;
+  kind: "min" | "max" | "bool" | "enum" | "int";
+  value: number | string | boolean;
+  text: string;
+  group: "technical" | "fundamental";
+};
+
+export type AiScanPatternRef = { id: string; name: string; description?: string };
+
+export type AiScanParseResult = {
+  query: string;
+  summary: string;
+  notes: string[];
+  unsupported: { text: string; reason: string }[];
+  criteria: AiScanCriterion[];
+  patterns: AiScanPatternRef[];
+  request: AiScanRequest;
+};
+
+export type AiScanColumn = { id: string; label: string; format: "pct" | "num" | "crore" | "x" | "pp" | "price" };
+
+export type AiScanRow = ScanMatch & {
+  metrics: Record<string, number | null>;
+  matched_patterns: string[];
+  latest_quarter: string | null;
+};
+
+export type AiScanRunResult = {
+  items: AiScanRow[];
+  hit_count: number;
+  universe_count: number;
+  columns: AiScanColumn[];
+  criteria: AiScanCriterion[];
+  patterns: AiScanPatternRef[];
+  pattern_match: "any" | "all";
+  request: AiScanRequest;
+  fundamentals_as_of: string | null;
+  session_date: string | null;
+};
+
+export type AiScanCatalog = {
+  patterns: AiScanPatternRef[];
+  fields: { key: string; label: string; kind: string; unit: string; help: string }[];
+};
+
+export function parseAiScan(query: string, market: MarketKey): Promise<AiScanParseResult> {
+  return request<AiScanParseResult>(
+    withMarket("/api/ai-scanner/parse", market),
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) },
+    { timeoutMs: 90_000 },
+  );
+}
+
+export function runAiScan(body: AiScanRequest, market: MarketKey): Promise<AiScanRunResult> {
+  return request<AiScanRunResult>(
+    withMarket("/api/ai-scanner/run", market),
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+    { timeoutMs: 60_000 },
+  );
+}
+
+export function getAiScanCatalog(): Promise<AiScanCatalog> {
+  return request<AiScanCatalog>("/api/ai-scanner/catalog");
+}
+
 export function runCustomScan(body: CustomScanRequest, market: MarketKey, options?: ScanRequestOptions) {
   return request<ScanResultsResponse>(withScanOptions("/api/custom-scan", market, options), {
     method: "POST",

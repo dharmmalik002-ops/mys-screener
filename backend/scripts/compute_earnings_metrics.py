@@ -43,7 +43,10 @@ from app.services.earnings_metrics import (  # noqa: E402  (sys.path mutated abo
     compute_metrics,
     fetch_bse_forthcoming_results,
     fetch_bse_result_filings,
+    fetch_nse_results_calendar,
+    load_calendar_file,
     load_metrics_file,
+    merge_upcoming_calendar,
     save_calendar_file,
     save_metrics_file,
 )
@@ -59,20 +62,46 @@ def _load_universe() -> list[dict]:
     return json.loads(universe_path.read_text(encoding="utf-8"))
 
 
-def _write_calendar(universe: list[dict], forthcoming: dict[str, date]) -> None:
-    """Map the scrip-code-keyed calendar to NSE symbols and persist it."""
+def _write_calendar(
+    universe: list[dict],
+    forthcoming: dict[str, date],
+    nse_events: dict[str, list[date]],
+    today: date,
+) -> None:
+    """Merge BSE's scrip-keyed calendar and NSE's symbol-keyed one into one
+    upcoming date per universe symbol, keeping still-future dates already on
+    file that neither source named this run, and persist it."""
     symbol_by_scrip = {
         str(item.get("bse_code") or "").strip(): str(item.get("symbol") or "").upper()
         for item in universe
         if item.get("bse_code") and item.get("symbol")
     }
-    upcoming = {
-        symbol_by_scrip[scrip]: meeting.isoformat()
+    universe_symbols = {str(item.get("symbol") or "").upper() for item in universe if item.get("symbol")}
+    bse_by_symbol = {
+        symbol_by_scrip[scrip]: [meeting]
         for scrip, meeting in forthcoming.items()
         if scrip in symbol_by_scrip
     }
+    nse_by_symbol = {sym: dates for sym, dates in nse_events.items() if sym in universe_symbols}
+    upcoming = merge_upcoming_calendar(
+        (bse_by_symbol, nse_by_symbol), load_calendar_file(BACKEND_ROOT), today
+    )
     save_calendar_file(BACKEND_ROOT, upcoming)
-    LOGGER.info("earnings calendar: %d universe symbols scheduled", len(upcoming))
+    LOGGER.info(
+        "earnings calendar: %d universe symbols scheduled (BSE %d, NSE %d)",
+        len(upcoming), len(bse_by_symbol), len(nse_by_symbol),
+    )
+
+
+def _nse_anchor_dates(nse_events: dict[str, list[date]], today: date, lookback_days: int) -> dict[str, date]:
+    """The latest results meeting already held, per symbol, within the lookback."""
+    cutoff = today - timedelta(days=lookback_days)
+    anchors: dict[str, date] = {}
+    for symbol, dates in nse_events.items():
+        held = [d for d in dates if cutoff <= d <= today]
+        if held:
+            anchors[symbol] = max(held)
+    return anchors
 
 
 def _prune_stale(entries: dict[str, dict], lookback_days: int) -> dict[str, dict]:
@@ -118,13 +147,17 @@ def main() -> int:
     )
 
     universe = _load_universe()
+    today = datetime.now(timezone.utc).astimezone().date()
 
     # 1. Upcoming-results calendar — always refreshed, independent of scoring.
+    # Two exchanges, so one refusing us no longer freezes the calendar.
     forthcoming = fetch_bse_forthcoming_results()
-    if forthcoming:
-        _write_calendar(universe, forthcoming)
+    nse_events = fetch_nse_results_calendar(today - timedelta(days=args.lookback_days), today + timedelta(days=90))
+    if forthcoming or nse_events:
+        _write_calendar(universe, forthcoming, nse_events, today)
     else:
-        LOGGER.warning("forthcoming calendar unavailable — keeping the committed one")
+        LOGGER.warning("BSE and NSE calendars both unavailable — keeping the committed one")
+    nse_anchors = _nse_anchor_dates(nse_events, today, args.lookback_days)
 
     # 2. Anchor dates for results that have already landed.
     bse_filing_dates = fetch_bse_result_filings(args.lookback_days)
@@ -133,15 +166,17 @@ def main() -> int:
     if args.bars_source == "chart-cache":
         bars_loader = chart_cache_bars_loader_factory(BACKEND_ROOT / "data" / "chart_cache")
     else:
-        today = datetime.now(timezone.utc).astimezone().date()
         anchored_scrips = set(bse_filing_dates) | {
             scrip for scrip, meeting in forthcoming.items() if meeting <= today
         }
         tickers = [
             str(item.get("ticker") or "").strip()
             for item in universe
-            if str(item.get("bse_code") or "").strip() in anchored_scrips
-            and item.get("ticker")
+            if item.get("ticker")
+            and (
+                str(item.get("bse_code") or "").strip() in anchored_scrips
+                or str(item.get("symbol") or "").upper() in nse_anchors
+            )
         ]
         if args.all_symbols:
             tickers = [str(item.get("ticker") or "").strip() for item in universe if item.get("ticker")]
@@ -155,6 +190,7 @@ def main() -> int:
         max_workers=args.workers,
         bse_filing_dates=bse_filing_dates,
         calendar_dates=forthcoming,
+        symbol_calendar_dates=nse_anchors,
         only_anchored=not args.all_symbols,
         use_yfinance_dates=args.all_symbols,
     )
