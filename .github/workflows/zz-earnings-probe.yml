@@ -2,7 +2,7 @@ name: zz earnings source probe (temporary)
 on:
   push:
     branches: ["claude/great-hypatia-50gvy8"]
-    paths: [".github/probe/**", ".github/workflows/zz-earnings-probe.yml"]
+    paths: [".github/workflows/zz-earnings-probe.yml"]
 jobs:
   probe:
     runs-on: ubuntu-latest
@@ -10,5 +10,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.11"}
-      - run: pip install requests yfinance curl_cffi pandas
-      - run: python .github/probe/probe.py
+      - run: pip install requests yfinance pandas curl_cffi
+      - name: Run the real earnings refresh (output not committed)
+        run: python backend/scripts/compute_earnings_metrics.py --workers 6
+      - name: Summarise
+        run: |
+          python - <<'PY'
+          import json, collections, datetime as dt
+          cal = json.load(open("backend/data/earnings_calendar.json"))
+          up = cal["upcoming"]
+          print("calendar symbols:", len(up), "updated", cal["updated_at"])
+          for s in ("HDFCBANK","ICICIBANK","KOTAKBANK","TATAELXSI","INFY","RELIANCE","JIOFIN","MRPL"):
+              print("  ", s, up.get(s))
+          m = json.load(open("backend/data/earnings_metrics.json"))["entries"]
+          c = collections.Counter(v["earnings_date"][:7] for v in m.values())
+          print("metrics entries:", len(m), sorted(c.items()))
+          octo = sorted(((v["earnings_date"], k, v.get("source"), v.get("best_pop_pct"), v.get("best_pop_rvol")) for k, v in m.items() if v["earnings_date"] >= "2026-10-01"))
+          print("october results:", len(octo))
+          for row in octo[:60]: print("  ", row)
+          PY
+      - name: Quarterly results sample (2 min)
+        run: timeout 120 python backend/scripts/build_quarterly_summary.py --workers 4 || true
