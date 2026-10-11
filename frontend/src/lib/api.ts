@@ -6660,3 +6660,90 @@ export function normalizeDataFreshness(raw: unknown): DataFreshnessReport {
 export function getDataFreshness() {
   return request<DataFreshnessReport>("/api/data-freshness", undefined, { timeoutMs: 20_000 }, normalizeDataFreshness);
 }
+
+/* ── Results page (backend services/results_feed.py) ───────────────────── */
+
+export type ResultsCapBucket = "large" | "mid" | "small" | "micro";
+
+export type ResultMetric = {
+  value: number | null;
+  prev: number | null;
+  year_ago: number | null;
+  yoy_pct: number | null;
+  qoq_pct: number | null;
+};
+
+export type ResultMetricKey = "sales" | "operating_profit" | "net_profit" | "eps";
+
+export type ResultsBasis = "consolidated" | "standalone";
+
+/* One basis's figures for a quarter: compared with that same basis's previous
+   and year-ago quarters, PE / PEG on its trailing four quarters. */
+export type ResultBasisBlock = {
+  metrics: Record<ResultMetricKey, ResultMetric>;
+  operating_margin_pct: number | null;
+  pe: number | null;
+  peg: number | null;
+  result_url: string | null;
+};
+
+export type QuarterlyResultEntry = {
+  symbol: string;
+  name: string;
+  sector: string | null;
+  sub_sector: string | null;
+  market_cap_crore: number | null;
+  cap_bucket: ResultsCapBucket | null;
+  declared_at: string;
+  declared_date: string;
+  period: string;
+  prev_period: string | null;
+  year_ago_period: string | null;
+  standalone: ResultBasisBlock | null;
+  consolidated: ResultBasisBlock | null;
+};
+
+export type QuarterlyResultsResponse = {
+  from: string;
+  to: string;
+  items: QuarterlyResultEntry[];
+  awaiting_figures: { symbol: string; name: string }[];
+  summary_generated_at: string | null;
+  feed_checked_at: string | null;
+  consolidated_generated_at?: string | null;
+};
+
+export type UpcomingLastQuarter = {
+  last_period: string | null;
+  last_sales_yoy_pct: number | null;
+  last_profit_yoy_pct: number | null;
+  pe: number | null;
+  peg: number | null;
+};
+
+export type UpcomingResultEntry = {
+  symbol: string;
+  name: string;
+  sector: string | null;
+  sub_sector: string | null;
+  market_cap_crore: number | null;
+  cap_bucket: ResultsCapBucket | null;
+  date: string;
+  standalone: UpcomingLastQuarter | null;
+  consolidated: UpcomingLastQuarter | null;
+};
+
+export type UpcomingResultsResponse = {
+  items: UpcomingResultEntry[];
+  calendar_updated_at: string | null;
+  days: number;
+};
+
+export function getQuarterlyResults(from: string, to: string) {
+  const query = new URLSearchParams({ from, to });
+  return request<QuarterlyResultsResponse>(`/api/results/quarterly?${query.toString()}`, undefined, { timeoutMs: 30000 });
+}
+
+export function getUpcomingResults(days = 30) {
+  return request<UpcomingResultsResponse>(`/api/results/upcoming?days=${days}`, undefined, { timeoutMs: 30000 });
+}

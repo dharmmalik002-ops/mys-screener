@@ -523,6 +523,32 @@ def build_router(service):
 
         return ai_scanner.catalog_payload()
 
+    # --- Results page ---------------------------------------------------
+    # Quarterly results by the day they were declared (services/results_feed.py).
+    # Opening the page also pulls a newer evening feed in the background.
+    @router.get("/results/quarterly")
+    async def results_quarterly(
+        date_from: date | None = Query(default=None, alias="from"),
+        date_to: date | None = Query(default=None, alias="to"),
+        market: str = Query(default="india"),
+    ):
+        from app.services import results_feed
+
+        results_feed.pull_in_background()
+        today = results_feed.today_ist()
+        end = date_to or today
+        start = date_from or results_feed.season_start(end)
+        return await resolve_service(market).quarterly_results(start, end)
+
+    @router.get("/results/upcoming")
+    async def results_upcoming(
+        days: int = Query(default=30, ge=1, le=90),
+        market: str = Query(default="india"),
+    ):
+        from app.services import results_feed
+
+        return await resolve_service(market).upcoming_results(results_feed.today_ist(), days)
+
     @router.get("/gap-up-openers")
     async def gap_up_openers(
         market: str = Query(default="india"),

@@ -641,6 +641,12 @@ def apply_bhavcopy_patch_on_startup() -> None:
     earnings_pulled = pull_latest_earnings_data()
     breakout_pulled = pull_latest_breakout_stats()
     try:
+        from app.services import results_feed as _rf
+
+        _rf.pull_latest_feed()
+    except Exception as exc:  # noqa: BLE001 - the page keeps its local copy
+        logger.warning("Results feed pull on startup failed: %s", exc)
+    try:
         result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
         logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
@@ -902,6 +908,60 @@ def trigger_github_lookalike_if_stale() -> None:
         logger.warning("Look-alike trigger watchdog failed: %s", exc)
 
 
+_results_dispatches: dict[str, int] = {}
+RESULTS_MAX_DISPATCHES_PER_DAY = 6
+
+
+def trigger_github_results_if_stale() -> None:
+    """Watchdog for the 7 PM results run (.github/workflows/quarterly-results.yml).
+
+    Same reason as the look-alike watchdog: GitHub starts this repository's
+    schedules hours late, and the Results page promises the day's results by
+    7 PM. Every evening (results are declared on Saturdays too), if the
+    committed feed has not checked BSE's filings since the latest evening slot,
+    send a ``repository_dispatch`` (``results-trigger``). The workflow re-checks
+    the same thing itself (``--if-due``), so a redundant trigger costs a
+    skipped run. Capped per day so a broken run cannot loop.
+    """
+    import requests as _requests
+
+    from app.services import results_feed as _rf
+
+    try:
+        now_ist = datetime.now(IST)
+        slot = _rf.latest_slot(now_ist)
+        if slot is None:
+            return
+        today = now_ist.date().isoformat()
+        if _results_dispatches.get(today, 0) >= RESULTS_MAX_DISPATCHES_PER_DAY:
+            return
+        repo = os.environ.get("GITHUB_DATA_REPO", "dharmmalik002-ops/mys-screener")
+        resp = _requests.get(f"https://raw.githubusercontent.com/{repo}/main/backend/data/results_feed.json", timeout=25)
+        checked = resp.json().get("filings_checked_at", "") if resp.status_code == 200 else ""
+        if not _rf.slot_due(checked, now_ist):
+            return
+        token = (os.environ.get("GITHUB_PAT") or "").strip()
+        if not token:
+            logger.info("Results trigger watchdog: feed checked %s but GITHUB_PAT is not set — skipping", checked or "<never>")
+            return
+        response = _requests.post(
+            f"https://api.github.com/repos/{repo}/dispatches",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+            json={"event_type": "results-trigger"},
+            timeout=20,
+        )
+        _results_dispatches[today] = _results_dispatches.get(today, 0) + 1
+        logger.info("Results trigger watchdog: feed checked %s -> repository_dispatch HTTP %s", checked or "<never>", response.status_code)
+    except Exception as exc:
+        logger.warning("Results trigger watchdog failed: %s", exc)
+
+
+def pull_results_feed_job() -> None:
+    from app.services import results_feed as _rf
+
+    _rf.pull_latest_feed(force=True)
+
+
 _universe_chart_warm_running = False
 
 
@@ -1017,6 +1077,21 @@ async def lifespan(app: FastAPI):
             trigger_github_lookalike_if_stale,
             CronTrigger(hour="18-23", minute="5,35", day_of_week="mon-fri", timezone=IST),
             id="lookalike_github_trigger",
+            replace_existing=True,
+        )
+        # The Results page's evening feed: start the GitHub run if it has not
+        # run since the latest slot (7 PM / 9:30 PM / 11:45 PM IST, any day),
+        # and pull what it committed every 15 minutes until midnight.
+        scheduler.add_job(
+            trigger_github_results_if_stale,
+            CronTrigger(hour="19-23", minute="10,40", timezone=IST),
+            id="results_github_trigger",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            pull_results_feed_job,
+            CronTrigger(hour="19-23", minute="*/15", timezone=IST),
+            id="results_feed_pull",
             replace_existing=True,
         )
         # After the evening bhavcopy lands, and once each morning, re-fill any

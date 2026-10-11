@@ -4689,6 +4689,32 @@ class DashboardService:
         payload["session_date"] = max(sessions).isoformat() if sessions else None
         return payload
 
+    async def quarterly_results(self, date_from: date, date_to: date) -> dict:
+        """The Results page (services/results_feed.py), cached until any input
+        file or the snapshot changes."""
+        from app.services import results_feed
+
+        snapshots = await self._snapshots()
+        key = ("quarterly", date_from, date_to, results_feed.data_stamp(), self._snapshot_updated_at())
+        cache = self.__dict__.setdefault("_results_page_cache", {})
+        if key not in cache:
+            if len(cache) > 24:
+                cache.clear()
+            cache[key] = await asyncio.to_thread(results_feed.build_quarterly, snapshots, date_from, date_to)
+        return cache[key]
+
+    async def upcoming_results(self, today: date, days: int) -> dict:
+        from app.services import results_feed
+
+        snapshots = await self._snapshots()
+        key = ("upcoming", today, days, results_feed.data_stamp(), self._snapshot_updated_at())
+        cache = self.__dict__.setdefault("_results_page_cache", {})
+        if key not in cache:
+            if len(cache) > 24:
+                cache.clear()
+            cache[key] = await asyncio.to_thread(results_feed.build_upcoming, snapshots, today, days)
+        return cache[key]
+
     async def get_chart(self, symbol: str, timeframe: str):
         snapshot_updated_at = self._snapshot_updated_at()
         cache_key = (symbol, timeframe)

@@ -77,6 +77,7 @@ FEEDS: tuple[Feed, ...] = (
     Feed("bot", "Bot signals", "bot_signals.json", lambda d: d.get("as_of"), 2, "Bot page"),
     Feed("lookalikes", "Look-alike picks", "lookalike_picks.json", _newest_calendar_day, 2, "Look-alikes page"),
     Feed("funds", "Fund NAVs", "mf_universe.json", lambda d: d.get("as_of"), 2, "Funds page"),
+    Feed("results", "Quarterly results", "results_feed.json", lambda d: d.get("filings_through"), 1, "Results page"),
 )
 
 
