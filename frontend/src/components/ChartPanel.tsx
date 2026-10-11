@@ -6994,7 +6994,7 @@ export function ChartPanel({
               <span
                 className="chart-stage-label chart-next-e-chip"
                 style={{ background: palette.background, borderColor: "rgba(245, 183, 49, 0.55)", color: "#f5b731" }}
-                title={`Result announced for ${upcomingEarningsDate} (BSE calendar)`}
+                title={`Results board meeting on ${upcomingEarningsDate} (BSE / NSE calendar)`}
               >
                 {nextEarnings.label} · {nextEarnings.dateLabel}
               </span>
