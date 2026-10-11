@@ -78,27 +78,37 @@ describe("normalizeIndexOverlaySettings", () => {
 });
 
 describe("placeIndexAboveBars", () => {
+  // A stock that ranges 100 -> 200 (a 2x year) against an index that moves 10%.
   const stock = [
-    { time: 1, high: 100 },
-    { time: 2, high: 110 },
-    { time: 3, high: 105 },
+    { time: 1, high: 105, low: 100 },
+    { time: 2, high: 150, low: 140 },
+    { time: 3, high: 200, low: 190 },
   ];
   const index = [
     { time: 1, value: 20_000 },
-    { time: 2, value: 20_000 },
+    { time: 2, value: 22_000 },
     { time: 3, value: 21_000 },
   ];
 
-  it("runs just above every recent candle and touches the gap at the closest one", () => {
-    const { points, scale } = placeIndexAboveBars(stock, index, { gap: 0.04 });
-    points.forEach((point, i) => expect(point.value).toBeGreaterThanOrEqual(stock[i].high * 1.04 - 1e-9));
-    expect(points[1].value).toBeCloseTo(110 * 1.04, 6);
-    expect(points[2].value / scale).toBeCloseTo(21_000, 6);
+  it("sits above every recent candle, its low point just above the highest one", () => {
+    const { points } = placeIndexAboveBars(stock, index, { gap: 0.03 });
+    points.forEach((point) => expect(point.value).toBeGreaterThanOrEqual(200 * 1.03 - 1e-9));
+    expect(Math.min(...points.map((p) => p.value))).toBeCloseTo(200 * 1.03, 6);
   });
 
-  it("keeps the index's own shape", () => {
-    const { points } = placeIndexAboveBars(stock, index);
-    expect(points[2].value / points[0].value).toBeCloseTo(21_000 / 20_000, 9);
+  it("stretches a small index move to a visible share of the stock's range", () => {
+    const { points } = placeIndexAboveBars(stock, index, { band: 0.35 });
+    const drawnRange = Math.log(Math.max(...points.map((p) => p.value)) / Math.min(...points.map((p) => p.value)));
+    // Drawn as is, a 10% index swing would be log(1.1) = 0.095; the stock's range is log(2) = 0.69.
+    expect(drawnRange).toBeCloseTo(0.35 * Math.log(200 / 100), 6);
+    expect(drawnRange).toBeGreaterThan(Math.log(1.1) * 2);
+  });
+
+  it("keeps the order of the index's moves and reads back the real value", () => {
+    const placed = placeIndexAboveBars(stock, index);
+    expect(placed.points[1].value).toBeGreaterThan(placed.points[2].value);
+    expect(placed.points[2].value).toBeGreaterThan(placed.points[0].value);
+    placed.points.forEach((point, i) => expect(placed.toIndex(point.value)).toBeCloseTo(index[i].value, 6));
   });
 
   it("draws nothing without data", () => {

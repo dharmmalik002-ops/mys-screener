@@ -152,34 +152,68 @@ export function fetchIndexOverlay(
   return promise;
 }
 
-/** Gap between the index line and the highest candle it passes over. */
-export const INDEX_LINE_GAP = 0.04;
+/** Gap between the bottom of the index line and the highest recent candle. */
+export const INDEX_LINE_GAP = 0.03;
 /** Placement looks at the most recent year, which is what the chart opens on. */
 export const INDEX_LINE_LOOKBACK = 250;
+/** The band the index fills above the candles, as a share of the stock's own
+ *  recent range (in log terms): the index's high-to-low swing is stretched to
+ *  this height, MarketSmith style, so a 10% index move reads as a move. */
+export const INDEX_LINE_BAND = 0.28;
+/** Bounds on the stretch: never more than 12x, and never compressed below
+ *  0.5x (a stock flatter than its index keeps most of the index's shape). */
+const MIN_STRETCH = 0.5;
+const MAX_STRETCH = 12;
+
+export type IndexPlacement = {
+  points: Array<{ time: number; value: number }>;
+  /** Turns a drawn value back into the index's real value (hover legend). */
+  toIndex: (drawn: number) => number;
+};
+
+const EMPTY_PLACEMENT: IndexPlacement = { points: [], toIndex: (v) => v };
 
 /**
  * The index drawn in the stock's own price units, so it lives on the candles'
- * scale and moves with every drag and zoom of that axis. Multiplying by one
- * factor keeps its shape exactly (on a log axis it is a plain vertical shift).
- * The factor puts the line INDEX_LINE_GAP above the highest candle-to-index
- * ratio of the recent bars, so it runs just above the candles without crossing
- * them. `scale` turns a drawn value back into the index's real value.
+ * scale and moves with every drag and zoom of that axis — but stretched.
+ * Drawn at the index's own size it was nearly flat: a stock's range is often
+ * several times its index's. The index's swing over the recent year is
+ * stretched (a power on its ratio to its low, so on a log axis it is an exact
+ * scaling of its shape) to fill INDEX_LINE_BAND of the stock's range, and its
+ * low point sits INDEX_LINE_GAP above the stock's highest recent candle.
  */
 export function placeIndexAboveBars(
-  stockBars: Array<{ time: number; high: number }>,
+  stockBars: Array<{ time: number; high: number; low: number }>,
   indexCloses: Array<{ time: number; value: number }>,
-  options: { gap?: number; lookback?: number } = {},
-): { points: Array<{ time: number; value: number }>; scale: number } {
+  options: { gap?: number; lookback?: number; band?: number } = {},
+): IndexPlacement {
   const gap = options.gap ?? INDEX_LINE_GAP;
   const lookback = options.lookback ?? INDEX_LINE_LOOKBACK;
-  if (!indexCloses.length || !stockBars.length) return { points: [], scale: 1 };
-  const highByTime = new Map(stockBars.map((bar) => [bar.time, bar.high]));
-  let ratio = 0;
-  for (const point of indexCloses.slice(-lookback)) {
-    const high = highByTime.get(point.time);
-    if (high && high > 0 && point.value > 0) ratio = Math.max(ratio, high / point.value);
-  }
-  if (!(ratio > 0)) return { points: [], scale: 1 };
-  const scale = ratio * (1 + gap);
-  return { points: indexCloses.map((point) => ({ time: point.time, value: point.value * scale })), scale };
+  const band = options.band ?? INDEX_LINE_BAND;
+  if (!indexCloses.length || !stockBars.length) return EMPTY_PLACEMENT;
+
+  const recentStock = stockBars.slice(-lookback).filter((bar) => bar.high > 0 && bar.low > 0);
+  const firstTime = recentStock[0]?.time ?? -Infinity;
+  const recentIndex = indexCloses.filter((point) => point.time >= firstTime && point.value > 0);
+  if (!recentStock.length || !recentIndex.length) return EMPTY_PLACEMENT;
+
+  const stockHigh = Math.max(...recentStock.map((bar) => bar.high));
+  const stockLow = Math.min(...recentStock.map((bar) => bar.low));
+  const indexHigh = Math.max(...recentIndex.map((point) => point.value));
+  const indexLow = Math.min(...recentIndex.map((point) => point.value));
+  const stockRange = Math.log(stockHigh / stockLow);
+  const indexRange = Math.log(indexHigh / indexLow);
+  const stretch =
+    indexRange > 0 && stockRange > 0
+      ? Math.min(MAX_STRETCH, Math.max(MIN_STRETCH, (band * stockRange) / indexRange))
+      : 1;
+  const base = stockHigh * (1 + gap);
+
+  const points = indexCloses
+    .filter((point) => point.value > 0)
+    .map((point) => ({ time: point.time, value: base * Math.pow(point.value / indexLow, stretch) }));
+  return {
+    points,
+    toIndex: (drawn) => (drawn > 0 ? indexLow * Math.pow(drawn / base, 1 / stretch) : drawn),
+  };
 }

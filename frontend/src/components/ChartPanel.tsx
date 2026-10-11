@@ -302,10 +302,9 @@ const VOLUME_MODES: Array<{ key: VolumeMode; label: string; title: string }> = [
 ];
 type IndicatorColorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 
-// The SMA200, RS line and index line: a touch heavier than the 1px averages so
-// they stand out, lighter than the 2px they used to be. Line series are drawn
-// at width x pixel ratio without rounding, so a half pixel is a real step.
-const THIN_EMPHASIS_LINE = 1.5 as LineWidth;
+// The SMA200, RS line and index line: 1px, the same weight as the other
+// averages (they were 2px, then 1.5px; asked thinner both times).
+const THIN_EMPHASIS_LINE = 1 as LineWidth;
 
 const INDICATORS: Array<{ key: IndicatorKey; label: string; colorKey: IndicatorColorKey }> = [
   { key: "ema10", label: "EMA10", colorKey: "ema10" },
@@ -2434,7 +2433,7 @@ export function ChartPanel({
    *  a time the stock has no bar for would add a slot to the shared time axis
    *  and open a gap in the candles, so the index is sampled, never merged. */
   const indexOverlayPlaced = useMemo(() => {
-    if (!indexOverlayActive || !indexOverlaySeries || activeBars.length < 2) return { points: [], scale: 1 };
+    if (!indexOverlayActive || !indexOverlaySeries || activeBars.length < 2) return { points: [], toIndex: (v: number) => v };
     const indexBars = sanitizeChartBars(indexOverlaySeries.bars);
     const points: Array<{ time: UTCTimestamp; value: number }> = [];
     let j = 0;
@@ -2449,9 +2448,9 @@ export function ChartPanel({
     return placeIndexAboveBars(activeBars, points);
   }, [activeBars, indexOverlayActive, indexOverlaySeries]);
   const indexOverlayData = indexOverlayPlaced.points as Array<{ time: UTCTimestamp; value: number }>;
-  // Drawn values are the index times this factor; the hover legend divides it out.
-  const indexOverlayScaleRef = useRef(1);
-  indexOverlayScaleRef.current = indexOverlayPlaced.scale;
+  // Drawn values are the stretched index; the hover legend maps them back.
+  const indexOverlayToIndexRef = useRef<(drawn: number) => number>((v) => v);
+  indexOverlayToIndexRef.current = indexOverlayPlaced.toIndex;
   /** How extended price is from its moving averages, measured in the stock's
    *  OWN average daily range rather than in rupees or raw percent. "3 ADR above
    *  the 10 EMA" is a sizing decision; "34 rupees above" is not, because the
@@ -3447,7 +3446,7 @@ export function ChartPanel({
       if (indexSeries) {
         const seriesData = param.seriesData?.get?.(indexSeries) as { value?: number } | undefined;
         if (seriesData?.value !== undefined) {
-          indexPoint = { time: hoveredTime, value: Number(seriesData.value) / (indexOverlayScaleRef.current || 1) };
+          indexPoint = { time: hoveredTime, value: indexOverlayToIndexRef.current(Number(seriesData.value)) };
         }
       }
 
