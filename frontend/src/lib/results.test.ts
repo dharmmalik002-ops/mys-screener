@@ -105,7 +105,7 @@ describe("results page rules", () => {
 
   it("shows the chosen basis, and the other one only when a company does not file it", () => {
     const base = entry("TCS", "2026-10-09T15:40", 800000, 11.2);
-    const metric = (value: number, yoy: number) => ({ value, prev: null, year_ago: null, yoy_pct: yoy, qoq_pct: null });
+    const metric = (value: number, yoy: number) => ({ value, prev: value, year_ago: value / (1 + yoy / 100), yoy_pct: yoy, qoq_pct: 0 });
     const consolidated = {
       metrics: { sales: metric(73188, 11.23), operating_profit: metric(1, 1), net_profit: metric(1, 1), eps: metric(1, 1) },
       operating_margin_pct: 25,
@@ -122,6 +122,15 @@ describe("results page rules", () => {
     // Filed only on NSE: consolidated even when standalone was asked for.
     expect(shown({ ...both, standalone: null }, "standalone").shown_basis).toBe("consolidated");
     expect(showBasis({ ...base, standalone: null }, "consolidated")).toBeNull();
+
+    // Consolidated with nothing to compare against yet: standalone, which
+    // can compare, is shown until consolidated history arrives.
+    const lone = (value: number) => ({ value, prev: null, year_ago: null, yoy_pct: null, qoq_pct: null });
+    const bare = { ...consolidated, metrics: { sales: lone(73188), operating_profit: lone(1), net_profit: lone(1), eps: lone(1) } };
+    const withPrev = { ...base.standalone!, metrics: { ...base.standalone!.metrics, sales: { ...base.standalone!.metrics.sales, prev: 1 } } };
+    expect(shown({ ...base, standalone: withPrev, consolidated: bare }, "consolidated").shown_basis).toBe("standalone");
+    // ...but if neither can compare, the chosen basis stays.
+    expect(shown({ ...base, standalone: { ...bare, metrics: { ...bare.metrics, sales: lone(60441) } }, consolidated: bare }, "consolidated").shown_basis).toBe("consolidated");
 
     const upcoming = { symbol: "X", name: "X", sector: null, sub_sector: null, market_cap_crore: 1, cap_bucket: null, date: "2026-10-20",
       standalone: { last_period: "Jun 2026", last_sales_yoy_pct: 5, last_profit_yoy_pct: 6, pe: 10, peg: null }, consolidated: null };

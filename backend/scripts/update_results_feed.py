@@ -137,6 +137,7 @@ def process(symbol: str, code: str, filings: list[datetime], feed: dict, known: 
         if parsed is not None:
             parsed.pop("result_document_url", None)
             parsed["qtr"] = quarter_code
+            parsed["v"] = 2
             rows.append(parsed)
     return symbol, rows, outcome, True
 

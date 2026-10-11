@@ -100,9 +100,11 @@ def test_listing_rows_keep_consolidated_filings_with_an_instance():
     row = {"symbol": "tcs", "consolidated": "Consolidated", "qe_Date": "30-Sep-2026",
            "creation_Date": "09-Oct-2026 17:42:10", "xbrl": "https://nsearchives.nseindia.com/corporate/xbrl/X.xml",
            "ixbrl": "https://nsearchives.nseindia.com/corporate/ixbrl/X.html"}
-    assert cr.listing_row(row) == {"symbol": "TCS", "period_end": "2026-09-30", "filed": "2026-10-09T17:42",
+    assert cr.listing_row(row) == {"symbol": "TCS", "basis": "consolidated", "period_end": "2026-09-30",
+                                   "filed": "2026-10-09T17:42",
                                    "xbrl": "https://nsearchives.nseindia.com/corporate/xbrl/X.xml"}
-    assert cr.listing_row({**row, "consolidated": "Non-Consolidated"}) is None
+    assert cr.listing_row({**row, "consolidated": "Non-Consolidated"})["basis"] == "standalone"
+    assert cr.listing_row({**row, "consolidated": ""}) is None
     # NSE's null sentinel, bare or joined into a URL.
     assert cr.listing_row({**row, "xbrl": "https://nsearchives.nseindia.com/corporate/xbrl/-"}) is None
     assert cr.listing_row({**row, "xbrl": "-"}) is None
@@ -184,29 +186,66 @@ def _listing_row(symbol, end, filed, nature="Consolidated"):
             "xbrl": f"https://nsearchives.nseindia.com/corporate/xbrl/{symbol}_{end}.xml"}
 
 
-def test_the_job_queues_downloads_and_stores_consolidated_quarters(files, job, monkeypatch):
+def test_the_job_stores_every_column_of_both_bases(files, job, monkeypatch):
     listed = [_listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10"),
               _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:40:00", nature="Non-Consolidated"),
               _listing_row("NOTOURS", "30-Sep-2026", "09-Oct-2026 17:00:00")]
     calls: list[str] = []
     monkeypatch.setattr(job, "fetch_listing", lambda start, end: (calls.append(f"{start}"), (list(listed), []))[1])
+    fetched: list[str] = []
 
     def fake_fetch(url):
+        fetched.append(url)
         assert "TCS" in url
-        return instance()
+        return instance()  # a consolidated instance for both filings
 
     monkeypatch.setattr(job, "_fetch_archive", fake_fetch)
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
     assert calls == ["2025-01-01"]  # first run: from the start of integrated filing
-    assert doc["symbols"]["TCS"]["quarters"][0]["sales_crore"] == 73188.0
-    assert doc["symbols"]["TCS"]["quarters"][0]["filed"] == "2026-10-09T17:42"
+    rows = doc["symbols"]["TCS"]["quarters"]
+    # The filing's own quarter and its previous-quarter column.
+    assert [(r["period"], r["sales_crore"]) for r in rows] == [("Sep 2026", 73188.0), ("Jun 2026", 72275.0)]
+    assert rows[0]["filed"] == "2026-10-09T17:42" and rows[1]["via"] == "2026-10-09T17:42"
+    # The standalone filing's XBRL said Consolidated: not stored as standalone,
+    # remembered, and not fetched again.
+    assert "standalone" not in doc["symbols"]["TCS"]
     assert doc["queue"] == [] and doc["listed_through"] == "2026-10-10"
+    assert len(fetched) == 2
 
-    # Next run: overlap of one day; the same filing is not fetched again.
-    monkeypatch.setattr(job, "_fetch_archive", lambda url: pytest.fail("already stored"))
     assert job.main() == 0
     assert calls[-1] == "2026-10-09"
+    assert len(fetched) == 2  # neither filing downloaded again
+
+
+def test_a_filing_never_overrides_a_quarter_s_own_report():
+    own = {"period": "Jun 2026", "sales_crore": 100.0, "filed": "2026-08-10T18:00"}
+    later = {date(2026, 9, 30): {"period": "Sep 2026", "sales_crore": 120.0},
+             date(2026, 6, 30): {"period": "Jun 2026", "sales_crore": 99.0}}  # comparative column
+    rows = cr.merge_filing([own], later, date(2026, 9, 30), "2026-10-09T18:00")
+    by = {r["period"]: r for r in rows}
+    assert by["Jun 2026"]["sales_crore"] == 100.0 and by["Jun 2026"]["filed"] == "2026-08-10T18:00"
+    assert by["Sep 2026"]["filed"] == "2026-10-09T18:00"
+
+    # A comparative fills a gap, and a newer comparative (a restatement) replaces it.
+    rows = cr.merge_filing([], {date(2025, 9, 30): {"period": "Sep 2025", "sales_crore": 90.0}},
+                           date(2026, 9, 30), "2026-10-09T18:00")
+    assert rows[0]["via"] == "2026-10-09T18:00"
+    rows = cr.merge_filing(rows, {date(2025, 9, 30): {"period": "Sep 2025", "sales_crore": 91.0}},
+                           date(2026, 12, 31), "2027-01-20T18:00")
+    assert rows[0]["sales_crore"] == 91.0
+    # A revision of the own quarter replaces the earlier one; an older one does not.
+    rows = cr.merge_filing([own], {date(2026, 6, 30): {"period": "Jun 2026", "sales_crore": 101.0}},
+                           date(2026, 6, 30), "2026-08-01T10:00")
+    assert rows[0]["sales_crore"] == 100.0
+
+
+def test_every_quarter_column_of_a_filing_is_read():
+    parsed = cr.parse_filing(instance())
+    assert parsed["nature"] == "Consolidated"
+    assert parsed["quarter_end"] == date(2026, 9, 30)
+    assert {end: row["sales_crore"] for end, row in parsed["periods"].items()} == {
+        date(2026, 9, 30): 73188.0, date(2026, 6, 30): 72275.0}
 
 
 def test_an_unreachable_instance_stays_queued_and_a_failed_listing_does_not_advance(files, job, monkeypatch):
