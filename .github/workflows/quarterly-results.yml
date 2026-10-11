@@ -18,6 +18,10 @@ on:
     - cron: "30 13 * * *"   # 7:00 PM IST
     - cron: "0 16 * * *"    # 9:30 PM IST
     - cron: "15 18 * * *"   # 11:45 PM IST
+    # Every three hours as well, so the consolidated backfill's download
+    # queue drains within a day; once it is empty these runs list a few
+    # windows and stop. The BSE step skips itself when its slot already ran.
+    - cron: "40 */3 * * *"
   # GitHub runs this repository's schedules HOURS late (gotcha 143), so the
   # cron lines alone are not a 7 PM job. The Space's watchdog
   # (main.py::trigger_github_results_if_stale) sends this event at :10 and :40

@@ -270,6 +270,7 @@ def main() -> int:
     queue: dict = {queue_key(q): q for q in doc.get("queue") or []}
     harvest_again = doc.get("harvest_version") != HARVEST_VERSION
     samples: list = list(doc.get("unparsed_samples") or [])[-10:]
+    layouts: list = []
     # Filings read and found unusable: not downloaded again unless revised.
     # (Cleared when a re-read of the history starts: the new reader may read
     # what the old one could not.)
@@ -344,6 +345,14 @@ def main() -> int:
             key = queue_key(item)
             basis = item.get("basis", "consolidated")
             nature = str((parsed or {}).get("nature") or "").strip().lower()
+            if parsed is not None and len(layouts) < 3:
+                # A few filings' context layouts per run, so the structure of
+                # real filings can be read from the file (see gotcha 163).
+                periods = {(c["start"], c["end"]) for c in parsed["contexts"] if c["start"] and not c["dims"]}
+                layouts.append({"symbol": item["symbol"], "basis": basis, "xbrl": item["xbrl"],
+                                "contexts": len(parsed["contexts"]),
+                                "undimensioned_periods": sorted(f"{a}..{b}" for a, b in periods),
+                                "dimensioned_sample": [c for c in parsed["contexts"] if c["dims"]][:12]})
             if parsed is not None and parsed["periods"] and (not nature or nature == basis):
                 entry = symbols.setdefault(item["symbol"], {})
                 field = cr.ROW_KEYS[basis]
@@ -392,6 +401,7 @@ def main() -> int:
                    "each filing's own quarter ('filed') and its comparative columns ('via'); "
                    "consolidated net profit attributable to owners"),
         "unparsed_samples": samples[-10:],
+        "context_samples": layouts or doc.get("context_samples") or [],
         "skipped_filings": dict(sorted(skipped_filings.items())),
         "queue": sorted(queue.values(), key=lambda q: q["filed"], reverse=True),
         "symbols": dict(sorted(symbols.items())),
