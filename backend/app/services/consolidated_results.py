@@ -140,12 +140,13 @@ def _row(values: dict[str, float], quarter_end: date) -> dict[str, Any] | None:
 def parse_filing(xml_bytes: bytes) -> dict[str, Any] | None:
     """Every quarter an Integrated Filing XBRL instance carries.
 
-    A results filing reports the quarter, the quarter before it and the same
-    quarter a year earlier side by side (SEBI's results format), so one
-    filing is enough for a card's QoQ and YoY — even for a company that listed
-    this year or whose earlier filing was missed. Each column is an
-    undimensioned context running ~3 months; year-to-date and segment
-    contexts are never read as a quarter.
+    The printed results show the previous and year-ago quarters beside the
+    current one, but the XBRL measured on the first live harvest (2026-10-11,
+    4,053 filings) carried only the filing's own quarter as an undimensioned
+    ~3-month context — not one comparative column. Each quarter therefore
+    comes from its own filing; this reads every ~3-month column anyway, so
+    a filing that does carry comparatives fills them. Year-to-date and
+    segment contexts are never read as a quarter.
 
     Returns {"nature": "Consolidated" | "Standalone" | None,
              "periods": {quarter end: row}, "quarter_end": the filing's own
@@ -186,7 +187,29 @@ def parse_filing(xml_bytes: bytes) -> dict[str, Any] | None:
         if row is not None:
             periods[end] = row
     quarter_end = max((end for _s, end in contexts.values()), default=None)
-    return {"nature": nature, "periods": periods, "quarter_end": quarter_end, "names": sorted(names)}
+    return {"nature": nature, "periods": periods, "quarter_end": quarter_end, "names": sorted(names),
+            "contexts": context_layout(root)}
+
+
+def context_layout(root: ET.Element) -> list[dict[str, Any]]:
+    """Every context's period and whether it is dimensioned — recorded for a
+    few filings per run so the filing structure can be checked from the file
+    rather than assumed (gotcha 163)."""
+    out: list[dict[str, Any]] = []
+    for ctx in root.findall(f"{_XBRLI}context"):
+        entity = ctx.find(f"{_XBRLI}entity")
+        period = ctx.find(f"{_XBRLI}period")
+        dims = [m.attrib.get("dimension", "") + "=" + (m.text or "").strip()
+                for holder in (ctx.find(f"{_XBRLI}scenario"), entity.find(f"{_XBRLI}segment") if entity is not None else None)
+                if holder is not None for m in holder]
+        out.append({
+            "id": ctx.attrib.get("id"),
+            "start": getattr(period.find(f"{_XBRLI}startDate"), "text", None) if period is not None else None,
+            "end": getattr(period.find(f"{_XBRLI}endDate"), "text", None) if period is not None else None,
+            "instant": getattr(period.find(f"{_XBRLI}instant"), "text", None) if period is not None else None,
+            "dims": dims[:3],
+        })
+    return out
 
 
 def parse_instance(xml_bytes: bytes, expect_end: date | None = None, basis: str = "consolidated") -> dict[str, Any] | None:
