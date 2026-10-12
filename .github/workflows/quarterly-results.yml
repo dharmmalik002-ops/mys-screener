@@ -1,34 +1,29 @@
 name: Quarterly Results (evening)
 
-# The Results page: every company that declared results today, by 7 PM IST.
-# Reads BSE's "Result" filings since the last run, fetches the new quarters'
-# figures and the minute each was declared, and commits
-# backend/data/results_feed.json. Two later runs pick up late filers (many
-# boards meet into the evening). Results are declared on Saturdays too, so it
+# The Results page: every company that declared results, on the page within
+# about half an hour of the announcement, at any time of day. Every run reads
+# BSE's "Result" filings since the last run, fetches the new quarters' figures
+# and the minute each was declared (results_feed.json), then lists NSE's
+# Integrated Filings since the last run and downloads the new ones
+# (consolidated_results.json). Results are declared on Saturdays too, so it
 # runs every day.
 #
-# The Space is not redeployed: it pulls the feed itself every 15 minutes from
-# 19:00 to midnight IST and whenever the page is opened (results_feed.py), and
-# the commit carries [skip ci]. It writes ONLY results_feed.json and
-# consolidated_results.json — the 4:23 PM bhavcopy job owns
-# quarterly_summary.json, and two jobs rewriting one file would collide on
-# push. Consolidated figures (and standalone ones BSE does not publish, such as
-# NBFCs' and insurers') come from NSE's Integrated Filing XBRL, written by the
-# second step.
+# Half-hourly runs are quick: today's filings only. Every three hours a run
+# also re-lists the season (NSE's listing comes back incomplete at random,
+# gotcha 163) — the script decides which from `full_listed_at`. A run that
+# finds nothing new writes nothing, so there is no commit.
+#
+# The Space is not redeployed: it pulls both files every 10 minutes from 8 AM
+# to midnight IST and whenever the page is opened (results_feed.py), and the
+# commit carries [skip ci]. The 4:23 PM bhavcopy job owns quarterly_summary.json,
+# and two jobs rewriting one file would collide on push.
 on:
   schedule:
-    - cron: "30 13 * * *"   # 7:00 PM IST
-    - cron: "0 16 * * *"    # 9:30 PM IST
-    - cron: "15 18 * * *"   # 11:45 PM IST
-    # Every three hours as well, so the consolidated backfill's download
-    # queue drains within a day; once it is empty these runs list a few
-    # windows and stop. The BSE step skips itself when its slot already ran.
-    - cron: "40 */3 * * *"
-  # GitHub runs this repository's schedules HOURS late (gotcha 143), so the
-  # cron lines alone are not a 7 PM job. The Space's watchdog
-  # (main.py::trigger_github_results_if_stale) sends this event at :10 and :40
-  # past each hour from 19:10 IST until a run has read the filings since the
-  # latest slot.
+    - cron: "5,35 * * * *"   # every half hour (GitHub may start it late)
+  # GitHub runs this repository's schedules late, sometimes by hours (gotcha
+  # 143), so the cron line alone is not a half-hourly job. The Space's
+  # watchdog (main.py::trigger_github_results_if_stale) sends this event at
+  # :05 and :35 past each hour from 8 AM to midnight IST.
   repository_dispatch:
     types: [results-trigger]
   push:
@@ -82,16 +77,16 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           set -uo pipefail
-          # Scheduled and dispatched runs skip once a run has already read the
-          # filings since the latest evening slot; push and manual runs always go.
+          # Scheduled and dispatched runs skip when a run read BSE in the last
+          # 20 minutes (the cron and the Space can both fire); push and manual
+          # runs always go.
           FLAGS=""
           if [ "$EVENT" = "schedule" ] || [ "$EVENT" = "repository_dispatch" ]; then FLAGS="--if-due"; fi
           if [ "$DAYS" != "0" ]; then FLAGS="$FLAGS --days $DAYS"; fi
           timeout 1200 python backend/scripts/update_results_feed.py $FLAGS
 
-      # Consolidated figures (NSE Integrated Filing XBRL). Listing is cheap and
-      # only new or revised filings are downloaded; the first backfill from
-      # Jan 2025 is spread over runs by the time budget, newest filings first.
+      # Consolidated figures (NSE Integrated Filing XBRL). A quick run stops
+      # after ~7 minutes; a full one (every 3 hours) uses the whole budget.
       - name: Fetch consolidated results from NSE
         id: consolidated
         continue-on-error: true

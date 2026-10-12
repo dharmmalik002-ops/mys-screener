@@ -40,8 +40,9 @@ import "./ResultsPanel.css";
 /* The Results page: each company's latest quarter, on the day it was
    declared — sales, operating profit, net profit and EPS with YoY / QoQ
    growth, as in an exchange results tracker. Figures are STANDALONE from
-   BSE's filings; the evening job (7 PM IST, then 9:30 PM and 11:45 PM for
-   late filers) adds the day's results with the minute each was filed. */
+   BSE's filings and consolidated from NSE's; a job every half hour from 8 AM
+   to midnight IST adds each result within about half an hour of its
+   announcement, with the minute it was filed. */
 
 type ResultsView = "quarterly" | "upcoming";
 
@@ -252,8 +253,8 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
     void load();
   }, [load]);
 
-  // While today's results are on screen, re-read every few minutes: the
-  // evening runs land from 7 PM.
+  // While today's results are on screen, re-read every few minutes: results
+  // land through the day, half-hourly.
   useEffect(() => {
     if (view !== "quarterly" || range.to < today) return;
     const timer = window.setInterval(() => {
@@ -316,7 +317,7 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
         <div>
           <h2 className="results-title">{view === "quarterly" ? "Latest Quarterly Results" : "Upcoming Results"}</h2>
           <p className="results-sub">
-            Consolidated figures from NSE's XBRL filings, standalone from BSE, in ₹ crore. Updated daily at 7:00 PM IST with that day's results; late filers follow at 9:30 PM and 11:45 PM.
+            Consolidated figures from NSE's XBRL filings, standalone from BSE, in ₹ crore. Updated every half hour from 8 AM to midnight IST: a result appears within about 30 minutes of being declared.
           </p>
         </div>
         <div className="results-tabs" role="tablist" aria-label="Results view">
@@ -464,7 +465,7 @@ export function ResultsPanel({ watchlistSymbols, onOpenChart }: ResultsPanelProp
                   {quarterly.items.length
                     ? "No results match these filters."
                     : range.to >= today && range.from >= seasonStart(today)
-                      ? "No results declared in this range yet. The day's results arrive at 7:00 PM IST."
+                      ? "No results declared in this range yet. Results appear within about 30 minutes of being declared."
                       : "No results declared in this range."}
                 </p>
               ) : null}

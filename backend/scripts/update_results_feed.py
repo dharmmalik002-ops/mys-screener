@@ -3,10 +3,11 @@
 
     python3 scripts/update_results_feed.py            # since the last run (first run: 45 days)
     python3 scripts/update_results_feed.py --days 10  # a fixed look-back
-    python3 scripts/update_results_feed.py --if-due   # skip when this evening's slot already ran
+    python3 scripts/update_results_feed.py --if-due   # skip when a run read BSE in the last 20 minutes
 
-Run by .github/workflows/quarterly-results.yml at 7 PM IST, then 9:30 PM and
-11:45 PM for late filers. Each run:
+Run by .github/workflows/quarterly-results.yml every half hour from 8 AM to
+midnight IST, so a result declared during the day is on the page within about
+half an hour. Each run:
 
 1. reads BSE's "Result" announcements since the last successful run (one day
    of overlap), which says WHO declared and WHEN, to the minute;
@@ -118,6 +119,15 @@ def fetch_filings(start: date, end: date) -> list[tuple[str, datetime]] | None:
     return out
 
 
+# Stamps every run rewrites; a run that changes nothing else writes nothing.
+VOLATILE_KEYS = ("generated_at", "filings_checked_at")
+
+
+def _unchanged(before: dict, after: dict) -> bool:
+    strip = lambda doc: {k: v for k, v in doc.items() if k not in VOLATILE_KEYS}  # noqa: E731
+    return bool(before) and json.dumps(strip(before), sort_keys=True) == json.dumps(strip(after), sort_keys=True)
+
+
 def backfill_window(feed: dict, today: date) -> tuple[date, date] | None:
     """The next earlier stretch to read, or None once every filing since the
     previous quarter's season began has been read (`filings_from`)."""
@@ -184,9 +194,10 @@ def main() -> int:
             feed = json.loads(path.read_text(encoding="utf-8"))
         except ValueError:
             feed = {}
+    previous = json.loads(json.dumps(feed))
     now = _now()
     today = now.date()
-    due = not args.if_due or rf.slot_due(feed.get("filings_checked_at"), now)
+    due = not args.if_due or rf.run_due(feed.get("filings_checked_at"), now)
     backfill = backfill_window(feed, today)
     if not due and backfill is None:
         print(f"not due: filings already checked at {feed.get('filings_checked_at')}")
@@ -299,6 +310,11 @@ def main() -> int:
                                           "source", "unparsed_samples") if key in feed}
     for key in ("declared", "pending", "quarters"):
         ordered[key] = dict(sorted((feed.get(key) or {}).items()))
+    if _unchanged(previous, ordered):
+        # Nothing declared, dated or fetched since the last write: leave the
+        # file alone, so a half-hourly run that found nothing makes no commit.
+        print("nothing new since the last run: results_feed.json left as it was", flush=True)
+        return 0 if read_ok and (backfill is None or backfill_ok) else 1
     path.write_text(json.dumps(ordered, separators=(",", ":"), sort_keys=False), encoding="utf-8")
     print(f"wrote {path.name}: {len(ordered['declared'])} companies dated, "
           f"{len(ordered['pending'])} awaiting figures, {len(ordered['quarters'])} with fresh quarters, "
