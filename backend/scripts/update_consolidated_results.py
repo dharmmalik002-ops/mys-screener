@@ -233,6 +233,7 @@ ARCHIVE_HEADERS = {
 ARCHIVE_MIN_INTERVAL = 6.0
 ARCHIVE_BACKOFF = 6.0
 ARCHIVE_ATTEMPTS = 3
+GONE_AFTER_404S = 3  # runs in a row on which NSE answered 404 for one file
 _statuses: dict[str, int] = {}
 # Past this, no new attempt or backoff starts: the file must be written before
 # the workflow's hard `timeout` kills the step, or the whole run is lost.
@@ -254,6 +255,7 @@ def _fetch_archive(url: str) -> bytes | None:
         _local.archive = requests.Session()
         _local.archive.headers.update(ARCHIVE_HEADERS)
         _local.last = 0.0
+    _local.reason = "deadline"
     for attempt in range(ARCHIVE_ATTEMPTS):
         if time.monotonic() >= _deadline:
             return None
@@ -264,12 +266,17 @@ def _fetch_archive(url: str) -> bytes | None:
         try:
             response = _local.archive.get(url, timeout=45)
             _count(str(response.status_code))
-            if response.status_code == 200 and response.content.lstrip().startswith(b"<"):
+            # A byte-order mark before the XML declaration is still XML.
+            head = response.content.lstrip().removeprefix(b"\xef\xbb\xbf").lstrip()
+            if response.status_code == 200 and head.startswith(b"<"):
                 return response.content
+            _local.reason = (f"200 not xml: {head[:40]!r}" if response.status_code == 200
+                             else str(response.status_code))
             if response.status_code == 404:
                 return None
         except Exception as exc:  # noqa: BLE001 - one bad file must not stop the run
             _count(type(exc).__name__)
+            _local.reason = type(exc).__name__
         backoff = ARCHIVE_BACKOFF * (attempt + 1)
         time.sleep(backoff + random.uniform(0, backoff * 0.25))
     return None
@@ -279,6 +286,8 @@ def download(item: dict) -> tuple[dict, dict | None, bool]:
     """(queue item, parsed filing or None, reached NSE)."""
     body = _fetch_archive(item["xbrl"])
     if body is None:
+        # Why, kept on the queue entry: a file that keeps failing must say so.
+        item["last_error"] = getattr(_local, "reason", "unknown")
         return item, None, False
     return item, cr.parse_filing(body), True
 
@@ -545,7 +554,13 @@ def main() -> int:
                                     "revenue_contexts": parsed.get("revenue_contexts") or []})
             else:
                 item["attempts"] = int(item.get("attempts") or 0) + 1
+                item["not_found"] = int(item.get("not_found") or 0) + 1 if item.get("last_error") == "404" else 0
                 failed += 1
+                if item["not_found"] >= GONE_AFTER_404S:
+                    # NSE has said the file does not exist on three runs: it
+                    # is gone (a revision has its own, later filing).
+                    queue.pop(key, None)
+                    skipped_filings[key] = item["filed"]
             if time.monotonic() - started < budget:
                 nxt = next(it, None)
                 if nxt is not None:

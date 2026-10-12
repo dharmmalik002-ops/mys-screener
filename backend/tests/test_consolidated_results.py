@@ -672,3 +672,35 @@ def test_a_quarter_read_as_zero_profit_is_read_again_once_and_its_lines_kept(fil
     assert sample["symbol"] == "TCS" and sample["profit_lines"]["ProfitLossForPeriod"] == 140000000000.0
     assert job.main() == 0
     assert len(fetched) == 1  # once per reader version, not every run
+
+
+def test_an_xml_file_with_a_byte_order_mark_is_accepted(job, monkeypatch):
+    import requests
+
+    monkeypatch.setattr(job.time, "sleep", lambda s: None)
+    body = b"\xef\xbb\xbf" + instance()
+    monkeypatch.setattr(requests.Session, "get", lambda self, url, timeout: SimpleNamespace(status_code=200, content=body))
+    if hasattr(job._local, "archive"):
+        del job._local.archive
+    assert job._fetch_archive("https://nsearchives.nseindia.com/corporate/xbrl/X.xml") == body
+    assert cr.parse_filing(body)["periods"]
+
+
+def test_a_failing_download_says_why_and_a_file_nse_calls_missing_is_dropped(files, job, monkeypatch):
+    item = {"symbol": "TCS", "basis": "consolidated", "period_end": "2026-09-30", "filed": "2026-10-09T17:42",
+            "xbrl": "https://nsearchives.nseindia.com/corporate/xbrl/TCS.xml", "attempts": 0}
+    (files / "consolidated_results.json").write_text(json.dumps({"symbols": {}, "queue": [item]}))
+    _fake_windows(job, monkeypatch)
+
+    def missing(url):
+        job._local.reason = "404"
+        return None
+
+    monkeypatch.setattr(job, "_fetch_archive", missing)
+    for run in range(job.GONE_AFTER_404S):
+        assert job.main() == 0
+        doc = json.loads((files / "consolidated_results.json").read_text())
+        if run < job.GONE_AFTER_404S - 1:
+            assert doc["queue"][0]["last_error"] == "404" and doc["queue"][0]["not_found"] == run + 1
+    assert doc["queue"] == []
+    assert job.queue_key(item) in doc["skipped_filings"]
