@@ -129,6 +129,67 @@ def _unchanged(before: dict, after: dict) -> bool:
     return bool(before) and json.dumps(strip(before), sort_keys=True) == json.dumps(strip(after), sort_keys=True)
 
 
+DATE_LOOKUPS_PER_RUN = 25
+RESULT_SUBJECT = ("financial result", "financial results", "results for the quarter", "unaudited", "audited")
+
+
+def find_declared_dates(feed: dict, summary: dict, code_of: dict, today: date) -> None:
+    """A quarter with figures but no declared time: its Result filing was not
+    under BSE's "Result" category (FRONTSP, KESAR, TANFACIND, WPIL, BLUECLOUDS
+    for June 2026). Ask BSE for that one company's announcements of every
+    category in the quarter's results window and take the earliest whose
+    subject names financial results — the real filing time. Each (company,
+    quarter) is looked up once (`date_lookups`)."""
+    lookups = feed.setdefault("date_lookups", {})
+    done = 0
+    for symbol, entry in sorted(summary.items()):
+        if done >= DATE_LOOKUPS_PER_RUN or symbol not in code_of:
+            continue
+        rows = entry.get("quarters") or []
+        if not rows:
+            continue
+        period = rows[0].get("period")
+        end = rf.period_end(period) if period else None
+        if end is None or (today - end).days > rf.MAX_DAYS_AFTER_QUARTER or (today - end).days < 5:
+            continue
+        if rf.declared_at(symbol, period, feed) or period in (lookups.get(symbol) or {}):
+            continue
+        done += 1
+        start, stop = end + timedelta(days=1), min(today, end + timedelta(days=rf.MAX_DAYS_AFTER_QUARTER))
+        found = None
+        cursor = start
+        while cursor <= stop and found is None:
+            window_end = min(stop, cursor + timedelta(days=WINDOW_DAYS - 1))
+            payload = _get(ANN_URL, {"strCat": "-1", "strPrevDate": cursor.strftime("%Y%m%d"),
+                                     "strToDate": window_end.strftime("%Y%m%d"), "strSearch": "P",
+                                     "strscrip": code_of[symbol], "strType": "C", "pageno": "1"})
+            hits = []
+            for item in (payload or {}).get("Table") or []:
+                subject = f"{item.get('NEWSSUB') or ''} {item.get('HEADLINE') or ''} {item.get('SUBCATNAME') or ''}".lower()
+                if not any(word in subject for word in RESULT_SUBJECT) or "intimation" in subject:
+                    continue
+                try:
+                    hits.append(datetime.fromisoformat(str(item.get("NEWS_DT") or item.get("DT_TM") or "")[:19]))
+                except ValueError:
+                    continue
+            hits = [h for h in hits if rf.target_period(h) == period]
+            if hits:
+                found = min(hits)
+            cursor = window_end + timedelta(days=1)
+        lookups.setdefault(symbol, {})[period] = found.isoformat(timespec="minutes") if found else "none"
+        if found:
+            feed.setdefault("declared", {}).setdefault(symbol, {})[period] = found.isoformat(timespec="minutes")
+            print(f"  {symbol} {period}: declared {found:%Y-%m-%d %H:%M} (found by company search)", flush=True)
+    # Keep only lookups that can still matter.
+    for symbol in list(lookups):
+        for period in list(lookups[symbol]):
+            end = rf.period_end(period)
+            if end is None or (today - end).days > rf.MAX_DAYS_AFTER_QUARTER:
+                lookups[symbol].pop(period)
+        if not lookups[symbol]:
+            lookups.pop(symbol)
+
+
 ATTACH_URLS = ("https://www.bseindia.com/xml-data/corpfiling/AttachLive/{name}",
                 "https://www.bseindia.com/xml-data/corpfiling/AttachHis/{name}")
 MAX_DOCS = 6
@@ -467,6 +528,8 @@ def main() -> int:
                 print(f"[{n}/{len(local_of)}] quarters fetched={fetched} failed={failed} {totals}", flush=True)
 
     read_result_pdfs(feed, docs_of, today)
+    if read_ok:
+        find_declared_dates(feed, summary, code_of, today)
     rf.prune(feed, summary, today)
     stamp = datetime.now(timezone.utc).isoformat()
     feed["generated_at"] = stamp
@@ -478,7 +541,7 @@ def main() -> int:
     if backfill is not None and backfill_ok:
         feed["filings_from"] = backfill[0].isoformat()
     feed["source"] = "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)"
-    for key in ("result_docs", "pdf_quarters", "pdf_tried"):
+    for key in ("result_docs", "pdf_quarters", "pdf_tried", "date_lookups"):
         if not feed.get(key):
             feed.pop(key, None)
     if "pdf_tried" not in feed:
@@ -486,8 +549,8 @@ def main() -> int:
     ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
                                           "source", "unparsed_samples", "pdf_reader", "pdf_samples", "pdf_checks")
                if key in feed}
-    for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried"):
-        if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried"):
+    for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried", "date_lookups"):
+        if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried", "date_lookups"):
             continue
         ordered[key] = dict(sorted((feed.get(key) or {}).items()))
     if _unchanged(previous, ordered):
