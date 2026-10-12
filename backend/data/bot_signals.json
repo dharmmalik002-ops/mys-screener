@@ -1,18 +1,18 @@
 {
-  "as_of": "2026-10-09",
+  "as_of": "2026-10-12",
   "regime": {
-    "day": "2026-10-09",
+    "day": "2026-10-12",
     "regime": "correction",
     "volatility_band": "normal",
-    "regime_age": 31,
-    "index_close": 22520.45,
-    "pct_from_200dma": -7.21,
-    "pct_from_52w_high": -14.61,
-    "ma200_slope": -0.0489,
-    "breadth_above_200dma": 46.51,
-    "breadth_net_new_highs": -5.25,
-    "vix_percentile": 63.9,
-    "constituents": 1449,
+    "regime_age": 32,
+    "index_close": 22363.35,
+    "pct_from_200dma": -7.8,
+    "pct_from_52w_high": -15.2,
+    "ma200_slope": -0.0501,
+    "breadth_above_200dma": 46.88,
+    "breadth_net_new_highs": -0.9,
+    "vix_percentile": 73.2,
+    "constituents": 1444,
     "regime_label": "Correction"
   },
   "playbook": {
@@ -39,9 +39,9 @@
         "family": "volatility",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.031,
-        "out_sample_r": 0.149,
-        "out_sample_trades": 1513,
-        "win_rate": 27.4,
+        "out_sample_r": 0.146,
+        "out_sample_trades": 1517,
+        "win_rate": 27.3,
         "risk_per_trade_pct": 0.06,
         "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.15R)."
       }
@@ -52,83 +52,28 @@
   },
   "macro": {
     "headwinds": [
+      "US Dollar Index",
       "US 10-Year Yield",
-      "Brent Crude"
+      "Brent Crude",
+      "MSCI Emerging Markets ETF"
     ],
     "tailwinds": [
       "USD/INR"
     ],
-    "size_multiplier": 0.5,
-    "stance": "cautious",
-    "note": "2 external series are headwinds. Trading at half size."
+    "size_multiplier": 0.25,
+    "stance": "defensive",
+    "note": "4 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
   },
   "stance": "selective",
   "equity": 1000000.0,
-  "candidates": [
-    {
-      "symbol": "AAYUSHBULL",
-      "strategy": "nr7_release",
-      "strategy_label": "NR7 Release",
-      "signal_day": "2026-10-09",
-      "close": 1282.5,
-      "entry_hint": 1282.5,
-      "stop": 1248.93,
-      "risk_pct": 2.62,
-      "atr_pct": 1.31,
-      "turnover_crore": 9.6,
-      "expected_r": 0.149,
-      "verdict": "confirmed_weak",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 8,
-        "position_value": 10260.0,
-        "risk_budget": 300.0,
-        "risk_per_share": 33.57,
-        "actual_risk": 268.57,
-        "pct_of_equity": 1.0,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.149,
-      "volatility_adjustment_r": 0.266,
-      "volatility_bucket": "under 2%",
-      "edge_score_r": 0.415
-    },
-    {
-      "symbol": "HEXT",
-      "strategy": "gap_continuation",
-      "strategy_label": "Gap Continuation",
-      "signal_day": "2026-10-09",
-      "close": 538.5,
-      "entry_hint": 538.5,
-      "stop": 493.04,
-      "risk_pct": 8.44,
-      "atr_pct": 3.38,
-      "turnover_crore": 7.6,
-      "expected_r": 0.329,
-      "verdict": "confirmed_weak",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 6,
-        "position_value": 3231.0,
-        "risk_budget": 300.0,
-        "risk_per_share": 45.46,
-        "actual_risk": 272.78,
-        "pct_of_equity": 0.3,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.329,
-      "volatility_adjustment_r": -0.001,
-      "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.328
-    }
-  ],
-  "candidates_found": 2,
+  "candidates": [],
+  "candidates_found": 0,
   "ranking": {
     "active": true,
     "note": "Ranking adds a volatility adjustment to each candidate's cell expectancy. The adjustment is that ATR bucket's average R minus the book average, measured over the full trade population and confirmed out-of-sample."
   },
   "calibration": null,
-  "message": "2 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
-  "generated_at": "2026-10-11T04:49:50.727150+00:00",
+  "message": "2 setup(s) are cleared to trade in Correction, but none fired today.",
+  "generated_at": "2026-10-12T22:14:44.988935+00:00",
   "source": "offline"
 }
