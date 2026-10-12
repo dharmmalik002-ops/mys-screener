@@ -183,6 +183,7 @@ def parse_filing(xml_bytes: bytes) -> dict[str, Any] | None:
     by_context: dict[str, dict[str, float]] = {cid: {} for cid in contexts}
     nature = None
     names: set[str] = set()
+    revenue_refs: set[str] = set()
     for el in root:
         if not isinstance(el.tag, str):
             continue
@@ -192,6 +193,8 @@ def parse_filing(xml_bytes: bytes) -> dict[str, Any] | None:
             nature = text
             continue
         names.add(name)
+        if name in REVENUE or name in INSURANCE_REVENUE:
+            revenue_refs.add(el.attrib.get("contextRef") or "")
         bucket = by_context.get(el.attrib.get("contextRef") or "")
         if bucket is None or name in bucket:
             continue
@@ -207,8 +210,12 @@ def parse_filing(xml_bytes: bytes) -> dict[str, Any] | None:
         if row is not None:
             periods[end] = row
     quarter_end = max((end for _s, end in contexts.values()), default=None)
+    layout = context_layout(root)
     return {"nature": nature, "periods": periods, "quarter_end": quarter_end, "names": sorted(names),
-            "contexts": context_layout(root)}
+            "contexts": layout,
+            # Where the revenue line sits: what a filing read as "no quarter"
+            # needs to show (75 were, CGPOWER and COFORGE among them).
+            "revenue_contexts": [c for c in layout if c["id"] in revenue_refs][:8]}
 
 
 def context_layout(root: ET.Element) -> list[dict[str, Any]]:

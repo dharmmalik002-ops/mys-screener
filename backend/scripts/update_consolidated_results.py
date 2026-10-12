@@ -51,6 +51,7 @@ LIST_BUDGET_SHARE = 0.45
 # rather than dropped: a dropped filing was never listed again, so a company
 # could stay without its quarter for good.
 MAX_ATTEMPTS = 5  # per queued filing, across runs
+SKIP_READER = 2  # 2: skipped filings record where their revenue line sits
 RECENT_DAYS = 45  # "reported this season": a filing within this many days
 
 _local = threading.local()
@@ -302,6 +303,10 @@ def main() -> int:
     # filings it stored before this reader existed would keep the old reading.
     restart = harvest_again and (not doc.get("harvesting") or doc.get("harvest_target") != HARVEST_VERSION)
     skipped_filings: dict = {} if restart else dict(doc.get("skipped_filings") or {})
+    # Filings skipped by an older reader are read once more by a new one, so
+    # its diagnostics (or its fix) reach them as the rotation lists them again.
+    if doc.get("skip_reader") != SKIP_READER:
+        skipped_filings = {}
 
     universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
     known = {str(r["symbol"]).upper() for r in universe if r.get("symbol")}
@@ -466,7 +471,8 @@ def main() -> int:
                                                      "Premium", "Surplus"))
                              and not any(w in n for w in ("Classified", "Adjustments", "Cash", "Description"))]
                     samples.append({"symbol": item["symbol"], "basis": basis, "xbrl": item["xbrl"],
-                                    "nature": parsed.get("nature"), "names": names[:120]})
+                                    "nature": parsed.get("nature"), "names": names[:120],
+                                    "revenue_contexts": parsed.get("revenue_contexts") or []})
             else:
                 item["attempts"] = int(item.get("attempts") or 0) + 1
                 failed += 1
@@ -501,6 +507,7 @@ def main() -> int:
         "unparsed_samples": samples[-10:],
         "context_samples": layouts or doc.get("context_samples") or [],
         "skipped_filings": dict(sorted(skipped_filings.items())),
+        "skip_reader": SKIP_READER,
         "queue": sorted(queue.values(), key=lambda q: q["filed"], reverse=True),
         "symbols": dict(sorted(symbols.items())),
     }
