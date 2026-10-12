@@ -374,9 +374,12 @@ def build_quarterly(snapshots: list[Any], date_from: date, date_to: date) -> dic
             end = period_end(period)
             if end is None or end < oldest_end or end > date_to:
                 continue
-            # The BSE announcement dates it; NSE's consolidated filing time
-            # only when BSE gave nothing (it can trail the announcement).
-            declared = declared_at(symbol, period, feed) or consolidated_results.filed_at(symbol, period)
+            # The BSE announcement dates it — also when BSE's figures are not
+            # out yet and NSE's are (the filing waits as pending, with its
+            # time); NSE's filing time only when BSE gave nothing.
+            declared = (declared_at(symbol, period, feed)
+                        or _parse_stamp(((feed.get("pending") or {}).get(symbol) or {}).get(period))
+                        or consolidated_results.filed_at(symbol, period))
             if declared is None or not (date_from <= declared.date() <= date_to):
                 continue
             entry = result_entry(symbol, period, declared, rows, snapshot, buckets.get(symbol), cons)

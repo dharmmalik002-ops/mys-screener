@@ -142,11 +142,12 @@ def test_the_page_lists_results_declared_in_the_range(files):
     snaps = [_snap("ABC", 360.0, "Abc Ltd"), _snap("XYZ", 50.0)]
     page = rf.build_quarterly(snaps, date(2026, 10, 1), date(2026, 10, 11))
 
-    # XYZ's September quarter is in the data but has no declared date: it is
-    # left off rather than dated by guess, and listed as awaiting.
-    assert [item["symbol"] for item in page["items"]] == ["ABC"]
-    assert page["awaiting_figures"] == [{"symbol": "XYZ", "name": "XYZ"}]
-    item = page["items"][0]
+    # XYZ's filing is still marked pending, but its September figures are in
+    # the data: it is listed, dated by the filing's own time, not awaiting.
+    assert [(item["symbol"], item["declared_at"]) for item in page["items"]] == [
+        ("XYZ", "2026-10-10T18:10"), ("ABC", "2026-10-09T17:42")]
+    assert page["awaiting_figures"] == []
+    item = page["items"][1]
     assert item["name"] == "Abc Ltd"
     assert item["declared_at"] == "2026-10-09T17:42"
     assert (item["period"], item["prev_period"], item["year_ago_period"]) == ("Sep 2026", "Jun 2026", "Sep 2025")
@@ -176,7 +177,8 @@ def test_a_company_bse_has_no_figures_for_gets_its_card_from_nse(files):
     (files.dir / "consolidated_results.json").write_text(json.dumps({"symbols": {"INS": {"standalone": [
         {"period": "Sep 2026", "sales_crore": 2553.16, "net_profit_crore": 43.05, "eps": 0.45, "filed": "2026-10-09T16:48"}]}}}))
     page = rf.build_quarterly([_snap("INS", 13065.0)], date(2026, 10, 1), date(2026, 10, 11))
-    assert [(i["symbol"], i["declared_at"]) for i in page["items"]] == [("INS", "2026-10-09T16:48")]
+    # Dated by the BSE filing (16:45), not NSE's later one (16:48).
+    assert [(i["symbol"], i["declared_at"]) for i in page["items"]] == [("INS", "2026-10-09T16:45")]
     assert page["items"][0]["standalone"]["metrics"]["net_profit"]["value"] == 43.05
     assert page["awaiting_figures"] == []
 
