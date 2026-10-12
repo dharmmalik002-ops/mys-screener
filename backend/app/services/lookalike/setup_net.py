@@ -25,6 +25,30 @@ REPORT_FILE = "setup_net_report.json"
 MIN_UNSEEN = 50
 
 
+# transformers 5 renamed DINOv2's attention layers. The weights were saved under
+# the old names, and the runner installs whatever transformers is current, so a
+# key is translated to whichever spelling the installed model uses.
+_ATTENTION_RENAMES = {
+    "attention.attention.query.": "attention.q_proj.",
+    "attention.attention.key.": "attention.k_proj.",
+    "attention.attention.value.": "attention.v_proj.",
+    "attention.output.dense.": "attention.o_proj.",
+}
+
+
+def _match_attention_names(saved: dict, expected: set[str]) -> dict:
+    pairs = [*_ATTENTION_RENAMES.items(), *((n, o) for o, n in _ATTENTION_RENAMES.items())]
+    out = {}
+    for key, value in saved.items():
+        if key not in expected:
+            for a, b in pairs:
+                if key.startswith(a) and b + key[len(a):] in expected:
+                    key = b + key[len(a):]
+                    break
+        out[key] = value
+    return out
+
+
 @dataclass
 class SetupNet:
     classes: list[str]
@@ -44,8 +68,9 @@ class SetupNet:
         n_trained = len({k.split(".")[0] for k in self.weights if k.startswith("block")})
         blocks = base.encoder.layer[len(base.encoder.layer) - n_trained:]
         for j, blk in enumerate(blocks):
-            blk.load_state_dict({k.split(".", 1)[1]: torch.from_numpy(v.astype(np.float32))
-                                 for k, v in self.weights.items() if k.startswith(f"block{j}.")})
+            saved = {k.split(".", 1)[1]: torch.from_numpy(v.astype(np.float32))
+                     for k, v in self.weights.items() if k.startswith(f"block{j}.")}
+            blk.load_state_dict(_match_attention_names(saved, set(blk.state_dict())))
         base.layernorm.load_state_dict({k.split(".", 1)[1]: torch.from_numpy(v.astype(np.float32))
                                         for k, v in self.weights.items() if k.startswith("layernorm.")})
         head = torch.nn.Linear(768, len(self.classes))
