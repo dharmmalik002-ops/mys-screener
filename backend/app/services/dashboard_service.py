@@ -1179,6 +1179,25 @@ class DashboardService:
         self._breadth_history_cache = (snapshot_updated_at, history)
         return history
 
+    @staticmethod
+    def _choose_breadth(
+        exchange_breadth: list[BreadthDayCounts],
+        snapshot_today: BreadthDayCounts | None,
+    ) -> tuple[BreadthDayCounts | None, list[BreadthDayCounts] | None]:
+        """Today's counts and the 10-session history (None: build it from the
+        snapshots). NSE's own counts win whenever they cover the session the
+        prices describe. When the prices are a session ahead — the day's run
+        went out before NSE published its file (BSE and Yahoo are out ~16:00
+        IST, NSE later) — the newest day is counted from the scan universe,
+        because breadth_today.date is the session every page dates itself by
+        and the site otherwise read the previous day all evening (2026-10-12).
+        """
+        if exchange_breadth and snapshot_today and snapshot_today.date > exchange_breadth[-1].date:
+            return snapshot_today, [*exchange_breadth, snapshot_today][-10:]
+        if exchange_breadth:
+            return exchange_breadth[-1], exchange_breadth
+        return snapshot_today, None
+
     def _load_exchange_breadth(self, days: int = 10) -> list[BreadthDayCounts]:
         """Whole-market advance/decline rows from NSE's bhavcopy (newest last),
         written by the daily bhavcopy job. Empty when the file is absent, which
@@ -1386,11 +1405,9 @@ class DashboardService:
         # four symbols on the Space, which the 10-session chart then plotted as
         # if it were the market.
         exchange_breadth = await asyncio.to_thread(self._load_exchange_breadth, 10)
-        if exchange_breadth:
-            breadth_today = exchange_breadth[-1]
-            breadth_history = exchange_breadth
-        else:
-            breadth_today = self._breadth_today_from_snapshots(scan_snapshots)
+        snapshot_today = self._breadth_today_from_snapshots(scan_snapshots)
+        breadth_today, breadth_history = self._choose_breadth(exchange_breadth, snapshot_today)
+        if breadth_history is None:
             breadth_history = await asyncio.to_thread(
                 self._breadth_history_cached, scan_snapshots, snapshot_updated_at, 10
             )

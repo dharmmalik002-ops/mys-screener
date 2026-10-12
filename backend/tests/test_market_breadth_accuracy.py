@@ -126,3 +126,39 @@ class DashboardBreadthSourceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BreadthSessionFollowsPricesTests(unittest.TestCase):
+    """2026-10-12: the day's run went out at 16:31 IST, before NSE published
+    its file, so prices moved to the 12th while NSE's counts stayed on the
+    9th — and the whole site, which dates itself by breadth_today.date, read
+    the 9th all evening."""
+
+    @staticmethod
+    def _day(date: str, universe: str | None = None):
+        from app.models.market import BreadthDayCounts
+
+        return BreadthDayCounts(date=date, advances=1, declines=2, unchanged=0, total=3, universe=universe)
+
+    def test_prices_a_session_ahead_of_nse_date_the_dashboard(self) -> None:
+        from app.services.dashboard_service import DashboardService
+
+        nse = [self._day("2026-10-08", "NSE"), self._day("2026-10-09", "NSE")]
+        today, history = DashboardService._choose_breadth(nse, self._day("2026-10-12"))
+        self.assertEqual(today.date, "2026-10-12")
+        self.assertEqual([d.date for d in history], ["2026-10-08", "2026-10-09", "2026-10-12"])
+
+    def test_nse_counts_win_once_they_cover_the_session(self) -> None:
+        from app.services.dashboard_service import DashboardService
+
+        nse = [self._day("2026-10-09", "NSE"), self._day("2026-10-12", "NSE")]
+        today, history = DashboardService._choose_breadth(nse, self._day("2026-10-12"))
+        self.assertEqual(today.universe, "NSE")
+        self.assertIs(history, nse)
+
+    def test_no_exchange_file_falls_back_to_snapshots(self) -> None:
+        from app.services.dashboard_service import DashboardService
+
+        today, history = DashboardService._choose_breadth([], self._day("2026-10-12"))
+        self.assertEqual(today.date, "2026-10-12")
+        self.assertIsNone(history)
