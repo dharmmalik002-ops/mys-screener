@@ -81,6 +81,41 @@ def test_an_owners_profit_tagged_zero_does_not_hide_the_period_profit():
 
 
 
+def _june_quarter(facts: list[tuple[str, str, str]]) -> bytes:
+    """A June-quarter filing: the quarter and the year to date are the same
+    dates, under two context ids."""
+    body = "".join([_ctx("OneD", "2026-04-01", "2026-06-30"), _ctx("FourD", "2026-04-01", "2026-06-30"),
+                    *(_fact(name, ctx, value) for name, ctx, value in facts)])
+    return ('<?xml version="1.0" encoding="UTF-8"?><xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" '
+            'xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:in-capmkt="http://www.sebi.gov.in/xbrl/2025-01-31">'
+            f'{body}</xbrli:xbrl>').encode()
+
+
+def test_one_quarter_split_over_two_contexts_of_the_same_dates_is_read_as_one_column():
+    # Jun 2026 held 46 of the 174 quarters read as 0 net profit beside a
+    # pre-tax profit: the quarter's lines may sit under either id.
+    row = cr.parse_instance(_june_quarter([
+        ("RevenueFromOperations", "OneD", "23870000000"),
+        ("ProfitBeforeTax", "OneD", "1800000000"),
+        ("ProfitOrLossAttributableToOwnersOfParent", "OneD", "0"),
+        ("ProfitLossForPeriod", "FourD", "1548000000"),
+    ]))
+    assert (row["sales_crore"], row["profit_before_tax_crore"], row["net_profit_crore"]) == (2387.0, 180.0, 154.8)
+
+
+def test_a_line_tagged_twice_takes_the_non_zero_copy():
+    row = cr.parse_instance(_june_quarter([
+        ("RevenueFromOperations", "OneD", "23870000000"),
+        ("ProfitLossForPeriod", "OneD", "0"),
+        ("ProfitLossForPeriod", "OneD", "1548000000"),
+    ]))
+    assert row["net_profit_crore"] == 154.8
+    # A genuine zero still reads as zero.
+    row = cr.parse_instance(_june_quarter([("RevenueFromOperations", "OneD", "23870000000"),
+                                           ("ProfitLossForPeriod", "OneD", "0")]))
+    assert row["net_profit_crore"] == 0.0
+
+
 def _insurer(facts: list[tuple[str, str]]) -> bytes:
     body = "".join([_ctx("OneD", "2026-04-01", "2026-06-30"),
                     _fact("NatureOfReportStandaloneConsolidated", "OneD", "Standalone", unit=None)
@@ -619,3 +654,21 @@ def test_a_half_hourly_run_lists_only_the_newest_filings_and_writes_nothing_when
     doc = json.loads((files / "consolidated_results.json").read_text())
     assert doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"
     assert doc["relist_gaps"] == [["2025-01-01", "2025-01-05"]]  # kept for the next full run
+
+
+def test_a_quarter_read_as_zero_profit_is_read_again_once_and_its_lines_kept(files, job, monkeypatch):
+    stored = {"period": "Sep 2026", "sales_crore": 73188.0, "profit_before_tax_crore": 18500.0,
+              "net_profit_crore": 0.0, "eps": 38.35, "filed": "2026-10-09T17:42"}
+    (files / "consolidated_results.json").write_text(json.dumps({"symbols": {"TCS": {"quarters": [stored]}}}))
+    listed = [(date(2026, 10, 9), _listing_row("TCS", "30-Sep-2026", "09-Oct-2026 17:42:10"))]
+    _fake_windows(job, monkeypatch, listed)
+    fetched: list[str] = []
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: fetched.append(url) or instance(owners_profit="0"))
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert fetched == [listed[0][1]["xbrl"]]  # already stored, downloaded again for its zero
+    assert doc["symbols"]["TCS"]["quarters"][0]["net_profit_crore"] == 14000.0
+    sample = doc["zero_profit_samples"][0]
+    assert sample["symbol"] == "TCS" and sample["profit_lines"]["ProfitLossForPeriod"] == 140000000000.0
+    assert job.main() == 0
+    assert len(fetched) == 1  # once per reader version, not every run

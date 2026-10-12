@@ -196,23 +196,39 @@ def parse_filing(xml_bytes: bytes) -> dict[str, Any] | None:
         if name in REVENUE or name in INSURANCE_REVENUE:
             revenue_refs.add(el.attrib.get("contextRef") or "")
         bucket = by_context.get(el.attrib.get("contextRef") or "")
-        if bucket is None or name in bucket:
+        if bucket is None or bucket.get(name, 0) != 0:
             continue
         try:
             bucket[name] = float(text)
         except ValueError:
             continue
+    # Contexts covering the same dates are one column: a filer may put the
+    # quarter's facts under two ids (the quarter and the year to date, which
+    # are the same dates for a June quarter) or tag a line twice, once as 0.
+    # Merged, with a non-zero figure preferred over a zero for the same line.
+    by_period: dict[tuple[date, date], dict[str, float]] = {}
+    for cid, span in contexts.items():
+        merged = by_period.setdefault(span, {})
+        for name, value in by_context[cid].items():
+            if merged.get(name, 0) == 0:
+                merged[name] = value
     periods: dict[date, dict[str, Any]] = {}
-    for cid, (_start, end) in sorted(contexts.items(), key=lambda kv: kv[1][1], reverse=True):
+    for (start, end), values in sorted(by_period.items(), key=lambda kv: (kv[0][1], kv[0][0]), reverse=True):
         if end in periods:
             continue
-        row = _row(by_context[cid], end)
+        row = _row(values, end)
         if row is not None:
             periods[end] = row
     quarter_end = max((end for _s, end in contexts.values()), default=None)
     layout = context_layout(root)
     return {"nature": nature, "periods": periods, "quarter_end": quarter_end, "names": sorted(names),
             "contexts": layout,
+            # Every profit / EPS line per quarter column, for the diagnostics a
+            # quarter whose net profit reads 0 beside a pre-tax profit keeps.
+            "profit_lines": {end.isoformat(): {k: v for k, v in sorted(values.items())
+                                               if ("Profit" in k or "EarningsLossPerShare" in k or "EPS" in k)
+                                               and "Segment" not in k}
+                             for (_s, end), values in by_period.items()},
             # Where the revenue line sits: what a filing read as "no quarter"
             # needs to show (75 were, CGPOWER and COFORGE among them).
             "revenue_contexts": [c for c in layout if c["id"] in revenue_refs][:8]}
