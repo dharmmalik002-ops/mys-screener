@@ -1,0 +1,26 @@
+name: Backend syntax (Python 3.11)
+
+# The Space and every data workflow run Python 3.11; development is on 3.12+.
+# A 3.12-only f-string in lookalike/picks.py stopped the evening look-alike job
+# at its compile step for ten days (2026-10-02 to 10-12) without anything
+# failing at push time. This compiles the whole backend on 3.11 on every push.
+on:
+  push:
+    paths:
+      - "backend/**.py"
+      - ".github/workflows/backend-syntax.yml"
+  pull_request:
+    paths:
+      - "backend/**.py"
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile backend on Python 3.11
+        run: python -m compileall -q backend/app backend/scripts backend/tests

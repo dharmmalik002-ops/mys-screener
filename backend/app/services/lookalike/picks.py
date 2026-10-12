@@ -147,8 +147,9 @@ def describe(style: str, pct: float, m: dict, f: dict, nearest: list[dict]) -> s
     tmpl = rules.template_score(f) or 0
     rel = None if m.get("index_return_6m_pct") is None else m["return_6m_pct"] - m["index_return_6m_pct"]
     rel_txt = f", and it beat the Nifty 500 by {rel:.0f} points over 6 months" if rel is not None else ""
+    owner = "his" if trader == "minervini" else "Minervini's"
     parts.append(
-        f"It passes {tmpl} of {'his' if trader == 'minervini' else 'Minervini\'s'} 8 Trend Template rules: above its 50, 150 and 200-day averages with the 200-day rising, "
+        f"It passes {tmpl} of {owner} 8 Trend Template rules: above its 50, 150 and 200-day averages with the 200-day rising, "
         f"{m['above_low_pct']:.0f}% above its 52-week low and {m['below_high_pct']:.1f}% below its high{rel_txt}."
     )
     if f.get("tightening"):
