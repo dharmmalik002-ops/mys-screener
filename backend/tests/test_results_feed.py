@@ -219,12 +219,14 @@ def test_season_start():
     assert rf.season_start(date(2026, 2, 3)) == date(2026, 1, 1)
 
 
-def test_slots_say_when_a_run_is_owed():
-    checked = "2026-10-10T13:35:00+00:00"  # 19:05 IST
-    assert rf.slot_due(checked, datetime(2026, 10, 10, 18, 0, tzinfo=IST)) is True  # daytime: manual run
-    assert rf.slot_due(checked, datetime(2026, 10, 10, 20, 0, tzinfo=IST)) is False
-    assert rf.slot_due(checked, datetime(2026, 10, 10, 21, 40, tzinfo=IST)) is True
-    assert rf.slot_due(None, datetime(2026, 10, 10, 20, 0, tzinfo=IST)) is True
+def test_a_run_is_owed_every_half_hour_through_the_day():
+    checked = "2026-10-10T05:35:00+00:00"  # 11:05 IST
+    assert rf.run_due(checked, datetime(2026, 10, 10, 11, 15, tzinfo=IST)) is False  # a duplicate trigger
+    assert rf.run_due(checked, datetime(2026, 10, 10, 11, 35, tzinfo=IST)) is True
+    assert rf.run_due(None, datetime(2026, 10, 10, 11, 0, tzinfo=IST)) is True
+    assert rf.in_run_hours(datetime(2026, 10, 10, 8, 5, tzinfo=IST))
+    assert rf.in_run_hours(datetime(2026, 10, 10, 23, 35, tzinfo=IST))
+    assert not rf.in_run_hours(datetime(2026, 10, 10, 3, 5, tzinfo=IST))
 
 
 # ── the evening script, against a fake BSE ──────────────────────────────────
@@ -292,18 +294,20 @@ def test_a_failed_filings_read_does_not_advance_the_window(files, job, monkeypat
     assert json.loads(files.feed.read_text())["filings_through"] == "2026-10-08"
 
 
-def test_if_due_skips_a_slot_already_run(files, job, monkeypatch):
-    files.feed.write_text(json.dumps({"filings_checked_at": "2026-10-10T13:35:00+00:00"}))  # 19:05 IST
+def test_if_due_skips_a_run_that_just_happened(files, job, monkeypatch):
+    # The Space's trigger and GitHub's cron can both fire: a run 10 minutes
+    # after the last one is a duplicate.
+    files.feed.write_text(json.dumps({"filings_checked_at": "2026-10-10T14:20:00+00:00"}))  # 19:50 IST
     monkeypatch.setattr(job, "fetch_filings", lambda start, end: pytest.fail("should not read BSE"))
     monkeypatch.setattr(sys, "argv", ["update_results_feed.py", "--if-due"])
     assert job.main() == 0
 
 
 def test_the_season_that_just_closed_is_dated_from_bse_in_stretches(files, job, monkeypatch):
-    # The evening slot already ran, but filings before Sep 29 were never read:
+    # A run read today's filings ten minutes ago, but filings before Sep 29 were never read:
     # each run reads one earlier stretch until the June quarter's season
     # (from Jul 1) is covered, then stops.
-    files.feed.write_text(json.dumps({"filings_checked_at": "2026-10-10T13:35:00+00:00", "filings_through": "2026-10-10",
+    files.feed.write_text(json.dumps({"filings_checked_at": "2026-10-10T14:20:00+00:00", "filings_through": "2026-10-10",
                                       "filings_from": "2026-09-29", "declared": {}, "pending": {}, "quarters": {}}))
     reads: list[tuple[date, date]] = []
 
@@ -322,7 +326,7 @@ def test_the_season_that_just_closed_is_dated_from_bse_in_stretches(files, job, 
     assert feed["filings_from"] == "2026-07-01"
     assert feed["declared"]["XYZ"] == {"Jun 2026": "2026-08-12T16:05"}
     # A backfill alone does not count as the evening's read.
-    assert feed["filings_checked_at"] == "2026-10-10T13:35:00+00:00"
+    assert feed["filings_checked_at"] == "2026-10-10T14:20:00+00:00"
 
 
 def test_a_schedule_the_parser_cannot_read_is_recorded(files, job, monkeypatch):
@@ -337,6 +341,21 @@ def test_a_schedule_the_parser_cannot_read_is_recorded(files, job, monkeypatch):
     assert job.main() == 0
     feed = json.loads(files.feed.read_text())
     assert feed["unparsed_samples"] == [{"symbol": "ABC", "names": ["Interest Income", "Net Profit"]}]
+
+
+
+def test_a_run_that_finds_nothing_new_writes_nothing(files, job, monkeypatch):
+    # Half-hourly runs: one that finds no new filing must not rewrite the
+    # file, or `main` gets a commit every half hour that only moves a stamp.
+    files.feed.write_text(json.dumps({"generated_at": "2026-10-10T14:00:00+00:00",
+                                      "filings_checked_at": "2026-10-10T14:00:00+00:00",
+                                      "filings_through": "2026-10-10", "filings_from": "2026-07-01",
+                                      "source": "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)",
+                                      "declared": {}, "pending": {}, "quarters": {}}))
+    before = files.feed.read_text()
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [])
+    assert job.main() == 0
+    assert files.feed.read_text() == before
 
 
 def test_nse_standalone_columns_fill_quarters_bse_lacks(files):

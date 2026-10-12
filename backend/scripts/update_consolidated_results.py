@@ -45,6 +45,8 @@ FIRST_LISTING = date(2025, 1, 1)
 # for a whole results season. Fifteen days keeps every window small.
 WINDOW_DAYS = 15
 RETRY_DAYS = 5
+FULL_EVERY_HOURS = 3.0
+QUICK_SECONDS = 420.0
 RECENT_LIST_DAYS = 110  # windows this recent are listed again on every run
 # Listing may use this share of --max-seconds; the rest is for downloads.
 LIST_BUDGET_SHARE = 0.45
@@ -148,6 +150,16 @@ def list_window(start: date, stop: date) -> tuple[list[dict], bool] | None:
     if repeats:
         print(f"    {start} .. {stop}: {len(rows)} distinct of {total} ({repeats} repeated rows)", flush=True)
     return rows, total is None or len(rows) >= total
+
+
+def _hours_since(stamp: object) -> float:
+    try:
+        when = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return float("inf")
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return (_now() - when).total_seconds() / 3600
 
 
 def _row_id(row: dict) -> str:
@@ -280,6 +292,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-seconds", type=float, default=1200)
     parser.add_argument("--workers", type=int, default=12)
+    # Half-hourly runs list only the newest filings and download them; the
+    # full re-listing of the season (and older retries) runs when the last
+    # one is this many hours old.
+    parser.add_argument("--full-every-hours", type=float, default=FULL_EVERY_HOURS)
+    parser.add_argument("--quick-seconds", type=float, default=QUICK_SECONDS)
     args = parser.parse_args()
     started = time.monotonic()
     global _deadline
@@ -292,6 +309,9 @@ def main() -> int:
             doc = json.loads(path.read_text(encoding="utf-8"))
         except ValueError:
             doc = {}
+    # The file as read, kept apart: queue entries and symbol rows are updated
+    # in place, so `doc` itself cannot show whether anything changed.
+    before: dict = json.loads(json.dumps(doc))
     symbols: dict = doc.setdefault("symbols", {})
     queue: dict = {queue_key(q): q for q in doc.get("queue") or []}
     harvest_again = doc.get("harvest_version") != HARVEST_VERSION
@@ -332,9 +352,18 @@ def main() -> int:
     if doc.get("listing_version") != LISTING_VERSION and through:
         relist = windows(FIRST_LISTING, date.fromisoformat(through))
     main_windows = windows(start, today)
+    # A quick run (the half-hourly ones between full runs) lists only the
+    # newest filings: a result declared at 11 AM should be on the page by
+    # 11:30, and re-listing the season takes ~15 minutes. Anything that
+    # changes what has to be listed forces a full run.
+    full = (restart or harvesting or doc.get("listing_version") != LISTING_VERSION
+            or _hours_since(doc.get("full_listed_at")) >= args.full_every_hours)
+    if not full:
+        args.max_seconds = min(args.max_seconds, args.quick_seconds)
+        _deadline = started + args.max_seconds
     # Tonight's filings first, then the gaps newest first: recent seasons fill
     # before old ones.
-    earlier = sorted((set(gaps) | set(relist)) - set(main_windows), reverse=True)
+    earlier = sorted((set(gaps) | set(relist)) - set(main_windows), reverse=True) if full else []
     # NSE's listing is not a complete answer: the same fortnight came back
     # with 440 filings on one run and 1,120 on the next (and 3,087 then 220),
     # each time with a totalCount that agreed. So every window is listed again
@@ -345,7 +374,7 @@ def main() -> int:
     seen_windows: dict = dict(doc.get("window_seen") or {})
     grid = windows(FIRST_LISTING, today)
     rotation = sorted((w for w in grid if w not in set(main_windows) | set(earlier)),
-                      key=lambda w: str((seen_windows.get(w[0].isoformat()) or {}).get("at") or ""))
+                      key=lambda w: str((seen_windows.get(w[0].isoformat()) or {}).get("at") or "")) if full else []
     # The rotation asks in RETRY_DAYS pieces too: a fortnight NSE answers short
     # as one request is the case it exists for.
     piece_of = {piece: window for window in rotation for piece in windows(window[0], window[1], RETRY_DAYS)}
@@ -360,8 +389,8 @@ def main() -> int:
             + [p for p in rotation_pieces if p[1] >= recent_cut]
             + [w for w in earlier if w[1] < recent_cut]
             + [p for p in rotation_pieces if p[1] < recent_cut])
-    print(f"listing NSE integrated filings: {len(main_windows)} new, {len(earlier)} earlier and "
-          f"{len(rotation)} in rotation", flush=True)
+    print(f"listing NSE integrated filings ({'full' if full else 'quick'} run): {len(main_windows)} new, "
+          f"{len(earlier)} earlier and {len(rotation)} in rotation", flush=True)
     listed, left, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
     # A rotation window counts as listed only when all its pieces were.
     pieces_left = {piece for piece in left if piece in piece_of}
@@ -378,6 +407,10 @@ def main() -> int:
     from_gaps = {window for window in listed if window not in main_windows and window in gap_set}
     new_gaps = [w for w in left if w in gap_set or w in main_windows]
     new_relist = [w for w in left if w not in gap_set and w not in main_windows and w not in rotation_set]
+    if not full:
+        # Nothing older was attempted: every gap and retry waits for the next full run.
+        new_gaps += [w for w in gaps if w not in new_gaps and w not in listed]
+        new_relist += [w for w in relist if w not in new_relist]
     stamp_now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for window, rows in listed.items():
         if window not in set(grid):
@@ -505,6 +538,7 @@ def main() -> int:
         # Any window not yet listed in full is in listing_gaps, so the
         # one-off re-list is recorded as done whatever this run managed.
         "listing_version": LISTING_VERSION,
+        "full_listed_at": _now().isoformat(timespec="seconds") if full else doc.get("full_listed_at"),
         "harvest_version": doc.get("harvest_version") if harvesting else HARVEST_VERSION,
         "harvesting": harvesting,
         "harvest_target": HARVEST_VERSION if harvesting else None,
@@ -522,6 +556,11 @@ def main() -> int:
         "queue": sorted(queue.values(), key=lambda q: q["filed"], reverse=True),
         "symbols": dict(sorted(symbols.items())),
     }
+    if {k: v for k, v in before.items() if k != "generated_at"} == json.loads(json.dumps(
+            {k: v for k, v in out.items() if k != "generated_at"})):
+        # A quick run that found nothing new: no write, so no commit.
+        print("nothing new since the last run: consolidated_results.json left as it was", flush=True)
+        return 0 if listed_ok else 1
     path.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
     print(f"wrote {path.name}: {len(symbols)} companies, stored={stored} skipped={skipped} failed={failed}, "
           f"{len(queue)} still queued, {path.stat().st_size / 1024:.0f} KB; responses={_statuses}", flush=True)

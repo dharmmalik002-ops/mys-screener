@@ -7,7 +7,7 @@ each quarter was DECLARED, which neither BSE's results listing nor the
 summary carries:
 
 1. `results_feed.json["declared"]` — the first BSE "Result" filing the evening
-   job (`scripts/update_results_feed.py`, 7 PM IST and two late runs) matched
+   job (`scripts/update_results_feed.py`, every half hour from 8 AM IST) matched
    to the quarter. Exact to the minute.
 2. Otherwise `results_calendar.json`, the bot's results calendar from the same
    BSE feed, which goes back to 2011 — so older seasons have dates too.
@@ -472,12 +472,15 @@ def data_stamp() -> tuple[float, ...]:
 
 # ── Delivery to the Space ───────────────────────────────────────────────────
 # The workflow commits with GITHUB_TOKEN and [skip ci], so nothing redeploys
-# the Space: it pulls the feed itself, on a timer through the evening and when
+# the Space: it pulls the feed itself, every 10 minutes through the day and when
 # the page is opened (same reason as main.py::pull_latest_breakout_stats).
 
-PULL_MIN_INTERVAL_S = 600
+PULL_MIN_INTERVAL_S = 300  # a page open pulls at most this often; conditional, so cheap
 _pull_lock = threading.Lock()
 _last_pull = 0.0
+
+
+_etags: dict[str, str] = {}
 
 
 def _pull_one(raw_base: str, path: Path, required_key: str) -> bool:
@@ -485,7 +488,12 @@ def _pull_one(raw_base: str, path: Path, required_key: str) -> bool:
 
     try:
         local = str(bse_quarterly.read_cached(path).get("generated_at") or "")
-        response = requests.get(f"{raw_base}/{path.name}", timeout=40)
+        # Pulled every 10 minutes all day; the consolidated file is ~3 MB, so
+        # ask whether it changed first (GitHub's raw host answers 304).
+        headers = {"If-None-Match": _etags[path.name]} if path.name in _etags and path.exists() else {}
+        response = requests.get(f"{raw_base}/{path.name}", timeout=40, headers=headers)
+        if response.status_code == 304:
+            return False
         if response.status_code != 200:
             logger.info("Results pull (%s): remote HTTP %s — keeping local %s", path.name, response.status_code, local or "<none>")
             return False
@@ -494,6 +502,8 @@ def _pull_one(raw_base: str, path: Path, required_key: str) -> bool:
         if not stamp or not isinstance(remote.get(required_key), dict):
             logger.warning("Results pull (%s): remote payload invalid — keeping local", path.name)
             return False
+        if response.headers.get("ETag"):
+            _etags[path.name] = response.headers["ETag"]
         if local and stamp <= local:
             return False
         tmp = path.with_name(path.name + ".tmp")
@@ -540,27 +550,30 @@ def season_start(day: date) -> date:
     return date(day.year, ((day.month - 1) // 3) * 3 + 1, 1)
 
 
-# Evening slots (IST) for the results job. Shared by the workflow's --if-due
-# check and the Space's watchdog so both agree on when a run is owed.
-SLOTS = ((19, 0), (21, 30), (23, 45))
+# The results job runs every half hour through the day, so a result
+# declared at 11 AM is on the page by about 11:30 rather than waiting for the
+# evening. Shared by the workflow's --if-due check and the Space's watchdog.
+RUN_INTERVAL_MINUTES = 30
+RUN_HOURS = (8, 24)  # IST: from 08:00 to midnight; results are declared through the evening
+# A run within this many minutes of the last one is a duplicate (the Space's
+# trigger and GitHub's own cron both fire); anything older is owed a run.
+RUN_DEDUPE_MINUTES = 20
 
 
-def latest_slot(now_ist: datetime) -> datetime | None:
-    passed = [now_ist.replace(hour=h, minute=m, second=0, microsecond=0) for h, m in SLOTS]
-    passed = [slot for slot in passed if slot <= now_ist]
-    return passed[-1] if passed else None
+def in_run_hours(now_ist: datetime) -> bool:
+    return RUN_HOURS[0] <= now_ist.hour < RUN_HOURS[1]
 
 
-def slot_due(filings_checked_at: Any, now_ist: datetime) -> bool:
-    """True when no run has read BSE's filings since the latest slot that has
-    passed today (a daytime manual run is always due)."""
-    slot = latest_slot(now_ist)
-    if slot is None:
-        return True
+def run_due(filings_checked_at: Any, now_ist: datetime) -> bool:
+    """True unless BSE's filings were read in the last RUN_DEDUPE_MINUTES.
+
+    A run that finds nothing new does not rewrite the feed (so `main` does
+    not get 48 identical commits a day), which leaves `filings_checked_at` at
+    the last run that changed something — such a run is simply due again."""
     try:
         checked = datetime.fromisoformat(str(filings_checked_at).replace("Z", "+00:00"))
     except (TypeError, ValueError):
         return True
     if checked.tzinfo is None:
         checked = checked.replace(tzinfo=timezone.utc)
-    return checked < slot
+    return (now_ist - checked).total_seconds() >= RUN_DEDUPE_MINUTES * 60

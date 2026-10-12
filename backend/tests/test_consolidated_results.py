@@ -302,7 +302,15 @@ def test_nothing_listed_is_thrown_away_when_a_window_gets_no_answer(files, job, 
     assert doc["listing_gaps"] == [["2026-09-19", "2026-10-03"]]
     assert doc["listed_through"] == "2026-10-10"
 
+    # The next half-hourly run is a quick one: it lists only the newest
+    # filings and keeps the gap for the next full run.
     calls = _fake_windows(job, monkeypatch, [])
+    job.main()
+    assert ("2026-09-19", "2026-10-03") not in calls
+    assert json.loads((files / "consolidated_results.json").read_text())["listing_gaps"] == [["2026-09-19", "2026-10-03"]]
+    # A full run (due every FULL_EVERY_HOURS) lists it.
+    calls = _fake_windows(job, monkeypatch, [])
+    monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--workers", "2", "--full-every-hours", "0"])
     assert job.main() == 0
     assert ("2026-09-19", "2026-10-03") in calls
     assert json.loads((files / "consolidated_results.json").read_text())["listing_gaps"] == []
@@ -482,11 +490,11 @@ def test_a_new_lister_lists_every_window_again_without_re_downloading(files, job
     # The filing the old lister missed is queued; the one already stored is not.
     assert [q["symbol"] for q in doc["queue"]] == ["INFY"]
     assert doc["relist_gaps"] == [["2025-01-01", "2025-01-15"]] and doc["listing_gaps"] == []
-    # Next run lists only what is left.
+    # The next full run lists what is left, in 5-day pieces, ahead of the
+    # older rotation.
     calls = _fake_windows(job, monkeypatch, [])
+    monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--workers", "2", "--full-every-hours", "0"])
     assert job.main() == 0
-    # The window left over goes right after tonight's, ahead of the rotation.
-    # Retried in 5-day pieces, right after tonight's window.
     pieces = [("2025-01-11", "2025-01-15"), ("2025-01-06", "2025-01-10"), ("2025-01-01", "2025-01-05")]
     first = calls.index(pieces[0])
     assert calls[first:first + 3] == pieces and first < calls.index(("2025-01-16", "2025-01-20"))
@@ -584,3 +592,30 @@ def test_this_season_is_listed_again_before_older_retries(files, job, monkeypatc
     calls = _fake_windows(job, monkeypatch, [])
     assert job.main() == 0
     assert calls.index(("2026-07-10", "2026-07-14")) < calls.index(("2025-01-31", "2025-02-04"))
+
+
+
+def test_a_half_hourly_run_lists_only_the_newest_filings_and_writes_nothing_when_there_are_none(files, job, monkeypatch):
+    # A result declared at 11 AM must be on the page by about 11:30, so the
+    # runs between full ones list today's filings only — and one that finds
+    # nothing makes no commit.
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "symbols": {}, "listed_through": "2026-10-10", "harvest_version": job.HARVEST_VERSION,
+        "listing_version": job.LISTING_VERSION, "full_listed_at": "2026-10-10T13:00:00+00:00",
+        "relist_gaps": [["2025-01-01", "2025-01-05"]], "listing_gaps": [], "queue": []}))
+    calls = _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    assert calls == [("2026-10-09", "2026-10-10")]  # 1.5 hours after a full run: quick
+    before = (files / "consolidated_results.json").read_text()
+    _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    assert (files / "consolidated_results.json").read_text() == before
+
+    # Today's filing is queued and downloaded at once.
+    listed = [(date(2026, 10, 10), _listing_row("TCS", "30-Sep-2026", "10-Oct-2026 11:02:00"))]
+    _fake_windows(job, monkeypatch, listed)
+    monkeypatch.setattr(job, "_fetch_archive", lambda url: instance())
+    assert job.main() == 0
+    doc = json.loads((files / "consolidated_results.json").read_text())
+    assert doc["symbols"]["TCS"]["quarters"][0]["period"] == "Sep 2026"
+    assert doc["relist_gaps"] == [["2025-01-01", "2025-01-05"]]  # kept for the next full run
