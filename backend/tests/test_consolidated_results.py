@@ -323,8 +323,10 @@ def test_listing_stops_at_its_share_of_the_budget_and_keeps_the_rest(files, job,
     monkeypatch.setattr(sys, "argv", ["update_consolidated_results.py", "--max-seconds", "1200"])
     assert job.main() == 0
     gaps = json.loads((files / "consolidated_results.json").read_text())["listing_gaps"]
-    # The new window and two gap windows (newest first) were listed; the rest wait.
-    assert gaps and gaps[0][0] < "2026-03-01" and len(gaps) == len(job.windows(date(2026, 1, 1), date(2026, 3, 31))) - 2
+    # The new window and this season's re-listing used the listing share;
+    # every older gap window is kept for the next run.
+    assert gaps == [[a.isoformat(), b.isoformat()] for a, b in
+                    sorted(job.windows(date(2026, 1, 1), date(2026, 3, 31)), reverse=True)]
 
 
 def test_an_old_file_reads_its_history_again_over_several_runs(files, job, monkeypatch):
@@ -367,7 +369,9 @@ def test_a_new_reader_restarts_a_re_read_already_under_way(files, job, monkeypat
     assert job.main() == 0
     doc = json.loads((files / "consolidated_results.json").read_text())
     # The window left over goes right after tonight's, ahead of the rotation.
-    assert calls[1] == ("2025-01-01", "2025-01-15")
+    # The window left over is listed after this season and ahead of the
+    # older rotation.
+    assert calls.index(("2025-01-01", "2025-01-15")) < calls.index(("2025-01-16", "2025-01-20"))
     assert doc["harvesting"] is False and doc["harvest_version"] == job.HARVEST_VERSION
 
 
@@ -483,7 +487,9 @@ def test_a_new_lister_lists_every_window_again_without_re_downloading(files, job
     assert job.main() == 0
     # The window left over goes right after tonight's, ahead of the rotation.
     # Retried in 5-day pieces, right after tonight's window.
-    assert calls[1:4] == [("2025-01-11", "2025-01-15"), ("2025-01-06", "2025-01-10"), ("2025-01-01", "2025-01-05")]
+    pieces = [("2025-01-11", "2025-01-15"), ("2025-01-06", "2025-01-10"), ("2025-01-01", "2025-01-05")]
+    first = calls.index(pieces[0])
+    assert calls[first:first + 3] == pieces and first < calls.index(("2025-01-16", "2025-01-20"))
     assert json.loads((files / "consolidated_results.json").read_text())["relist_gaps"] == []
 
 
@@ -565,3 +571,16 @@ def test_every_window_is_listed_again_in_rotation_and_a_short_one_is_retried(fil
     # One row against 1,120 before: far short, so it is listed again next run.
     assert [["2026-07-10", "2026-07-14"], ["2026-07-15", "2026-07-19"], ["2026-07-20", "2026-07-24"]] == [g for g in doc["relist_gaps"] if g[0].startswith("2026-07")]
     assert doc["window_seen"]["2026-07-10"]["max"] == 1120
+
+
+def test_this_season_is_listed_again_before_older_retries(files, job, monkeypatch):
+    # Retries of short 2025 windows used the whole listing budget while July
+    # 2026 waited; recent windows now come first on every run.
+    (files / "consolidated_results.json").write_text(json.dumps({
+        "symbols": {}, "listed_through": "2026-10-10", "harvest_version": job.HARVEST_VERSION,
+        "listing_version": job.LISTING_VERSION,
+        "relist_gaps": [["2025-01-31", "2025-02-04"]],
+        "window_seen": {"2026-07-10": {"at": "2026-10-11T00:00:00+00:00", "max": 380}}}))
+    calls = _fake_windows(job, monkeypatch, [])
+    assert job.main() == 0
+    assert calls.index(("2026-07-10", "2026-07-14")) < calls.index(("2025-01-31", "2025-02-04"))
