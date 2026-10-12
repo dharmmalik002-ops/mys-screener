@@ -30,6 +30,13 @@ on:
 permissions:
   contents: write
 
+# The Space's watchdog dispatches this every 15 minutes until the day's patch
+# lands. Never run two at once (both would commit and push the same files);
+# a dispatch arriving mid-run waits and then no-ops on the current patch.
+concurrency:
+  group: daily-bhavcopy
+  cancel-in-progress: false
+
 jobs:
   bhavcopy:
     name: Fetch NSE EOD prices and commit patch

@@ -6136,6 +6136,60 @@ button {
 
 /* Calibration ruler: fixed-position badge whose bar height always equals a 5%
    move at the latest close (kept in sync by ChartPanel's overlay updater). */
+/* Bottom-right jump buttons: newest / oldest bar, keeping the zoom.
+   Sits inside the plot, clear of the price axis and the time axis. */
+.chart-jump-controls {
+  position: absolute;
+  right: 76px;
+  bottom: 38px;
+  z-index: 10000;
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  backdrop-filter: blur(9px);
+}
+
+.chart-jump-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+
+.chart-jump-button:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.chart-jump-button:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 640px) {
+  .chart-jump-controls {
+    right: 60px;
+    bottom: 32px;
+  }
+  .chart-jump-button span {
+    display: none;
+  }
+  .chart-jump-button {
+    padding: 0 6px;
+  }
+}
+
 .chart-pct-ruler {
   position: absolute;
   top: 14px;
