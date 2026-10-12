@@ -787,6 +787,24 @@ def maybe_self_heal_bhavcopy() -> None:
     threading.Thread(target=_run, name="bhavcopy-self-heal", daemon=True).start()
 
 
+# GitHub's own schedule for daily-bhavcopy.yml runs hours late or not at all
+# (2026-10-12: no scheduled run had started by 16:30 IST; 2026-10-09's ran at
+# 22:54 IST), so this Space starts it every 15 minutes from 16:12 IST until the
+# day's patch is here. A run takes ~12 minutes plus the Space rebuild, so a
+# dispatch is held back while the previous one can still be running.
+BHAVCOPY_DISPATCH_GAP_MINUTES = 25
+BHAVCOPY_MAX_DISPATCHES_PER_DAY = 10
+_bhavcopy_dispatches: list[datetime] = []
+
+
+def _bhavcopy_dispatch_allowed(now_ist: datetime) -> bool:
+    today = [stamp for stamp in _bhavcopy_dispatches if stamp.date() == now_ist.date()]
+    _bhavcopy_dispatches[:] = today
+    if len(today) >= BHAVCOPY_MAX_DISPATCHES_PER_DAY:
+        return False
+    return not today or (now_ist - today[-1]).total_seconds() >= BHAVCOPY_DISPATCH_GAP_MINUTES * 60
+
+
 def trigger_github_bhavcopy_if_stale() -> None:
     """Watchdog: fire the GitHub daily-bhavcopy workflow when today's EOD data
     is missing.
@@ -826,6 +844,12 @@ def trigger_github_bhavcopy_if_stale() -> None:
                 patch_date or "<unknown>", today_iso,
             )
             return
+        if not _bhavcopy_dispatch_allowed(now_ist):
+            logger.info(
+                "Bhavcopy trigger watchdog: data stale (last=%s today=%s) but a run was started %s min ago — waiting",
+                patch_date or "<unknown>", today_iso, BHAVCOPY_DISPATCH_GAP_MINUTES,
+            )
+            return
         repo = os.environ.get("GITHUB_DATA_REPO", "dharmmalik002-ops/mys-screener")
         response = _requests.post(
             f"https://api.github.com/repos/{repo}/dispatches",
@@ -836,6 +860,8 @@ def trigger_github_bhavcopy_if_stale() -> None:
             json={"event_type": "bhavcopy-trigger"},
             timeout=20,
         )
+        if response.status_code < 300:
+            _bhavcopy_dispatches.append(now_ist)
         logger.info(
             "Bhavcopy trigger watchdog: data stale (last=%s today=%s) -> repository_dispatch HTTP %s",
             patch_date or "<unknown>", today_iso, response.status_code,
@@ -1051,7 +1077,7 @@ async def lifespan(app: FastAPI):
         # HF push never lands. Each run no-ops once the patch is already current.
         scheduler.add_job(
             apply_bhavcopy_patch_on_startup,
-            CronTrigger(hour="16,17,18,19,21", minute=50, day_of_week="mon-fri", timezone=IST),
+            CronTrigger(hour="16-21", minute="20,50", day_of_week="mon-fri", timezone=IST),
             id="india_bhavcopy_patch_apply",
             replace_existing=True,
         )
@@ -1063,11 +1089,12 @@ async def lifespan(app: FastAPI):
             replace_existing=True,
         )
         # Reliable evening watchdog: GitHub's cron drops runs, so this Space
-        # fires the bhavcopy workflow itself whenever today's data is missing.
-        # Several attempts across the evening; each no-ops once data is current.
+        # fires the bhavcopy workflow itself whenever today's data is missing:
+        # every 15 minutes from 16:12 IST (throttled so runs never pile up),
+        # each a no-op once the data is current.
         scheduler.add_job(
             trigger_github_bhavcopy_if_stale,
-            CronTrigger(hour="16,17,18,19,21", minute=42, day_of_week="mon-fri", timezone=IST),
+            CronTrigger(hour="16-21", minute="12,27,42,57", day_of_week="mon-fri", timezone=IST),
             id="india_bhavcopy_github_trigger",
             replace_existing=True,
         )

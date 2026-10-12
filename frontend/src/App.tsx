@@ -260,6 +260,7 @@ const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
  *  without asking the server again. A tab left open through the 4:30 PM bhavcopy used to keep
  *  the morning's groups forever: the Groups page only fetched when it held nothing. */
 const GROUPS_REVALIDATE_MS = 5 * 60 * 1000;
+const DASHBOARD_REVALIDATE_MS = 5 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
 type AppPage = "today" | "home" | "screener" | "ai" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "lookalikes" | "course" | "bot" | "results";
@@ -2832,6 +2833,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // whose newest bar is older than it. A ref rather than state because
   // readCachedChart is called from callbacks that must not re-bind on it.
   const latestSessionDateRef = useRef<string | null>(null);
+  // Bumped when the dashboard moves to a newer session, so the open chart is
+  // fetched again rather than left on the previous close.
+  const [chartSessionNonce, setChartSessionNonce] = useState(0);
   // Newest daily bar carried by a live chart response since the dashboard's
   // session last changed. The dashboard's date can run ahead of the newest
   // session (a weekend, a holiday, a weekday before the close), and comparing
@@ -3362,6 +3366,59 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     };
   }, [activeMarket, activePage, loading]);
 
+  // The dashboard (and with it the "as of" session every page reads) was
+  // fetched once per load, so a tab opened before the evening's EOD data
+  // landed kept showing the previous session until a manual reload. Re-check
+  // every few minutes and on returning to the tab; the copy on screen is only
+  // replaced when the server's actually moved on.
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+    let active = true;
+    let inFlight = false;
+    let lastCheckedAt = Date.now();
+    const revalidate = () => {
+      if (inFlight || Date.now() - lastCheckedAt < DASHBOARD_REVALIDATE_MS) {
+        return;
+      }
+      inFlight = true;
+      lastCheckedAt = Date.now();
+      void getDashboard(activeMarket)
+        .then((payload) => {
+          if (!active || !payload) return;
+          const current = marketViewCacheRef.current[activeMarket]?.dashboard ?? null;
+          const nextSession = payload.breadth_today?.date ?? null;
+          const currentSession = current?.breadth_today?.date ?? null;
+          if (current && nextSession === currentSession && payload.generated_at === current.generated_at) {
+            return;
+          }
+          setDashboard(payload);
+          updateMarketViewCache(activeMarket, { dashboard: payload });
+          if (nextSession !== currentSession) {
+            // A new session makes the groups copy stale too.
+            groupsConfirmedAtRef.current = 0;
+          }
+        })
+        .catch(() => {
+          // Keep the copy we have; the next tick or focus tries again.
+        })
+        .finally(() => {
+          inFlight = false;
+        });
+    };
+    const timer = window.setInterval(revalidate, DASHBOARD_REVALIDATE_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") revalidate();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [activeMarket, loading]);
+
   useEffect(() => {
     if (loading || activePage === "groups" || groupsData) {
       return;
@@ -3430,7 +3487,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     return () => {
       chartRequestIdRef.current += 1;
     };
-  }, [activeMarket, activePage, chartOpen, selectedSymbol, timeframe]);
+  }, [activeMarket, activePage, chartOpen, selectedSymbol, timeframe, chartSessionNonce]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -3858,10 +3915,17 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   useEffect(() => {
     const session = dashboard?.breadth_today?.date ?? null;
     if (session && session !== latestSessionDateRef.current) {
+      const hadSession = latestSessionDateRef.current !== null;
       latestSessionDateRef.current = session;
       // Only bars served after this session was announced may vouch for it;
       // otherwise yesterday's charts would keep a new session from expiring them.
       newestServedBarDateRef.current = null;
+      // The chart on screen was loaded against the previous session (often
+      // from the browser's cache) — load it again so it shows the new close
+      // instead of waiting for the user to pick another stock.
+      if (hadSession) {
+        setChartSessionNonce((value) => value + 1);
+      }
     }
   }, [dashboard]);
 

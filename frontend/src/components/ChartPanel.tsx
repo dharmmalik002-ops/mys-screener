@@ -2011,6 +2011,10 @@ export function ChartPanel({
   // {key, chartRange, epoch} the range-init effect last applied — lets data
   // updates for the SAME symbol/timeframe preserve the user's zoom.
   const rangeStateRef = useRef<{ key: string; chartRange: string; epoch: number }>({ key: "", chartRange: "", epoch: -1 });
+  // The bars the main series last held, so a same-dataset refresh can tell
+  // older history prepended (a cached copy replaced by the deeper live one)
+  // from a new session appended, and keep the user's view on the same dates.
+  const seriesShapeRef = useRef<{ key: string; length: number; firstTime: number } | null>(null);
   const benchmarkHistoryCacheRef = useRef<Record<string, ChartBar[]>>({});
   const indicatorKeysRef = useRef(indicatorKeys);
   const drawingToolRef = useRef<DrawingTool>("none");
@@ -3676,8 +3680,36 @@ export function ChartPanel({
     );
     volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
 
-    if (savedRange) {
-      chart.timeScale().setVisibleLogicalRange(savedRange);
+    const prevShape = seriesShapeRef.current;
+    const nextLength = activeBars.length;
+    seriesShapeRef.current = nextLength > 0
+      ? {
+          key: dataKey,
+          length: nextLength,
+          firstTime: Number(activeBars[0].time),
+        }
+      : null;
+    if (savedRange && prevShape && nextLength > 0) {
+      // A logical range is bar INDICES, not dates. When the refreshed series
+      // starts earlier (a cached ~2-year chart replaced by the 5-year one)
+      // every index points ~650 bars further back, and the chart reopened on
+      // 2024. Shift by the bars added in front, and when the view was on the
+      // newest bar keep it there as new sessions arrive.
+      const oldFirstIndex = prevShape.key !== dataKey
+        ? -1
+        : Number(activeBars[0].time) === prevShape.firstTime
+          ? 0
+          : activeBars.findIndex((bar) => Number(bar.time) === prevShape.firstTime);
+      const followingLatest = savedRange.to >= prevShape.length - 1;
+      // Anchor the right edge (same offset from the newest bar as before)
+      // unless the user had scrolled back into history we can still find.
+      const shift = followingLatest || oldFirstIndex < 0
+        ? nextLength - prevShape.length
+        : oldFirstIndex;
+      chart.timeScale().setVisibleLogicalRange({
+        from: savedRange.from + shift,
+        to: savedRange.to + shift,
+      });
     }
     updatePctRulerRef.current?.();
     scheduleOverlayUpdate();
@@ -4072,6 +4104,25 @@ export function ChartPanel({
       chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
     }
   }, [chartEpoch, chartRange, activeBars, timeframe, symbol]);
+
+  // Bottom-right jump buttons: keep the current zoom (bars on screen) and move
+  // the view to the newest or the oldest loaded bar.
+  const jumpChartTo = (edge: "latest" | "oldest") => {
+    const chart = chartRef.current;
+    if (!chart || activeBars.length === 0) return;
+    const timeScale = chart.timeScale();
+    const current = timeScale.getVisibleLogicalRange();
+    const fallbackWidth = Math.min(activeBars.length, barsForChartRange(timeframe, chartRange) ?? defaultVisibleBars(timeframe));
+    const width = current ? Math.max(10, current.to - current.from) : fallbackWidth;
+    if (edge === "latest") {
+      const to = activeBars.length - 1 + RIGHT_EDGE_PADDING_BARS;
+      timeScale.setVisibleLogicalRange({ from: to - width, to });
+    } else {
+      const from = -2;
+      timeScale.setVisibleLogicalRange({ from, to: from + width });
+    }
+    scheduleOverlayUpdate();
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -7268,6 +7319,40 @@ export function ChartPanel({
             className={drawingTool === "none" ? "chart-stage-hitbox" : "chart-stage-hitbox drawing-active"}
           >
             <div ref={attachChartContainer} className="chart-canvas" />
+            {activeBars.length > 0 ? (
+              <div
+                className="chart-jump-controls"
+                role="group"
+                aria-label="Jump along the chart"
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="chart-jump-button"
+                  onClick={() => jumpChartTo("oldest")}
+                  title="Go to the oldest bar"
+                  aria-label="Go to the oldest bar"
+                >
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                    <path d="M3 3v10M13 3 7.5 8 13 13M9.5 3 4.5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>Oldest</span>
+                </button>
+                <button
+                  type="button"
+                  className="chart-jump-button"
+                  onClick={() => jumpChartTo("latest")}
+                  title="Go to the latest bar"
+                  aria-label="Go to the latest bar"
+                >
+                  <span>Latest</span>
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                    <path d="M13 3v10M3 3l5.5 5L3 13M6.5 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            ) : null}
             <div className="chart-tool-rail" role="toolbar" aria-label="Drawing tools" aria-orientation="vertical">
               {TOOL_RAIL_ITEMS.map((item, idx) => (
                 <button
