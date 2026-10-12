@@ -135,14 +135,21 @@ MAX_DOCS = 6
 PDF_KEEP_DAYS = 45
 
 
+_download_notes: dict[str, str] = {}
+
+
 def _download_pdf(name: str) -> bytes | None:
+    notes = []
     for template in ATTACH_URLS:
         try:
             response = _session().get(template.format(name=name), timeout=60)
-        except Exception:  # noqa: BLE001 - try the archive copy, then give up
+        except Exception as exc:  # noqa: BLE001 - try the archive copy, then give up
+            notes.append(type(exc).__name__)
             continue
         if response.status_code == 200 and response.content[:5] == b"%PDF-":
             return response.content
+        notes.append(f"{response.status_code} {response.headers.get('Content-Type', '')} {response.content[:12]!r}")
+    _download_notes[name] = "; ".join(notes)
     return None
 
 
@@ -193,7 +200,14 @@ def read_result_pdfs(feed: dict, docs_of: dict[tuple[str, str], list[str]], toda
         for name in names:
             pdf = _download_pdf(name)
             if pdf is None:
-                continue  # not marked tried: a failed download is retried next run
+                # Not marked tried: a failed download is retried next run.
+                samples = feed.setdefault("pdf_samples", [])
+                note = {"symbol": symbol, "period": period, "document": name,
+                        "download_failed": _download_notes.get(name, "")}
+                if note not in samples:  # a repeat would make every half-hourly run commit
+                    samples.append(note)
+                    del samples[:-8]
+                continue
             tried.append(name)
             text = result_pdf.extract_text(pdf)
             rows = result_pdf.read_quarter(text, period, priors)
