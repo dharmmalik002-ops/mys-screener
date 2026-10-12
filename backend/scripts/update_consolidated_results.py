@@ -45,6 +45,7 @@ FIRST_LISTING = date(2025, 1, 1)
 # for a whole results season. Fifteen days keeps every window small.
 WINDOW_DAYS = 15
 RETRY_DAYS = 5
+RECENT_LIST_DAYS = 110  # windows this recent are listed again on every run
 # Listing may use this share of --max-seconds; the rest is for downloads.
 LIST_BUDGET_SHARE = 0.45
 # A filing that failed this many downloads is tried after everything else
@@ -348,7 +349,17 @@ def main() -> int:
     # The rotation asks in RETRY_DAYS pieces too: a fortnight NSE answers short
     # as one request is the case it exists for.
     piece_of = {piece: window for window in rotation for piece in windows(window[0], window[1], RETRY_DAYS)}
-    todo = main_windows + earlier + list(piece_of)
+    # This season and the last come first, every run: the cards on the page
+    # need their previous quarter, and retries of short 2025 windows had used
+    # the whole listing budget while July 2026 (HCLTECH's, DMART's June
+    # quarter) waited. Older retries and the rest of the rotation follow.
+    recent_cut = today - timedelta(days=RECENT_LIST_DAYS)
+    rotation_pieces = list(piece_of)
+    todo = (main_windows
+            + [w for w in earlier if w[1] >= recent_cut]
+            + [p for p in rotation_pieces if p[1] >= recent_cut]
+            + [w for w in earlier if w[1] < recent_cut]
+            + [p for p in rotation_pieces if p[1] < recent_cut])
     print(f"listing NSE integrated filings: {len(main_windows)} new, {len(earlier)} earlier and "
           f"{len(rotation)} in rotation", flush=True)
     listed, left, listing_failed = list_windows(todo, started + args.max_seconds * LIST_BUDGET_SHARE)
