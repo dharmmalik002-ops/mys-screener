@@ -517,3 +517,28 @@ def test_a_company_outside_the_universe_is_dated_once_its_code_is_learned(files,
     assert feed["bse_codes"] == {"AKZOINDIA": {"code": "500710", "name": "Akzo Nobel India Ltd"}}
     assert feed["declared"]["AKZOINDIA"] == {"Sep 2026": "2026-10-10T16:05"}
     assert feed["quarters"]["AKZOINDIA"]["quarters"][0]["sales_crore"] == 1050.0
+
+
+def test_the_company_search_reads_every_page_and_does_not_give_up_on_a_refusal(files, job, monkeypatch):
+    # BLUEDART, June 2026: its results filing was on page 2 of the fortnight,
+    # and the first search recorded "none" for good.
+    summary = json.loads(files.summary.read_text())["symbols"]
+    feed = {"declared": {}, "pending": {}, "date_lookups": {"XYZ": {"Sep 2026": "none"}}}
+    refused = {"on": True}
+
+    def fake_get(url, params):
+        if refused["on"]:
+            return None
+        if params["pageno"] == "1":
+            return {"Table": [{"NEWS_DT": "2026-10-09T20:00:00", "NEWSSUB": "Shareholding pattern"}],
+                    "Table1": [{"ROWCNT": 2}]}
+        return {"Table": [{"NEWS_DT": "2026-10-09T18:05:00", "NEWSSUB": "Unaudited Financial Results"}],
+                "Table1": [{"ROWCNT": 2}]}
+
+    monkeypatch.setattr(job, "_get", fake_get)
+    job._find_declared_dates_real(feed, summary, {"XYZ": "500002"}, date(2026, 10, 10))
+    # The old "none" is dropped for a new search, and a refused search records nothing.
+    assert "XYZ" not in feed["date_lookups"] and feed["date_lookups_version"] == job.DATE_LOOKUP_VERSION
+    refused["on"] = False
+    job._find_declared_dates_real(feed, summary, {"XYZ": "500002"}, date(2026, 10, 10))
+    assert feed["declared"]["XYZ"] == {"Sep 2026": "2026-10-09T18:05"}
