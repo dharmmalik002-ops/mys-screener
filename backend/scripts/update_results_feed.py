@@ -153,6 +153,36 @@ def _download_pdf(name: str) -> bytes | None:
     return None
 
 
+CHECK_KEYS = ("sales_crore", "operating_profit_crore", "net_profit_crore", "eps")
+
+
+def _record_check(feed: dict, symbol: str, entry: dict, fresh: list, cr) -> None:
+    """When the exchange's figures replace a PDF reading, keep how far apart
+    they were: the running measure of whether the reader can be trusted."""
+    period = entry.get("period")
+    exchange = {
+        "standalone": next((r for r in fresh if r.get("period") == period), None) or next(
+            (r for r in rf.standalone_rows(symbol) if r["period"] == period and r.get("source") != "pdf"), None),
+        "consolidated": next((r for r in cr.results_for(symbol) if r["period"] == period), None),
+    }
+    gaps = {}
+    for basis in ("standalone", "consolidated"):
+        read, truth = entry.get(basis), exchange.get(basis)
+        if not read or not truth:
+            continue
+        for key in CHECK_KEYS:
+            a, b = read.get(key), truth.get(key)
+            if a is None or b is None:
+                continue
+            gaps[f"{basis}.{key}"] = round(a - b, 2)
+    checks = feed.setdefault("pdf_checks", [])
+    record = {"symbol": symbol, "period": period, "document": entry.get("document"), "gaps": gaps,
+              "agrees": all(abs(v) <= 0.6 for k, v in gaps.items() if not k.endswith("eps"))
+              and all(abs(v) <= 0.011 for k, v in gaps.items() if k.endswith("eps"))}
+    checks[:] = [c for c in checks if (c.get("symbol"), c.get("period")) != (symbol, period)] + [record]
+    del checks[:-40]
+
+
 def read_result_pdfs(feed: dict, docs_of: dict[tuple[str, str], list[str]], today: date) -> None:
     """Read the figures from the results PDF of every filing still waiting
     for BSE's structured numbers (services/result_pdf.py checks each figure
@@ -237,6 +267,8 @@ def read_result_pdfs(feed: dict, docs_of: dict[tuple[str, str], list[str]], toda
         have_consolidated = any(r["period"] == period for r in cr.results_for(symbol))
         stale = (today - date.fromisoformat(str(entry.get("read_at") or "1970-01-01"))).days > PDF_KEEP_DAYS
         if stale or (have_standalone and (not entry.get("consolidated") or have_consolidated)):
+            if not stale:
+                _record_check(feed, symbol, entry, fresh, cr)
             pdfs.pop(symbol)
     tried_all = feed.get("pdf_tried") or {}
     for symbol in list(tried_all):
@@ -452,7 +484,8 @@ def main() -> int:
     if "pdf_tried" not in feed:
         feed.pop("pdf_reader", None)
     ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
-                                          "source", "unparsed_samples", "pdf_reader", "pdf_samples") if key in feed}
+                                          "source", "unparsed_samples", "pdf_reader", "pdf_samples", "pdf_checks")
+               if key in feed}
     for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried"):
         if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried"):
             continue
