@@ -32,6 +32,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services import consolidated_results as cr  # noqa: E402
+from app.services import results_feed as rf  # noqa: E402
 from app.services.exchange_http import browser_session  # noqa: E402
 
 LIST_URL = "https://www.nseindia.com/api/integrated-filing-results"
@@ -54,6 +55,10 @@ LIST_BUDGET_SHARE = 0.45
 # rather than dropped: a dropped filing was never listed again, so a company
 # could stay without its quarter for good.
 MAX_ATTEMPTS = 5  # per queued filing, across runs
+# A stored quarter whose net profit reads 0 beside a pre-tax profit (174 on
+# 2026-10-12, nearly all Jun 2026 and Mar 2025) is downloaded once more under
+# each version of this reader, and its profit lines are kept for checking.
+ZERO_READER = 1
 SKIP_READER = 2  # 2: skipped filings record where their revenue line sits
 RECENT_DAYS = 45  # "reported this season": a filing within this many days
 
@@ -328,9 +333,12 @@ def main() -> int:
     # its diagnostics (or its fix) reach them as the rotation lists them again.
     if doc.get("skip_reader") != SKIP_READER:
         skipped_filings = {}
+    zero_rechecked: dict = dict(doc.get("zero_rechecked") or {})
+    zero_samples: list = list(doc.get("zero_profit_samples") or [])
 
-    universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
-    known = {str(r["symbol"]).upper() for r in universe if r.get("symbol")}
+    # Every company the page can list, the year's IPOs included — not only
+    # the scanner universe (62 companies of Rs 1,000 cr+ were never read).
+    known = rf.result_symbols(BACKEND_ROOT / "data")
 
     today = _now().date()
     through = doc.get("listed_through")
@@ -434,6 +442,15 @@ def main() -> int:
                 return str(row.get("filed") or "")
         return ""
 
+    def zero_profit(symbol: str, period: str, basis: str) -> bool:
+        for row in (symbols.get(symbol) or {}).get(cr.ROW_KEYS[basis]) or []:
+            if row.get("period") == period:
+                return row.get("net_profit_crore") == 0 and abs(row.get("profit_before_tax_crore") or 0) >= 0.5
+        return False
+
+    def recheck_mark(item: dict) -> str:
+        return f"{ZERO_READER}:{item['filed']}"
+
     added = 0
     rejected: list = list(doc.get("rejected_listing_samples") or [])[-10:]
     for raw, from_gap in listing:
@@ -447,9 +464,11 @@ def main() -> int:
             continue
         period = cr.period_label(date.fromisoformat(item["period_end"]))
         rereading = from_gap and reread_gaps
-        if not rereading and stored_filed(item["symbol"], period, item["basis"]) >= item["filed"]:
-            continue  # already have this filing (or a later revision)
         key = queue_key(item)
+        recheck = (zero_profit(item["symbol"], period, item["basis"])
+                   and zero_rechecked.get(key) != recheck_mark(item))
+        if not rereading and not recheck and stored_filed(item["symbol"], period, item["basis"]) >= item["filed"]:
+            continue  # already have this filing (or a later revision)
         if str(skipped_filings.get(key) or "") >= item["filed"]:
             continue
         if key not in queue or queue[key]["filed"] < item["filed"]:
@@ -494,6 +513,13 @@ def main() -> int:
                                 "contexts": len(parsed["contexts"]),
                                 "undimensioned_periods": sorted(f"{a}..{b}" for a, b in periods),
                                 "dimensioned_sample": [c for c in parsed["contexts"] if c["dims"]][:12]})
+            if reached and parsed is not None and zero_profit(
+                    item["symbol"], cr.period_label(date.fromisoformat(item["period_end"])), basis):
+                # A quarter read as 0 net profit: what the filing itself says.
+                zero_rechecked[key] = recheck_mark(item)
+                zero_samples.append({"symbol": item["symbol"], "basis": basis, "xbrl": item["xbrl"],
+                                     "period_end": item["period_end"],
+                                     "profit_lines": (parsed.get("profit_lines") or {}).get(item["period_end"])})
             if parsed is not None and parsed["periods"] and (not nature or nature == basis):
                 entry = symbols.setdefault(item["symbol"], {})
                 field = cr.ROW_KEYS[basis]
@@ -553,6 +579,8 @@ def main() -> int:
         "context_samples": layouts or doc.get("context_samples") or [],
         "skipped_filings": dict(sorted(skipped_filings.items())),
         "skip_reader": SKIP_READER,
+        "zero_rechecked": dict(sorted(zero_rechecked.items())),
+        "zero_profit_samples": zero_samples[-40:],
         "queue": sorted(queue.values(), key=lambda q: q["filed"], reverse=True),
         "symbols": dict(sorted(symbols.items())),
     }

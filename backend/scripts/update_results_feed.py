@@ -86,10 +86,10 @@ def _get(url: str, params: dict) -> dict | None:
     return None
 
 
-def fetch_filings(start: date, end: date, category: str = "Result") -> list[tuple[str, datetime, str]] | None:
-    """(scrip code, filing time IST, attachment) for every filing in
-    `category`, or None if any window failed — a partial read must not
-    advance `filings_through`."""
+def fetch_filings(start: date, end: date, category: str = "Result") -> list[tuple[str, datetime, str, str, str]] | None:
+    """(scrip code, filing time IST, attachment, the company's BSE page, its
+    name) for every filing in `category`, or None if any window failed — a
+    partial read must not advance `filings_through`."""
     out: list[tuple[str, datetime]] = []
     cursor = start
     while cursor <= end:
@@ -111,7 +111,8 @@ def fetch_filings(start: date, end: date, category: str = "Result") -> list[tupl
                     when = datetime.fromisoformat(stamp[:19])
                 except ValueError:
                     continue
-                out.append((str(item.get("SCRIP_CD") or ""), when, str(item.get("ATTACHMENTNAME") or "").strip()))
+                out.append((str(item.get("SCRIP_CD") or ""), when, str(item.get("ATTACHMENTNAME") or "").strip(),
+                            str(item.get("NSURL") or "").strip(), str(item.get("SLONGNAME") or "").strip()))
             rows += len(table)
             if not table or rows >= total:
                 break
@@ -428,9 +429,11 @@ def main() -> int:
         start = date.fromisoformat(through) - timedelta(days=1) if through else today - timedelta(days=FIRST_RUN_DAYS)
     start = max(start, today - timedelta(days=MAX_LOOKBACK_DAYS))
 
-    universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
-    by_code = {str(r["bse_code"]): str(r["symbol"]).upper() for r in universe if r.get("symbol") and r.get("bse_code")}
-    code_of = {sym: code for code, sym in by_code.items()}
+    # Every company the page can list that has a BSE code (the universe, the
+    # year's listings, codes learned from earlier filings).
+    data = BACKEND_ROOT / "data"
+    code_of = rf.result_codes(data, feed)
+    by_code = {code: sym for sym, code in code_of.items()}
     summary = (bq.read_cached(bq.ARTIFACT_PATH).get("symbols") or {})
 
     filings: list[tuple[str, datetime]] | None = []
@@ -444,6 +447,19 @@ def main() -> int:
         earlier = fetch_filings(*backfill)
         backfill_ok = earlier is not None
         filings = (filings or []) + (earlier or [])
+    # Companies on the page that no file maps to a BSE code (AKZOINDIA,
+    # RELINFRA …): learned from the filings themselves, name checked.
+    names = {str(r.get("symbol") or "").upper(): str(r.get("name") or "")
+             for r in rf._read_json(data / "free_snapshots.json") or [] if isinstance(r, dict)}
+    aliases = {str(k).upper(): str(v).upper()
+               for k, v in ((rf._read_json(data / "ipo_listings.json") or {}).get("aliases") or {}).items()}
+    learned = rf.learn_codes(filings or [], code_of, names, aliases)
+    if learned:
+        print(f"learned BSE codes from filings: {sorted(learned)}", flush=True)
+        feed.setdefault("bse_codes", {}).update(learned)
+        for symbol, row in learned.items():
+            code_of[symbol] = row["code"]
+            by_code[row["code"]] = symbol
     per_symbol: dict[str, list[datetime]] = {}
     docs_of: dict[tuple[str, str], list[str]] = {}
     for code, when, *rest in filings or []:
@@ -541,7 +557,7 @@ def main() -> int:
     if backfill is not None and backfill_ok:
         feed["filings_from"] = backfill[0].isoformat()
     feed["source"] = "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)"
-    for key in ("result_docs", "pdf_quarters", "pdf_tried", "date_lookups"):
+    for key in ("result_docs", "pdf_quarters", "pdf_tried", "date_lookups", "bse_codes"):
         if not feed.get(key):
             feed.pop(key, None)
     if "pdf_tried" not in feed:
@@ -549,8 +565,9 @@ def main() -> int:
     ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
                                           "source", "unparsed_samples", "pdf_reader", "pdf_samples", "pdf_checks")
                if key in feed}
-    for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried", "date_lookups"):
-        if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried", "date_lookups"):
+    for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried", "date_lookups",
+                "bse_codes"):
+        if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried", "date_lookups", "bse_codes"):
             continue
         ordered[key] = dict(sorted((feed.get(key) or {}).items()))
     if _unchanged(previous, ordered):

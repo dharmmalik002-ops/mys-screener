@@ -968,7 +968,7 @@ def trigger_github_lookalike_if_stale() -> None:
 
 
 _results_dispatches: dict[str, int] = {}
-RESULTS_MAX_DISPATCHES_PER_DAY = 40  # 08:00-24:00 IST at :05 and :35 is 32
+RESULTS_MAX_DISPATCHES_PER_DAY = 48  # 32 half-hourly slots 08:00-24:00 IST + 8 hourly overnight
 
 
 def trigger_github_results_if_stale() -> None:
@@ -976,9 +976,9 @@ def trigger_github_results_if_stale() -> None:
 
     Results are declared through the day, and the page should show one
     within about half an hour of the announcement. GitHub starts this
-    repository's schedules late (sometimes by hours), so from 8 AM to
-    midnight IST the Space sends a ``repository_dispatch`` (``results-trigger``)
-    at :05 and :35, unless the committed feed shows BSE was read in the last
+    repository's schedules late (sometimes by hours, sometimes not at all), so
+    the Space sends a ``repository_dispatch`` (``results-trigger``) at :05 and
+    :35 from 8 AM to midnight IST and at :05 overnight, unless the committed feed shows BSE was read in the last
     20 minutes. A run that finds nothing new writes nothing, so the feed's
     stamp is the last run that changed something and a quiet day dispatches
     every time — which is the point. Capped per day so a broken run cannot loop.
@@ -989,7 +989,7 @@ def trigger_github_results_if_stale() -> None:
 
     try:
         now_ist = datetime.now(IST)
-        if not _rf.in_run_hours(now_ist):
+        if not _rf.dispatch_slot(now_ist):
             return
         today = now_ist.date().isoformat()
         if _results_dispatches.get(today, 0) >= RESULTS_MAX_DISPATCHES_PER_DAY:
@@ -1140,18 +1140,18 @@ async def lifespan(app: FastAPI):
             replace_existing=True,
         )
         # The Results page: start the GitHub run every half hour from 8 AM to
-        # midnight IST (any day — results are declared on Saturdays too), and
-        # pull what it committed every 10 minutes (a conditional request, so
-        # an unchanged file costs nothing).
+        # midnight IST and hourly overnight (any day — results are declared on
+        # Saturdays too), and pull what it committed every 10 minutes (a
+        # conditional request, so an unchanged file costs nothing).
         scheduler.add_job(
             trigger_github_results_if_stale,
-            CronTrigger(hour="8-23", minute="5,35", timezone=IST),
+            CronTrigger(minute="5,35", timezone=IST),
             id="results_github_trigger",
             replace_existing=True,
         )
         scheduler.add_job(
             pull_results_feed_job,
-            CronTrigger(hour="0,8-23", minute="*/10", timezone=IST),
+            CronTrigger(minute="*/10", timezone=IST),
             id="results_feed_pull",
             replace_existing=True,
         )

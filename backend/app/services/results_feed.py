@@ -30,8 +30,10 @@ shows consolidated results.
 from __future__ import annotations
 
 import calendar
+import json
 import logging
 import os
+import re
 import threading
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -586,7 +588,10 @@ def season_start(day: date) -> date:
 # declared at 11 AM is on the page by about 11:30 rather than waiting for the
 # evening. Shared by the workflow's --if-due check and the Space's watchdog.
 RUN_INTERVAL_MINUTES = 30
-RUN_HOURS = (8, 24)  # IST: from 08:00 to midnight; results are declared through the evening
+RUN_HOURS = (8, 24)  # IST: every half hour from 08:00 to midnight, when results are declared
+# Overnight the run still goes once an hour: the exchanges publish the evening's
+# structured figures and XBRL late at night, and GitHub's own cron cannot be
+# relied on to fire at all (it has gone whole nights without starting).
 # A run within this many minutes of the last one is a duplicate (the Space's
 # trigger and GitHub's own cron both fire); anything older is owed a run.
 RUN_DEDUPE_MINUTES = 20
@@ -594,6 +599,12 @@ RUN_DEDUPE_MINUTES = 20
 
 def in_run_hours(now_ist: datetime) -> bool:
     return RUN_HOURS[0] <= now_ist.hour < RUN_HOURS[1]
+
+
+def dispatch_slot(now_ist: datetime) -> bool:
+    """Whether the Space should start a run now: every half hour in the day,
+    on the first half hour only overnight."""
+    return in_run_hours(now_ist) or now_ist.minute < 30
 
 
 def run_due(filings_checked_at: Any, now_ist: datetime) -> bool:
@@ -609,3 +620,101 @@ def run_due(filings_checked_at: Any, now_ist: datetime) -> bool:
     if checked.tzinfo is None:
         checked = checked.replace(tzinfo=timezone.utc)
     return (now_ist - checked).total_seconds() >= RUN_DEDUPE_MINUTES * 60
+
+
+# ── which companies the results jobs cover ──────────────────────────────────
+#
+# The page lists every company in the snapshots (1,816 on 2026-10-12), but the
+# jobs used to cover only `free_universe.json` (1,581): 62 companies of
+# Rs 1,000 cr+ — the year's IPOs (MANIPALHOS, HEROMOTORS, MOLBIO …) and a few
+# older names (AKZOINDIA, RELINFRA) — were never read, so they never showed.
+
+
+def _read_json(path: Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def result_symbols(data_dir: Path) -> set[str]:
+    """Every symbol the page can list: the universe, the snapshots and the
+    year's listings (under their current symbol)."""
+    out = {str(r.get("symbol") or "").upper() for r in _read_json(data_dir / "free_universe.json") or []}
+    out |= {str(r.get("symbol") or "").upper() for r in _read_json(data_dir / "free_snapshots.json") or []
+            if isinstance(r, dict)}
+    ipo = _read_json(data_dir / "ipo_listings.json") or {}
+    aliases = {str(k).upper(): str(v).upper() for k, v in (ipo.get("aliases") or {}).items()}
+    out |= {aliases.get(str(s).upper(), str(s).upper()) for s in ipo.get("listings") or {}}
+    out.discard("")
+    return out
+
+
+def result_codes(data_dir: Path, feed: dict | None = None) -> dict[str, str]:
+    """symbol -> BSE scrip code: the universe's, then the year's listings'
+    (BSE's own IPO list), then codes learned from BSE's Result filings and
+    checked against the company's name (`learn_codes`)."""
+    codes: dict[str, str] = {}
+    for row in _read_json(data_dir / "free_universe.json") or []:
+        if row.get("symbol") and row.get("bse_code"):
+            codes[str(row["symbol"]).upper()] = str(row["bse_code"])
+    ipo = _read_json(data_dir / "ipo_listings.json") or {}
+    aliases = {str(k).upper(): str(v).upper() for k, v in (ipo.get("aliases") or {}).items()}
+    for symbol, row in (ipo.get("listings") or {}).items():
+        if isinstance(row, dict) and row.get("bse_code"):
+            codes.setdefault(aliases.get(str(symbol).upper(), str(symbol).upper()), str(row["bse_code"]))
+    for symbol, row in ((feed or {}).get("bse_codes") or {}).items():
+        if isinstance(row, dict) and row.get("code"):
+            codes.setdefault(str(symbol).upper(), str(row["code"]))
+    # One code, one company: a code claimed twice keeps its first owner.
+    seen: dict[str, str] = {}
+    for symbol, code in list(codes.items()):
+        if code in seen:
+            codes.pop(symbol)
+        else:
+            seen[code] = symbol
+    return codes
+
+
+_NAME_FILLER = {"ltd", "limited", "the", "co", "company", "corp", "corporation", "inc", "pvt", "private", "and"}
+
+
+def _name_words(name: str) -> list[str]:
+    words = re.sub(r"[^a-z0-9 ]", " ", str(name or "").lower().replace("&", " and ")).split()
+    return [w for w in words if w not in _NAME_FILLER]
+
+
+def same_company(a: str, b: str) -> bool:
+    """Two spellings of one company's name ("Reliance Infrastructure Ltd" /
+    "Reliance Infrastructure Limited"): the first two words agree."""
+    wa, wb = _name_words(a), _name_words(b)
+    return bool(wa and wb) and wa[:2] == wb[:2]
+
+
+def learn_codes(filings: Iterable[tuple], codes: dict[str, str], names: dict[str, str],
+                aliases: dict[str, str] | None = None) -> dict[str, dict[str, str]]:
+    """BSE codes for companies the page lists but no file maps, read from
+    BSE's own filings: each carries the company's BSE page
+    (".../stock-share-price/<name>/<scrip id>/<code>/") and its name. Taken
+    only when the scrip id is a listed symbol with no code yet AND the names
+    agree. Returns {symbol: {"code", "name"}}."""
+    taken = set(codes.values())
+    learned: dict[str, dict[str, str]] = {}
+    for filing in filings:
+        if len(filing) < 5:
+            continue
+        code, url, long_name = str(filing[0]), str(filing[3] or ""), str(filing[4] or "")
+        if not code or code in taken:
+            continue
+        match = re.search(r"/stock-share-price/[^/]+/([^/]+)/(\d+)/?", url)
+        if not match or match.group(2) != code:
+            continue
+        symbol = match.group(1).upper()
+        symbol = (aliases or {}).get(symbol, symbol)
+        if symbol in codes or symbol in learned or symbol not in names:
+            continue
+        if not same_company(names[symbol], long_name):
+            continue
+        learned[symbol] = {"code": code, "name": long_name}
+        taken.add(code)
+    return learned

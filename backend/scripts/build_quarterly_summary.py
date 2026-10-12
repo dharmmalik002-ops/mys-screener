@@ -30,6 +30,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services import bse_quarterly as bq  # noqa: E402
+from app.services import results_feed as rf  # noqa: E402
 from app.services.earnings_metrics import BSE_HEADERS  # noqa: E402
 from app.services.exchange_http import browser_session  # noqa: E402
 
@@ -58,7 +59,12 @@ def _get(endpoint: str, params: dict) -> dict | None:
     return None
 
 
+_deadline = float("inf")
+
+
 def update_company(symbol: str, code: str, existing: list[dict], refresh: bool) -> tuple[str, list[dict] | None, int]:
+    if time.monotonic() > _deadline:
+        return symbol, None, 0  # out of time: kept as it is, read next run
     listing = _get("CorprateResultbeta/w", {"scripcode": code})
     if listing is None:
         return symbol, None, 0
@@ -95,10 +101,18 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--refresh", action="store_true")
+    # Stop starting companies after this long, so the file is written before
+    # the workflow's own timeout (900 s) kills the run with nothing saved.
+    parser.add_argument("--max-seconds", type=float, default=720)
     args = parser.parse_args()
+    global _deadline
+    _deadline = time.monotonic() + args.max_seconds
 
-    universe = json.loads((BACKEND_ROOT / "data" / "free_universe.json").read_text(encoding="utf-8"))
-    pairs = [(str(r["symbol"]).upper(), str(r["bse_code"])) for r in universe if r.get("symbol") and r.get("bse_code")]
+    # Every company with a known BSE code: the universe, the year's listings
+    # and the codes the results feed learned from BSE's own filings.
+    data = BACKEND_ROOT / "data"
+    feed = json.loads((data / "results_feed.json").read_text(encoding="utf-8")) if (data / "results_feed.json").exists() else {}
+    pairs = sorted(rf.result_codes(data, feed).items())
     if args.limit:
         pairs = pairs[: args.limit]
 
@@ -109,6 +123,9 @@ def main() -> int:
         except ValueError:
             previous = {}
     symbols: dict[str, dict] = dict(previous.get("symbols") or {})
+    # Companies with no figures yet first (the year's listings, codes just
+    # learned), so a run cut short by the deadline still covers them.
+    pairs.sort(key=lambda pair: (pair[0] in symbols, pair[0]))
 
     started = time.time()
     done = failed = fetched_total = 0

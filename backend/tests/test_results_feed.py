@@ -229,6 +229,10 @@ def test_a_run_is_owed_every_half_hour_through_the_day():
     assert rf.in_run_hours(datetime(2026, 10, 10, 8, 5, tzinfo=IST))
     assert rf.in_run_hours(datetime(2026, 10, 10, 23, 35, tzinfo=IST))
     assert not rf.in_run_hours(datetime(2026, 10, 10, 3, 5, tzinfo=IST))
+    # Overnight the Space still starts a run once an hour.
+    assert rf.dispatch_slot(datetime(2026, 10, 10, 3, 5, tzinfo=IST))
+    assert not rf.dispatch_slot(datetime(2026, 10, 10, 3, 35, tzinfo=IST))
+    assert rf.dispatch_slot(datetime(2026, 10, 10, 14, 35, tzinfo=IST))
 
 
 # ── the evening script, against a fake BSE ──────────────────────────────────
@@ -454,3 +458,62 @@ def test_a_quarter_with_figures_but_no_date_is_dated_by_a_company_search(files, 
     asked.clear()
     job._find_declared_dates_real(feed, summary, {"XYZ": "500002"}, date(2026, 10, 10))
     assert "500002" not in asked
+
+
+# ── coverage: every company the page lists, not only the scanner universe ───
+
+
+def test_the_jobs_cover_snapshots_and_the_year_s_listings(tmp_path):
+    (tmp_path / "free_universe.json").write_text(json.dumps([{"symbol": "ABC", "bse_code": "500001"}]))
+    (tmp_path / "free_snapshots.json").write_text(json.dumps([{"symbol": "ABC"}, {"symbol": "AKZOINDIA"}]))
+    (tmp_path / "ipo_listings.json").write_text(json.dumps({
+        "aliases": {"AMIRCHAND": "AEROPLANE"},
+        "listings": {"MANIPALHOS": {"bse_code": "544900"}, "AMIRCHAND": {"bse_code": "544800"},
+                     "CLASH": {"bse_code": "500001"}}}))
+    assert rf.result_symbols(tmp_path) == {"ABC", "AKZOINDIA", "MANIPALHOS", "AEROPLANE", "CLASH"}
+    feed = {"bse_codes": {"AKZOINDIA": {"code": "500710", "name": "Akzo Nobel India Ltd"}}}
+    codes = rf.result_codes(tmp_path, feed)
+    # A code is one company's: the universe's owner keeps it.
+    assert codes == {"ABC": "500001", "MANIPALHOS": "544900", "AEROPLANE": "544800", "AKZOINDIA": "500710"}
+
+
+def test_a_bse_code_is_learned_only_when_the_filing_names_the_same_company():
+    names = {"AKZOINDIA": "Akzo Nobel India Limited", "RELINFRA": "Reliance Infrastructure Limited",
+             "ABC": "Abc Limited"}
+    page = "https://www.bseindia.com/stock-share-price/{}/{}/{}/"
+    filings = [
+        ("500710", None, "", page.format("akzo-nobel-india-ltd", "akzoindia", "500710"), "AKZO NOBEL INDIA LTD."),
+        # Same scrip id, a different company's name: not taken.
+        ("500390", None, "", page.format("reliance-power-ltd", "relinfra", "500390"), "Reliance Power Ltd"),
+        # The page's code is not the filing's: not taken.
+        ("532939", None, "", page.format("x", "relinfra", "500390"), "Reliance Infrastructure Ltd"),
+        # Already mapped.
+        ("500009", None, "", page.format("abc-ltd", "abc", "500009"), "ABC Ltd"),
+        # An old three-field filing row (no page): ignored.
+        ("500111", None, ""),
+    ]
+    assert rf.learn_codes(filings, {"ABC": "500001"}, names) == {
+        "AKZOINDIA": {"code": "500710", "name": "AKZO NOBEL INDIA LTD."}}
+
+
+def test_a_company_outside_the_universe_is_dated_once_its_code_is_learned(files, job, monkeypatch):
+    root = job.BACKEND_ROOT
+    (root / "data" / "free_snapshots.json").write_text(json.dumps([
+        {"symbol": "ABC"}, {"symbol": "AKZOINDIA", "name": "Akzo Nobel India Limited"}]))
+    page = "https://www.bseindia.com/stock-share-price/akzo-nobel-india-ltd/akzoindia/500710/"
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: [
+        ("500710", datetime(2026, 10, 10, 16, 5), "", page, "Akzo Nobel India Ltd")])
+
+    def fake_get(url, params):
+        assert params.get("scripcode", params.get("Scrip_cd")) == "500710"
+        if "CorprateResultbeta" in url:
+            return {"Table": [{"Q1": "Sep-26;X;131.00;"}]}
+        return {"table1": [{"fld_desc": "Net Sales/Revenue From Operations", "Value": "10500"},
+                           {"fld_desc": "Net Profit", "Value": "1200"}, {"fld_desc": "Basic EPS", "Value": "26.3"}]}
+
+    monkeypatch.setattr(job, "_get", fake_get)
+    assert job.main() == 0
+    feed = json.loads(files.feed.read_text())
+    assert feed["bse_codes"] == {"AKZOINDIA": {"code": "500710", "name": "Akzo Nobel India Ltd"}}
+    assert feed["declared"]["AKZOINDIA"] == {"Sep 2026": "2026-10-10T16:05"}
+    assert feed["quarters"]["AKZOINDIA"]["quarters"][0]["sales_crore"] == 1050.0
