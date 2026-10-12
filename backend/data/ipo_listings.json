@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-09",
+ "as_of": "2026-10-12",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,14 +7,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-09",
+ "bse_ipos_as_of": "2026-10-12",
  "bse_ipos": {
-  "544570": {
-   "name": "WeWork India Management Limited",
-   "symbol": "WEWORK",
-   "listing_date": "2025-10-10",
-   "issue_price": 648.0
-  },
   "544574": {
    "name": "Tata Capital Limited",
    "symbol": "TATACAP",
@@ -822,12 +816,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544962",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 32.0,
    "sector": "Consumer Services",
    "sub_sector": "E-Retail/ E-Commerce",
-   "shares_crore": 54.418817
+   "shares_crore": 54.418817,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 32.0
   },
   "ACGL": {
    "listing_date": "2026-08-17",
@@ -866,12 +860,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544950",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 134.0,
    "sector": "Automobile and Auto Components",
    "sub_sector": "Auto Components & Equipments",
-   "shares_crore": 4.480835
+   "shares_crore": 4.480835,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 134.0
   },
   "ADVAIT": {
    "listing_date": "2026-01-20",
@@ -954,6 +948,16 @@
    "sector": "Services",
    "sub_sector": "Logistics Solution Provider",
    "shares_crore": 98.278281,
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "AGOL": {
+   "listing_date": "2026-10-12",
+   "name": "Ashapuri Gold Ornament Limited",
+   "isin": "INE05FR01029",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "542579",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -1109,12 +1113,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544952",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 405.0,
    "sector": "Capital Goods",
    "sub_sector": "Iron & Steel Products",
-   "shares_crore": 7.723477
+   "shares_crore": 7.723477,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 405.0
   },
   "APOORVA": {
    "listing_date": "2026-08-17",
@@ -1184,12 +1188,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544951",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 375.0,
    "sector": "Information Technology",
    "sub_sector": "IT Enabled Services",
-   "shares_crore": 3.173158
+   "shares_crore": 3.173158,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 375.0
   },
   "ARYAMAN": {
    "listing_date": "2026-08-17",
@@ -1346,6 +1350,16 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539018",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "BELDING": {
+   "listing_date": "2026-10-12",
+   "name": "Belding India Limited",
+   "isin": "INE363L01045",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "513307",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -1534,7 +1548,7 @@
    "listing_date": "2026-04-20",
    "name": "Bhilwara Technical Textiles Limited",
    "isin": "INE274K01012",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533108",
    "ipo": false,
@@ -1981,12 +1995,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544945",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 362.0,
    "sector": "Services",
    "sub_sector": "Diversified Commercial Services",
-   "shares_crore": 16.853102
+   "shares_crore": 16.853102,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 362.0
   },
   "ELITECON": {
    "listing_date": "2026-04-20",
@@ -2169,12 +2183,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544957",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 139.0,
    "sector": "Capital Goods",
    "sub_sector": "Iron & Steel Products",
-   "shares_crore": 7.534933
+   "shares_crore": 7.534933,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 139.0
   },
   "GICL": {
    "listing_date": "2026-02-18",
@@ -2654,7 +2668,7 @@
    "listing_date": "2026-09-23",
    "name": "Jindal Supreme (India) Limited",
    "isin": "INE1DLO01028",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "544935",
    "sector": "Capital Goods",
@@ -3480,12 +3494,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544953",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 34.0,
    "sector": "Financial Services",
    "sub_sector": "Financial Technology (Fintech)",
-   "shares_crore": 176.023174
+   "shares_crore": 176.023174,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 34.0
   },
   "MPDL": {
    "listing_date": "2026-08-17",
@@ -3646,12 +3660,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544974",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 75.0,
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
-   "shares_crore": 5.75935
+   "shares_crore": 5.75935,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 75.0
   },
   "NOVARTIND": {
    "listing_date": "2026-04-20",
@@ -3762,12 +3776,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544960",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 272.0,
    "sector": "Telecommunication",
    "sub_sector": "Telecom -  Equipment & Accessories",
-   "shares_crore": 11.379966
+   "shares_crore": 11.379966,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 272.0
   },
   "ORIRAIL": {
    "listing_date": "2026-08-17",
@@ -4271,12 +4285,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544959",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 305.0,
    "sector": "Realty",
    "sub_sector": "Residential, Commercial Projects",
-   "shares_crore": 14.778895
+   "shares_crore": 14.778895,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 305.0
   },
   "SAB": {
    "listing_date": "2026-08-17",
@@ -4464,12 +4478,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544963",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 167.0,
    "sector": "Financial Services",
    "sub_sector": "Stockbroking & Allied",
-   "shares_crore": 2.115321
+   "shares_crore": 2.115321,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 167.0
   },
   "SHANKESH": {
    "listing_date": "2026-08-25",
@@ -4730,6 +4744,16 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "SPELS": {
+   "listing_date": "2026-08-17",
+   "name": "SPEL Semiconductor Limited",
+   "isin": "INE252A01019",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "517166",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
    "name": "Sri KPR Industries Limited",
@@ -4747,12 +4771,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544965",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 130.0,
    "sector": "Information Technology",
    "sub_sector": "IT Enabled Services",
-   "shares_crore": 6.427143
+   "shares_crore": 6.427143,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 130.0
   },
   "SRTL": {
    "listing_date": "2026-03-02",
@@ -4945,12 +4969,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544949",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 185.0,
    "sector": "Construction",
    "sub_sector": "Civil Construction",
-   "shares_crore": 3.412011
+   "shares_crore": 3.412011,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 185.0
   },
   "SWISSMLTRY": {
    "listing_date": "2026-08-17",
@@ -4993,7 +5017,7 @@
    "listing_date": "2026-04-20",
    "name": "Tamboli Industries Limited",
    "isin": "INE864J01012",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "533170",
    "ipo": false,
@@ -5188,6 +5212,16 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "505978",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "TRIVENIPT": {
+   "listing_date": "2026-10-12",
+   "name": "Triveni Power Transmission Limited",
+   "isin": "INE2WKE01011",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544824",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -5473,12 +5507,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "544973",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 220.0,
    "sector": "Construction",
    "sub_sector": "Civil Construction",
-   "shares_crore": 2.639114
+   "shares_crore": 2.639114,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 220.0
   },
   "VOEPL": {
    "listing_date": "2026-07-01",
@@ -5556,20 +5590,6 @@
    "bse_code": "500365",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "WEWORK": {
-   "listing_date": "2025-10-10",
-   "name": "WeWork India Management Limited",
-   "isin": "INE085001019",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544570",
-   "sector": "Services",
-   "sub_sector": "Diversified Commercial Services",
-   "shares_crore": 13.887017,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 648.0
   },
   "WHBRADY": {
    "listing_date": "2026-08-17",
