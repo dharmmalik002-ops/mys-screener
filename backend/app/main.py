@@ -797,6 +797,33 @@ BHAVCOPY_MAX_DISPATCHES_PER_DAY = 10
 _bhavcopy_dispatches: list[datetime] = []
 
 
+# NSE's EOD file is usually up by early evening; before this hour a missing
+# NSE row is expected, not a reason to re-run.
+NSE_BREADTH_RETRY_FROM_HOUR = 17
+
+
+def _nse_breadth_last_date(data_dir: Path) -> str:
+    import json as _json
+
+    try:
+        doc = _json.loads((data_dir / "nse_breadth_history.json").read_text(encoding="utf-8"))
+        days = doc.get("days") if isinstance(doc, dict) else None
+        return str(days[-1].get("date") or "") if isinstance(days, list) and days else ""
+    except Exception:
+        return ""
+
+
+def _bhavcopy_run_needed(patch_date: str, nse_date: str, now_ist: datetime) -> bool:
+    """Today's price patch is missing — or it is here but NSE's breadth row for
+    today is not, past the hour NSE's file is normally up. NSE publishes after
+    BSE, so a run that went out first leaves the day's NSE breadth (and the XP
+    score) behind, and nothing else re-runs the job that evening."""
+    today_iso = now_ist.date().isoformat()
+    if patch_date != today_iso:
+        return True
+    return now_ist.hour >= NSE_BREADTH_RETRY_FROM_HOUR and nse_date < today_iso
+
+
 def _bhavcopy_dispatch_allowed(now_ist: datetime) -> bool:
     today = [stamp for stamp in _bhavcopy_dispatches if stamp.date() == now_ist.date()]
     _bhavcopy_dispatches[:] = today
@@ -833,9 +860,15 @@ def trigger_github_bhavcopy_if_stale() -> None:
             patch_date = str(_json.loads(patch_path.read_text(encoding="utf-8")).get("date") or "")
         except Exception:
             patch_date = ""
-        if patch_date == today_iso:
+        nse_date = _nse_breadth_last_date(patch_path.parent)
+        if not _bhavcopy_run_needed(patch_date, nse_date, now_ist):
             logger.info("Bhavcopy trigger watchdog: already current for %s", today_iso)
             return
+        if patch_date == today_iso:
+            logger.info(
+                "Bhavcopy trigger watchdog: prices current for %s but NSE breadth ends %s — re-running",
+                today_iso, nse_date or "<unknown>",
+            )
 
         token = (os.environ.get("GITHUB_PAT") or "").strip()
         if not token:

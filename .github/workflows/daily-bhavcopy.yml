@@ -62,7 +62,16 @@ jobs:
           python backend/scripts/generate_bhavcopy_patch.py
           # Capture whether the patch (or the price-band-changes store, which
           # the same script maintains) changed — new date vs already current.
-          if git diff --quiet backend/data/bhavcopy_patch.json backend/data/price_band_changes.json && git diff --quiet -- backend/data/price_bands.json backend/data/ipo_listings.json && ! git ls-files --others --exclude-standard backend/data/price_bands.json backend/data/ipo_listings.json | grep -q .; then
+          # NSE publishes its file after BSE, so a later run on a day whose
+          # prices are already current exists to add NSE's breadth row (and
+          # the XP score built from it) — that must be committed too. Compared
+          # on the newest day only: the file is rewritten with a fresh
+          # generated_at on every run.
+          nse_last() { python -c 'import json,sys; d=json.load(sys.stdin).get("days") or [{}]; print(d[-1].get("date",""))' 2>/dev/null || true; }
+          NSE_BEFORE=$(git show HEAD:backend/data/nse_breadth_history.json 2>/dev/null | nse_last) || true
+          NSE_AFTER=$(nse_last < backend/data/nse_breadth_history.json 2>/dev/null) || true
+          echo "NSE breadth newest day: ${NSE_BEFORE:-none} -> ${NSE_AFTER:-none}"
+          if [ "$NSE_BEFORE" = "$NSE_AFTER" ] && git diff --quiet backend/data/bhavcopy_patch.json backend/data/price_band_changes.json && git diff --quiet -- backend/data/price_bands.json backend/data/ipo_listings.json && ! git ls-files --others --exclude-standard backend/data/price_bands.json backend/data/ipo_listings.json | grep -q .; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
