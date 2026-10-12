@@ -272,15 +272,41 @@ def change_pct(current: float | None, prior: float | None) -> float | None:
     return round((current - prior) / abs(prior) * 100, 2)
 
 
+def pdf_row(symbol: str, basis: str, feed: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """A quarter read from the company's results PDF (services/result_pdf.py)
+    while neither exchange has published its structured figures yet."""
+    feed = bse_quarterly.load_feed() if feed is None else feed
+    entry = (feed.get("pdf_quarters") or {}).get(symbol.upper()) or {}
+    row = entry.get(basis)
+    if not isinstance(row, dict) or not row.get("period"):
+        return None
+    document = entry.get("document")
+    url = f"https://www.bseindia.com/xml-data/corpfiling/AttachLive/{document}" if document else None
+    return dict(row, source="pdf", result_document_url=url)
+
+
 def standalone_rows(symbol: str) -> list[dict[str, Any]]:
     """BSE's standalone quarters, with NSE's standalone filings (their own
     quarters and comparative columns) filling the quarters BSE lacks — a
     recent listing's year-ago quarter, a quarter BSE never structured.
-    Where both have a quarter, BSE's is kept."""
+    Where both have a quarter, BSE's is kept; a quarter read from the results
+    PDF fills in only where neither exchange has it yet."""
     by_period = {row["period"]: row for row in bse_quarterly.results_for(symbol) if row.get("period")}
     for row in consolidated_results.results_for(symbol, "standalone"):
         by_period.setdefault(row["period"], row)
+    if (row := pdf_row(symbol, "standalone")) is not None:
+        by_period.setdefault(row["period"], row)
     return sorted(by_period.values(), key=lambda row: bse_quarterly._period_key(row["period"]), reverse=True)
+
+
+def consolidated_rows(symbol: str) -> list[dict[str, Any]]:
+    """NSE's consolidated quarters, with the results PDF's quarter where NSE
+    has not published that one yet."""
+    rows = consolidated_results.results_for(symbol)
+    row = pdf_row(symbol, "consolidated")
+    if row is not None and row["period"] not in {r["period"] for r in rows}:
+        rows = sorted(rows + [row], key=lambda r: bse_quarterly._period_key(r["period"]), reverse=True)
+    return rows
 
 
 def _metric_block(by_period: dict[str, dict[str, Any]], period: str, key: str) -> dict[str, Any]:
@@ -313,6 +339,8 @@ def basis_block(rows: list[dict[str, Any]], period: str, market_cap: float | Non
         "pe": pe,
         "peg": peg,
         "result_url": current.get("result_document_url"),
+        # Read from the results PDF until the exchange's own figures arrive.
+        "from_pdf": current.get("source") == "pdf",
     }
 
 
@@ -359,13 +387,14 @@ def build_quarterly(snapshots: list[Any], date_from: date, date_to: date) -> dic
     # A quarter declared inside the range ended at most MAX_DAYS before it.
     oldest_end = date_from - timedelta(days=MAX_DAYS_AFTER_QUARTER)
     nse_symbols = consolidated_results.load().get("symbols") or {}
-    consolidated_symbols = {s for s, e in nse_symbols.items() if e.get("quarters")}
-    for symbol in sorted(bse_quarterly.symbols() | set(nse_symbols)):
+    pdf_symbols = set(feed.get("pdf_quarters") or {})
+    consolidated_symbols = {s for s, e in nse_symbols.items() if e.get("quarters")} | pdf_symbols
+    for symbol in sorted(bse_quarterly.symbols() | set(nse_symbols) | pdf_symbols):
         snapshot = by_symbol.get(symbol)
         if snapshot is None:
             continue
         rows = standalone_rows(symbol)
-        cons = consolidated_results.results_for(symbol) if symbol in consolidated_symbols else []
+        cons = consolidated_rows(symbol) if symbol in consolidated_symbols else []
         periods: list[str] = []
         for row in rows[:3] + cons[:3]:
             if row.get("period") and row["period"] not in periods:
@@ -451,7 +480,7 @@ def build_upcoming(snapshots: list[Any], today: date, days: int = 30) -> dict[st
             "cap_bucket": buckets.get(snapshot.symbol.upper()),
             "date": day.isoformat(),
             "standalone": _last_quarter(standalone_rows(symbol), snapshot.market_cap_crore),
-            "consolidated": _last_quarter(consolidated_results.results_for(symbol), snapshot.market_cap_crore),
+            "consolidated": _last_quarter(consolidated_rows(symbol), snapshot.market_cap_crore),
         })
     items.sort(key=lambda item: (item["date"], -(item["market_cap_crore"] or 0)))
     return {"items": items, "calendar_updated_at": payload.get("updated_at"), "days": days}

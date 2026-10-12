@@ -6685,6 +6685,8 @@ export type ResultBasisBlock = {
   pe: number | null;
   peg: number | null;
   result_url: string | null;
+  /** Read from the results PDF; the exchange's structured figures are not out yet. */
+  from_pdf?: boolean;
 };
 
 export type QuarterlyResultEntry = {

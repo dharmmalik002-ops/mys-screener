@@ -110,7 +110,7 @@ def fetch_filings(start: date, end: date) -> list[tuple[str, datetime]] | None:
                     when = datetime.fromisoformat(stamp[:19])
                 except ValueError:
                     continue
-                out.append((str(item.get("SCRIP_CD") or ""), when))
+                out.append((str(item.get("SCRIP_CD") or ""), when, str(item.get("ATTACHMENTNAME") or "").strip()))
             rows += len(table)
             if not table or rows >= total:
                 break
@@ -126,6 +126,104 @@ VOLATILE_KEYS = ("generated_at", "filings_checked_at")
 def _unchanged(before: dict, after: dict) -> bool:
     strip = lambda doc: {k: v for k, v in doc.items() if k not in VOLATILE_KEYS}  # noqa: E731
     return bool(before) and json.dumps(strip(before), sort_keys=True) == json.dumps(strip(after), sort_keys=True)
+
+
+ATTACH_URLS = ("https://www.bseindia.com/xml-data/corpfiling/AttachLive/{name}",
+                "https://www.bseindia.com/xml-data/corpfiling/AttachHis/{name}")
+MAX_DOCS = 6
+PDF_KEEP_DAYS = 45
+
+
+def _download_pdf(name: str) -> bytes | None:
+    for template in ATTACH_URLS:
+        try:
+            response = _session().get(template.format(name=name), timeout=60)
+        except Exception:  # noqa: BLE001 - try the archive copy, then give up
+            continue
+        if response.status_code == 200 and response.content[:5] == b"%PDF-":
+            return response.content
+    return None
+
+
+def read_result_pdfs(feed: dict, docs_of: dict[tuple[str, str], list[str]], today: date) -> None:
+    """Read the figures from the results PDF of every filing still waiting
+    for BSE's structured numbers (services/result_pdf.py checks each figure
+    against the stored previous and year-ago quarters before taking it).
+    The exchanges' own figures replace these the moment they exist."""
+    from app.services import consolidated_results as cr
+    from app.services import result_pdf
+
+    docs = feed.setdefault("result_docs", {})
+    for (symbol, period), names in docs_of.items():
+        kept = docs.setdefault(symbol, {}).setdefault(period, [])
+        for name in names:
+            if name not in kept:
+                kept.append(name)
+        del kept[MAX_DOCS:]
+    pdfs = feed.setdefault("pdf_quarters", {})
+    # Waiting for BSE's structured figures, or declared but with no figures
+    # anywhere (BSE serves some NBFCs' and AMCs' schedules with no line items).
+    targets = {(symbol, period) for symbol, periods in (feed.get("pending") or {}).items() for period in periods}
+    for symbol, period in docs_of:
+        fresh = ((feed.get("quarters") or {}).get(symbol) or {}).get("quarters") or []
+        if not any(r.get("period") == period for r in fresh) and not any(
+                r["period"] == period and r.get("source") != "pdf" for r in rf.standalone_rows(symbol)):
+            targets.add((symbol, period))
+    for symbol, period in sorted(targets):
+        done = pdfs.get(symbol) or {}
+        if done.get("period") == period and done.get("standalone") and done.get("consolidated"):
+            continue
+        # Each PDF is read once: a scanned or unmatched one is not
+        # downloaded again every half hour while the filing waits.
+        tried = feed.setdefault("pdf_tried", {}).setdefault(symbol, {}).setdefault(period, [])
+        names = [n for n in (docs.get(symbol) or {}).get(period) or [] if n not in tried]
+        if not names:
+            continue
+        prev_label, year_label = rf._shift(period, -3), rf._shift(period, -12)
+        priors = {}
+        for basis, rows in (("standalone", rf.standalone_rows(symbol)), ("consolidated", cr.results_for(symbol))):
+            by_period = {row["period"]: row for row in rows if row.get("source") != "pdf"}
+            priors[basis] = (by_period.get(prev_label), by_period.get(year_label))
+        best: dict = {}
+        best_name = None
+        for name in names:
+            pdf = _download_pdf(name)
+            if pdf is None:
+                continue  # not marked tried: a failed download is retried next run
+            tried.append(name)
+            rows = result_pdf.read_quarter(result_pdf.extract_text(pdf), period, priors)
+            if len(rows) > len(best):
+                best, best_name = rows, name
+            if len(rows) == 2:
+                break
+        if best:
+            pdfs[symbol] = {"period": period, "read_at": today.isoformat(), **best, "document": best_name}
+            print(f"  {symbol} {period}: read from the results PDF ({', '.join(k for k in best if k != 'document')})",
+                  flush=True)
+    # Drop what the exchanges have caught up with, and anything old.
+    for symbol, entry in list(pdfs.items()):
+        period = entry.get("period")
+        # This run's fresh quarters are in `feed` only (not yet on disk).
+        fresh = ((feed.get("quarters") or {}).get(symbol) or {}).get("quarters") or []
+        have_standalone = any(r.get("period") == period for r in fresh) or any(
+            r["period"] == period and r.get("source") != "pdf" for r in rf.standalone_rows(symbol))
+        have_consolidated = any(r["period"] == period for r in cr.results_for(symbol))
+        stale = (today - date.fromisoformat(str(entry.get("read_at") or "1970-01-01"))).days > PDF_KEEP_DAYS
+        if stale or (have_standalone and (not entry.get("consolidated") or have_consolidated)):
+            pdfs.pop(symbol)
+    tried_all = feed.get("pdf_tried") or {}
+    for symbol in list(tried_all):
+        for period in list(tried_all[symbol]):
+            if (symbol, period) not in targets:
+                tried_all[symbol].pop(period)
+        if not tried_all[symbol]:
+            tried_all.pop(symbol)
+    for symbol in list(docs):
+        for period in list(docs[symbol]):
+            if (symbol, period) not in targets and (pdfs.get(symbol) or {}).get("period") != period:
+                docs[symbol].pop(period)
+        if not docs[symbol]:
+            docs.pop(symbol)
 
 
 def backfill_window(feed: dict, today: date) -> tuple[date, date] | None:
@@ -227,10 +325,13 @@ def main() -> int:
         backfill_ok = earlier is not None
         filings = (filings or []) + (earlier or [])
     per_symbol: dict[str, list[datetime]] = {}
-    for code, when in filings or []:
+    docs_of: dict[tuple[str, str], list[str]] = {}
+    for code, when, *rest in filings or []:
         symbol = by_code.get(code)
         if symbol:
             per_symbol.setdefault(symbol, []).append(when)
+            if rest and rest[0]:
+                docs_of.setdefault((symbol, rf.target_period(when)), []).append(rest[0])
     # Companies whose figures were not out yet last time: retry from the
     # filing time already recorded.
     for symbol, periods in (feed.get("pending") or {}).items():
@@ -295,6 +396,7 @@ def main() -> int:
             if n % 100 == 0 or n == len(local_of):
                 print(f"[{n}/{len(local_of)}] quarters fetched={fetched} failed={failed} {totals}", flush=True)
 
+    read_result_pdfs(feed, docs_of, today)
     rf.prune(feed, summary, today)
     stamp = datetime.now(timezone.utc).isoformat()
     feed["generated_at"] = stamp
@@ -308,7 +410,12 @@ def main() -> int:
     feed["source"] = "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)"
     ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
                                           "source", "unparsed_samples") if key in feed}
-    for key in ("declared", "pending", "quarters"):
+    for key in ("result_docs", "pdf_quarters", "pdf_tried"):
+        if not feed.get(key):
+            feed.pop(key, None)
+    for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried"):
+        if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried"):
+            continue
         ordered[key] = dict(sorted((feed.get(key) or {}).items()))
     if _unchanged(previous, ordered):
         # Nothing declared, dated or fetched since the last write: leave the
