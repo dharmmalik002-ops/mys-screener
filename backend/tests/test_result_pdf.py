@@ -81,3 +81,16 @@ def test_negative_figures_in_brackets():
 
 def test_a_scanned_pdf_reads_as_nothing():
     assert rp.extract_text(b"%PDF-1.4 not really a pdf") == ""
+
+
+def test_an_ocr_statement_that_lost_a_decimal_point_in_a_comparative():
+    # SWANDEF's scanned statement, as its OCR text reads (INR lakh): last
+    # quarter's 3,061.14 came out as "306114". The comparative still matches
+    # once the point is put back; the current figure is printed with its point.
+    text = "Revenue from Operations 6884.65 306114 3957.00 9.945.79 399850 2821387 Other income 563380\n"
+    rows = rp.read_quarter(text, "Sep 2026", {"standalone": (
+        {"sales_crore": 30.61}, {"sales_crore": 39.57})})
+    assert rows["standalone"]["sales_crore"] == 68.85
+    # The current figure itself without its point is ambiguous: not taken.
+    text = "Revenue from Operations 688465 3061.14 3957.00\n"
+    assert rp.read_quarter(text, "Sep 2026", {"standalone": ({"sales_crore": 30.61}, {"sales_crore": 39.57})}) == {}

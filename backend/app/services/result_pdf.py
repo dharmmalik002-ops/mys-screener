@@ -22,7 +22,7 @@ import io
 import re
 from typing import Any
 
-READER_VERSION = 2  # bump when the reader changes: every waiting PDF is read once more
+READER_VERSION = 3  # bump when the reader changes: every waiting PDF is read once more
 
 # Values in the PDF divided by this give crore.
 SCALES = (1.0, 100.0, 10.0, 1e7, 1e5)
@@ -70,6 +70,29 @@ def extract_text(pdf_bytes: bytes) -> str:
         return ""
 
 
+class _Num(float):
+    """A printed number that remembers whether it carried a decimal point."""
+
+    dotted: bool = False
+
+
+def _num(value: float, dotted: bool) -> _Num:
+    out = _Num(value)
+    out.dotted = dotted
+    return out
+
+
+def _readings(value: float, current_dotted: bool) -> list[float]:
+    """A comparative as printed, and — on an OCR'd statement whose figures
+    carry two decimals — the same digits with the lost decimal point put back
+    (SWANDEF 2026-10-12: 3,061.14 lakh read as "306114"). Only ever used to
+    MATCH a stored figure; the current quarter's own figure must be printed
+    unambiguously."""
+    if current_dotted and not getattr(value, "dotted", True) and abs(value) >= 100:
+        return [float(value), value / 100]
+    return [float(value)]
+
+
 def _numbers(text: str) -> list[float]:
     out: list[float] = []
     for token in _NUMBER.findall(_NOTE.sub(" ", text)):
@@ -81,7 +104,7 @@ def _numbers(text: str) -> list[float]:
             value = float(digits)
         except ValueError:
             continue
-        out.append(-value if negative else value)
+        out.append(_num(-value if negative else value, "." in digits))
     return out
 
 
@@ -126,8 +149,18 @@ def _best(lines: list[list[float]], prev: float | None, year_ago: float | None,
     for index, nums in enumerate(lines):
         for scale in scales:
             for start in range(0, min(3, len(nums) - 2)):
-                cur, p, y = (n / scale for n in nums[start:start + 3])
-                e1, e2 = _error(p, prev, eps, scale), _error(y, year_ago, eps, scale)
+                raw_cur, raw_p, raw_y = nums[start:start + 3]
+                dotted = bool(getattr(raw_cur, "dotted", True))
+                if not dotted and (getattr(raw_p, "dotted", False) or getattr(raw_y, "dotted", False)):
+                    # The comparatives carry decimals and the current figure
+                    # does not: OCR may have dropped its point, which would
+                    # read it 100 times too large. Ambiguous, so not taken.
+                    continue
+                cur = raw_cur / scale
+                e1 = min((e for e in (_error(v / scale, prev, eps, scale) for v in _readings(raw_p, dotted))
+                          if e is not None), default=None)
+                e2 = min((e for e in (_error(v / scale, year_ago, eps, scale) for v in _readings(raw_y, dotted))
+                          if e is not None), default=None)
                 if e1 is None or e2 is None:
                     continue
                 if best is None or e1 + e2 < best[0]:
