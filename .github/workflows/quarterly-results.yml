@@ -67,7 +67,8 @@ jobs:
 
       - name: Install dependencies
         # curl_cffi: BSE's Akamai refuses plain requests by TLS fingerprint (gotcha 159).
-        run: pip install requests curl_cffi
+        # pypdf: results are read from the filed PDF until BSE structures them.
+        run: pip install requests curl_cffi "pypdf>=5.0,<6.0"
 
       - name: Fetch the day's results from BSE
         id: standalone

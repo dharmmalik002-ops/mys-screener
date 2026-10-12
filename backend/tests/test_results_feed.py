@@ -360,6 +360,53 @@ def test_a_run_that_finds_nothing_new_writes_nothing(files, job, monkeypatch):
     assert files.feed.read_text() == before
 
 
+
+def test_a_result_is_read_from_its_pdf_while_bse_has_not_structured_it(files, job, monkeypatch):
+    # HCLTECH, 12 Oct 2026: the PDF was filed at 17:12; BSE's structured
+    # figures and NSE's XBRL came hours later. The card shows the PDF's
+    # figures once its comparatives match the stored quarters.
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [("500001", datetime(2026, 10, 10, 17, 12), "abc-result.pdf")])
+    monkeypatch.setattr(job, "_get", lambda url, params: {"Table": [{"Q1": "Jun-26;X;130.00;"}]})  # Sep not structured yet
+    monkeypatch.setattr(job, "_download_pdf", lambda name: b"%PDF-1.4" if name == "abc-result.pdf" else None)
+    from app.services import result_pdf
+    statement = ("Revenue from operations 120.00 110.00 100.00\n"
+                 "Net profit for the period 12.00 11.00 10.00\n"
+                 "Basic 1.20 1.10 1.00\n")
+    monkeypatch.setattr(result_pdf, "extract_text", lambda pdf: statement)
+    assert job.main() == 0
+    feed = json.loads(files.feed.read_text())
+    assert feed["pending"]["ABC"] == {"Sep 2026": "2026-10-10T17:12"}
+    row = feed["pdf_quarters"]["ABC"]["standalone"]
+    assert (row["sales_crore"], row["net_profit_crore"], row["eps"]) == (120.0, 12.0, 1.2)
+
+    page = rf.build_quarterly([_snap("ABC", 360.0)], date(2026, 10, 1), date(2026, 10, 11))
+    item = page["items"][0]
+    assert (item["symbol"], item["period"], item["declared_at"]) == ("ABC", "Sep 2026", "2026-10-10T17:12")
+    sales = item["standalone"]["metrics"]["sales"]
+    assert (sales["value"], sales["prev"], sales["year_ago"], sales["yoy_pct"]) == (120.0, 110.0, 100.0, 20.0)
+
+    # BSE structures the quarter: its figures replace the PDF's, which are dropped.
+    monkeypatch.setattr(job, "_get", lambda url, params: (
+        {"Table": [{"Q2": "Sep-26;X;131.00;", "Q1": "Jun-26;X;130.00;"}]} if "CorprateResultbeta" in url else
+        {"table1": [{"fld_desc": "Net Sales/Revenue From Operations", "Value": "1200"},
+                    {"fld_desc": "Net Profit", "Value": "120"}, {"fld_desc": "Basic EPS", "Value": "1.2"}]}))
+    assert job.main() == 0
+    feed = json.loads(files.feed.read_text())
+    assert "ABC" not in (feed.get("pdf_quarters") or {}) and "ABC" not in feed["pending"]
+
+
+def test_a_pdf_whose_comparatives_do_not_match_is_not_used(files, job, monkeypatch):
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [("500001", datetime(2026, 10, 10, 17, 12), "abc-result.pdf")])
+    monkeypatch.setattr(job, "_get", lambda url, params: {"Table": [{"Q1": "Jun-26;X;130.00;"}]})
+    monkeypatch.setattr(job, "_download_pdf", lambda name: b"%PDF-1.4")
+    from app.services import result_pdf
+    monkeypatch.setattr(result_pdf, "extract_text", lambda pdf: "Revenue from operations 130.00 115.00 99.00\n")
+    assert job.main() == 0
+    feed = json.loads(files.feed.read_text())
+    assert not (feed.get("pdf_quarters") or {}).get("ABC")
+    assert rf.build_quarterly([_snap("ABC", 360.0)], date(2026, 10, 1), date(2026, 10, 11))["items"] == []
+
+
 def test_nse_standalone_columns_fill_quarters_bse_lacks(files):
     # A recent listing: BSE holds only its quarters since listing; NSE's
     # filing carries the year-ago and previous quarters as columns.

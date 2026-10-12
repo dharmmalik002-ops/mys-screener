@@ -116,6 +116,14 @@ function ResultCard({ item, basis, onOpen }: { item: ShownResult; basis: Results
           </button>
           <span className="results-symbol">{item.symbol}</span>
           <BasisTag shown={item.shown_basis} wanted={basis} />
+          {item.from_pdf ? (
+            <span
+              className="results-basis is-fallback"
+              title="Read from the results PDF the company filed, checked against the exchange's figures for the previous and year-ago quarters. The exchange's own figures replace these when they are published."
+            >
+              From filing PDF
+            </span>
+          ) : null}
           <span className="results-declared" title="When the result was filed on BSE (IST)">
             {formatDeclared(item.declared_at)}
           </span>
