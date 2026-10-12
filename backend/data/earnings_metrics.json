@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-10-12T11:07:52.524599+00:00",
+  "generated_at": "2026-10-12T12:00:18.743193+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -3034,7 +3034,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.042,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.518,
       "best_pop_rvol": 1.042
     },
@@ -3045,7 +3045,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.96,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.072,
       "best_pop_rvol": 0.96
     },
