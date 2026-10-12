@@ -246,6 +246,9 @@ def job(files, monkeypatch):
     monkeypatch.setattr(module, "BACKEND_ROOT", root)
     monkeypatch.setattr(module, "_now", lambda: datetime(2026, 10, 10, 20, 0, tzinfo=IST))
     monkeypatch.setattr(sys, "argv", ["update_results_feed.py", "--workers", "2"])
+    # The per-company date search has its own test below.
+    module._find_declared_dates_real = module.find_declared_dates
+    monkeypatch.setattr(module, "find_declared_dates", lambda *a, **k: None)
     return module
 
 
@@ -423,3 +426,31 @@ def test_nse_standalone_columns_fill_quarters_bse_lacks(files):
     assert rows["Sep 2025"]["sales_crore"] == 40.0  # the gap is filled
     block = rf.basis_block(rf.standalone_rows("XYZ"), "Sep 2026", 100.0)
     assert block["metrics"]["sales"]["yoy_pct"] == 25.0
+
+
+def test_a_quarter_with_figures_but_no_date_is_dated_by_a_company_search(files, job, monkeypatch):
+    # FRONTSP, June 2026: BSE has the figures, but its filing was not under
+    # the "Result" category, so no date was found and the card was left off.
+    files.feed.write_text(json.dumps({"declared": {}, "pending": {}, "quarters": {}}))
+    files.calendar.write_text(json.dumps({}))
+    asked = []
+
+    def fake_get(url, params):
+        asked.append(params.get("strscrip"))
+        return {"Table": [
+            {"NEWS_DT": "2026-10-06T10:00:00", "NEWSSUB": "Intimation of board meeting to consider financial results"},
+            {"NEWS_DT": "2026-10-09T18:05:00", "NEWSSUB": "Unaudited Financial Results for the quarter ended September 30, 2026"},
+            {"NEWS_DT": "2026-10-09T19:00:00", "NEWSSUB": "Outcome of board meeting - financial results"},
+        ]}
+
+    monkeypatch.setattr(job, "_get", fake_get)
+    summary = json.loads(files.summary.read_text())["symbols"]
+    feed = {"declared": {}, "pending": {}}
+    job._find_declared_dates_real(feed, summary, {"XYZ": "500002", "ABC": "500001"}, date(2026, 10, 10))
+    # The earliest results filing that is not an intimation of a meeting.
+    assert feed["declared"]["XYZ"] == {"Sep 2026": "2026-10-09T18:05"}
+    assert feed["date_lookups"]["XYZ"] == {"Sep 2026": "2026-10-09T18:05"}
+    # Looked up once: a second pass asks BSE nothing for XYZ.
+    asked.clear()
+    job._find_declared_dates_real(feed, summary, {"XYZ": "500002"}, date(2026, 10, 10))
+    assert "500002" not in asked
