@@ -393,6 +393,10 @@ def test_a_result_is_read_from_its_pdf_while_bse_has_not_structured_it(files, jo
     assert job.main() == 0
     feed = json.loads(files.feed.read_text())
     assert "ABC" not in (feed.get("pdf_quarters") or {}) and "ABC" not in feed["pending"]
+    # How the PDF reading compared with BSE's own figures is kept.
+    check = feed["pdf_checks"][-1]
+    assert check["symbol"] == "ABC" and check["agrees"] is True
+    assert check["gaps"]["standalone.sales_crore"] == 0.0
 
 
 def test_a_pdf_whose_comparatives_do_not_match_is_not_used(files, job, monkeypatch):
