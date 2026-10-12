@@ -131,6 +131,7 @@ def _unchanged(before: dict, after: dict) -> bool:
 
 
 DATE_LOOKUPS_PER_RUN = 25
+DATE_LOOKUP_VERSION = 2  # 2: every page searched, a refused request is not "none"
 RESULT_SUBJECT = ("financial result", "financial results", "results for the quarter", "unaudited", "audited")
 
 
@@ -142,6 +143,14 @@ def find_declared_dates(feed: dict, summary: dict, code_of: dict, today: date) -
     subject names financial results — the real filing time. Each (company,
     quarter) is looked up once (`date_lookups`)."""
     lookups = feed.setdefault("date_lookups", {})
+    if feed.get("date_lookups_version") != DATE_LOOKUP_VERSION:
+        # "none" from an older search (first page only, a refused request
+        # counted as no filing): searched once more.
+        for symbol in list(lookups):
+            lookups[symbol] = {p: v for p, v in lookups[symbol].items() if v != "none"}
+            if not lookups[symbol]:
+                lookups.pop(symbol)
+        feed["date_lookups_version"] = DATE_LOOKUP_VERSION
     done = 0
     for symbol, entry in sorted(summary.items()):
         if done >= DATE_LOOKUPS_PER_RUN or symbol not in code_of:
@@ -158,14 +167,27 @@ def find_declared_dates(feed: dict, summary: dict, code_of: dict, today: date) -
         done += 1
         start, stop = end + timedelta(days=1), min(today, end + timedelta(days=rf.MAX_DAYS_AFTER_QUARTER))
         found = None
+        failed = False
         cursor = start
-        while cursor <= stop and found is None:
+        while cursor <= stop and found is None and not failed:
             window_end = min(stop, cursor + timedelta(days=WINDOW_DAYS - 1))
-            payload = _get(ANN_URL, {"strCat": "-1", "strPrevDate": cursor.strftime("%Y%m%d"),
-                                     "strToDate": window_end.strftime("%Y%m%d"), "strSearch": "P",
-                                     "strscrip": code_of[symbol], "strType": "C", "pageno": "1"})
+            # Every page: a company that files a lot (BLUEDART, BEML) has its
+            # results filing past the first page of a fortnight.
+            items: list[dict] = []
+            for page in range(1, 21):
+                payload = _get(ANN_URL, {"strCat": "-1", "strPrevDate": cursor.strftime("%Y%m%d"),
+                                         "strToDate": window_end.strftime("%Y%m%d"), "strSearch": "P",
+                                         "strscrip": code_of[symbol], "strType": "C", "pageno": str(page)})
+                if payload is None:
+                    failed = True  # not answered: no verdict, searched again next run
+                    break
+                table = payload.get("Table") or []
+                items += table
+                total = int(((payload.get("Table1") or [{}])[0]).get("ROWCNT") or 0)
+                if not table or len(items) >= total:
+                    break
             hits = []
-            for item in (payload or {}).get("Table") or []:
+            for item in items:
                 subject = f"{item.get('NEWSSUB') or ''} {item.get('HEADLINE') or ''} {item.get('SUBCATNAME') or ''}".lower()
                 if not any(word in subject for word in RESULT_SUBJECT) or "intimation" in subject:
                     continue
@@ -177,6 +199,8 @@ def find_declared_dates(feed: dict, summary: dict, code_of: dict, today: date) -
             if hits:
                 found = min(hits)
             cursor = window_end + timedelta(days=1)
+        if failed and found is None:
+            continue
         lookups.setdefault(symbol, {})[period] = found.isoformat(timespec="minutes") if found else "none"
         if found:
             feed.setdefault("declared", {}).setdefault(symbol, {})[period] = found.isoformat(timespec="minutes")
@@ -563,7 +587,8 @@ def main() -> int:
     if "pdf_tried" not in feed:
         feed.pop("pdf_reader", None)
     ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
-                                          "source", "unparsed_samples", "pdf_reader", "pdf_samples", "pdf_checks")
+                                          "source", "unparsed_samples", "pdf_reader", "pdf_samples", "pdf_checks",
+                                          "date_lookups_version")
                if key in feed}
     for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried", "date_lookups",
                 "bse_codes"):
