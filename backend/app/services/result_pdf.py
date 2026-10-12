@@ -22,6 +22,8 @@ import io
 import re
 from typing import Any
 
+READER_VERSION = 2  # bump when the reader changes: every waiting PDF is read once more
+
 # Values in the PDF divided by this give crore.
 SCALES = (1.0, 100.0, 10.0, 1e7, 1e5)
 # Printed figures are rounded to the statement's unit: half a unit, in crore,
@@ -193,3 +195,12 @@ def _derived_operating(candidates: dict, scale: float, prev: dict | None, year_a
                             and _error(cols[2], want_year, False, scale) is not None):
                         return round(cols[0], 2)
     return None
+
+
+def sample_lines(text: str, limit: int = 40) -> list[str]:
+    """The lines a statement's figures would sit on (and its unit line), for
+    the diagnostics kept when a PDF reads as nothing."""
+    keys = ("revenue", "income", "profit", "expense", "basic", "earning", "crore", "lakh", "million", "quarter ended",
+            "consolidated", "standalone")
+    out = [line.strip()[:200] for line in text.splitlines() if any(k in line.lower() for k in keys)]
+    return out[:limit]

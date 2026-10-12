@@ -253,7 +253,7 @@ def test_the_evening_run_fetches_dates_and_retries(files, job, monkeypatch):
     xyz_ready = {"value": False}
     filings = [("500001", datetime(2026, 10, 9, 17, 42)), ("500001", datetime(2026, 10, 10, 9, 0)),
                ("500002", datetime(2026, 10, 10, 18, 10)), ("999999", datetime(2026, 10, 10, 10, 0))]
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: list(filings))
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: list(filings))
 
     def fake_get(url, params):
         if "CorprateResultbeta" in url:
@@ -291,7 +291,7 @@ def test_the_evening_run_fetches_dates_and_retries(files, job, monkeypatch):
 
 def test_a_failed_filings_read_does_not_advance_the_window(files, job, monkeypatch):
     files.feed.write_text(json.dumps({"filings_through": "2026-10-08", "declared": {}, "pending": {}, "quarters": {}}))
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: None)
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: None)
     assert job.main() == 1
     assert json.loads(files.feed.read_text())["filings_through"] == "2026-10-08"
 
@@ -300,7 +300,7 @@ def test_if_due_skips_a_run_that_just_happened(files, job, monkeypatch):
     # The Space's trigger and GitHub's cron can both fire: a run 10 minutes
     # after the last one is a duplicate.
     files.feed.write_text(json.dumps({"filings_checked_at": "2026-10-10T14:20:00+00:00"}))  # 19:50 IST
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: pytest.fail("should not read BSE"))
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: pytest.fail("should not read BSE"))
     monkeypatch.setattr(sys, "argv", ["update_results_feed.py", "--if-due"])
     assert job.main() == 0
 
@@ -332,7 +332,7 @@ def test_the_season_that_just_closed_is_dated_from_bse_in_stretches(files, job, 
 
 
 def test_a_schedule_the_parser_cannot_read_is_recorded(files, job, monkeypatch):
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [("500001", datetime(2026, 10, 9, 17, 42))])
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: [("500001", datetime(2026, 10, 9, 17, 42))])
 
     def fake_get(url, params):
         if "CorprateResultbeta" in url:
@@ -355,7 +355,7 @@ def test_a_run_that_finds_nothing_new_writes_nothing(files, job, monkeypatch):
                                       "source": "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)",
                                       "declared": {}, "pending": {}, "quarters": {}}))
     before = files.feed.read_text()
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [])
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: [])
     assert job.main() == 0
     assert files.feed.read_text() == before
 
@@ -365,7 +365,7 @@ def test_a_result_is_read_from_its_pdf_while_bse_has_not_structured_it(files, jo
     # HCLTECH, 12 Oct 2026: the PDF was filed at 17:12; BSE's structured
     # figures and NSE's XBRL came hours later. The card shows the PDF's
     # figures once its comparatives match the stored quarters.
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [("500001", datetime(2026, 10, 10, 17, 12), "abc-result.pdf")])
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: [("500001", datetime(2026, 10, 10, 17, 12), "abc-result.pdf")])
     monkeypatch.setattr(job, "_get", lambda url, params: {"Table": [{"Q1": "Jun-26;X;130.00;"}]})  # Sep not structured yet
     monkeypatch.setattr(job, "_download_pdf", lambda name: b"%PDF-1.4" if name == "abc-result.pdf" else None)
     from app.services import result_pdf
@@ -396,7 +396,7 @@ def test_a_result_is_read_from_its_pdf_while_bse_has_not_structured_it(files, jo
 
 
 def test_a_pdf_whose_comparatives_do_not_match_is_not_used(files, job, monkeypatch):
-    monkeypatch.setattr(job, "fetch_filings", lambda start, end: [("500001", datetime(2026, 10, 10, 17, 12), "abc-result.pdf")])
+    monkeypatch.setattr(job, "fetch_filings", lambda start, end, *category: [("500001", datetime(2026, 10, 10, 17, 12), "abc-result.pdf")])
     monkeypatch.setattr(job, "_get", lambda url, params: {"Table": [{"Q1": "Jun-26;X;130.00;"}]})
     monkeypatch.setattr(job, "_download_pdf", lambda name: b"%PDF-1.4")
     from app.services import result_pdf

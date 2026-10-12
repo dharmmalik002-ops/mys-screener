@@ -86,14 +86,15 @@ def _get(url: str, params: dict) -> dict | None:
     return None
 
 
-def fetch_filings(start: date, end: date) -> list[tuple[str, datetime]] | None:
-    """(scrip code, filing time IST) for every "Result" filing, or None if any
-    window failed — a partial read must not advance `filings_through`."""
+def fetch_filings(start: date, end: date, category: str = "Result") -> list[tuple[str, datetime, str]] | None:
+    """(scrip code, filing time IST, attachment) for every filing in
+    `category`, or None if any window failed — a partial read must not
+    advance `filings_through`."""
     out: list[tuple[str, datetime]] = []
     cursor = start
     while cursor <= end:
         stop = min(end, cursor + timedelta(days=WINDOW_DAYS - 1))
-        base = {"strCat": "Result", "strPrevDate": cursor.strftime("%Y%m%d"),
+        base = {"strCat": category, "strPrevDate": cursor.strftime("%Y%m%d"),
                 "strToDate": stop.strftime("%Y%m%d"), "strSearch": "P", "strscrip": "", "strType": "C"}
         total = None
         rows = 0
@@ -153,6 +154,9 @@ def read_result_pdfs(feed: dict, docs_of: dict[tuple[str, str], list[str]], toda
     from app.services import consolidated_results as cr
     from app.services import result_pdf
 
+    if feed.get("pdf_reader") != result_pdf.READER_VERSION:
+        feed.pop("pdf_tried", None)  # a new reader reads every PDF once more
+        feed["pdf_reader"] = result_pdf.READER_VERSION
     docs = feed.setdefault("result_docs", {})
     for (symbol, period), names in docs_of.items():
         kept = docs.setdefault(symbol, {}).setdefault(period, [])
@@ -191,7 +195,16 @@ def read_result_pdfs(feed: dict, docs_of: dict[tuple[str, str], list[str]], toda
             if pdf is None:
                 continue  # not marked tried: a failed download is retried next run
             tried.append(name)
-            rows = result_pdf.read_quarter(result_pdf.extract_text(pdf), period, priors)
+            text = result_pdf.extract_text(pdf)
+            rows = result_pdf.read_quarter(text, period, priors)
+            if not rows:
+                # What the PDF held, so a statement the reader misses can be
+                # seen and the reader fixed (never guessed at).
+                samples = feed.setdefault("pdf_samples", [])
+                samples.append({"symbol": symbol, "period": period, "document": name, "chars": len(text),
+                                "lines": result_pdf.sample_lines(text),
+                                "priors": {b: [r.get("sales_crore") if r else None for r in pr] for b, pr in priors.items()}})
+                del samples[:-8]
             if len(rows) > len(best):
                 best, best_name = rows, name
             if len(rows) == 2:
@@ -332,6 +345,17 @@ def main() -> int:
             per_symbol.setdefault(symbol, []).append(when)
             if rest and rest[0]:
                 docs_of.setdefault((symbol, rf.target_period(when)), []).append(rest[0])
+    # The full statement is often attached to the board meeting's outcome
+    # rather than to the "Result" filing (HCLTECH 2026-10-12: the Result
+    # filing's PDF was not the statement). Their attachments are only read,
+    # never used to date a quarter.
+    if due and docs_of:
+        meetings = fetch_filings(today - timedelta(days=1), today, "Board Meeting") or []
+        for code, when, *rest in meetings:
+            symbol = by_code.get(code)
+            key = (symbol, rf.target_period(when))
+            if symbol and rest and rest[0] and (key in docs_of or symbol in (feed.get("pending") or {})):
+                docs_of.setdefault(key, []).append(rest[0])
     # Companies whose figures were not out yet last time: retry from the
     # filing time already recorded.
     for symbol, periods in (feed.get("pending") or {}).items():
@@ -408,11 +432,13 @@ def main() -> int:
     if backfill is not None and backfill_ok:
         feed["filings_from"] = backfill[0].isoformat()
     feed["source"] = "BSE Result filings (declared time) + standalone results (Rs million / 10 = crore)"
-    ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
-                                          "source", "unparsed_samples") if key in feed}
     for key in ("result_docs", "pdf_quarters", "pdf_tried"):
         if not feed.get(key):
             feed.pop(key, None)
+    if "pdf_tried" not in feed:
+        feed.pop("pdf_reader", None)
+    ordered = {key: feed[key] for key in ("generated_at", "filings_checked_at", "filings_through", "filings_from",
+                                          "source", "unparsed_samples", "pdf_reader", "pdf_samples") if key in feed}
     for key in ("declared", "pending", "quarters", "result_docs", "pdf_quarters", "pdf_tried"):
         if key not in feed and key in ("result_docs", "pdf_quarters", "pdf_tried"):
             continue
