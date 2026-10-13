@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-12",
+ "as_of": "2026-10-13",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-12",
+ "bse_ipos_as_of": "2026-10-13",
  "bse_ipos": {
   "544574": {
    "name": "Tata Capital Limited",
@@ -4741,16 +4741,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538943",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "SPELS": {
-   "listing_date": "2026-08-17",
-   "name": "SPEL Semiconductor Limited",
-   "isin": "INE252A01019",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "517166",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
