@@ -91,6 +91,17 @@ jobs:
         id: build
         run: |
           set -euo pipefail
+          # Sector index history ships with the app because Yahoo refuses most
+          # of these symbols from datacenter IPs, this runner included — see
+          # scripts/build_sector_indices.py, which completes every series from
+          # NSE's per-session closing files. It runs FIRST: the universe build
+          # reads it as the benchmark for sector funds, whose beta/alpha were
+          # blank while Yahoo was the only source. It keeps whatever it already
+          # has when a fetch fails and refuses to shrink the file, so a non-zero
+          # exit here must not fail the universe refresh.
+          python backend/scripts/build_sector_indices.py || \
+            echo "sector index refresh failed; keeping the committed history" >&2
+
           if [ "${{ steps.mode.outputs.full }}" = "true" ]; then
             echo "full crawl: re-reading every fund page"
             python backend/scripts/build_mf_universe.py --workers 6 --nav-workers 10 --refresh-navs
@@ -99,14 +110,6 @@ jobs:
             python backend/scripts/build_mf_universe.py --compute-only --refresh-navs
           fi
 
-          # Sector index history ships with the app because Yahoo refuses most
-          # of these symbols from datacenter IPs — see
-          # scripts/build_sector_indices.py. The builder keeps whatever it
-          # already has when a fetch fails and refuses to shrink the file, so a
-          # throttled runner cannot take the Sectors page down; a non-zero exit
-          # here must not fail the universe refresh either.
-          python backend/scripts/build_sector_indices.py || \
-            echo "sector index refresh failed; keeping the committed history" >&2
 
           if git diff --quiet backend/data/mf_universe.json backend/data/sector_indices.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"

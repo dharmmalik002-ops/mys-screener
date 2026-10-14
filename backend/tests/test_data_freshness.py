@@ -59,6 +59,10 @@ def test_report_reads_each_feed_and_takes_the_worst(tmp_path):
     _write(tmp_path, "lookalike_picks.json", {"calendar": {"2026-09-30": {}, "2026-10-02": {}}})
     _write(tmp_path, "mf_universe.json", {"as_of": "2026-10-09"})
     _write(tmp_path, "results_feed.json", {"filings_through": "2026-10-10"})
+    _write(tmp_path, "sector_indices.json", {"sectors": {
+        "a": {"daily": {"dates": ["2026-10-08", "2026-10-09"]}},
+        "b": {"daily": {"dates": ["2026-07-16", "2026-07-17"]}},
+    }})
 
     report = df.build_report(tmp_path, now=_ist(2026, 10, 10, 12))
     by_key = {f["key"]: f for f in report["feeds"]}
@@ -73,6 +77,9 @@ def test_report_reads_each_feed_and_takes_the_worst(tmp_path):
     # Results are filed on Saturdays too: a feed read through Saturday is
     # ahead of the weekday session, not behind it.
     assert by_key["results"]["status"] == "ok"
+    # One sector stuck in July makes the whole feed stale, however fresh the rest.
+    assert by_key["sectors"]["as_of"] == "2026-07-17"
+    assert by_key["sectors"]["status"] == "stale"
     assert report["status"] == "stale"
 
 

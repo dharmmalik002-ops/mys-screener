@@ -173,6 +173,18 @@ def phase_navs(scheme_codes: list[str], *, workers: int, refresh: bool) -> dict[
 
 # ----------------------------------------------------------------- phase 3b
 
+def _shipped_sector_series(key: str) -> dict | None:
+    """Daily closes for one sector benchmark from `sector_indices.json`."""
+    try:
+        blob = json.loads((paths.DATA_DIR / "sector_indices.json").read_text())
+    except (OSError, ValueError):
+        return None
+    daily = ((blob.get("sectors") or {}).get(key) or {}).get("daily") or {}
+    if not daily.get("dates"):
+        return None
+    return {"dates": daily["dates"], "navs": daily["closes"], "is_price_index": True}
+
+
 def phase_benchmarks(series: dict[str, dict]) -> dict[str, dict]:
     """One usable series per benchmark key.
 
@@ -198,6 +210,14 @@ def phase_benchmarks(series: dict[str, dict]) -> dict[str, dict]:
                     kind = "price_index"
                 except index_source.IndexUnavailable as exc:
                     log(f"  {key}: {exc}")
+        shipped = _shipped_sector_series(key)
+        if shipped and (not payload or not payload.get("dates")
+                        or shipped["dates"][-1] > payload["dates"][-1]):
+            # Yahoo refuses 13 of the 16 sector indices from the runner, which
+            # left every fund benchmarked to them with no beta or alpha. The
+            # committed artifact is kept current from NSE's closing files
+            # (build_sector_indices.py runs first), so it stands in.
+            payload, kind = shipped, "price_index"
         if payload and payload.get("dates"):
             out[key] = {**payload, "_kind": kind}
             log(f"  {key}: {len(payload['dates'])} points via {kind}")

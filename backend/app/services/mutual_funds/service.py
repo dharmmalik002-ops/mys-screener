@@ -579,6 +579,13 @@ class MutualFundService:
 
         symbol = bench.yahoo_symbol or bench.fallback_yahoo_symbol
         if symbol:
+            # Sector indices go through the same live-or-shipped path as the
+            # Sectors tab: Yahoo refuses 13 of the 16 from the Space.
+            if any(item.yahoo_symbol == symbol for item in benchmarks.SECTOR_BENCHMARKS):
+                try:
+                    return self._sector_index_series(symbol), bench.label, "price_index"
+                except index_source.IndexUnavailable:
+                    pass
             try:
                 return index_source.fetch_index_series(symbol), bench.label, "price_index"
             except index_source.IndexUnavailable:
@@ -1293,15 +1300,20 @@ class MutualFundService:
         is what makes the page whole in production; see
         `scripts/build_sector_indices.py`.
         """
-        cached = getattr(self, "_sector_blob", None)
-        if cached is not None:
-            return cached
         path = paths.DATA_DIR / "sector_indices.json"
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = None
+        cached = getattr(self, "_sector_blob", None)
+        if cached is not None and getattr(self, "_sector_blob_mtime", None) == mtime:
+            return cached
         try:
             blob = json.loads(path.read_text())
         except (OSError, ValueError):
             blob = {}
         self._sector_blob = blob
+        self._sector_blob_mtime = mtime
         return blob
 
     def _sector_index_series(self, symbol: str) -> dict[str, Any]:
@@ -1311,13 +1323,23 @@ class MutualFundService:
         but a refusal falls through to the committed history rather than
         dropping the sector off the page.
         """
+        live: dict[str, Any] | None = None
         try:
             live = index_source.fetch_index_series(symbol, want_ohlc=True)
-            if live.get("dates"):
-                return live
         except Exception:
-            pass
+            live = None
+        shipped = self._shipped_sector_series(symbol)
+        # The artifact is completed nightly from NSE's closing files, so it can
+        # be newer than what Yahoo hands this machine; take whichever is.
+        if live and live.get("dates") and (
+            shipped is None or live["dates"][-1] >= shipped["dates"][-1]
+        ):
+            return live
+        if shipped is not None:
+            return shipped
+        raise index_source.IndexUnavailable(f"no live feed or shipped history for {symbol}")
 
+    def _shipped_sector_series(self, symbol: str) -> dict[str, Any] | None:
         for entry in (self._sector_artifact().get("sectors") or {}).values():
             if entry.get("symbol") == symbol:
                 daily = entry["daily"]
@@ -1346,7 +1368,7 @@ class MutualFundService:
                 "from_artifact": True,
                 "is_price_index": True,
             }
-        raise index_source.IndexUnavailable(f"no live feed or shipped history for {symbol}")
+        return None
 
     def _funds_by_sector(self) -> dict[str, list[dict[str, Any]]]:
         """Which funds in the universe track each sector index.

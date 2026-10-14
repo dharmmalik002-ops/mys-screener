@@ -12,6 +12,12 @@ exactly the same reason — a cold Space has to serve the page immediately.
 Runtime still prefers a live fetch when one succeeds, so a machine that *can*
 reach the feed gets today's bar; the artifact is the floor, not a ceiling.
 
+**The runners are refused too.** This nightly build kept 13 sectors on
+17 Jul 2026 for three months because Yahoo turned the GitHub runner away and
+the builder kept what it had. Every series — fetched or kept — is now
+completed from NSE's own per-session closing file (`nse_index_close`), so a
+refused Yahoo costs nothing but the deep history it already shipped.
+
 Run from `backend/`:
 
     python3 scripts/build_sector_indices.py
@@ -25,12 +31,18 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.services.mutual_funds import benchmarks, index_source, paths, sector_stages  # noqa: E402
+from app.services.mutual_funds import (  # noqa: E402
+    benchmarks,
+    index_source,
+    nse_index_close,
+    paths,
+    sector_stages,
+)
 
 OUT_PATH = paths.DATA_DIR / "sector_indices.json"
 
@@ -39,6 +51,7 @@ OUT_PATH = paths.DATA_DIR / "sector_indices.json"
 # stage analysis only ever reads weekly.
 DAILY_YEARS = 5
 MARKET_SYMBOL = "^NSEI"
+MARKET_LABEL = "Nifty 50"
 
 
 def _round(values: list[float], digits: int = 2) -> list[float]:
@@ -82,6 +95,55 @@ def _pack(payload: dict) -> dict | None:
     }
 
 
+def _raw(payload: dict) -> dict | None:
+    """A fetched series as plain OHLC lists, oldest first."""
+    dates = list(payload.get("dates") or [])
+    closes = [float(v) for v in (payload.get("navs") or [])]
+    if len(dates) < 200 or len(closes) != len(dates):
+        return None
+    pick = lambda key: [float(v) for v in (payload.get(key) or closes)]  # noqa: E731
+    return {"dates": dates, "opens": pick("opens"), "highs": pick("highs"),
+            "lows": pick("lows"), "closes": closes}
+
+
+def _extend_entry(entry: dict, label: str, files: dict) -> int:
+    """Append NSE sessions to a committed entry Yahoo would not refresh.
+
+    The entry holds five years of daily bars and the full weekly series, so
+    only the tail is recomputed: the 30-week average for the new days (on the
+    stored daily closes, which hold far more than 150 sessions) and the weeks
+    from the first new bar's ISO week on, so a week that was part-filled when
+    last built is re-folded with its remaining days.
+    """
+    daily = entry["daily"]
+    raw = {k: list(daily[k]) for k in ("dates", "opens", "highs", "lows", "closes")}
+    before = len(raw["dates"])
+    added = nse_index_close.extend(raw, label, files)
+    if not added:
+        return 0
+
+    ma = sector_stages._sma(raw["closes"], sector_stages.MA_WEEKS * 5)
+    entry["daily"] = {
+        **{k: _round(v) if k != "dates" else v for k, v in raw.items()},
+        "ma30w": list(daily.get("ma30w") or [None] * before)
+        + [round(v, 2) if v is not None else None for v in ma[before:]],
+    }
+
+    first_week = date.fromisoformat(raw["dates"][before]).isocalendar()[:2]
+    start = before
+    while start > 0 and date.fromisoformat(raw["dates"][start - 1]).isocalendar()[:2] == first_week:
+        start -= 1
+    tail = sector_stages._to_weekly(raw["dates"][start:], raw["closes"][start:],
+                                    raw["highs"][start:], raw["lows"][start:])
+    weekly = entry["weekly"]
+    keep = sum(1 for d in weekly["dates"] if date.fromisoformat(d).isocalendar()[:2] < first_week)
+    entry["weekly"] = {
+        key: list(weekly[key][:keep]) + (_round(tail[key]) if key != "dates" else tail[key])
+        for key in ("dates", "opens", "highs", "lows", "closes")
+    }
+    return added
+
+
 def main() -> int:
     existing: dict = {}
     if OUT_PATH.exists():
@@ -92,33 +154,59 @@ def main() -> int:
     sectors: dict = dict(existing.get("sectors") or {})
 
     targets = [(b.key, b.label, b.yahoo_symbol) for b in benchmarks.SECTOR_BENCHMARKS if b.yahoo_symbol]
-    fetched, kept, failed = 0, 0, 0
+    targets.append(("__market__", MARKET_LABEL, MARKET_SYMBOL))
+    entries: dict = {**sectors}
+    if existing.get("market"):
+        entries["__market__"] = existing["market"]
 
+    # 1. Yahoo, which has the full history but refuses most of these symbols
+    #    from datacenter IPs (the runners included).
+    fresh: dict[str, dict] = {}
     for key, label, symbol in targets:
         try:
-            packed = _pack(index_source.fetch_index_series(symbol, force=True, want_ohlc=True))
+            raw = _raw(index_source.fetch_index_series(symbol, force=True, want_ohlc=True))
         except Exception as exc:
-            packed = None
-            print(f"  {label:26s} FAILED {type(exc).__name__}")
-        if packed is None:
-            if key in sectors:
-                kept += 1
-                print(f"  {label:26s} kept existing ({sectors[key]['daily']['dates'][-1]})")
-            else:
-                failed += 1
-            continue
-        sectors[key] = {"symbol": symbol, "name": label, **packed}
-        fetched += 1
-        print(f"  {label:26s} {packed['daily']['dates'][-1]}  "
-              f"{len(packed['weekly']['dates'])}w / {len(packed['daily']['dates'])}d")
+            raw = None
+            print(f"  {label:26s} Yahoo FAILED {type(exc).__name__}")
+        if raw is not None:
+            fresh[key] = raw
 
-    market = (existing.get("market") or None)
-    try:
-        packed_market = _pack(index_source.fetch_index_series(MARKET_SYMBOL, force=True, want_ohlc=True))
-        if packed_market:
-            market = {"symbol": MARKET_SYMBOL, "name": "Nifty 50", **packed_market}
-    except Exception as exc:
-        print(f"  market {MARKET_SYMBOL} FAILED {type(exc).__name__}; keeping existing")
+    # 2. NSE's closing files for every session after the stalest series —
+    #    fetched once and shared, since one file carries every index.
+    lasts = [fresh[k]["dates"][-1] if k in fresh else entries[k]["daily"]["dates"][-1]
+             for k, _, _ in targets if k in fresh or k in entries]
+    files = nse_index_close.sessions_after(date.fromisoformat(min(lasts))) if lasts else {}
+    print(f"  NSE closing files read: {len(files)}"
+          + (f" ({min(files)} .. {max(files)})" if files else ""))
+
+    fetched = extended = kept = failed = 0
+    for key, label, symbol in targets:
+        if key in fresh:
+            raw = fresh[key]
+            added = nse_index_close.extend(raw, label, files)
+            packed = _pack({"dates": raw["dates"], "navs": raw["closes"], "opens": raw["opens"],
+                            "highs": raw["highs"], "lows": raw["lows"]})
+            if packed is not None:
+                entries[key] = {"symbol": symbol, "name": label, **packed}
+                fetched += 1
+                print(f"  {label:26s} {packed['daily']['dates'][-1]}  (Yahoo"
+                      f"{f' + {added} sessions from NSE' if added else ''})")
+                continue
+        if key in entries:
+            added = _extend_entry(entries[key], label, files)
+            last = entries[key]["daily"]["dates"][-1]
+            if added:
+                extended += 1
+                print(f"  {label:26s} {last}  (+{added} sessions from NSE)")
+            else:
+                kept += 1
+                print(f"  {label:26s} {last}  kept existing")
+        else:
+            failed += 1
+            print(f"  {label:26s} MISSING")
+
+    market = entries.pop("__market__", None)
+    sectors = entries
 
     if not sectors:
         print("Refusing to write an empty artifact.")
@@ -139,8 +227,14 @@ def main() -> int:
     temp.replace(OUT_PATH)
 
     size_mb = OUT_PATH.stat().st_size / 1e6
-    print(f"\nWrote {OUT_PATH.name}: {len(sectors)} sectors "
-          f"({fetched} fresh, {kept} kept, {failed} missing), {size_mb:.2f} MB")
+    print(f"\nWrote {OUT_PATH.name}: {len(sectors)} sectors + market "
+          f"({fetched} from Yahoo, {extended} extended from NSE, {kept} unchanged, {failed} missing), "
+          f"{size_mb:.2f} MB")
+    stalest = min(entry["daily"]["dates"][-1] for entry in sectors.values())
+    newest = max(entry["daily"]["dates"][-1] for entry in sectors.values())
+    if stalest < newest:
+        behind = [e["name"] for e in sectors.values() if e["daily"]["dates"][-1] == stalest]
+        print(f"WARNING: {len(behind)} sector(s) end on {stalest}, behind {newest}: {', '.join(behind)}")
     return 0
 
 

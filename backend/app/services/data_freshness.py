@@ -62,6 +62,20 @@ def _latest_date(doc: dict[str, Any]) -> str | None:
     return latest.get("date") if isinstance(latest, dict) else None
 
 
+def _stalest_sector(doc: dict[str, Any]) -> str | None:
+    """The sector index that ends earliest — one stuck sector is the outage
+    (13 of 16 sat on July for three months while the file kept being rebuilt)."""
+    sectors = doc.get("sectors")
+    if not isinstance(sectors, dict) or not sectors:
+        return None
+    lasts = [
+        entry["daily"]["dates"][-1]
+        for entry in sectors.values()
+        if isinstance(entry, dict) and isinstance(entry.get("daily"), dict) and entry["daily"].get("dates")
+    ]
+    return min(lasts) if len(lasts) == len(sectors) else None
+
+
 def _newest_calendar_day(doc: dict[str, Any]) -> str | None:
     calendar = doc.get("calendar")
     if isinstance(calendar, dict) and calendar:
@@ -77,6 +91,7 @@ FEEDS: tuple[Feed, ...] = (
     Feed("bot", "Bot signals", "bot_signals.json", lambda d: d.get("as_of"), 2, "Bot page"),
     Feed("lookalikes", "Look-alike picks", "lookalike_picks.json", _newest_calendar_day, 2, "Look-alikes page"),
     Feed("funds", "Fund NAVs", "mf_universe.json", lambda d: d.get("as_of"), 2, "Funds page"),
+    Feed("sectors", "Sector indices", "sector_indices.json", _stalest_sector, 2, "Funds page Sectors tab"),
     Feed("results", "Quarterly results", "results_feed.json", lambda d: d.get("filings_through"), 1, "Results page"),
 )
 
