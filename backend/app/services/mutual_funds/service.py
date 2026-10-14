@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from . import (
-    benchmarks, concentration, fund_review, groww_source, index_source, metrics,
+    benchmarks, committed_pull, concentration, fund_review, groww_source, index_source, metrics,
     nav_source, overlap, paths, portfolio, portfolio_health, sector_stages,
     statement_import,
 )
@@ -103,6 +103,7 @@ class MutualFundService:
         an mtime check is what keeps a long-lived Space from serving last
         week's ranks forever.
         """
+        committed_pull.pull_in_background("mf_universe.json")
         with self._universe_lock:
             try:
                 mtime = paths.UNIVERSE_PATH.stat().st_mtime
@@ -1407,11 +1408,17 @@ class MutualFundService:
 
         Cached for six hours: the classification moves on weekly closes, so
         recomputing it per request would re-read sixteen index files to produce
-        the same answer.
+        the same answer. Keyed on the shipped file's mtime too, so a pulled
+        sector file shows at once rather than six hours later.
         """
+        committed_pull.pull_in_background("sector_indices.json")
+        try:
+            artifact_mtime = (paths.DATA_DIR / "sector_indices.json").stat().st_mtime
+        except OSError:
+            artifact_mtime = None
         with self._ai_lock:
             cached = self._ai_cache.get("sector_stages")
-            if cached and (time.time() - cached[0]) < 6 * 60 * 60:
+            if cached and (time.time() - cached[0]) < 6 * 60 * 60 and cached[2] == artifact_mtime:
                 return cached[1]
 
         try:
@@ -1432,7 +1439,7 @@ class MutualFundService:
                 row["funds"] = tracking[:8]
 
         with self._ai_lock:
-            self._ai_cache["sector_stages"] = (time.time(), payload)
+            self._ai_cache["sector_stages"] = (time.time(), payload, artifact_mtime)
         return payload
 
     def get_sector_series(self, key: str, *, range_key: str = "3y") -> dict[str, Any] | None:
