@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-13",
+ "as_of": "2026-10-14",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,14 +7,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-13",
+ "bse_ipos_as_of": "2026-10-14",
  "bse_ipos": {
-  "544574": {
-   "name": "Tata Capital Limited",
-   "symbol": "TATACAP",
-   "listing_date": "2025-10-13",
-   "issue_price": 326.0
-  },
   "544576": {
    "name": "LG Electronics India Limited",
    "symbol": "LGEINDIA",
@@ -1009,7 +1003,7 @@
    "listing_date": "2026-08-17",
    "name": "Alufluoride Limited",
    "isin": "INE058F01019",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "524634",
    "ipo": false,
@@ -3029,7 +3023,7 @@
    "issue_price": 201.0
   },
   "LANCER": {
-   "listing_date": "2026-08-17",
+   "listing_date": "2026-10-14",
    "name": "Lancer Container Lines Limited",
    "isin": "INE359U01028",
    "series": "EQ",
@@ -5022,20 +5016,6 @@
    "bse_code": "522229",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "TATACAP": {
-   "listing_date": "2025-10-13",
-   "name": "Tata Capital Limited",
-   "isin": "INE976I01016",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544574",
-   "sector": "Financial Services",
-   "sub_sector": "Non Banking Financial Company (NBFC)",
-   "shares_crore": 424.486907,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 326.0
   },
   "TCC": {
    "listing_date": "2026-02-25",
