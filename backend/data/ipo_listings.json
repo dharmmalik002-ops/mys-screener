@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-14",
+ "as_of": "2026-10-15",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,14 +7,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-14",
+ "bse_ipos_as_of": "2026-10-15",
  "bse_ipos": {
-  "544576": {
-   "name": "LG Electronics India Limited",
-   "symbol": "LGEINDIA",
-   "listing_date": "2025-10-14",
-   "issue_price": 1140.0
-  },
   "544578": {
    "name": "RUBICON RESEARCH LIMITED",
    "symbol": "RUBICON",
@@ -851,7 +845,7 @@
    "listing_date": "2026-09-30",
    "name": "Adroit Industries (India) Limited",
    "isin": "INE505M01015",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544950",
    "sector": "Automobile and Auto Components",
@@ -2330,7 +2324,7 @@
    "listing_date": "2026-09-30",
    "name": "GSPL Transmission Limited",
    "isin": "INE1TUG01013",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544801",
    "ipo": false,
@@ -3125,20 +3119,6 @@
    "basis": "bse_ipo_list",
    "issue_price": 402.0
   },
-  "LGEINDIA": {
-   "listing_date": "2025-10-14",
-   "name": "LG Electronics India Limited",
-   "isin": "INE324D01010",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544576",
-   "sector": "Consumer Durables",
-   "sub_sector": "Household Appliances",
-   "shares_crore": 67.877236,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 1140.0
-  },
   "LKPSEC": {
    "listing_date": "2026-08-17",
    "name": "LKP Securities Limited",
@@ -3240,16 +3220,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 590.0
-  },
-  "MARKOLINES": {
-   "listing_date": "2025-10-14",
-   "name": "Markolines Pavement Technologies Limited",
-   "isin": "INE0FW001016",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "543364",
-   "ipo": false,
-   "basis": "bse_ipo_list"
   },
   "MARSONS": {
    "listing_date": "2026-03-13",
@@ -4950,7 +4920,7 @@
    "listing_date": "2026-09-30",
    "name": "Swastika Infra Limited",
    "isin": "INE1QJA01015",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544949",
    "sector": "Construction",
@@ -5223,7 +5193,7 @@
    "listing_date": "2026-09-25",
    "name": "Uday Jewellery Industries Limited",
    "isin": "INE551B01012",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "539518",
    "ipo": false,
