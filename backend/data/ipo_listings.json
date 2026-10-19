@@ -4644,12 +4644,9 @@
    "isin": "INE252A01019",
    "series": "BE",
    "exchange": "NSE",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "517166",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
