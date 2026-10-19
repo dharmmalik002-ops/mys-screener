@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-16",
+ "as_of": "2026-10-19",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,26 +7,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-16",
+ "bse_ipos_as_of": "2026-10-19",
  "bse_ipos": {
-  "544578": {
-   "name": "RUBICON RESEARCH LIMITED",
-   "symbol": "RUBICON",
-   "listing_date": "2025-10-16",
-   "issue_price": 485.0
-  },
-  "544580": {
-   "name": "Canara Robeco Asset Management Company Limited",
-   "symbol": "CRAMC",
-   "listing_date": "2025-10-16",
-   "issue_price": 266.0
-  },
-  "544583": {
-   "name": "Canara HSBC Life Insurance Company Limited",
-   "symbol": "CANHLIFE",
-   "listing_date": "2025-10-17",
-   "issue_price": 106.0
-  },
   "544587": {
    "name": "Midwest Limited",
    "symbol": "MIDWESTLTD",
@@ -1552,20 +1534,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "CANHLIFE": {
-   "listing_date": "2025-10-17",
-   "name": "Canara HSBC Life Insurance Company Limited",
-   "isin": "INE01TY01017",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544583",
-   "sector": "Financial Services",
-   "sub_sector": "Life Insurance",
-   "shares_crore": 95.0,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 106.0
-  },
   "CAPILLARY": {
    "listing_date": "2025-11-21",
    "name": "Capillary Technologies India Limited",
@@ -1743,20 +1711,6 @@
    "bse_code": "536974",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "CRAMC": {
-   "listing_date": "2025-10-16",
-   "name": "Canara Robeco Asset Management Company Limited",
-   "isin": "INE218I01013",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544580",
-   "sector": "Financial Services",
-   "sub_sector": "Asset Management Company",
-   "shares_crore": 19.941732,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 266.0
   },
   "CRAVATEX": {
    "listing_date": "2026-08-17",
@@ -2428,7 +2382,7 @@
    "listing_date": "2026-06-12",
    "name": "Hexagon Nutrition Limited",
    "isin": "INE0JUI01012",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544785",
    "sector": "Fast Moving Consumer Goods",
@@ -4208,20 +4162,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "RUBICON": {
-   "listing_date": "2025-10-16",
-   "name": "Rubicon Research Limited",
-   "isin": "INE506V01022",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544578",
-   "sector": "Healthcare",
-   "sub_sector": "Pharmaceuticals",
-   "shares_crore": 16.553192,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 485.0
-  },
   "RUDRA": {
    "listing_date": "2025-12-19",
    "name": "Rudra Global Infra Products Limited",
@@ -4697,6 +4637,19 @@
    "bse_code": "538943",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "SPELS": {
+   "listing_date": "2026-08-17",
+   "name": "SPEL Semiconductor Limited",
+   "isin": "INE252A01019",
+   "series": "BE",
+   "exchange": "NSE",
+   "checked_session": "2026-08-14",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
   },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
