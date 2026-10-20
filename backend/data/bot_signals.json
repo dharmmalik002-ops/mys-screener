@@ -9,10 +9,10 @@
     "pct_from_200dma": -5.32,
     "pct_from_52w_high": -13.21,
     "ma200_slope": -0.0561,
-    "breadth_above_200dma": 45.67,
-    "breadth_net_new_highs": -3.37,
+    "breadth_above_200dma": 45.82,
+    "breadth_net_new_highs": -3.31,
     "vix_percentile": 69.4,
-    "constituents": 1454,
+    "constituents": 1482,
     "regime_label": "Correction"
   },
   "playbook": {
@@ -27,7 +27,7 @@
         "family": "momentum",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.062,
-        "out_sample_r": 0.336,
+        "out_sample_r": 0.335,
         "out_sample_trades": 250,
         "win_rate": 40.4,
         "risk_per_trade_pct": 0.06,
@@ -39,8 +39,8 @@
         "family": "volatility",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.031,
-        "out_sample_r": 0.107,
-        "out_sample_trades": 1556,
+        "out_sample_r": 0.106,
+        "out_sample_trades": 1557,
         "win_rate": 26.6,
         "risk_per_trade_pct": 0.06,
         "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.11R)."
@@ -55,14 +55,16 @@
       "CBOE VIX",
       "US 10-Year Yield",
       "Brent Crude",
+      "Copper",
       "MSCI Emerging Markets ETF"
     ],
     "tailwinds": [
-      "USD/INR"
+      "USD/INR",
+      "Gold"
     ],
     "size_multiplier": 0.25,
     "stance": "defensive",
-    "note": "4 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
+    "note": "5 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
   },
   "stance": "selective",
   "equity": 1000000.0,
@@ -78,7 +80,7 @@
       "risk_pct": 6.6,
       "atr_pct": 2.64,
       "turnover_crore": 150.0,
-      "expected_r": 0.336,
+      "expected_r": 0.335,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -90,10 +92,10 @@
         "pct_of_equity": 0.2,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.336,
+      "cell_expectancy_r": 0.335,
       "volatility_adjustment_r": 0.045,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.381
+      "edge_score_r": 0.38
     },
     {
       "symbol": "MVGJL",
@@ -106,7 +108,7 @@
       "risk_pct": 13.59,
       "atr_pct": 5.43,
       "turnover_crore": 5.9,
-      "expected_r": 0.336,
+      "expected_r": 0.335,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -118,10 +120,10 @@
         "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.336,
-      "volatility_adjustment_r": -0.046,
+      "cell_expectancy_r": 0.335,
+      "volatility_adjustment_r": -0.047,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.29
+      "edge_score_r": 0.288
     },
     {
       "symbol": "ADANIPORTS",
@@ -134,7 +136,7 @@
       "risk_pct": 4.78,
       "atr_pct": 2.39,
       "turnover_crore": 344.3,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -146,10 +148,10 @@
         "pct_of_equity": 0.2,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
+      "cell_expectancy_r": 0.106,
       "volatility_adjustment_r": 0.045,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.152
+      "edge_score_r": 0.151
     },
     {
       "symbol": "DRREDDY",
@@ -162,7 +164,7 @@
       "risk_pct": 4.01,
       "atr_pct": 2.0,
       "turnover_crore": 205.7,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -174,10 +176,10 @@
         "pct_of_equity": 0.4,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
+      "cell_expectancy_r": 0.106,
       "volatility_adjustment_r": 0.045,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.152
+      "edge_score_r": 0.151
     },
     {
       "symbol": "UNIONBANK",
@@ -190,7 +192,7 @@
       "risk_pct": 5.71,
       "atr_pct": 2.85,
       "turnover_crore": 140.1,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -202,10 +204,10 @@
         "pct_of_equity": 0.3,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
+      "cell_expectancy_r": 0.106,
       "volatility_adjustment_r": 0.045,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.152
+      "edge_score_r": 0.151
     },
     {
       "symbol": "SIRCA",
@@ -218,7 +220,7 @@
       "risk_pct": 4.81,
       "atr_pct": 2.4,
       "turnover_crore": 5.4,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -230,10 +232,10 @@
         "pct_of_equity": 0.3,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
+      "cell_expectancy_r": 0.106,
       "volatility_adjustment_r": 0.045,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.152
+      "edge_score_r": 0.151
     },
     {
       "symbol": "MANAKCOAT",
@@ -246,7 +248,7 @@
       "risk_pct": 7.12,
       "atr_pct": 3.56,
       "turnover_crore": 2.7,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -258,10 +260,10 @@
         "pct_of_equity": 0.2,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
+      "cell_expectancy_r": 0.106,
       "volatility_adjustment_r": 0.001,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.108
+      "edge_score_r": 0.107
     },
     {
       "symbol": "MANINDS",
@@ -274,7 +276,7 @@
       "risk_pct": 11.4,
       "atr_pct": 5.7,
       "turnover_crore": 41.1,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -286,10 +288,10 @@
         "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
-      "volatility_adjustment_r": -0.046,
+      "cell_expectancy_r": 0.106,
+      "volatility_adjustment_r": -0.047,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.061
+      "edge_score_r": 0.059
     },
     {
       "symbol": "JAYBARMARU",
@@ -302,7 +304,7 @@
       "risk_pct": 10.27,
       "atr_pct": 5.13,
       "turnover_crore": 5.3,
-      "expected_r": 0.107,
+      "expected_r": 0.106,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
@@ -314,10 +316,10 @@
         "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.107,
-      "volatility_adjustment_r": -0.046,
+      "cell_expectancy_r": 0.106,
+      "volatility_adjustment_r": -0.047,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.061
+      "edge_score_r": 0.059
     }
   ],
   "candidates_found": 9,
@@ -327,6 +329,6 @@
   },
   "calibration": null,
   "message": "9 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 25% of book risk (defensive external tape).",
-  "generated_at": "2026-10-19T20:03:28.613200+00:00",
+  "generated_at": "2026-10-20T18:40:11.948687+00:00",
   "source": "offline"
 }
