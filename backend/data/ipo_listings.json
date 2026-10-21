@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-20",
+ "as_of": "2026-10-21",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-20",
+ "bse_ipos_as_of": "2026-10-21",
  "bse_ipos": {
   "544587": {
    "name": "Midwest Limited",
@@ -722,6 +722,12 @@
    "symbol": "NITYAS",
    "listing_date": "2026-10-08",
    "issue_price": 75.0
+  },
+  "544994": {
+   "name": "HD Fire Protect Limited",
+   "symbol": "HDFIRE",
+   "listing_date": "2026-10-21",
+   "issue_price": 271.0
   }
  },
  "listings": {
@@ -2363,6 +2369,19 @@
    "bse_code": "532333",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "HDFIRE": {
+   "listing_date": "2026-10-21",
+   "name": "HD Fire Protect Limited",
+   "isin": "INE18AK01028",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-19",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "HEROMOTORS": {
    "listing_date": "2026-09-23",
@@ -4369,7 +4388,7 @@
    "listing_date": "2026-10-06",
    "name": "Shah Investor's Home Limited",
    "isin": "INE029N01014",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544963",
    "sector": "Financial Services",
@@ -4638,16 +4657,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "SPELS": {
-   "listing_date": "2026-08-17",
-   "name": "SPEL Semiconductor Limited",
-   "isin": "INE252A01019",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "517166",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
    "name": "Sri KPR Industries Limited",
@@ -4662,7 +4671,7 @@
    "listing_date": "2026-10-06",
    "name": "SRIT India Limited",
    "isin": "INE307K01028",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544965",
    "sector": "Information Technology",
@@ -5431,7 +5440,7 @@
    "listing_date": "2026-09-23",
    "name": "VTM Limited",
    "isin": "INE222F01029",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "532893",
    "ipo": false,
