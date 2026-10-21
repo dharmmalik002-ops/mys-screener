@@ -2377,12 +2377,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544994",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 271.0,
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
-   "shares_crore": 17.523014
+   "shares_crore": 17.523014,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 271.0
   },
   "HEROMOTORS": {
    "listing_date": "2026-09-23",
