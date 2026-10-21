@@ -2376,12 +2376,13 @@
    "isin": "INE18AK01028",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-10-19",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "544994",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 271.0,
+   "sector": "Capital Goods",
+   "sub_sector": "Industrial Products",
+   "shares_crore": 17.523014
   },
   "HEROMOTORS": {
    "listing_date": "2026-09-23",
