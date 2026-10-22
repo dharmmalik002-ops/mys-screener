@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-21",
+ "as_of": "2026-10-22",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-21",
+ "bse_ipos_as_of": "2026-10-22",
  "bse_ipos": {
   "544587": {
    "name": "Midwest Limited",
@@ -728,6 +728,12 @@
    "symbol": "HDFIRE",
    "listing_date": "2026-10-21",
    "issue_price": 271.0
+  },
+  "544995": {
+   "name": "FUSION CX LIMITED",
+   "symbol": "FUSIONCX",
+   "listing_date": "2026-10-22",
+   "issue_price": 289.0
   }
  },
  "listings": {
@@ -2096,6 +2102,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "FUSIONCX": {
+   "listing_date": "2026-10-22",
+   "name": "Fusion CX Limited",
+   "isin": "INE0N2201019",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-21",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "GAJA": {
    "listing_date": "2026-08-26",
    "name": "Gaja Alternative Asset Management Limited",
@@ -2483,6 +2502,16 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 2165.0
+  },
+  "IIRM": {
+   "listing_date": "2026-10-22",
+   "name": "IIRM Holdings India Limited",
+   "isin": "INE670C01026",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "526530",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "INA": {
    "listing_date": "2026-03-09",
