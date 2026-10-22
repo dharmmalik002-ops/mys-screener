@@ -1,18 +1,18 @@
 {
-  "as_of": "2026-10-21",
+  "as_of": "2026-10-22",
   "regime": {
-    "day": "2026-10-21",
+    "day": "2026-10-22",
     "regime": "correction",
     "volatility_band": "stressed",
-    "regime_age": 38,
-    "index_close": 22811.35,
-    "pct_from_200dma": -5.58,
-    "pct_from_52w_high": -13.51,
-    "ma200_slope": -0.0572,
-    "breadth_above_200dma": 40.14,
-    "breadth_net_new_highs": -10.31,
-    "vix_percentile": 77.0,
-    "constituents": 1455,
+    "regime_age": 39,
+    "index_close": 22687.65,
+    "pct_from_200dma": -6.02,
+    "pct_from_52w_high": -13.97,
+    "ma200_slope": -0.0583,
+    "breadth_above_200dma": 38.86,
+    "breadth_net_new_highs": -13.14,
+    "vix_percentile": 77.6,
+    "constituents": 1454,
     "regime_label": "Correction"
   },
   "playbook": {
@@ -27,11 +27,11 @@
         "family": "momentum",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.062,
-        "out_sample_r": 0.306,
-        "out_sample_trades": 256,
-        "win_rate": 39.5,
+        "out_sample_r": 0.295,
+        "out_sample_trades": 258,
+        "win_rate": 39.1,
         "risk_per_trade_pct": 0.06,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.31R)."
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.29R)."
       },
       {
         "strategy": "nr7_release",
@@ -39,11 +39,11 @@
         "family": "volatility",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.031,
-        "out_sample_r": 0.093,
-        "out_sample_trades": 1582,
-        "win_rate": 26.3,
+        "out_sample_r": 0.083,
+        "out_sample_trades": 1598,
+        "win_rate": 26.0,
         "risk_per_trade_pct": 0.06,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.09R)."
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.08R)."
       }
     ],
     "max_concurrent": 3,
@@ -57,7 +57,8 @@
       "MSCI Emerging Markets ETF"
     ],
     "tailwinds": [
-      "USD/INR"
+      "USD/INR",
+      "Gold"
     ],
     "size_multiplier": 0.5,
     "stance": "cautious",
@@ -67,97 +68,41 @@
   "equity": 1000000.0,
   "candidates": [
     {
-      "symbol": "LTTS",
+      "symbol": "IGIL",
       "strategy": "gap_continuation",
       "strategy_label": "Gap Continuation",
-      "signal_day": "2026-10-21",
-      "close": 3996.3,
-      "entry_hint": 3996.3,
-      "stop": 3628.48,
-      "risk_pct": 9.2,
-      "atr_pct": 3.68,
-      "turnover_crore": 20.0,
-      "expected_r": 0.306,
+      "signal_day": "2026-10-22",
+      "close": 353.2,
+      "entry_hint": 353.2,
+      "stop": 325.65,
+      "risk_pct": 7.8,
+      "atr_pct": 3.12,
+      "turnover_crore": 13.8,
+      "expected_r": 0.295,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
-        "shares": 0,
-        "position_value": 0.0,
+        "shares": 10,
+        "position_value": 3532.0,
         "risk_budget": 300.0,
-        "risk_per_share": 367.82,
-        "actual_risk": 0.0,
-        "pct_of_equity": 0.0,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.306,
-      "volatility_adjustment_r": 0.002,
-      "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.308
-    },
-    {
-      "symbol": "ANANDRATHI",
-      "strategy": "nr7_release",
-      "strategy_label": "NR7 Release",
-      "signal_day": "2026-10-21",
-      "close": 2200.0,
-      "entry_hint": 2200.0,
-      "stop": 2102.41,
-      "risk_pct": 4.44,
-      "atr_pct": 2.22,
-      "turnover_crore": 72.7,
-      "expected_r": 0.093,
-      "verdict": "confirmed_weak",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 3,
-        "position_value": 6600.0,
-        "risk_budget": 300.0,
-        "risk_per_share": 97.59,
-        "actual_risk": 292.78,
-        "pct_of_equity": 0.7,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.093,
-      "volatility_adjustment_r": 0.045,
-      "volatility_bucket": "2-3%",
-      "edge_score_r": 0.138
-    },
-    {
-      "symbol": "HEXT",
-      "strategy": "nr7_release",
-      "strategy_label": "NR7 Release",
-      "signal_day": "2026-10-21",
-      "close": 604.6,
-      "entry_hint": 604.6,
-      "stop": 564.87,
-      "risk_pct": 6.57,
-      "atr_pct": 3.29,
-      "turnover_crore": 11.4,
-      "expected_r": 0.093,
-      "verdict": "confirmed_weak",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 7,
-        "position_value": 4232.2,
-        "risk_budget": 300.0,
-        "risk_per_share": 39.73,
-        "actual_risk": 278.13,
+        "risk_per_share": 27.55,
+        "actual_risk": 275.47,
         "pct_of_equity": 0.4,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.093,
-      "volatility_adjustment_r": 0.002,
+      "cell_expectancy_r": 0.295,
+      "volatility_adjustment_r": 0.001,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.095
+      "edge_score_r": 0.296
     }
   ],
-  "candidates_found": 3,
+  "candidates_found": 1,
   "ranking": {
     "active": true,
     "note": "Ranking adds a volatility adjustment to each candidate's cell expectancy. The adjustment is that ATR bucket's average R minus the book average, measured over the full trade population and confirmed out-of-sample."
   },
   "calibration": null,
-  "message": "3 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
-  "generated_at": "2026-10-21T18:48:52.607185+00:00",
+  "message": "1 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
+  "generated_at": "2026-10-22T18:41:11.255376+00:00",
   "source": "offline"
 }
