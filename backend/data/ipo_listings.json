@@ -2108,12 +2108,13 @@
    "isin": "INE0N2201019",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-10-21",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "544995",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 289.0,
+   "sector": "Services",
+   "sub_sector": "Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO)",
+   "shares_crore": 14.436031
   },
   "GAJA": {
    "listing_date": "2026-08-26",
