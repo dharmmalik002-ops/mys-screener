@@ -2109,12 +2109,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544995",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 289.0,
    "sector": "Services",
    "sub_sector": "Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO)",
-   "shares_crore": 14.436031
+   "shares_crore": 14.436031,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 289.0
   },
   "GAJA": {
    "listing_date": "2026-08-26",
