@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-22",
+ "as_of": "2026-10-23",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-22",
+ "bse_ipos_as_of": "2026-10-23",
  "bse_ipos": {
   "544587": {
    "name": "Midwest Limited",
@@ -734,6 +734,30 @@
    "symbol": "FUSIONCX",
    "listing_date": "2026-10-22",
    "issue_price": 289.0
+  },
+  "544996": {
+   "name": "Bonfiglioli Transmissions Limited",
+   "symbol": "BONFIG",
+   "listing_date": "2026-10-23",
+   "issue_price": 586.0
+  },
+  "544999": {
+   "name": "TONBO IMAGING INDIA LIMITED",
+   "symbol": "TONBO",
+   "listing_date": "2026-10-23",
+   "issue_price": 700.0
+  },
+  "545000": {
+   "name": "Zetwerk Manufacturing Businesses Limited",
+   "symbol": "ZETWERK",
+   "listing_date": "2026-10-23",
+   "issue_price": 151.0
+  },
+  "545001": {
+   "name": "Sahajanand Medical Technologies Limited",
+   "symbol": "SMT",
+   "listing_date": "2026-10-23",
+   "issue_price": 344.0
   }
  },
  "listings": {
@@ -1288,12 +1312,15 @@
   "AZADIND": {
    "listing_date": "2026-08-17",
    "name": "Azad India Mobility Limited",
-   "isin": "INE566M01017",
+   "isin": "INE566M01025",
    "series": "EQ",
    "exchange": "NSE",
-   "bse_code": "504731",
-   "ipo": false,
-   "basis": "bse_ipo_list"
+   "checked_session": "2026-08-14",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
   },
   "BAJAJST": {
    "listing_date": "2026-04-20",
@@ -1486,6 +1513,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "BONFIG": {
+   "listing_date": "2026-10-23",
+   "name": "Bonfiglioli Transmissions Limited",
+   "isin": "INE28SO01013",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-22",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "BONLON": {
    "listing_date": "2026-02-20",
    "name": "Bonlon Industries Limited",
@@ -1670,7 +1710,7 @@
    "listing_date": "2026-04-20",
    "name": "Comfort Intech Limited",
    "isin": "INE819A01049",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "531216",
    "ipo": false,
@@ -2337,16 +2377,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "515147",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "HAMPTON": {
-   "listing_date": "2026-08-17",
-   "name": "Hampton Sky Realty Limited",
-   "isin": "INE299D01022",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "526407",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -3615,7 +3645,7 @@
    "listing_date": "2026-10-08",
    "name": "Nityas Gems and Jewellery Limited",
    "isin": "INE211501023",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544974",
    "sector": "Consumer Durables",
@@ -4664,6 +4694,19 @@
    "basis": "bse_ipo_list",
    "issue_price": 138.0
   },
+  "SMT": {
+   "listing_date": "2026-10-23",
+   "name": "Sahajanand Medical Technologies Limited",
+   "isin": "INE356Y01018",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-22",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "SONA": {
    "listing_date": "2026-09-24",
    "name": "Sonaselection India Limited",
@@ -5095,6 +5138,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "TONBO": {
+   "listing_date": "2026-10-23",
+   "name": "Tonbo Imaging India Limited",
+   "isin": "INE0LDG01026",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-22",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "TOYAMSL": {
    "listing_date": "2026-08-17",
    "name": "Toyam Sports Limited",
@@ -5424,7 +5480,7 @@
    "listing_date": "2026-10-08",
    "name": "Vishal Nirmiti Limited",
    "isin": "INE1O5L01025",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544973",
    "sector": "Construction",
@@ -5554,6 +5610,19 @@
    "bse_code": "511702",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "ZETWERK": {
+   "listing_date": "2026-10-23",
+   "name": "Zetwerk Manufacturing Businesses Limited",
+   "isin": "INE09PO01019",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-22",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "ZFSTEERING": {
    "listing_date": "2026-04-20",
