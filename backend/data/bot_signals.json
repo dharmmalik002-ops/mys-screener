@@ -1,18 +1,18 @@
 {
-  "as_of": "2026-10-22",
+  "as_of": "2026-10-23",
   "regime": {
-    "day": "2026-10-22",
+    "day": "2026-10-23",
     "regime": "correction",
     "volatility_band": "stressed",
-    "regime_age": 39,
-    "index_close": 22687.65,
-    "pct_from_200dma": -6.02,
-    "pct_from_52w_high": -13.97,
-    "ma200_slope": -0.0583,
-    "breadth_above_200dma": 38.86,
-    "breadth_net_new_highs": -13.14,
-    "vix_percentile": 77.6,
-    "constituents": 1454,
+    "regime_age": 40,
+    "index_close": 22600.0,
+    "pct_from_200dma": -6.32,
+    "pct_from_52w_high": -14.31,
+    "ma200_slope": -0.0594,
+    "breadth_above_200dma": 32.95,
+    "breadth_net_new_highs": -19.69,
+    "vix_percentile": 83.3,
+    "constituents": 1478,
     "regime_label": "Correction"
   },
   "playbook": {
@@ -27,11 +27,11 @@
         "family": "momentum",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.062,
-        "out_sample_r": 0.295,
-        "out_sample_trades": 258,
-        "win_rate": 39.1,
+        "out_sample_r": 0.269,
+        "out_sample_trades": 263,
+        "win_rate": 38.4,
         "risk_per_trade_pct": 0.06,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.29R)."
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.27R)."
       },
       {
         "strategy": "nr7_release",
@@ -39,11 +39,11 @@
         "family": "volatility",
         "verdict": "confirmed_weak",
         "in_sample_r": 0.031,
-        "out_sample_r": 0.083,
-        "out_sample_trades": 1598,
-        "win_rate": 26.0,
+        "out_sample_r": 0.068,
+        "out_sample_trades": 1628,
+        "win_rate": 25.7,
         "risk_per_trade_pct": 0.06,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.08R)."
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.07R)."
       }
     ],
     "max_concurrent": 3,
@@ -68,32 +68,32 @@
   "equity": 1000000.0,
   "candidates": [
     {
-      "symbol": "IGIL",
+      "symbol": "CYIENT",
       "strategy": "gap_continuation",
       "strategy_label": "Gap Continuation",
-      "signal_day": "2026-10-22",
-      "close": 353.2,
-      "entry_hint": 353.2,
-      "stop": 325.65,
-      "risk_pct": 7.8,
-      "atr_pct": 3.12,
-      "turnover_crore": 13.8,
-      "expected_r": 0.295,
+      "signal_day": "2026-10-23",
+      "close": 1233.0,
+      "entry_hint": 1233.0,
+      "stop": 1102.64,
+      "risk_pct": 10.57,
+      "atr_pct": 4.23,
+      "turnover_crore": 53.4,
+      "expected_r": 0.269,
       "verdict": "confirmed_weak",
       "live_size_multiplier": 1.0,
       "sizing": {
-        "shares": 10,
-        "position_value": 3532.0,
+        "shares": 2,
+        "position_value": 2466.0,
         "risk_budget": 300.0,
-        "risk_per_share": 27.55,
-        "actual_risk": 275.47,
-        "pct_of_equity": 0.4,
+        "risk_per_share": 130.36,
+        "actual_risk": 260.73,
+        "pct_of_equity": 0.2,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.295,
+      "cell_expectancy_r": 0.269,
       "volatility_adjustment_r": 0.001,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.296
+      "edge_score_r": 0.27
     }
   ],
   "candidates_found": 1,
@@ -103,6 +103,6 @@
   },
   "calibration": null,
   "message": "1 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 50% of book risk (cautious external tape).",
-  "generated_at": "2026-10-22T18:41:11.255376+00:00",
+  "generated_at": "2026-10-23T18:33:31.219723+00:00",
   "source": "offline"
 }
