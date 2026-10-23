@@ -1315,12 +1315,9 @@
    "isin": "INE566M01025",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-08-14",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "504731",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BAJAJST": {
    "listing_date": "2026-04-20",
@@ -1519,12 +1516,13 @@
    "isin": "INE28SO01013",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-10-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "544996",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 586.0,
+   "sector": "Capital Goods",
+   "sub_sector": "Industrial Products",
+   "shares_crore": 18.799584
   },
   "BONLON": {
    "listing_date": "2026-02-20",
@@ -4700,12 +4698,13 @@
    "isin": "INE356Y01018",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-10-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545001",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 344.0,
+   "sector": "Healthcare",
+   "sub_sector": "Medical Equipment & Supplies",
+   "shares_crore": 10.164675
   },
   "SONA": {
    "listing_date": "2026-09-24",
@@ -5144,12 +5143,13 @@
    "isin": "INE0LDG01026",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-10-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "544999",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 700.0,
+   "sector": "Capital Goods",
+   "sub_sector": "Aerospace & Defense",
+   "shares_crore": 5.728214
   },
   "TOYAMSL": {
    "listing_date": "2026-08-17",
@@ -5617,12 +5617,13 @@
    "isin": "INE09PO01019",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-10-22",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545000",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 151.0,
+   "sector": "Capital Goods",
+   "sub_sector": "Industrial Products",
+   "shares_crore": 169.425452
   },
   "ZFSTEERING": {
    "listing_date": "2026-04-20",
