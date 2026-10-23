@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-10-23T11:04:25.441788+00:00",
+  "generated_at": "2026-10-23T11:44:19.059923+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -2601,12 +2601,12 @@
     "SHREDIGCEM": {
       "symbol": "SHREDIGCEM",
       "earnings_date": "2026-10-23",
-      "close_in_range_pct": 0.1387,
+      "close_in_range_pct": 0.2996,
       "next_day_gap_pct": null,
       "day_rvol_50d": 4.646,
       "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": -9.984,
+      "best_pop_pct": -8.085,
       "best_pop_rvol": 4.646
     },
     "SKMEGGPROD": {

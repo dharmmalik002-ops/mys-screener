@@ -1517,12 +1517,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544996",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 586.0,
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
-   "shares_crore": 18.799584
+   "shares_crore": 18.799584,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 586.0
   },
   "BONLON": {
    "listing_date": "2026-02-20",
@@ -4699,12 +4699,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545001",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 344.0,
    "sector": "Healthcare",
    "sub_sector": "Medical Equipment & Supplies",
-   "shares_crore": 10.164675
+   "shares_crore": 10.164675,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 344.0
   },
   "SONA": {
    "listing_date": "2026-09-24",
@@ -5144,12 +5144,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544999",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 700.0,
    "sector": "Capital Goods",
    "sub_sector": "Aerospace & Defense",
-   "shares_crore": 5.728214
+   "shares_crore": 5.728214,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 700.0
   },
   "TOYAMSL": {
    "listing_date": "2026-08-17",
@@ -5618,12 +5618,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545000",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 151.0,
    "sector": "Capital Goods",
    "sub_sector": "Industrial Products",
-   "shares_crore": 169.425452
+   "shares_crore": 169.425452,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 151.0
   },
   "ZFSTEERING": {
    "listing_date": "2026-04-20",
