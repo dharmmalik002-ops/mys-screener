@@ -1044,6 +1044,19 @@ html .mobile-tabbar {
     min-width: 0;
   }
 
+  /* With headers at the 11px floor the five columns need ~357px in a 331px
+     card at 375px. Narrower cell padding and an 80px rank sparkline (it
+     stretches; preserveAspectRatio is none) bring it back inside. */
+  html .homepro-groups-table thead th,
+  html .homepro-groups-table tbody td {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  html .homepro-groups-table .homepro-spark-cell svg {
+    width: 80px;
+  }
+
   /* The zoom row is [-] [slider] [+] "401 sessions - from 2 Jan 2025" on one
      nowrap line, which needs ~354px inside a 321px card. Let the caption drop
      to its own line instead of being clipped. */

@@ -136,10 +136,15 @@
      declaration within 8% of where it was bar fourteen of them, and the
      worst case is one 8px icon glyph.
 
-     Steps are dense between 9 and 14px on purpose -- that band holds 1,028
-     of the 1,178 declarations, because this is a table-heavy app. */
-  --fs-nano: 9px;
-  --fs-micro: 10px;
+     Steps are dense between 11 and 14px on purpose -- that band holds most
+     declarations, because this is a table-heavy app.
+
+     11px is the floor for any text a person reads. nano and micro were 9
+     and 10px; they now equal --fs-tiny and stay only so their 222 call
+     sites need no edit. Do not reintroduce a step below 11px -- an icon
+     glyph that must be smaller sets its own size and says why. */
+  --fs-nano: 11px;
+  --fs-micro: 11px;
   --fs-tiny: 11px;
   --fs-small: 12px;
   --fs-base: 13px;
@@ -274,6 +279,25 @@ body {
   color: var(--text);
   background-attachment: fixed;
   font-variant-numeric: tabular-nums;
+}
+
+/* Headings break into even lines instead of leaving one word alone on the
+   last; prose avoids a single-word last line. The longhand on purpose: the
+   `text-wrap` shorthand also sets text-wrap-mode, which would undo a
+   `white-space: nowrap` a heading inherits from its tab or chip. Browsers
+   without it wrap as before. */
+h1, h2, h3, h4, h5, h6, caption, legend {
+  text-wrap-style: balance;
+}
+
+p, li, dd, blockquote, figcaption {
+  text-wrap-style: pretty;
+}
+
+/* The browser's `smaller` turns <small> in 12px text into 10px. Keep the
+   step down, never below the 11px floor. */
+small {
+  font-size: max(var(--fs-tiny), 0.83em);
 }
 
 button,
@@ -7944,7 +7968,7 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
   border-radius: 999px;
   background: color-mix(in srgb, currentColor 16%, transparent);
   color: inherit;
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   line-height: 16px;
   text-align: center;
 }
@@ -9892,7 +9916,7 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
   padding: 1px 5px;
   border-radius: var(--radius-xs);
   border: 1px solid currentColor;
-  font-size: 0.72em;
+  font-size: var(--fs-tiny);
   opacity: 0.7;
 }
 
@@ -10149,7 +10173,7 @@ html:root[data-design] .chart-panel.chart-compact > .panel-header h2 {
 .watchlist-picker-why label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
 .watchlist-picker-why label > span {
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;

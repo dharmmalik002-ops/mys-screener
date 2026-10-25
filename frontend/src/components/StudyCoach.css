@@ -46,7 +46,7 @@
   text-align: center;
 }
 
-.coach-numbers span { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.coach-numbers span { font-size: var(--fs-tiny); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
 .coach-numbers strong { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
 
 .coach-edge {

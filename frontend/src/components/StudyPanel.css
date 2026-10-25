@@ -558,7 +558,7 @@
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   cursor: pointer;
 }
 

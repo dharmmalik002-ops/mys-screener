@@ -723,7 +723,7 @@
 }
 .homepro-nifty-axis {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   fill: var(--text-muted);
 }
 .homepro-nifty-last {
@@ -737,7 +737,7 @@
 .homepro-nifty-last-pill.down { fill: var(--candle-down); }
 .homepro-nifty-last-text {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   fill: #fff;
 }
@@ -750,7 +750,7 @@
   fill: var(--inverse);
 }
 .homepro-nifty-hover-text {
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   fill: var(--inverse-ink);
 }
 .homepro-nifty-ohlc {
@@ -766,7 +766,7 @@
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
   pointer-events: none;
 }
@@ -1222,7 +1222,7 @@ body.dark .homepro-modal-close:hover {
 }
 .homepro-xp-axis {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   fill: var(--text-muted);
   letter-spacing: 0.02em;
 }
@@ -1251,7 +1251,7 @@ body.dark .homepro-modal-close:hover {
   fill: var(--inverse);
 }
 .homepro-xp-axis-pill-text {
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   fill: var(--inverse-ink);
 }
 .homepro-xp-pulse {
@@ -1288,7 +1288,7 @@ body.dark .homepro-modal-close:hover {
   transform: translate(-50%, 0);
 }
 .homepro-xp-tip-date {
-  font-size: 10.5px;
+  font-size: var(--fs-tiny);
   opacity: 0.7;
 }
 .homepro-xp-tip-row {
@@ -1471,7 +1471,7 @@ html:root .homepro-xp-tip .homepro-xp-tip-regime {
 .homepro-briefing-stats dt {
   margin-bottom: 3px;
   font-family: var(--font-caption);
-  font-size: 10.5px;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1552,7 +1552,7 @@ html:root .homepro-xp-tip .homepro-xp-tip-regime {
 
 .homepro-xp-gauge-regime {
   fill: var(--text-muted);
-  font-size: 7.5px;
+  font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1731,15 +1731,17 @@ html:root .homepro-xp-tip .homepro-xp-tip-regime {
 }
 .ol-col .ol-chip {
   position: relative;
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   padding: 0 5px;
 }
 
 .homepro-xp-gauge {
   width: 220px;
 }
+/* Gauge text is in viewBox units; the 220px gauge draws them ~1.09x, so
+   10.5 lands just above the 11px floor. */
 .homepro-xp-gauge-mark {
-  font-size: 9px;
+  font-size: 10.5px;
   fill: var(--axis);
 }
 html:root .homepro-xp-gauge-score {
@@ -1750,7 +1752,7 @@ html:root .homepro-xp-gauge-score {
   fill: var(--text);
 }
 html:root .homepro-xp-gauge-regime {
-  font-size: 8px;
+  font-size: 10.5px;
   letter-spacing: 0.02em;
   text-transform: none;
   fill: var(--text-muted);

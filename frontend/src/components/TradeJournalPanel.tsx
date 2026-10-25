@@ -696,7 +696,7 @@ function EquityCurve({
     const xLabels = Array.from({ length: xLabelCount }, (_, i) => {
       const pt = points[Math.min(i * xStep, points.length - 1)];
       const label = pt.date ? pt.date.slice(0, 7) : "";
-      return `<text x="${pt.x.toFixed(1)}" y="${(pad.t + innerH + 18).toFixed(1)}" fill="var(--text-muted)" font-size="10" text-anchor="middle">${label}</text>`;
+      return `<text x="${pt.x.toFixed(1)}" y="${(pad.t + innerH + 18).toFixed(1)}" fill="var(--text-muted)" style="font-size: var(--fs-micro)" text-anchor="middle">${label}</text>`;
     }).join("");
 
     const finalVal = points[points.length - 1].val;
@@ -2652,7 +2652,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         .kpi strong { display: block; font-size: 18px; } .kpi span { font-size: 11px; color: #666; }
         table { border-collapse: collapse; width: 100%; font-size: 12px; }
         th, td { padding: 6px 8px; border-bottom: 1px solid #e5e5e5; text-align: left; }
-        th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
+        th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
         .num { text-align: right; font-variant-numeric: tabular-nums; }
         .pos { color: #047857; } .neg { color: var(--negative-shade); }
         @media print { body { margin: 12mm; } }

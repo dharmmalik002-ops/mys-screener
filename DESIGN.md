@@ -91,6 +91,17 @@ card titles 16px / 500, card values 22–32px, body 14–15px, buttons and label
 13px / 500, table headers 11px / 500 uppercase (+0.05em), captions 11–12px. Letter-spacing tightens as size grows
 (−0.01em body, −0.02 to −0.03em heroes).
 
+**11px is the floor** for anything a person reads, measured as rendered: SVG
+text in a scaled `viewBox` counts at its drawn size (the XP gauge sets 10.5
+so it lands at ~11.4), and canvas labels count too. `--fs-nano` and
+`--fs-micro` both equal 11px now and exist only for their old call sites;
+don't add a step below them. `<small>` is floored at 11px in `app.css`.
+
+Headings (`h1`–`h6`) use `text-wrap-style: balance` and prose (`p`, `li`,
+`dd`) uses `text-wrap-style: pretty`, set once in `app.css`. Use the
+longhand: the `text-wrap` shorthand also resets wrapping and undoes a
+`white-space: nowrap` the element inherits.
+
 ### Shape and motion
 
 - Radii: 8px (buttons, inputs, tabs, icon tiles), 10px (wells), 12px

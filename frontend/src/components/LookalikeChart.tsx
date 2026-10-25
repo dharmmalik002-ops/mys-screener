@@ -80,7 +80,7 @@ export function LookalikeChart({
     const sma = slice(data.sma), v = slice(data.v);
 
     const padL = labels ? 4 : 0;
-    const padR = labels ? 46 : 0;
+    const padR = labels ? 50 : 0;
     const padB = labels ? 16 : 0;
     const plotW = cssW - padL - padR;
     const priceH = (cssH - padB) * 0.78;
@@ -135,11 +135,11 @@ export function LookalikeChart({
 
     if (labels) {
       g.fillStyle = LABEL_COLOUR;
-      g.font = "10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+      g.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
       if (data.lo != null && data.hi != null) {
         const toPrice = (u: number) => (data.lo as number) + u * ((data.hi as number) - (data.lo as number));
         g.textAlign = "left";
-        g.fillText(fmtPrice(toPrice(vMax)), padL + plotW + 4, 10);
+        g.fillText(fmtPrice(toPrice(vMax)), padL + plotW + 4, 11);
         g.fillText(fmtPrice(toPrice(vMin)), padL + plotW + 4, priceH - 2);
       }
       if (data.dates) {
@@ -149,7 +149,7 @@ export function LookalikeChart({
           // The setup date sits at the top, beside the dashed line, so it can
           // never collide with the start and end dates along the bottom.
           g.textAlign = "right";
-          g.fillText(fmtDate(data.dates.setup), x(setup) + step / 2 - 3, 10);
+          g.fillText(fmtDate(data.dates.setup), x(setup) + step / 2 - 3, 11);
           g.fillText(fmtDate(data.dates.end), padL + plotW, cssH - 3);
         } else {
           g.textAlign = "right";

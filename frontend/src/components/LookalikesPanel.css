@@ -230,7 +230,7 @@
   background: transparent; color: var(--text-soft); font: inherit; font-size: var(--fs-small); cursor: pointer;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
 }
-.lookalike-calendar-day small { font-size: 0.65rem; color: var(--text-muted); }
+.lookalike-calendar-day small { font-size: var(--fs-tiny); color: var(--text-muted); }
 .lookalike-calendar-day.has-picks { background: var(--surface-strong); color: var(--text); }
 .lookalike-calendar-day.lean-worked { background: color-mix(in srgb, var(--positive) 20%, var(--surface-strong)); }
 .lookalike-calendar-day.lean-failed { background: color-mix(in srgb, var(--negative) 16%, var(--surface-strong)); }

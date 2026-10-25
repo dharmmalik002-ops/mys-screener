@@ -172,7 +172,7 @@
 .rrg-trail.lagging   .rrg-dot, .rrg-trail.lagging   .rrg-head, .rrg-trail.lagging   .rrg-head-glow { fill: var(--negative); }
 
 .rrg-head-label {
-  font-size: 10.5px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   fill: var(--text);
   /* Painted under the glyphs (paint-order: stroke), so a name stays readable

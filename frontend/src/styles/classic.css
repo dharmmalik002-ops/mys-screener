@@ -144,10 +144,15 @@
      declaration within 8% of where it was bar fourteen of them, and the
      worst case is one 8px icon glyph.
 
-     Steps are dense between 9 and 14px on purpose -- that band holds 1,028
-     of the 1,178 declarations, because this is a table-heavy app. */
-  --fs-nano: 9px;
-  --fs-micro: 10px;
+     Steps are dense between 11 and 14px on purpose -- that band holds most
+     declarations, because this is a table-heavy app.
+
+     11px is the floor for any text a person reads. nano and micro were 9
+     and 10px; they now equal --fs-tiny and stay only so their 222 call
+     sites need no edit. Do not reintroduce a step below 11px -- an icon
+     glyph that must be smaller sets its own size and says why. */
+  --fs-nano: 11px;
+  --fs-micro: 11px;
   --fs-tiny: 11px;
   --fs-small: 12px;
   --fs-base: 13px;
@@ -474,7 +479,7 @@ html:root[data-design="classic"] .top-nav .brand-cluster h1 .brand-accent {
 
 html:root[data-design="classic"] .top-nav .brand-cluster .eyebrow {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: 0.14em;
   color: var(--text-muted);
@@ -640,7 +645,7 @@ html:root[data-design="classic"] .homepro-kpi-label,
 html:root[data-design="classic"] .homepro-card h3,
 html:root[data-design="classic"] .panel-kicker {
   font-family: var(--font-sans);
-  font-size: 10.5px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
@@ -841,7 +846,7 @@ html:root[data-design="classic"] .chart-panel .panel-header h2 {
 html:root[data-design="classic"] .chart-panel .panel-header .panel-kicker,
 html:root[data-design="classic"] .chart-panel .panel-header .eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.1em;
 }
 

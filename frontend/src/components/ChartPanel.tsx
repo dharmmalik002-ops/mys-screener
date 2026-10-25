@@ -4887,7 +4887,7 @@ export function ChartPanel({
           return (
             <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
               <rect x={xStart} y={top} width={width} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
-              <text x={xStart + 4} y={top + 12} fontSize="10" fontWeight={500} fill={color}>{label}</text>
+              <text x={xStart + 4} y={top + 12} fontSize="11" fontWeight={500} fill={color}>{label}</text>
             </g>
           );
         })

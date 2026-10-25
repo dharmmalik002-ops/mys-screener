@@ -18,7 +18,7 @@
 
 .sar-eyebrow {
   margin: 0 0 2px;
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -105,7 +105,7 @@
 }
 
 .sar-stats span {
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -114,7 +114,7 @@
 
 .sar-stats strong { font-size: 17px; font-weight: 680; color: var(--text); font-variant-numeric: tabular-nums; }
 
-.sar-delta { font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.sar-delta { font-size: var(--fs-tiny); font-weight: 500; letter-spacing: 0; text-transform: none; }
 .sar-delta--up { color: var(--positive); }
 .sar-delta--down { color: var(--negative); }
 .sar-delta--flat { color: var(--text-muted); }
@@ -147,7 +147,7 @@
 .sar-row--head {
   cursor: default;
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   border-bottom: 1px solid var(--line);
@@ -164,7 +164,7 @@
 .sar-sig em { display: block; font-style: normal; font-size: 11px; color: var(--text-muted); }
 .sar-sig small {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
   opacity: 0.8;
   overflow: hidden;
@@ -174,7 +174,7 @@
 
 .sar-outcome { display: flex; flex-direction: column; gap: 1px; text-align: right; }
 .sar-outcome strong { font-variant-numeric: tabular-nums; font-weight: 680; }
-.sar-outcome em { font-style: normal; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sar-outcome em { font-style: normal; font-size: var(--fs-tiny); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .sar-row--win .sar-outcome strong { color: var(--positive); }
 .sar-row--loss .sar-outcome strong { color: var(--negative); }
