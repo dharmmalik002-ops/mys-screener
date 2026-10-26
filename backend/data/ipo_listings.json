@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-23",
+ "as_of": "2026-10-26",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,14 +7,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-23",
+ "bse_ipos_as_of": "2026-10-26",
  "bse_ipos": {
-  "544587": {
-   "name": "Midwest Limited",
-   "symbol": "MIDWESTLTD",
-   "listing_date": "2025-10-24",
-   "issue_price": 1065.0
-  },
   "544595": {
    "name": "Orkla India Limited",
    "symbol": "ORKLAINDIA",
@@ -961,7 +955,7 @@
    "listing_date": "2026-10-12",
    "name": "Ashapuri Gold Ornament Limited",
    "isin": "INE05FR01029",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "542579",
    "ipo": false,
@@ -2604,7 +2598,7 @@
    "listing_date": "2026-04-20",
    "name": "Investment & Precision Castings Limited",
    "isin": "INE155E01016",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "504786",
    "ipo": false,
@@ -3336,20 +3330,6 @@
    "bse_code": "500159",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "MIDWESTLTD": {
-   "listing_date": "2025-10-24",
-   "name": "Midwest Limited",
-   "isin": "INE0XAD01024",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544587",
-   "sector": "Consumer Durables",
-   "sub_sector": "Granites & Marbles",
-   "shares_crore": 3.616076,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 1065.0
   },
   "MIIL": {
    "listing_date": "2026-08-17",
@@ -4085,7 +4065,7 @@
    "listing_date": "2026-08-17",
    "name": "Prismx Global Ventures Limited",
    "isin": "INE286N01028",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "501314",
    "ipo": false,
@@ -4730,6 +4710,16 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "SPELS": {
+   "listing_date": "2026-08-17",
+   "name": "SPEL Semiconductor Limited",
+   "isin": "INE252A01019",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "517166",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
    "name": "Sri KPR Industries Limited",
@@ -4932,7 +4922,7 @@
    "listing_date": "2026-08-17",
    "name": "Swarnsarita Jewels India Limited",
    "isin": "INE967A01012",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "526365",
    "ipo": false,
