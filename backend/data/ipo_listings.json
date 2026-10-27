@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-26",
+ "as_of": "2026-10-27",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-26",
+ "bse_ipos_as_of": "2026-10-27",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -2790,6 +2790,16 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "KHAZANCHI": {
+   "listing_date": "2026-10-27",
+   "name": "Khazanchi Jewellers Limited",
+   "isin": "INE0OWC01011",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "543953",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
   "KIRANVYPAR": {
    "listing_date": "2026-04-20",
    "name": "Kiran Vyapar Limited",
@@ -4710,16 +4720,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "SPELS": {
-   "listing_date": "2026-08-17",
-   "name": "SPEL Semiconductor Limited",
-   "isin": "INE252A01019",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "517166",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
    "name": "Sri KPR Industries Limited",
@@ -4809,6 +4809,16 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 585.0
+  },
+  "SUDARSHAN": {
+   "listing_date": "2026-10-27",
+   "name": "Sudarshan Pharma Industries Limited",
+   "isin": "INE00TV01023",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "543828",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "SUDEEPPHRM": {
    "listing_date": "2025-11-28",
@@ -5185,7 +5195,7 @@
    "listing_date": "2026-10-12",
    "name": "Triveni Power Transmission Limited",
    "isin": "INE2WKE01011",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544824",
    "ipo": false,
