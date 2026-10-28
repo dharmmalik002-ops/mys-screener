@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-27",
+ "as_of": "2026-10-28",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-27",
+ "bse_ipos_as_of": "2026-10-28",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -752,6 +752,18 @@
    "symbol": "SMT",
    "listing_date": "2026-10-23",
    "issue_price": 344.0
+  },
+  "545004": {
+   "name": "Jio Platforms Limited",
+   "symbol": "JPL",
+   "listing_date": "2026-10-28",
+   "issue_price": 1119.0
+  },
+  "545005": {
+   "name": "Paras Healthcare Limited",
+   "symbol": "PARASHLTH",
+   "listing_date": "2026-10-28",
+   "issue_price": 693.0
   }
  },
  "listings": {
@@ -2678,6 +2690,19 @@
    "basis": "bse_ipo_list",
    "issue_price": 225.0
   },
+  "JPL": {
+   "listing_date": "2026-10-28",
+   "name": "Jio Platforms Limited",
+   "isin": "INE0BJO01010",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-27",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "JSIPL": {
    "listing_date": "2026-09-23",
    "name": "Jindal Supreme (India) Limited",
@@ -3813,6 +3838,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "PARASHLTH": {
+   "listing_date": "2026-10-28",
+   "name": "Paras Healthcare Limited",
+   "isin": "INE661T01029",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-27",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "PARIN": {
    "listing_date": "2026-09-25",
    "name": "Parin Enterprises Limited",
@@ -4554,6 +4592,19 @@
    "bse_code": "532323",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "SHIVAM-RE1": {
+   "listing_date": "2026-10-28",
+   "name": "Shivam Autotech Ltd-RE",
+   "isin": "INE637H20024",
+   "series": "BE",
+   "exchange": "NSE",
+   "checked_session": "2026-10-27",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "SHIVAUM": {
    "listing_date": "2025-11-14",
