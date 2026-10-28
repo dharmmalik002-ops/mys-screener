@@ -2697,12 +2697,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545004",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 1119.0,
    "sector": "Telecommunication",
    "sub_sector": "Telecom - Cellular & Fixed line services",
-   "shares_crore": 920.90308
+   "shares_crore": 920.90308,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1119.0
   },
   "JSIPL": {
    "listing_date": "2026-09-23",
@@ -3846,12 +3846,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545005",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 693.0,
    "sector": "Healthcare",
    "sub_sector": "Hospital",
-   "shares_crore": 10.820118
+   "shares_crore": 10.820118,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 693.0
   },
   "PARIN": {
    "listing_date": "2026-09-25",
