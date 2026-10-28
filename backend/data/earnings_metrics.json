@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-10-28T10:47:22.787822+00:00",
+  "generated_at": "2026-10-28T11:04:27.781661+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -4753,6 +4753,50 @@
       "source": "bse-calendar",
       "best_pop_pct": -0.022,
       "best_pop_rvol": 8.654
+    },
+    "ELANTAS": {
+      "symbol": "ELANTAS",
+      "earnings_date": "2026-10-28",
+      "close_in_range_pct": 0.4923,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.608,
+      "return_5d_pct": null,
+      "source": "bse-calendar",
+      "best_pop_pct": 0.994,
+      "best_pop_rvol": 0.608
+    },
+    "MMWL": {
+      "symbol": "MMWL",
+      "earnings_date": "2026-10-28",
+      "close_in_range_pct": 0.4029,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.147,
+      "return_5d_pct": null,
+      "source": "bse-calendar",
+      "best_pop_pct": -2.399,
+      "best_pop_rvol": 0.147
+    },
+    "MANAKCOAT": {
+      "symbol": "MANAKCOAT",
+      "earnings_date": "2026-10-28",
+      "close_in_range_pct": 0.7691,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 1.343,
+      "return_5d_pct": null,
+      "source": "bse-calendar",
+      "best_pop_pct": 3.377,
+      "best_pop_rvol": 1.343
+    },
+    "ROBU": {
+      "symbol": "ROBU",
+      "earnings_date": "2026-10-28",
+      "close_in_range_pct": 0.8218,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.784,
+      "return_5d_pct": null,
+      "source": "bse-calendar",
+      "best_pop_pct": 4.391,
+      "best_pop_rvol": 0.784
     }
   }
 }
