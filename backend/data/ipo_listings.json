@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-28",
+ "as_of": "2026-10-29",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-28",
+ "bse_ipos_as_of": "2026-10-29",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -1513,6 +1513,16 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "508136",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "BONDADA": {
+   "listing_date": "2026-10-29",
+   "name": "Bondada Engineering Limited",
+   "isin": "INE0Q8P01029",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "543971",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
