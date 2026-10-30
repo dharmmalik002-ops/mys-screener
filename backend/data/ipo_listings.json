@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-29",
+ "as_of": "2026-10-30",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -7,7 +7,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-10-29",
+ "bse_ipos_as_of": "2026-10-30",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -1183,6 +1183,19 @@
    "basis": "bse_ipo_list",
    "issue_price": 53.0
   },
+  "ARHAM": {
+   "listing_date": "2026-10-30",
+   "name": "Arham Technologies Limited",
+   "isin": "INE0L2Y01011",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-10-29",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
+  },
   "ARIHANT": {
    "listing_date": "2026-04-20",
    "name": "Arihant Foundations & Housing Limited",
@@ -1990,7 +2003,7 @@
    "listing_date": "2026-04-20",
    "name": "EL CID Investments Limited",
    "isin": "INE927X01018",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "503681",
    "ipo": false,
@@ -2602,6 +2615,16 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "INDTONER": {
+   "listing_date": "2026-10-30",
+   "name": "Indian Toners & Developers Limited",
+   "isin": "INE826B01026",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "523586",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
   "INNOVISION": {
    "listing_date": "2026-03-23",
    "name": "Innovision Limited",
@@ -2742,7 +2765,7 @@
    "listing_date": "2026-04-20",
    "name": "Kama Holdings Limited",
    "isin": "INE411F01010",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "532468",
    "ipo": false,
