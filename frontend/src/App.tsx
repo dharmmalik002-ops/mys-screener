@@ -6599,7 +6599,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                       setTimeout(() => handleSearchSubmit(value), 0);
                     }
                   }}
-                  placeholder="Search stock"
+                  placeholder="Search"
                   aria-label="Search symbol or company. Enter opens chart, Shift+Enter jumps to group."
                 />
                 <span className="nav-search-hint">Enter opens chart. Shift+Enter jumps to the stock&apos;s group.</span>

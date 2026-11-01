@@ -96,8 +96,8 @@ describe("results page rules", () => {
     expect(formatCrore(19644)).toBe("19,644");
     expect(formatCrore(11.4)).toBe("11.40");
     expect(formatCrore(null)).toBe("—");
-    expect(formatMarketCap(230000)).toBe("₹2.30 L Cr.");
-    expect(formatMarketCap(45210.4)).toBe("₹45,210 Cr.");
+    expect(formatMarketCap(230000)).toBe("₹2.30 L cr");
+    expect(formatMarketCap(45210.4)).toBe("₹45,210 cr");
     expect(formatPct(-13.6)).toBe("-13.60%");
     expect(formatDeclared("2026-10-09T17:42")).toBe("9 Oct 2026 · 5:42 PM");
     expect(formatDeclared("2026-10-09T00:05")).toBe("9 Oct 2026 · 12:05 AM");

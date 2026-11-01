@@ -233,7 +233,7 @@ export function formatPct(value: number | null | undefined): string {
 
 export function formatMarketCap(crore: number | null | undefined): string {
   if (crore == null || !Number.isFinite(crore) || crore <= 0) return "—";
-  return crore >= 100_000 ? `₹${INR2.format(crore / 100_000)} L Cr.` : `₹${INR0.format(crore)} Cr.`;
+  return crore >= 100_000 ? `₹${INR2.format(crore / 100_000)} L cr` : `₹${INR0.format(crore)} cr`;
 }
 
 export function formatRatio(value: number | null | undefined): string {

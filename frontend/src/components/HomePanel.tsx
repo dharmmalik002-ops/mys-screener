@@ -1028,7 +1028,7 @@ function XpHeroTile({ xp }: { xp: XpBreadthScore }) {
         <div className="homepro-kpi-label">XP breadth score</div>
         {delta != null && deltaCls ? (
           <span className={`homepro-xp-delta ${deltaCls}`} title="Change vs previous session">
-            {deltaCls === "flat" ? "▬" : deltaCls === "up" ? "▲" : "▼"} {Math.abs(delta).toFixed(2)}
+            {delta > 0 ? "+" : delta < 0 ? "−" : ""}{Math.abs(delta).toFixed(2)} vs last session
           </span>
         ) : null}
       </div>
@@ -1354,7 +1354,7 @@ export function HomePanel({
             ) : null}
             {briefing.improving.length > 0 || briefing.topGroups.length > 0 ? (
               <div className="homepro-briefing-groups">
-                <dt>{briefing.improving.length > 0 ? "Improving groups" : "Leading groups"}</dt>
+                <dt>{briefing.improving.length > 0 ? "Ranks gained this week" : "Leading groups"}</dt>
                 <dd>
                   {(briefing.improving.length > 0 ? briefing.improving : briefing.topGroups).map((g, i) => (
                     <Fragment key={g.group_id}>
@@ -1365,7 +1365,7 @@ export function HomePanel({
                         onClick={() => onOpenGroups({ groupId: g.group_id })}
                       >
                         {g.group_name}
-                        {briefing.improving.length > 0 ? ` ▲${g.rank_change_1w}` : ""}
+                        {briefing.improving.length > 0 ? ` +${g.rank_change_1w}` : ""}
                       </button>
                     </Fragment>
                   ))}

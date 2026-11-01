@@ -84,11 +84,13 @@ Canvas charts cannot read CSS variables; their colours live in
 |---|---|---|
 | `--font-sans` | System SF Pro stack | Everything by default; tabular numerals on |
 | `--font-editorial` | `ui-serif`, New York, Georgia | One-sentence headlines only (the Home briefing) |
-| `--font-caption` | `ui-monospace`, SF Mono | Small uppercase kickers ("MARKET BRIEFING · 01 OCT") |
+| `--font-caption` | `ui-monospace`, SF Mono | Small sentence-case kickers ("Market briefing · 01 Oct") |
 
 Sizes in practice: hero figures 30–46px (`clamp`), page titles 26px / 500,
 card titles 16px / 500, card values 22–32px, body 14–15px, buttons and labels
-13px / 500, table headers 11px / 500 uppercase (+0.05em), captions 11–12px. Letter-spacing tightens as size grows
+13px / 500, table headers 12px / 500 muted, captions 11–12px. **Sentence case
+everywhere** — no `text-transform: uppercase`, no tracked capitals; Studio
+resets it at the end of `premium.css`. No italic for emphasis. Letter-spacing tightens as size grows
 (−0.01em body, −0.02 to −0.03em heroes).
 
 **11px is the floor** for anything a person reads, measured as rendered: SVG

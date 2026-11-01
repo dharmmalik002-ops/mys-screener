@@ -973,8 +973,7 @@ html:root[data-design="studio"] .news-modal-title {
 html:root[data-design="studio"] .news-modal-sub {
   font-family: var(--font-caption);
   font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--text-muted);
   opacity: 1;
 }
@@ -1065,8 +1064,7 @@ html:root[data-design="studio"] .news-item-title:hover {
 html:root[data-design="studio"] .news-item-meta {
   font-family: var(--font-caption);
   font-size: var(--fs-tiny);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   opacity: 1;
 }
 
@@ -1312,12 +1310,12 @@ html:root[data-design="studio"] :is(.homepro-kpi-value, .mkx-number strong, .mkc
   letter-spacing: -0.03em;
 }
 
-/* Table headers: small caps-height labels, one treatment in every table. */
+/* Table headers: small muted sentence-case labels, one treatment in every table. */
 html:root[data-design="studio"] :is(table thead th, .st-card .st-head, .sortable-th-btn) {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-muted);
 }
 
@@ -1519,4 +1517,32 @@ html:root[data-design="studio"] .chart-tool-rail-button.active {
   background: var(--inverse);
   border-color: var(--inverse);
   color: var(--inverse-ink);
+}
+
+/* Sentence case, everywhere. Every label in the source is already written in
+   sentence case ("Market briefing", "Why", "Sales"); the shared stylesheets
+   shouted them back in tracked capitals, which reads as template chrome and
+   is slower to scan in a dense table. Studio only: Classic keeps its look.
+   `capitalize` is left alone on purpose — it is only used on single words
+   that arrive lowercase from the API. */
+html:root[data-design="studio"] body *:not(input):not(textarea) {
+  text-transform: none;
+}
+html:root[data-design="studio"] body *:is(
+  .ol-kicker, [class*="kicker"], [class*="eyebrow"], .mk-outline-hdr,
+  th, dt, legend, .ticker-ribbon-item span
+) {
+  letter-spacing: 0;
+}
+html:root[data-design="studio"] .panel .mkb .mkb-why h3 {
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* The capitalize call sites, restated so the reset above does not reach them. */
+html:root[data-design="studio"] .earnings-metric .metric-label,
+html:root[data-design="studio"] .cat-impact,
+html:root[data-design="studio"] .fdm-standing strong,
+html:root[data-design="studio"] .pfd-sips i,
+html:root[data-design="studio"] .bot-macro-gate strong {
+  text-transform: capitalize;
 }

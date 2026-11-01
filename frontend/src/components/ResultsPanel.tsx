@@ -138,7 +138,7 @@ function ResultCard({ item, basis, onOpen }: { item: ShownResult; basis: Results
         <table className="results-table">
           <thead>
             <tr>
-              <th scope="col">(In Cr.)</th>
+              <th scope="col">₹ crore</th>
               <th scope="col">YoY Growth</th>
               <th scope="col">QoQ Growth</th>
               <th scope="col">{item.period}</th>
