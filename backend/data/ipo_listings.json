@@ -1992,12 +1992,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545008",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 1665.0,
    "sector": "Financial Services",
    "sub_sector": "Asset Management Company",
-   "shares_crore": 6.465522
+   "shares_crore": 6.465522,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 1665.0
   },
   "EKI": {
    "listing_date": "2026-08-17",
