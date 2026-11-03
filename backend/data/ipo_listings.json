@@ -1523,12 +1523,13 @@
    "isin": "INE0ZCQ01019",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-11-02",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545011",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 150.0,
+   "sector": "Chemicals",
+   "sub_sector": "Specialty Chemicals",
+   "shares_crore": 6.203193
   },
   "BLUECLOUDS": {
    "listing_date": "2026-08-17",
@@ -4523,12 +4524,13 @@
    "isin": "INE0PKN01028",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-11-02",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545009",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 330.0,
+   "sector": "Utilities",
+   "sub_sector": "Waste Management",
+   "shares_crore": 9.795669
   },
   "SGLRES": {
    "listing_date": "2026-08-17",
