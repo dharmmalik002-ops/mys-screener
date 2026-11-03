@@ -2,10 +2,10 @@
   "started": "2026-09-18",
   "starting_equity": 1000000.0,
   "cash": 0.0,
-  "last_session": "2026-11-02",
-  "sessions": 29,
-  "sleeve_units": 531.762723,
-  "sleeve_level": 1843.094891,
+  "last_session": "2026-11-03",
+  "sessions": 30,
+  "sleeve_units": 538.064787,
+  "sleeve_level": 1821.507709,
   "positions": [],
   "closed": [],
   "equity_curve": [
@@ -207,6 +207,13 @@
     },
     {
       "day": "2026-11-02",
+      "equity": 980089.16,
+      "open": 0,
+      "cash": 0.0,
+      "sleeve": 980089.16
+    },
+    {
+      "day": "2026-11-03",
       "equity": 980089.16,
       "open": 0,
       "cash": 0.0,
