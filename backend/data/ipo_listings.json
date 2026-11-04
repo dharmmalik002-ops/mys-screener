@@ -2146,12 +2146,9 @@
    "isin": "INE2WCT01016",
    "series": "BE",
    "exchange": "NSE",
-   "checked_session": "2026-11-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545012",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "ESDS": {
    "listing_date": "2026-09-04",
@@ -2643,12 +2640,9 @@
    "isin": "INE2W6901017",
    "series": "BE",
    "exchange": "NSE",
-   "checked_session": "2026-11-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545013",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "IIRM": {
    "listing_date": "2026-10-22",
@@ -3539,12 +3533,13 @@
    "isin": "INE2IXO01012",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-11-03",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545017",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 162.0,
+   "sector": "Consumer Durables",
+   "sub_sector": "Gems, Jewellery And Watches",
+   "shares_crore": 5.6291
   },
   "MLKFOOD": {
    "listing_date": "2026-08-17",
