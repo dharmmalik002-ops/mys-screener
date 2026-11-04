@@ -1,13 +1,14 @@
 {
- "as_of": "2026-11-03",
+ "as_of": "2026-11-04",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
-  "LKPFIN": "GYFTR"
+  "LKPFIN": "GYFTR",
+  "NOVARTIND": "EVONILE"
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-03",
+ "bse_ipos_as_of": "2026-11-04",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -782,6 +783,12 @@
    "symbol": "BLSPOLY",
    "listing_date": "2026-11-03",
    "issue_price": 150.0
+  },
+  "545017": {
+   "name": "M. K. SONS FINE JEWELS LIMITED",
+   "symbol": "MKJEWELS",
+   "listing_date": "2026-11-04",
+   "issue_price": 162.0
   }
  },
  "listings": {
@@ -2133,6 +2140,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "ENNATURE": {
+   "listing_date": "2026-11-04",
+   "name": "Ennature Bio Pharma Limited",
+   "isin": "INE2WCT01016",
+   "series": "BE",
+   "exchange": "NSE",
+   "checked_session": "2026-11-03",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "ESDS": {
    "listing_date": "2026-09-04",
    "name": "ESDS Software Solution Limited",
@@ -2146,6 +2166,16 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 429.0
+  },
+  "EVONILE": {
+   "listing_date": "2026-04-20",
+   "name": "Evonile Pharma Limited",
+   "isin": "INE234A01025",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "500672",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "EXCELSOFT": {
    "listing_date": "2025-11-26",
@@ -2606,6 +2636,19 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 2165.0
+  },
+  "IGLSPIRITS": {
+   "listing_date": "2026-11-04",
+   "name": "IGL Spirits Limited",
+   "isin": "INE2W6901017",
+   "series": "BE",
+   "exchange": "NSE",
+   "checked_session": "2026-11-03",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "IIRM": {
    "listing_date": "2026-10-22",
@@ -3490,6 +3533,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "MKJEWELS": {
+   "listing_date": "2026-11-04",
+   "name": "M. K. Sons Fine Jewels Limited",
+   "isin": "INE2IXO01012",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-11-03",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
+  },
   "MLKFOOD": {
    "listing_date": "2026-08-17",
    "name": "Milkfood Limited",
@@ -3747,16 +3803,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 75.0
-  },
-  "NOVARTIND": {
-   "listing_date": "2026-04-20",
-   "name": "Novartis India Limited",
-   "isin": "INE234A01025",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "500672",
-   "ipo": false,
-   "basis": "bse_ipo_list"
   },
   "NSE": {
    "listing_date": "2026-09-24",
