@@ -3534,12 +3534,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545017",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 162.0,
    "sector": "Consumer Durables",
    "sub_sector": "Gems, Jewellery And Watches",
-   "shares_crore": 5.6291
+   "shares_crore": 5.6291,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 162.0
   },
   "MLKFOOD": {
    "listing_date": "2026-08-17",
