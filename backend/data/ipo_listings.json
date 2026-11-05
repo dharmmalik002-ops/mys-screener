@@ -1405,12 +1405,13 @@
    "isin": "INE0XFY01011",
    "series": "BE",
    "exchange": "NSE",
-   "checked_session": "2026-11-04",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545018",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 82.0,
+   "sector": "Capital Goods",
+   "sub_sector": "Iron & Steel Products",
+   "shares_crore": 6.282423
   },
   "BEEKAY": {
    "listing_date": "2026-04-20",
@@ -2374,12 +2375,9 @@
    "isin": "INE207H01026",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-04-17",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "513536",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "GOODYEAR": {
    "listing_date": "2026-04-20",
