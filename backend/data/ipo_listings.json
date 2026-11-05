@@ -1406,12 +1406,12 @@
    "series": "BE",
    "exchange": "NSE",
    "bse_code": "545018",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 82.0,
    "sector": "Capital Goods",
    "sub_sector": "Iron & Steel Products",
-   "shares_crore": 6.282423
+   "shares_crore": 6.282423,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 82.0
   },
   "BEEKAY": {
    "listing_date": "2026-04-20",
