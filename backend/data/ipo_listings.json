@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-04",
+ "as_of": "2026-11-05",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -8,7 +8,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-04",
+ "bse_ipos_as_of": "2026-11-05",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -789,6 +789,12 @@
    "symbol": "MKJEWELS",
    "listing_date": "2026-11-04",
    "issue_price": 162.0
+  },
+  "545018": {
+   "name": "BOMBAY COATED AND SPECIAL STEELS LIMITED",
+   "symbol": "BCSSL",
+   "listing_date": "2026-11-05",
+   "issue_price": 82.0
   }
  },
  "listings": {
@@ -1392,6 +1398,19 @@
    "bse_code": "542057",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "BCSSL": {
+   "listing_date": "2026-11-05",
+   "name": "Bombay Coated and Special Steels Limited",
+   "isin": "INE0XFY01011",
+   "series": "BE",
+   "exchange": "NSE",
+   "checked_session": "2026-11-04",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "BEEKAY": {
    "listing_date": "2026-04-20",
@@ -2352,12 +2371,15 @@
   "GNRL": {
    "listing_date": "2026-04-20",
    "name": "Gujarat Natural Resources Limited",
-   "isin": "INE207H01018",
+   "isin": "INE207H01026",
    "series": "EQ",
    "exchange": "NSE",
-   "bse_code": "513536",
-   "ipo": false,
-   "basis": "bse_ipo_list"
+   "checked_session": "2026-04-17",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
   },
   "GOODYEAR": {
    "listing_date": "2026-04-20",
