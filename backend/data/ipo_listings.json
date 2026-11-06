@@ -1376,12 +1376,9 @@
    "isin": "INE029Q01017",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-11-05",
-   "prior_trading": true,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
+   "bse_code": "545019",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BAJAJST": {
    "listing_date": "2026-04-20",
