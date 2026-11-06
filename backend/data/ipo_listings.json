@@ -1,14 +1,15 @@
 {
- "as_of": "2026-11-05",
+ "as_of": "2026-11-06",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
+  "BRIGHT": "BRIGHTOUTD",
   "LKPFIN": "GYFTR",
   "NOVARTIND": "EVONILE"
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-05",
+ "bse_ipos_as_of": "2026-11-06",
  "bse_ipos": {
   "544595": {
    "name": "Orkla India Limited",
@@ -1369,6 +1370,19 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "BAHETI": {
+   "listing_date": "2026-11-06",
+   "name": "Baheti Recycling Industries Limited",
+   "isin": "INE029Q01017",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-11-05",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
+  },
   "BAJAJST": {
    "listing_date": "2026-04-20",
    "name": "Bajaj Steel Industries Limited",
@@ -1649,6 +1663,16 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526731",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "BRIGHTOUTD": {
+   "listing_date": "2026-11-06",
+   "name": "Bright Outdoor Media Limited",
+   "isin": "INE0OMI01019",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "543831",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -4241,7 +4265,7 @@
    "listing_date": "2026-09-04",
    "name": "Priority Jewels Limited",
    "isin": "INE15EH01014",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "544899",
    "sector": "Consumer Durables",
@@ -5605,7 +5629,7 @@
    "listing_date": "2026-08-17",
    "name": "Virat Industries Limited",
    "isin": "INE467D01017",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "530521",
    "ipo": false,
