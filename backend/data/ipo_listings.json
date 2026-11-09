@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-06",
+ "as_of": "2026-11-09",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,20 +9,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-06",
+ "bse_ipos_as_of": "2026-11-09",
  "bse_ipos": {
-  "544595": {
-   "name": "Orkla India Limited",
-   "symbol": "ORKLAINDIA",
-   "listing_date": "2025-11-06",
-   "issue_price": 730.0
-  },
-  "544599": {
-   "name": "Studds Accessories Limited",
-   "symbol": "STUDDS",
-   "listing_date": "2025-11-07",
-   "issue_price": 585.0
-  },
   "544600": {
    "name": "Lenskart Solutions Limited",
    "symbol": "LENSKART",
@@ -3315,7 +3303,7 @@
    "listing_date": "2025-12-12",
    "name": "Le Merite Exports Limited",
    "isin": "INE0G1L01025",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "checked_session": "2025-12-11",
    "prior_trading": true,
@@ -3396,7 +3384,7 @@
    "listing_date": "2026-04-20",
    "name": "Majestic Auto Limited",
    "isin": "INE201B01022",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500267",
    "ipo": false,
@@ -3926,7 +3914,7 @@
    "listing_date": "2026-08-17",
    "name": "Optimus Finance Limited",
    "isin": "INE031G01022",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "531254",
    "ipo": false,
@@ -3955,20 +3943,6 @@
    "bse_code": "531859",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "ORKLAINDIA": {
-   "listing_date": "2025-11-06",
-   "name": "Orkla India Limited",
-   "isin": "INE16NZ01023",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544595",
-   "sector": "Fast Moving Consumer Goods",
-   "sub_sector": "Other Food Products",
-   "shares_crore": 13.69893,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 730.0
   },
   "PACIFICI": {
    "listing_date": "2026-08-17",
@@ -4126,19 +4100,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "507864",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "PIRAMALFIN": {
-   "listing_date": "2025-11-07",
-   "name": "Piramal Finance Limited",
-   "isin": "INE202B01038",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544597",
-   "sector": "Financial Services",
-   "sub_sector": "Non Banking Financial Company (NBFC)",
-   "shares_crore": 23.663032,
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -4401,7 +4362,7 @@
    "listing_date": "2026-04-20",
    "name": "RSD Finance Limited",
    "isin": "INE616F01022",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539875",
    "ipo": false,
@@ -4945,6 +4906,16 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "SPELS": {
+   "listing_date": "2026-08-17",
+   "name": "SPEL Semiconductor Limited",
+   "isin": "INE252A01019",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "517166",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
   "SRIKPRIND": {
    "listing_date": "2026-08-17",
    "name": "Sri KPR Industries Limited",
@@ -5020,20 +4991,6 @@
    "bse_code": "513173",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "STUDDS": {
-   "listing_date": "2025-11-07",
-   "name": "Studds Accessories Limited",
-   "isin": "INE00Q601028",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544599",
-   "sector": "Automobile and Auto Components",
-   "sub_sector": "Auto Components & Equipments",
-   "shares_crore": 3.935333,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 585.0
   },
   "SUDARSHAN": {
    "listing_date": "2026-10-27",
