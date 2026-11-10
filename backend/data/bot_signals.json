@@ -9,10 +9,10 @@
     "pct_from_200dma": 4.37,
     "pct_from_52w_high": -5.04,
     "ma200_slope": -0.0646,
-    "breadth_above_200dma": 47.67,
-    "breadth_net_new_highs": 2.97,
+    "breadth_above_200dma": 47.45,
+    "breadth_net_new_highs": 2.88,
     "vix_percentile": 86.1,
-    "constituents": 1483,
+    "constituents": 1490,
     "regime_label": "Correction"
   },
   "playbook": {
@@ -38,12 +38,12 @@
         "label": "NR7 Release",
         "family": "volatility",
         "verdict": "confirmed_weak",
-        "in_sample_r": 0.035,
+        "in_sample_r": 0.033,
         "out_sample_r": 0.046,
-        "out_sample_trades": 1670,
+        "out_sample_trades": 1669,
         "win_rate": 25.4,
         "risk_per_trade_pct": 0.06,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.04R then +0.05R)."
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.03R then +0.05R)."
       }
     ],
     "max_concurrent": 3,
@@ -56,7 +56,6 @@
       "Nasdaq Composite",
       "CBOE VIX",
       "US Dollar Index",
-      "Brent Crude",
       "Copper",
       "MSCI Emerging Markets ETF"
     ],
@@ -66,7 +65,7 @@
     ],
     "size_multiplier": 0.25,
     "stance": "defensive",
-    "note": "7 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
+    "note": "6 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
   },
   "stance": "selective",
   "equity": 1000000.0,
@@ -835,6 +834,6 @@
   },
   "calibration": null,
   "message": "27 candidate(s) from 2 cleared setup(s) in Correction. Sizing at 25% of book risk (defensive external tape).",
-  "generated_at": "2026-11-09T23:32:45.878896+00:00",
+  "generated_at": "2026-11-10T20:59:40.854884+00:00",
   "source": "offline"
 }

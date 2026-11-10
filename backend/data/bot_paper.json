@@ -26,13 +26,13 @@
         "asset": "gold",
         "name": "Gold (GOLDBEES)",
         "weight": 0.5,
-        "value": 491585.9
+        "value": 491585.91
       },
       {
         "asset": "cash",
         "name": "Liquid fund (HDFC Liquid)",
         "weight": 0.5,
-        "value": 491585.9
+        "value": 491585.91
       }
     ]
   },
