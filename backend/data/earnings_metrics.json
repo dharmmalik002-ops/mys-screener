@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-09T22:49:00.412614+00:00",
+  "generated_at": "2026-11-10T10:45:19.530011+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -3263,11 +3263,11 @@
       "earnings_date": "2026-11-09",
       "close_in_range_pct": 0.0528,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.923,
+      "day_rvol_50d": 1.924,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.778,
-      "best_pop_rvol": 1.923
+      "best_pop_rvol": 1.924
     },
     "LT": {
       "symbol": "LT",
@@ -11121,7 +11121,7 @@
       "return_5d_pct": -16.08,
       "source": "bse-calendar",
       "best_pop_pct": 1.442,
-      "best_pop_rvol": 2.616
+      "best_pop_rvol": 2.618
     },
     "ASTRAL": {
       "symbol": "ASTRAL",
@@ -11231,7 +11231,7 @@
       "return_5d_pct": 6.345,
       "source": "bse-calendar",
       "best_pop_pct": 7.344,
-      "best_pop_rvol": 3.8
+      "best_pop_rvol": 3.801
     },
     "NBCC": {
       "symbol": "NBCC",
@@ -11418,7 +11418,7 @@
       "return_5d_pct": -4.286,
       "source": "bse-calendar",
       "best_pop_pct": 6.344,
-      "best_pop_rvol": 6.165
+      "best_pop_rvol": 6.166
     },
     "SIGNATURE": {
       "symbol": "SIGNATURE",
@@ -11451,7 +11451,7 @@
       "return_5d_pct": 6.934,
       "source": "bse-calendar",
       "best_pop_pct": 6.586,
-      "best_pop_rvol": 1.998
+      "best_pop_rvol": 1.999
     },
     "LLOYDSENT": {
       "symbol": "LLOYDSENT",
@@ -11506,7 +11506,7 @@
       "return_5d_pct": 7.938,
       "source": "bse-calendar",
       "best_pop_pct": 10.114,
-      "best_pop_rvol": 2.704
+      "best_pop_rvol": 2.705
     },
     "INDIASHLTR": {
       "symbol": "INDIASHLTR",
@@ -11847,7 +11847,7 @@
       "return_5d_pct": 3.457,
       "source": "bse-calendar",
       "best_pop_pct": 2.067,
-      "best_pop_rvol": 0.651
+      "best_pop_rvol": 0.652
     },
     "TARC": {
       "symbol": "TARC",
@@ -12331,7 +12331,7 @@
       "return_5d_pct": -4.867,
       "source": "bse-calendar",
       "best_pop_pct": 2.871,
-      "best_pop_rvol": 0.574
+      "best_pop_rvol": 0.575
     },
     "TASTYBITE": {
       "symbol": "TASTYBITE",
@@ -12342,7 +12342,7 @@
       "return_5d_pct": -6.018,
       "source": "bse-calendar",
       "best_pop_pct": 1.526,
-      "best_pop_rvol": 0.891
+      "best_pop_rvol": 0.892
     },
     "KICL": {
       "symbol": "KICL",
@@ -12430,7 +12430,7 @@
       "return_5d_pct": 2.851,
       "source": "bse-calendar",
       "best_pop_pct": 1.957,
-      "best_pop_rvol": 0.677
+      "best_pop_rvol": 0.681
     },
     "UGROCAP": {
       "symbol": "UGROCAP",
@@ -12485,7 +12485,7 @@
       "return_5d_pct": -2.048,
       "source": "bse-calendar",
       "best_pop_pct": 1.188,
-      "best_pop_rvol": 0.05
+      "best_pop_rvol": 0.059
     },
     "HESTERBIO": {
       "symbol": "HESTERBIO",
@@ -12782,7 +12782,7 @@
       "return_5d_pct": -2.268,
       "source": "bse-calendar",
       "best_pop_pct": -2.268,
-      "best_pop_rvol": 1.846
+      "best_pop_rvol": 1.848
     },
     "COROMANDEL": {
       "symbol": "COROMANDEL",
@@ -12793,7 +12793,7 @@
       "return_5d_pct": 3.026,
       "source": "bse-calendar",
       "best_pop_pct": 3.026,
-      "best_pop_rvol": 1.625
+      "best_pop_rvol": 1.626
     },
     "VOLTAS": {
       "symbol": "VOLTAS",
@@ -12804,7 +12804,7 @@
       "return_5d_pct": -0.81,
       "source": "bse-calendar",
       "best_pop_pct": -0.81,
-      "best_pop_rvol": 3.121
+      "best_pop_rvol": 3.122
     },
     "ASTERDM": {
       "symbol": "ASTERDM",
@@ -12881,7 +12881,7 @@
       "return_5d_pct": 6.829,
       "source": "bse-calendar",
       "best_pop_pct": 6.829,
-      "best_pop_rvol": 7.075
+      "best_pop_rvol": 7.076
     },
     "3MINDIA": {
       "symbol": "3MINDIA",
@@ -12903,7 +12903,7 @@
       "return_5d_pct": -0.189,
       "source": "bse-calendar",
       "best_pop_pct": -0.189,
-      "best_pop_rvol": 1.455
+      "best_pop_rvol": 1.456
     },
     "RATNAMANI": {
       "symbol": "RATNAMANI",
@@ -12947,7 +12947,7 @@
       "return_5d_pct": 2.841,
       "source": "bse-calendar",
       "best_pop_pct": 2.841,
-      "best_pop_rvol": 2.236
+      "best_pop_rvol": 2.24
     },
     "AZAD": {
       "symbol": "AZAD",
@@ -13002,7 +13002,7 @@
       "return_5d_pct": 3.784,
       "source": "bse-calendar",
       "best_pop_pct": 3.784,
-      "best_pop_rvol": 3.891
+      "best_pop_rvol": 3.892
     },
     "GODREJAGRO": {
       "symbol": "GODREJAGRO",
@@ -13024,7 +13024,7 @@
       "return_5d_pct": 10.189,
       "source": "bse-calendar",
       "best_pop_pct": 10.189,
-      "best_pop_rvol": 42.467
+      "best_pop_rvol": 42.472
     },
     "STARCEMENT": {
       "symbol": "STARCEMENT",
@@ -13090,7 +13090,7 @@
       "return_5d_pct": 7.33,
       "source": "bse-calendar",
       "best_pop_pct": 7.33,
-      "best_pop_rvol": 2.477
+      "best_pop_rvol": 2.478
     },
     "AJAXENGG": {
       "symbol": "AJAXENGG",
@@ -13112,7 +13112,7 @@
       "return_5d_pct": -1.541,
       "source": "bse-calendar",
       "best_pop_pct": -1.541,
-      "best_pop_rvol": 0.771
+      "best_pop_rvol": 0.773
     },
     "SUPRIYA": {
       "symbol": "SUPRIYA",
@@ -13200,7 +13200,7 @@
       "return_5d_pct": 2.85,
       "source": "bse-calendar",
       "best_pop_pct": 2.85,
-      "best_pop_rvol": 0.853
+      "best_pop_rvol": 0.854
     },
     "FOSECOIND": {
       "symbol": "FOSECOIND",
@@ -13354,7 +13354,7 @@
       "return_5d_pct": -0.327,
       "source": "bse-calendar",
       "best_pop_pct": -0.327,
-      "best_pop_rvol": 1.122
+      "best_pop_rvol": 1.124
     },
     "GTLINFRA": {
       "symbol": "GTLINFRA",
@@ -13398,7 +13398,7 @@
       "return_5d_pct": 3.615,
       "source": "bse-calendar",
       "best_pop_pct": 3.615,
-      "best_pop_rvol": 1.148
+      "best_pop_rvol": 1.149
     },
     "SOLEX": {
       "symbol": "SOLEX",
@@ -13530,7 +13530,7 @@
       "return_5d_pct": 4.112,
       "source": "bse-calendar",
       "best_pop_pct": 4.112,
-      "best_pop_rvol": 0.508
+      "best_pop_rvol": 0.509
     },
     "KECL": {
       "symbol": "KECL",
@@ -13581,11 +13581,11 @@
       "earnings_date": "2026-11-09",
       "close_in_range_pct": 0.6567,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 4.424,
+      "day_rvol_50d": 4.426,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 12.063,
-      "best_pop_rvol": 4.424
+      "best_pop_rvol": 4.426
     },
     "HBLENGINE": {
       "symbol": "HBLENGINE",
@@ -13614,11 +13614,11 @@
       "earnings_date": "2026-11-09",
       "close_in_range_pct": 0.135,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 7.742,
+      "day_rvol_50d": 7.745,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 12.961,
-      "best_pop_rvol": 7.742
+      "best_pop_rvol": 7.745
     },
     "WHIRLPOOL": {
       "symbol": "WHIRLPOOL",
@@ -13636,11 +13636,11 @@
       "earnings_date": "2026-11-09",
       "close_in_range_pct": 0.6256,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.671,
+      "day_rvol_50d": 0.672,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 5.04,
-      "best_pop_rvol": 0.671
+      "best_pop_rvol": 0.672
     },
     "OLECTRA": {
       "symbol": "OLECTRA",
@@ -13680,11 +13680,11 @@
       "earnings_date": "2026-11-09",
       "close_in_range_pct": 0.4778,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.988,
+      "day_rvol_50d": 1.991,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.742,
-      "best_pop_rvol": 1.988
+      "best_pop_rvol": 1.991
     },
     "SPECTRUM": {
       "symbol": "SPECTRUM",
@@ -13724,11 +13724,11 @@
       "earnings_date": "2026-11-09",
       "close_in_range_pct": 0.262,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 3.059,
+      "day_rvol_50d": 3.064,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 4.674,
-      "best_pop_rvol": 3.059
+      "best_pop_rvol": 3.064
     },
     "PROSTARM": {
       "symbol": "PROSTARM",
