@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-12",
+ "as_of": "2026-11-13",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,14 +9,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-12",
+ "bse_ipos_as_of": "2026-11-13",
  "bse_ipos": {
-  "544603": {
-   "name": "Billionbrains Garage Ventures Limited",
-   "symbol": "GROWW",
-   "listing_date": "2025-11-12",
-   "issue_price": 100.0
-  },
   "544606": {
    "name": "Pine Labs Limited",
    "symbol": "PINELABS",
@@ -2187,6 +2181,19 @@
    "basis": "bse_ipo_list",
    "issue_price": 429.0
   },
+  "ESFL": {
+   "listing_date": "2026-11-13",
+   "name": "Essen Speciality Films Limited",
+   "isin": "INE0ITO01014",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-11-12",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
+  },
   "EVONILE": {
    "listing_date": "2026-04-20",
    "name": "Evonile Pharma Limited",
@@ -2434,20 +2441,6 @@
    "bse_code": "509546",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "GROWW": {
-   "listing_date": "2025-11-12",
-   "name": "Billionbrains Garage Ventures Limited",
-   "isin": "INE0HOQ01053",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544603",
-   "sector": "Financial Services",
-   "sub_sector": "Stockbroking & Allied",
-   "shares_crore": 627.359689,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 100.0
   },
   "GSPCROP": {
    "listing_date": "2026-03-24",
@@ -3374,7 +3367,7 @@
    "listing_date": "2026-08-17",
    "name": "Makers Laboratories Limited",
    "isin": "INE987A01010",
-   "series": "EQ",
+   "series": "BE",
    "exchange": "NSE",
    "bse_code": "506919",
    "ipo": false,
@@ -5283,19 +5276,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500414",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "TMCV": {
-   "listing_date": "2025-11-12",
-   "name": "Tata Motors Limited",
-   "isin": "INE1TAE01010",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544569",
-   "sector": "Capital Goods",
-   "sub_sector": "Commercial Vehicles",
-   "shares_crore": 368.278932,
    "ipo": false,
    "basis": "bse_ipo_list"
   },
