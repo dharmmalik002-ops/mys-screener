@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-13",
+ "as_of": "2026-11-16",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,14 +9,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-13",
+ "bse_ipos_as_of": "2026-11-16",
  "bse_ipos": {
-  "544606": {
-   "name": "Pine Labs Limited",
-   "symbol": "PINELABS",
-   "listing_date": "2025-11-14",
-   "issue_price": 221.0
-  },
   "544608": {
    "name": "Emmvee Photovoltaic Power Limited",
    "symbol": "EMMVEE",
@@ -897,19 +891,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "ADVENTHTL": {
-   "listing_date": "2025-11-13",
-   "name": "Advent Hotels International Limited",
-   "isin": "INE28GN01010",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544446",
-   "sector": "Consumer Services",
-   "sub_sector": "Hotels & Resorts",
-   "shares_crore": 5.394311,
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "ADVIKCA": {
    "listing_date": "2026-08-17",
    "name": "Advik Capital Limited",
@@ -1558,7 +1539,7 @@
   "BNAGROCHEM": {
    "listing_date": "2026-04-20",
    "name": "BN Agrochem Limited",
-   "isin": "INE00HZ01011",
+   "isin": "INE00HZ01029",
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526125",
@@ -3573,16 +3554,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "MODIS": {
-   "listing_date": "2025-11-14",
-   "name": "Modis Navnirman Limited",
-   "isin": "INE0L0L01012",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "543539",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "MOHITE": {
    "listing_date": "2026-08-17",
    "name": "Mohite Industries Limited",
@@ -4051,20 +4022,6 @@
    "bse_code": "526481",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "PINELABS": {
-   "listing_date": "2025-11-14",
-   "name": "Pine Labs Limited",
-   "isin": "INE15B701018",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544606",
-   "sector": "Financial Services",
-   "sub_sector": "Financial Technology (Fintech)",
-   "shares_crore": 115.474904,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 221.0
   },
   "PIONRINV": {
    "listing_date": "2026-04-20",
@@ -4701,26 +4658,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "532323",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "SHIVAM-RE1": {
-   "listing_date": "2026-10-28",
-   "name": "Shivam Autotech Ltd-RE",
-   "isin": "INE637H20024",
-   "series": "BE",
-   "exchange": "NSE",
-   "bse_code": "751148",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "SHIVAUM": {
-   "listing_date": "2025-11-14",
-   "name": "Shiv Aum Steels Limited",
-   "isin": "INE719F01016",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544969",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
