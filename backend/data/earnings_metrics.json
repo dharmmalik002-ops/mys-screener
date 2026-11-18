@@ -1,16 +1,16 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-18T19:27:35.851443+00:00",
+  "generated_at": "2026-11-18T19:44:28.402952+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-11-13",
-      "close_in_range_pct": 1.0,
-      "next_day_gap_pct": 0.0,
+      "earnings_date": "2026-11-18",
+      "close_in_range_pct": 0.0,
+      "next_day_gap_pct": null,
       "day_rvol_50d": null,
-      "return_5d_pct": 0.607,
+      "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": 0.607,
+      "best_pop_pct": null,
       "best_pop_rvol": null
     },
     "NAHARSPING": {
@@ -26,13 +26,13 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-11-13",
-      "close_in_range_pct": 0.6303,
-      "next_day_gap_pct": -0.272,
+      "earnings_date": "2026-11-18",
+      "close_in_range_pct": 1.0,
+      "next_day_gap_pct": null,
       "day_rvol_50d": null,
-      "return_5d_pct": -0.194,
+      "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": 0.588,
+      "best_pop_pct": null,
       "best_pop_rvol": null
     },
     "GSFC": {
