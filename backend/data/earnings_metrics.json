@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-18T19:44:28.402952+00:00",
+  "generated_at": "2026-11-18T20:49:19.858290+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -15,13 +15,13 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-11-13",
-      "close_in_range_pct": 0.1504,
-      "next_day_gap_pct": 0.797,
+      "earnings_date": "2026-11-18",
+      "close_in_range_pct": 0.0921,
+      "next_day_gap_pct": null,
       "day_rvol_50d": null,
-      "return_5d_pct": 0.02,
+      "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": 0.581,
+      "best_pop_pct": null,
       "best_pop_rvol": null
     },
     "HMT": {
