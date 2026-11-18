@@ -2775,12 +2775,9 @@
    "isin": "INE2OD001016",
    "series": "BE",
    "exchange": "NSE",
-   "checked_session": "2026-11-17",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "544956",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "JNPR": {
    "listing_date": "2026-08-06",
