@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-17",
+ "as_of": "2026-11-18",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -9,7 +9,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-17",
+ "bse_ipos_as_of": "2026-11-18",
  "bse_ipos": {
   "544608": {
    "name": "Emmvee Photovoltaic Power Limited",
@@ -1963,16 +1963,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "DRAGARWQ": {
-   "listing_date": "2026-04-20",
-   "name": "Dr Agarwals Eye Hospital Limited",
-   "isin": "INE934C01018",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "526783",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "DSFCL": {
    "listing_date": "2026-02-17",
    "name": "DCM Shriram Fine Chemicals Limited",
@@ -2081,16 +2071,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539533",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "ELPROINTL": {
-   "listing_date": "2026-04-20",
-   "name": "Elpro International Limited",
-   "isin": "INE579B01039",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "504000",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
@@ -2788,6 +2768,19 @@
    "bse_code": "524731",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "JKSHAH": {
+   "listing_date": "2026-11-18",
+   "name": "J.K.Shah Commerce Education Limited",
+   "isin": "INE2OD001016",
+   "series": "BE",
+   "exchange": "NSE",
+   "checked_session": "2026-11-17",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "JNPR": {
    "listing_date": "2026-08-06",
