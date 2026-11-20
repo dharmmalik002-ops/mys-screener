@@ -1,22 +1,17 @@
 {
- "as_of": "2026-11-19",
+ "as_of": "2026-11-20",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
   "BRIGHT": "BRIGHTOUTD",
   "LKPFIN": "GYFTR",
-  "NOVARTIND": "EVONILE"
+  "NOVARTIND": "EVONILE",
+  "SHUKRAPHAR": "SHUKRAMED"
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-19",
+ "bse_ipos_as_of": "2026-11-20",
  "bse_ipos": {
-  "544612": {
-   "name": "Tenneco Clean Air India Limited",
-   "symbol": "TENNIND",
-   "listing_date": "2025-11-19",
-   "issue_price": 397.0
-  },
   "544613": {
    "name": "Fujiyama Power Systems Limited",
    "symbol": "UTLSOLAR",
@@ -1359,7 +1354,7 @@
    "listing_date": "2026-11-05",
    "name": "Bombay Coated and Special Steels Limited",
    "isin": "INE0XFY01011",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545018",
    "sector": "Capital Goods",
@@ -4651,9 +4646,9 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "SHUKRAPHAR": {
+  "SHUKRAMED": {
    "listing_date": "2026-08-14",
-   "name": "Shukra Pharmaceuticals Limited",
+   "name": "Shukra Medtech Limited",
    "isin": "INE551C01044",
    "series": "EQ",
    "exchange": "NSE",
@@ -5111,20 +5106,6 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 300.0
-  },
-  "TENNIND": {
-   "listing_date": "2025-11-19",
-   "name": "Tenneco Clean Air India Limited",
-   "isin": "INE19RI01016",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544612",
-   "sector": "Automobile and Auto Components",
-   "sub_sector": "Auto Components & Equipments",
-   "shares_crore": 40.360432,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 397.0
   },
   "TERAI": {
    "listing_date": "2026-08-17",
