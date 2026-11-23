@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-20",
+ "as_of": "2026-11-23",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -10,20 +10,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-20",
+ "bse_ipos_as_of": "2026-11-23",
  "bse_ipos": {
-  "544613": {
-   "name": "Fujiyama Power Systems Limited",
-   "symbol": "UTLSOLAR",
-   "listing_date": "2025-11-20",
-   "issue_price": 228.0
-  },
-  "544614": {
-   "name": "Capillary Technologies India Limited",
-   "symbol": "CAPILLARY",
-   "listing_date": "2025-11-21",
-   "issue_price": 577.0
-  },
   "544617": {
    "name": "Excelsoft Technologies Limited",
    "symbol": "EXCELSOFT",
@@ -766,7 +754,7 @@
    "listing_date": "2026-02-25",
    "name": "Aarnav Fashions Limited",
    "isin": "INE750R01016",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "539562",
    "ipo": false,
@@ -1037,7 +1025,7 @@
    "listing_date": "2026-04-20",
    "name": "Ambalal Sarabhai Enterprises Limited",
    "isin": "INE432A01017",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "500009",
    "ipo": false,
@@ -1435,7 +1423,7 @@
    "listing_date": "2026-04-20",
    "name": "Bilcare Limited",
    "isin": "INE986A01012",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526853",
    "ipo": false,
@@ -1642,20 +1630,6 @@
    "bse_code": "544517",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "CAPILLARY": {
-   "listing_date": "2025-11-21",
-   "name": "Capillary Technologies India Limited",
-   "isin": "INE0ILV01024",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544614",
-   "sector": "Information Technology",
-   "sub_sector": "Software Products",
-   "shares_crore": 7.958872,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 577.0
   },
   "CEINSYS": {
    "listing_date": "2026-02-19",
@@ -1906,7 +1880,7 @@
    "listing_date": "2026-08-17",
    "name": "Dhabriya Polywood Limited",
    "isin": "INE260R01016",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "538715",
    "ipo": false,
@@ -3449,7 +3423,7 @@
    "listing_date": "2026-08-18",
    "name": "Milky Mist Dairy Food Limited",
    "isin": "INE00IT01020",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "544868",
    "sector": "Fast Moving Consumer Goods",
@@ -4526,7 +4500,7 @@
    "listing_date": "2026-04-20",
    "name": "Shardul Securities Limited",
    "isin": "INE037B01020",
-   "series": "BE",
+   "series": "EQ",
    "exchange": "NSE",
    "bse_code": "512393",
    "ipo": false,
@@ -5274,20 +5248,6 @@
    "bse_code": "509960",
    "ipo": false,
    "basis": "bse_ipo_list"
-  },
-  "UTLSOLAR": {
-   "listing_date": "2025-11-20",
-   "name": "Fujiyama Power Systems Limited",
-   "isin": "INE12UR01024",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544613",
-   "sector": "Capital Goods",
-   "sub_sector": "Other Electrical Equipment",
-   "shares_crore": 30.690184,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 228.0
   },
   "VADILENT": {
    "listing_date": "2026-08-17",
