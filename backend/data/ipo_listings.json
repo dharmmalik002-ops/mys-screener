@@ -1497,16 +1497,6 @@
    "basis": "bse_ipo_list",
    "issue_price": 150.0
   },
-  "BLUECLOUDS": {
-   "listing_date": "2026-08-17",
-   "name": "Blue Cloud Softech Solutions Limited",
-   "isin": "INE373T01047",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "539607",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
   "BNAGROCHEM": {
    "listing_date": "2026-04-20",
    "name": "BN Agrochem Limited",
