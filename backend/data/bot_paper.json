@@ -20,13 +20,13 @@
     "regime": "choppy",
     "cash": 0.0,
     "stocks": 0.0,
-    "sleeve": 976651.53,
+    "sleeve": 976651.54,
     "sleeve_mix": [
       {
         "asset": "small",
         "name": "Nifty Smallcap 250",
         "weight": 1.0,
-        "value": 976651.53
+        "value": 976651.54
       }
     ]
   },

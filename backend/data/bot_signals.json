@@ -9,10 +9,10 @@
     "pct_from_200dma": 5.63,
     "pct_from_52w_high": -3.88,
     "ma200_slope": -0.052,
-    "breadth_above_200dma": 43.59,
-    "breadth_net_new_highs": 0.68,
+    "breadth_above_200dma": 43.48,
+    "breadth_net_new_highs": 0.67,
     "vix_percentile": 86.9,
-    "constituents": 1466,
+    "constituents": 1495,
     "regime_label": "Choppy / Rangebound"
   },
   "playbook": {
@@ -93,7 +93,8 @@
       "CBOE VIX",
       "US Dollar Index",
       "US 10-Year Yield",
-      "Copper"
+      "Copper",
+      "MSCI Emerging Markets ETF"
     ],
     "tailwinds": [
       "USD/INR",
@@ -101,7 +102,7 @@
     ],
     "size_multiplier": 0.25,
     "stance": "defensive",
-    "note": "6 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
+    "note": "7 external series are pressuring Indian equities. The measured effect of a hostile external tape inside an otherwise healthy regime is roughly half a unit of R per trade, so size is cut hard rather than the book being closed."
   },
   "stance": "engaged",
   "equity": 1000000.0,
@@ -191,6 +192,34 @@
       "edge_score_r": 0.117
     },
     {
+      "symbol": "SHUKRAPHAR",
+      "strategy": "week52_breakout",
+      "strategy_label": "52-Week High Breakout",
+      "signal_day": "2026-11-23",
+      "close": 87.8,
+      "entry_hint": 87.8,
+      "stop": 79.57,
+      "risk_pct": 9.38,
+      "atr_pct": 4.26,
+      "turnover_crore": 4.5,
+      "expected_r": 0.115,
+      "verdict": "confirmed",
+      "live_size_multiplier": 1.0,
+      "sizing": {
+        "shares": 30,
+        "position_value": 2634.0,
+        "risk_budget": 250.0,
+        "risk_per_share": 8.23,
+        "actual_risk": 247.01,
+        "pct_of_equity": 0.3,
+        "capped_by_capital": false
+      },
+      "cell_expectancy_r": 0.115,
+      "volatility_adjustment_r": 0.002,
+      "volatility_bucket": "3-4.5%",
+      "edge_score_r": 0.117
+    },
+    {
       "symbol": "RATNAVEER",
       "strategy": "minervini_breakout",
       "strategy_label": "Minervini Breakout",
@@ -266,6 +295,34 @@
         "risk_budget": 250.0,
         "risk_per_share": 35.89,
         "actual_risk": 215.36,
+        "pct_of_equity": 0.3,
+        "capped_by_capital": false
+      },
+      "cell_expectancy_r": 0.087,
+      "volatility_adjustment_r": 0.002,
+      "volatility_bucket": "3-4.5%",
+      "edge_score_r": 0.089
+    },
+    {
+      "symbol": "SHUKRAPHAR",
+      "strategy": "minervini_breakout",
+      "strategy_label": "Minervini Breakout",
+      "signal_day": "2026-11-23",
+      "close": 87.8,
+      "entry_hint": 87.8,
+      "stop": 80.31,
+      "risk_pct": 8.53,
+      "atr_pct": 4.26,
+      "turnover_crore": 4.5,
+      "expected_r": 0.087,
+      "verdict": "confirmed",
+      "live_size_multiplier": 1.0,
+      "sizing": {
+        "shares": 33,
+        "position_value": 2897.4,
+        "risk_budget": 250.0,
+        "risk_per_share": 7.49,
+        "actual_risk": 247.01,
         "pct_of_equity": 0.3,
         "capped_by_capital": false
       },
@@ -547,6 +604,34 @@
         "risk_per_share": 19.82,
         "actual_risk": 237.8,
         "pct_of_equity": 0.4,
+        "capped_by_capital": false
+      },
+      "cell_expectancy_r": 0.028,
+      "volatility_adjustment_r": 0.002,
+      "volatility_bucket": "3-4.5%",
+      "edge_score_r": 0.03
+    },
+    {
+      "symbol": "SHUKRAPHAR",
+      "strategy": "vcp_breakout",
+      "strategy_label": "VCP Breakout",
+      "signal_day": "2026-11-23",
+      "close": 87.8,
+      "entry_hint": 87.8,
+      "stop": 81.06,
+      "risk_pct": 7.67,
+      "atr_pct": 4.26,
+      "turnover_crore": 4.5,
+      "expected_r": 0.028,
+      "verdict": "confirmed",
+      "live_size_multiplier": 1.0,
+      "sizing": {
+        "shares": 37,
+        "position_value": 3248.6,
+        "risk_budget": 250.0,
+        "risk_per_share": 6.74,
+        "actual_risk": 249.26,
+        "pct_of_equity": 0.3,
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.028,
@@ -1121,7 +1206,7 @@
       "signal_day": "2026-11-23",
       "close": 3404.4,
       "entry_hint": 3404.4,
-      "stop": 3152.2,
+      "stop": 3152.21,
       "risk_pct": 7.41,
       "atr_pct": 4.12,
       "turnover_crore": 4.6,
@@ -1132,7 +1217,7 @@
         "shares": 0,
         "position_value": 0.0,
         "risk_budget": 250.0,
-        "risk_per_share": 252.2,
+        "risk_per_share": 252.19,
         "actual_risk": 0.0,
         "pct_of_equity": 0.0,
         "capped_by_capital": false
@@ -1141,99 +1226,15 @@
       "volatility_adjustment_r": 0.002,
       "volatility_bucket": "3-4.5%",
       "edge_score_r": 0.008
-    },
-    {
-      "symbol": "ITDC",
-      "strategy": "pullback_ema21",
-      "strategy_label": "Pullback to 21 EMA",
-      "signal_day": "2026-11-23",
-      "close": 662.45,
-      "entry_hint": 662.45,
-      "stop": 615.4,
-      "risk_pct": 7.1,
-      "atr_pct": 3.95,
-      "turnover_crore": 3.9,
-      "expected_r": 0.006,
-      "verdict": "confirmed",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 5,
-        "position_value": 3312.25,
-        "risk_budget": 250.0,
-        "risk_per_share": 47.05,
-        "actual_risk": 235.23,
-        "pct_of_equity": 0.3,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.006,
-      "volatility_adjustment_r": 0.002,
-      "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.008
-    },
-    {
-      "symbol": "RAYMOND",
-      "strategy": "pullback_ema21",
-      "strategy_label": "Pullback to 21 EMA",
-      "signal_day": "2026-11-23",
-      "close": 1205.2,
-      "entry_hint": 1205.2,
-      "stop": 1093.95,
-      "risk_pct": 9.23,
-      "atr_pct": 5.13,
-      "turnover_crore": 65.6,
-      "expected_r": 0.006,
-      "verdict": "confirmed",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 2,
-        "position_value": 2410.4,
-        "risk_budget": 250.0,
-        "risk_per_share": 111.25,
-        "actual_risk": 222.49,
-        "pct_of_equity": 0.2,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.006,
-      "volatility_adjustment_r": -0.05,
-      "volatility_bucket": "4.5-6%",
-      "edge_score_r": -0.044
-    },
-    {
-      "symbol": "DIACABS",
-      "strategy": "pullback_ema21",
-      "strategy_label": "Pullback to 21 EMA",
-      "signal_day": "2026-11-23",
-      "close": 364.05,
-      "entry_hint": 364.05,
-      "stop": 333.08,
-      "risk_pct": 8.51,
-      "atr_pct": 4.73,
-      "turnover_crore": 41.2,
-      "expected_r": 0.006,
-      "verdict": "confirmed",
-      "live_size_multiplier": 1.0,
-      "sizing": {
-        "shares": 8,
-        "position_value": 2912.4,
-        "risk_budget": 250.0,
-        "risk_per_share": 30.97,
-        "actual_risk": 247.73,
-        "pct_of_equity": 0.3,
-        "capped_by_capital": false
-      },
-      "cell_expectancy_r": 0.006,
-      "volatility_adjustment_r": -0.05,
-      "volatility_bucket": "4.5-6%",
-      "edge_score_r": -0.044
     }
   ],
-  "candidates_found": 44,
+  "candidates_found": 47,
   "ranking": {
     "active": true,
     "note": "Ranking adds a volatility adjustment to each candidate's cell expectancy. The adjustment is that ATR bucket's average R minus the book average, measured over the full trade population and confirmed out-of-sample."
   },
   "calibration": null,
-  "message": "44 candidate(s) from 5 cleared setup(s) in Choppy / Rangebound. Sizing at 25% of book risk (defensive external tape).",
-  "generated_at": "2026-11-24T01:48:33.338093+00:00",
+  "message": "47 candidate(s) from 5 cleared setup(s) in Choppy / Rangebound. Sizing at 25% of book risk (defensive external tape).",
+  "generated_at": "2026-11-24T23:39:08.875159+00:00",
   "source": "offline"
 }
