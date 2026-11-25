@@ -1,11 +1,11 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-24T22:57:33.228399+00:00",
+  "generated_at": "2026-11-25T10:45:44.667502+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-11-23",
-      "close_in_range_pct": 0.5,
+      "earnings_date": "2026-11-25",
+      "close_in_range_pct": 1.0,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -15,8 +15,8 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-11-23",
-      "close_in_range_pct": 0.0,
+      "earnings_date": "2026-11-25",
+      "close_in_range_pct": 0.0145,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -26,8 +26,8 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-11-23",
-      "close_in_range_pct": 0.75,
+      "earnings_date": "2026-11-25",
+      "close_in_range_pct": 0.9589,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -70,14 +70,14 @@
     },
     "ELITECON": {
       "symbol": "ELITECON",
-      "earnings_date": "2026-11-23",
-      "close_in_range_pct": 0.875,
+      "earnings_date": "2026-11-25",
+      "close_in_range_pct": 0.0,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.468,
+      "day_rvol_50d": 1.54,
       "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": 4.0,
-      "best_pop_rvol": 2.468
+      "best_pop_pct": -4.915,
+      "best_pop_rvol": 1.54
     },
     "DMART": {
       "symbol": "DMART",
@@ -11932,7 +11932,7 @@
       "close_in_range_pct": 0.8358,
       "next_day_gap_pct": 0.118,
       "day_rvol_50d": 2.293,
-      "return_5d_pct": -5.736,
+      "return_5d_pct": -6.449,
       "source": "bse-calendar",
       "best_pop_pct": 2.803,
       "best_pop_rvol": 2.293
@@ -16952,6 +16952,17 @@
       "source": "bse-calendar",
       "best_pop_pct": 1.198,
       "best_pop_rvol": 0.003
+    },
+    "ENRIN": {
+      "symbol": "ENRIN",
+      "earnings_date": "2026-11-25",
+      "close_in_range_pct": 0.5006,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 1.045,
+      "return_5d_pct": null,
+      "source": "bse-calendar",
+      "best_pop_pct": -0.218,
+      "best_pop_rvol": 1.045
     }
   }
 }

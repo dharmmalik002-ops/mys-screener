@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-24",
+ "as_of": "2026-11-25",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -10,7 +10,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-24",
+ "bse_ipos_as_of": "2026-11-25",
  "bse_ipos": {
   "544617": {
    "name": "Excelsoft Technologies Limited",
@@ -1392,19 +1392,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "BETA": {
-   "listing_date": "2025-11-24",
-   "name": "Beta Drugs Limited",
-   "isin": "INE351Y01019",
-   "series": "EQ",
-   "exchange": "NSE",
-   "checked_session": "2025-11-21",
-   "prior_trading": true,
-   "nse_checked": false,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": false
-  },
   "BHARATCOAL": {
    "listing_date": "2026-01-19",
    "name": "Bharat Coking Coal Limited",
@@ -1496,6 +1483,16 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 150.0
+  },
+  "BLUECLOUDS": {
+   "listing_date": "2026-11-25",
+   "name": "Blue Cloud Softech Solutions Limited",
+   "isin": "INE373T01047",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "539607",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "BNAGROCHEM": {
    "listing_date": "2026-04-20",
@@ -3433,6 +3430,16 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
+  "MITSU": {
+   "listing_date": "2026-11-25",
+   "name": "Mitsu Chem Plast Limited",
+   "isin": "INE317V01016",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "540078",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
   "MKEXIM": {
    "listing_date": "2026-08-17",
    "name": "M.K. Exim (India) Limited",
@@ -4513,16 +4520,6 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "526117",
-   "ipo": false,
-   "basis": "bse_ipo_list"
-  },
-  "SHILCTECH": {
-   "listing_date": "2025-11-24",
-   "name": "Shilchar Technologies Limited",
-   "isin": "INE024F01011",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "531201",
    "ipo": false,
    "basis": "bse_ipo_list"
   },
