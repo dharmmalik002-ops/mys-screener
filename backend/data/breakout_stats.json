@@ -15700,18 +15700,18 @@
         "setup": "all",
         "label": "All setups",
         "signals": 4622,
-        "resolved": 3875,
-        "open_positions": 747,
-        "win_rate": 27.0,
-        "wins": 1045,
+        "resolved": 3912,
+        "open_positions": 710,
+        "win_rate": 27.7,
+        "wins": 1082,
         "losses": 2830,
         "timeouts": 0,
-        "median_max_move_pct": 2.99,
-        "median_final_pct": -2.23,
-        "median_sessions_held": 2,
-        "pct_closed_near_high": 26.7,
-        "pct_reached_big_move": 5.7,
-        "pct_big_move_held": 56.3,
+        "median_max_move_pct": 3.03,
+        "median_final_pct": -2.19,
+        "median_sessions_held": 2.0,
+        "pct_closed_near_high": 27.4,
+        "pct_reached_big_move": 5.9,
+        "pct_big_move_held": 57.8,
         "examples": [
           {
             "symbol": "DHANBANK",
@@ -15924,17 +15924,17 @@
           "setup": "momentum-burst",
           "label": "Momentum Burst",
           "signals": 80,
-          "resolved": 63,
-          "open_positions": 17,
-          "win_rate": 46.0,
-          "wins": 29,
+          "resolved": 66,
+          "open_positions": 14,
+          "win_rate": 48.5,
+          "wins": 32,
           "losses": 34,
           "timeouts": 0,
-          "median_max_move_pct": 5.57,
-          "median_final_pct": 0.53,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 42.9,
-          "pct_reached_big_move": 9.5,
+          "median_max_move_pct": 5.66,
+          "median_final_pct": 0.96,
+          "median_sessions_held": 2.5,
+          "pct_closed_near_high": 45.5,
+          "pct_reached_big_move": 9.1,
           "pct_big_move_held": 50.0,
           "examples": [
             {
@@ -16042,17 +16042,17 @@
           "setup": "tight-closes",
           "label": "3 Tight Closes",
           "signals": 166,
-          "resolved": 124,
-          "open_positions": 42,
-          "win_rate": 35.5,
-          "wins": 44,
+          "resolved": 126,
+          "open_positions": 40,
+          "win_rate": 36.5,
+          "wins": 46,
           "losses": 80,
           "timeouts": 0,
-          "median_max_move_pct": 3.59,
-          "median_final_pct": -1.58,
+          "median_max_move_pct": 3.61,
+          "median_final_pct": -1.56,
           "median_sessions_held": 3.0,
-          "pct_closed_near_high": 35.5,
-          "pct_reached_big_move": 7.3,
+          "pct_closed_near_high": 36.5,
+          "pct_reached_big_move": 7.1,
           "pct_big_move_held": 88.9,
           "examples": [
             {
@@ -16098,21 +16098,80 @@
           ]
         },
         {
+          "setup": "qullamaggie",
+          "label": "Qullamaggie",
+          "signals": 62,
+          "resolved": 54,
+          "open_positions": 8,
+          "win_rate": 35.2,
+          "wins": 19,
+          "losses": 35,
+          "timeouts": 0,
+          "median_max_move_pct": 3.97,
+          "median_final_pct": -1.01,
+          "median_sessions_held": 2.0,
+          "pct_closed_near_high": 31.5,
+          "pct_reached_big_move": 7.4,
+          "pct_big_move_held": 50.0,
+          "examples": [
+            {
+              "symbol": "FILATEX",
+              "trigger_date": "2026-11-11",
+              "max_move_pct": 19.67,
+              "final_pct": 8.38,
+              "sessions_held": 4,
+              "result": "win"
+            },
+            {
+              "symbol": "FILATEX",
+              "trigger_date": "2026-11-13",
+              "max_move_pct": 18.96,
+              "final_pct": 7.74,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "CUPID",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 13.46,
+              "final_pct": 12.24,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 10.06,
+              "final_pct": 6.93,
+              "sessions_held": 9,
+              "result": "win"
+            },
+            {
+              "symbol": "CNL",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 9.99,
+              "final_pct": 9.52,
+              "sessions_held": 1,
+              "result": "win"
+            }
+          ]
+        },
+        {
           "setup": "consolidating",
           "label": "Consolidating",
           "signals": 519,
-          "resolved": 385,
-          "open_positions": 134,
-          "win_rate": 30.1,
-          "wins": 116,
+          "resolved": 389,
+          "open_positions": 130,
+          "win_rate": 30.8,
+          "wins": 120,
           "losses": 269,
           "timeouts": 0,
-          "median_max_move_pct": 2.85,
-          "median_final_pct": -2.28,
+          "median_max_move_pct": 2.94,
+          "median_final_pct": -2.23,
           "median_sessions_held": 3,
-          "pct_closed_near_high": 30.6,
-          "pct_reached_big_move": 3.6,
-          "pct_big_move_held": 50.0,
+          "pct_closed_near_high": 31.4,
+          "pct_reached_big_move": 3.9,
+          "pct_big_move_held": 53.3,
           "examples": [
             {
               "symbol": "CUPID",
@@ -16157,80 +16216,21 @@
           ]
         },
         {
-          "setup": "qullamaggie",
-          "label": "Qullamaggie",
-          "signals": 62,
-          "resolved": 50,
-          "open_positions": 12,
-          "win_rate": 30.0,
-          "wins": 15,
-          "losses": 35,
-          "timeouts": 0,
-          "median_max_move_pct": 3.02,
-          "median_final_pct": -1.15,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 26.0,
-          "pct_reached_big_move": 6.0,
-          "pct_big_move_held": 33.3,
-          "examples": [
-            {
-              "symbol": "FILATEX",
-              "trigger_date": "2026-11-11",
-              "max_move_pct": 19.67,
-              "final_pct": 8.38,
-              "sessions_held": 4,
-              "result": "win"
-            },
-            {
-              "symbol": "FILATEX",
-              "trigger_date": "2026-11-13",
-              "max_move_pct": 18.96,
-              "final_pct": 7.74,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "CUPID",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 13.46,
-              "final_pct": 12.24,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "CNL",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 9.99,
-              "final_pct": 9.52,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "CUPID",
-              "trigger_date": "2026-11-11",
-              "max_move_pct": 9.89,
-              "final_pct": 8.7,
-              "sessions_held": 1,
-              "result": "win"
-            }
-          ]
-        },
-        {
           "setup": "power-base",
           "label": "Power Base",
           "signals": 490,
-          "resolved": 433,
-          "open_positions": 57,
-          "win_rate": 29.3,
-          "wins": 127,
+          "resolved": 437,
+          "open_positions": 53,
+          "win_rate": 30.0,
+          "wins": 131,
           "losses": 306,
           "timeouts": 0,
-          "median_max_move_pct": 3.13,
-          "median_final_pct": -2.11,
+          "median_max_move_pct": 3.19,
+          "median_final_pct": -2.07,
           "median_sessions_held": 2,
-          "pct_closed_near_high": 27.5,
-          "pct_reached_big_move": 8.5,
-          "pct_big_move_held": 54.1,
+          "pct_closed_near_high": 28.1,
+          "pct_reached_big_move": 8.7,
+          "pct_big_move_held": 55.3,
           "examples": [
             {
               "symbol": "DHANBANK",
@@ -16278,18 +16278,18 @@
           "setup": "minervini-1m",
           "label": "Minervini 1 Month",
           "signals": 928,
-          "resolved": 792,
-          "open_positions": 136,
-          "win_rate": 27.9,
-          "wins": 221,
+          "resolved": 796,
+          "open_positions": 132,
+          "win_rate": 28.3,
+          "wins": 225,
           "losses": 571,
           "timeouts": 0,
-          "median_max_move_pct": 3.09,
+          "median_max_move_pct": 3.13,
           "median_final_pct": -2.27,
           "median_sessions_held": 3.0,
-          "pct_closed_near_high": 26.0,
-          "pct_reached_big_move": 7.1,
-          "pct_big_move_held": 53.6,
+          "pct_closed_near_high": 26.4,
+          "pct_reached_big_move": 7.2,
+          "pct_big_move_held": 54.4,
           "examples": [
             {
               "symbol": "GABRIEL",
@@ -16337,18 +16337,18 @@
           "setup": "minervini-5m",
           "label": "Minervini 5 Months",
           "signals": 783,
-          "resolved": 677,
-          "open_positions": 106,
-          "win_rate": 27.3,
-          "wins": 185,
+          "resolved": 681,
+          "open_positions": 102,
+          "win_rate": 27.8,
+          "wins": 189,
           "losses": 492,
           "timeouts": 0,
-          "median_max_move_pct": 3.06,
-          "median_final_pct": -2.27,
+          "median_max_move_pct": 3.09,
+          "median_final_pct": -2.26,
           "median_sessions_held": 3,
-          "pct_closed_near_high": 26.3,
-          "pct_reached_big_move": 6.5,
-          "pct_big_move_held": 56.8,
+          "pct_closed_near_high": 26.7,
+          "pct_reached_big_move": 6.6,
+          "pct_big_move_held": 57.8,
           "examples": [
             {
               "symbol": "GABRIEL",
@@ -16388,6 +16388,65 @@
               "max_move_pct": 16.63,
               "final_pct": 15.6,
               "sessions_held": 2,
+              "result": "win"
+            }
+          ]
+        },
+        {
+          "setup": "strong-nifty",
+          "label": "Strong vs Benchmark",
+          "signals": 220,
+          "resolved": 188,
+          "open_positions": 32,
+          "win_rate": 26.1,
+          "wins": 49,
+          "losses": 139,
+          "timeouts": 0,
+          "median_max_move_pct": 2.79,
+          "median_final_pct": -1.98,
+          "median_sessions_held": 3.0,
+          "pct_closed_near_high": 28.7,
+          "pct_reached_big_move": 3.2,
+          "pct_big_move_held": 33.3,
+          "examples": [
+            {
+              "symbol": "MANAKCOAT",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 13.24,
+              "final_pct": 8.17,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 12.69,
+              "final_pct": 8.97,
+              "sessions_held": 4,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-12",
+              "max_move_pct": 11.63,
+              "final_pct": 7.94,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "MANAKCOAT",
+              "trigger_date": "2026-11-11",
+              "max_move_pct": 11.41,
+              "final_pct": 6.42,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 10.06,
+              "final_pct": 6.93,
+              "sessions_held": 9,
               "result": "win"
             }
           ]
@@ -16503,21 +16562,80 @@
           ]
         },
         {
-          "setup": "strong-nifty",
-          "label": "Strong vs Benchmark",
-          "signals": 220,
-          "resolved": 184,
-          "open_positions": 36,
-          "win_rate": 24.5,
-          "wins": 45,
-          "losses": 139,
+          "setup": "relative-strength",
+          "label": "Relative Strengths",
+          "signals": 420,
+          "resolved": 356,
+          "open_positions": 64,
+          "win_rate": 24.4,
+          "wins": 87,
+          "losses": 269,
           "timeouts": 0,
-          "median_max_move_pct": 2.71,
-          "median_final_pct": -2.04,
-          "median_sessions_held": 2.5,
-          "pct_closed_near_high": 27.2,
-          "pct_reached_big_move": 2.7,
-          "pct_big_move_held": 20.0,
+          "median_max_move_pct": 2.96,
+          "median_final_pct": -2.13,
+          "median_sessions_held": 2.0,
+          "pct_closed_near_high": 26.4,
+          "pct_reached_big_move": 3.9,
+          "pct_big_move_held": 64.3,
+          "examples": [
+            {
+              "symbol": "SKYGOLD",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 14.61,
+              "final_pct": 11.64,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "MANAKCOAT",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 13.24,
+              "final_pct": 8.17,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-09",
+              "max_move_pct": 12.69,
+              "final_pct": 8.97,
+              "sessions_held": 4,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-11",
+              "max_move_pct": 12.67,
+              "final_pct": 8.95,
+              "sessions_held": 3,
+              "result": "win"
+            },
+            {
+              "symbol": "RATNAVEER",
+              "trigger_date": "2026-11-13",
+              "max_move_pct": 11.65,
+              "final_pct": 10.69,
+              "sessions_held": 6,
+              "result": "win"
+            }
+          ]
+        },
+        {
+          "setup": "strong-sector",
+          "label": "Strong vs Sector",
+          "signals": 256,
+          "resolved": 215,
+          "open_positions": 41,
+          "win_rate": 24.2,
+          "wins": 52,
+          "losses": 163,
+          "timeouts": 0,
+          "median_max_move_pct": 2.8,
+          "median_final_pct": -2.1,
+          "median_sessions_held": 3,
+          "pct_closed_near_high": 26.5,
+          "pct_reached_big_move": 3.3,
+          "pct_big_move_held": 28.6,
           "examples": [
             {
               "symbol": "MANAKCOAT",
@@ -16537,6 +16655,14 @@
             },
             {
               "symbol": "SGMART",
+              "trigger_date": "2026-11-11",
+              "max_move_pct": 12.67,
+              "final_pct": 8.95,
+              "sessions_held": 3,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
               "trigger_date": "2026-11-12",
               "max_move_pct": 11.63,
               "final_pct": 7.94,
@@ -16548,14 +16674,6 @@
               "trigger_date": "2026-11-11",
               "max_move_pct": 11.41,
               "final_pct": 6.42,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "SEJALLTD",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 10.0,
-              "final_pct": 9.38,
               "sessions_held": 1,
               "result": "win"
             }
@@ -16616,124 +16734,6 @@
               "max_move_pct": 11.65,
               "final_pct": 10.69,
               "sessions_held": 6,
-              "result": "win"
-            }
-          ]
-        },
-        {
-          "setup": "relative-strength",
-          "label": "Relative Strengths",
-          "signals": 420,
-          "resolved": 352,
-          "open_positions": 68,
-          "win_rate": 23.6,
-          "wins": 83,
-          "losses": 269,
-          "timeouts": 0,
-          "median_max_move_pct": 2.94,
-          "median_final_pct": -2.17,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 25.6,
-          "pct_reached_big_move": 3.7,
-          "pct_big_move_held": 61.5,
-          "examples": [
-            {
-              "symbol": "SKYGOLD",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 14.61,
-              "final_pct": 11.64,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "MANAKCOAT",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 13.24,
-              "final_pct": 8.17,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 12.69,
-              "final_pct": 8.97,
-              "sessions_held": 4,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-11",
-              "max_move_pct": 12.67,
-              "final_pct": 8.95,
-              "sessions_held": 3,
-              "result": "win"
-            },
-            {
-              "symbol": "RATNAVEER",
-              "trigger_date": "2026-11-13",
-              "max_move_pct": 11.65,
-              "final_pct": 10.69,
-              "sessions_held": 6,
-              "result": "win"
-            }
-          ]
-        },
-        {
-          "setup": "strong-sector",
-          "label": "Strong vs Sector",
-          "signals": 256,
-          "resolved": 211,
-          "open_positions": 45,
-          "win_rate": 22.7,
-          "wins": 48,
-          "losses": 163,
-          "timeouts": 0,
-          "median_max_move_pct": 2.73,
-          "median_final_pct": -2.14,
-          "median_sessions_held": 3,
-          "pct_closed_near_high": 25.1,
-          "pct_reached_big_move": 2.8,
-          "pct_big_move_held": 16.7,
-          "examples": [
-            {
-              "symbol": "MANAKCOAT",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 13.24,
-              "final_pct": 8.17,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-09",
-              "max_move_pct": 12.69,
-              "final_pct": 8.97,
-              "sessions_held": 4,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-11",
-              "max_move_pct": 12.67,
-              "final_pct": 8.95,
-              "sessions_held": 3,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-12",
-              "max_move_pct": 11.63,
-              "final_pct": 7.94,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "MANAKCOAT",
-              "trigger_date": "2026-11-11",
-              "max_move_pct": 11.41,
-              "final_pct": 6.42,
-              "sessions_held": 1,
               "result": "win"
             }
           ]
@@ -17039,18 +17039,18 @@
           "setup": "leading",
           "label": "Top-decile groups",
           "signals": 1138,
-          "resolved": 899,
-          "open_positions": 239,
-          "win_rate": 29.1,
-          "wins": 262,
+          "resolved": 936,
+          "open_positions": 202,
+          "win_rate": 31.9,
+          "wins": 299,
           "losses": 637,
           "timeouts": 0,
-          "median_max_move_pct": 2.64,
-          "median_final_pct": -2.52,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 31.1,
-          "pct_reached_big_move": 4.7,
-          "pct_big_move_held": 90.5,
+          "median_max_move_pct": 2.79,
+          "median_final_pct": -2.49,
+          "median_sessions_held": 2.0,
+          "pct_closed_near_high": 33.9,
+          "pct_reached_big_move": 5.3,
+          "pct_big_move_held": 92.0,
           "examples": [
             {
               "symbol": "DHANBANK",
@@ -17164,21 +17164,21 @@
         "2026-11-19",
         "2026-11-20"
       ],
-      "total_signals": 6260,
+      "total_signals": 6270,
       "overall": {
         "setup": "all",
         "label": "All setups",
-        "signals": 6260,
-        "resolved": 3465,
-        "open_positions": 2795,
-        "win_rate": 14.7,
-        "wins": 508,
+        "signals": 6270,
+        "resolved": 3508,
+        "open_positions": 2762,
+        "win_rate": 15.7,
+        "wins": 551,
         "losses": 2957,
         "timeouts": 0,
-        "median_max_move_pct": 1.4,
-        "median_final_pct": -2.71,
-        "median_sessions_held": 2,
-        "pct_closed_near_high": 16.7,
+        "median_max_move_pct": 1.44,
+        "median_final_pct": -2.7,
+        "median_sessions_held": 2.0,
+        "pct_closed_near_high": 17.7,
         "pct_reached_big_move": 5.2,
         "pct_big_move_held": 80.1,
         "examples": [
@@ -17464,18 +17464,18 @@
         {
           "setup": "consolidating",
           "label": "Consolidating",
-          "signals": 635,
-          "resolved": 277,
-          "open_positions": 358,
-          "win_rate": 20.2,
-          "wins": 56,
+          "signals": 636,
+          "resolved": 281,
+          "open_positions": 355,
+          "win_rate": 21.4,
+          "wins": 60,
           "losses": 221,
           "timeouts": 0,
-          "median_max_move_pct": 1.42,
-          "median_final_pct": -2.65,
+          "median_max_move_pct": 1.46,
+          "median_final_pct": -2.62,
           "median_sessions_held": 2,
-          "pct_closed_near_high": 22.0,
-          "pct_reached_big_move": 2.9,
+          "pct_closed_near_high": 23.1,
+          "pct_reached_big_move": 2.8,
           "pct_big_move_held": 75.0,
           "examples": [
             {
@@ -17523,18 +17523,18 @@
         {
           "setup": "tight-closes",
           "label": "3 Tight Closes",
-          "signals": 376,
-          "resolved": 150,
-          "open_positions": 226,
-          "win_rate": 17.3,
-          "wins": 26,
+          "signals": 378,
+          "resolved": 153,
+          "open_positions": 225,
+          "win_rate": 19.0,
+          "wins": 29,
           "losses": 124,
           "timeouts": 0,
-          "median_max_move_pct": 1.15,
-          "median_final_pct": -2.47,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 21.3,
-          "pct_reached_big_move": 2.7,
+          "median_max_move_pct": 1.16,
+          "median_final_pct": -2.44,
+          "median_sessions_held": 2,
+          "pct_closed_near_high": 22.9,
+          "pct_reached_big_move": 2.6,
           "pct_big_move_held": 50.0,
           "examples": [
             {
@@ -17570,11 +17570,11 @@
               "result": "win"
             },
             {
-              "symbol": "RATNAVEER",
-              "trigger_date": "2026-11-20",
-              "max_move_pct": 9.87,
-              "final_pct": 8.93,
-              "sessions_held": 1,
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-19",
+              "max_move_pct": 9.91,
+              "final_pct": 6.79,
+              "sessions_held": 2,
               "result": "win"
             }
           ]
@@ -17582,17 +17582,17 @@
         {
           "setup": "minervini-5m",
           "label": "Minervini 5 Months",
-          "signals": 981,
-          "resolved": 555,
-          "open_positions": 426,
-          "win_rate": 16.0,
-          "wins": 89,
+          "signals": 982,
+          "resolved": 559,
+          "open_positions": 423,
+          "win_rate": 16.6,
+          "wins": 93,
           "losses": 466,
           "timeouts": 0,
-          "median_max_move_pct": 1.41,
-          "median_final_pct": -2.69,
+          "median_max_move_pct": 1.44,
+          "median_final_pct": -2.65,
           "median_sessions_held": 2,
-          "pct_closed_near_high": 17.7,
+          "pct_closed_near_high": 18.2,
           "pct_reached_big_move": 5.9,
           "pct_big_move_held": 81.8,
           "examples": [
@@ -17641,17 +17641,17 @@
         {
           "setup": "minervini-1m",
           "label": "Minervini 1 Month",
-          "signals": 1174,
-          "resolved": 673,
-          "open_positions": 501,
-          "win_rate": 15.8,
-          "wins": 106,
+          "signals": 1175,
+          "resolved": 677,
+          "open_positions": 498,
+          "win_rate": 16.2,
+          "wins": 110,
           "losses": 567,
           "timeouts": 0,
           "median_max_move_pct": 1.46,
-          "median_final_pct": -2.67,
+          "median_final_pct": -2.65,
           "median_sessions_held": 2,
-          "pct_closed_near_high": 18.0,
+          "pct_closed_near_high": 18.5,
           "pct_reached_big_move": 5.5,
           "pct_big_move_held": 81.1,
           "examples": [
@@ -17694,6 +17694,124 @@
               "final_pct": 6.94,
               "sessions_held": 1,
               "result": "loss"
+            }
+          ]
+        },
+        {
+          "setup": "strong-nifty",
+          "label": "Strong vs Benchmark",
+          "signals": 379,
+          "resolved": 208,
+          "open_positions": 171,
+          "win_rate": 14.9,
+          "wins": 31,
+          "losses": 177,
+          "timeouts": 0,
+          "median_max_move_pct": 1.29,
+          "median_final_pct": -2.8,
+          "median_sessions_held": 1.5,
+          "pct_closed_near_high": 18.8,
+          "pct_reached_big_move": 6.7,
+          "pct_big_move_held": 85.7,
+          "examples": [
+            {
+              "symbol": "HMAAGRO",
+              "trigger_date": "2026-11-20",
+              "max_move_pct": 19.99,
+              "final_pct": 18.05,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "HMAAGRO",
+              "trigger_date": "2026-11-19",
+              "max_move_pct": 18.0,
+              "final_pct": 15.58,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-20",
+              "max_move_pct": 14.34,
+              "final_pct": -5.49,
+              "sessions_held": 1,
+              "result": "loss"
+            },
+            {
+              "symbol": "KDDL",
+              "trigger_date": "2026-11-17",
+              "max_move_pct": 13.98,
+              "final_pct": 6.94,
+              "sessions_held": 1,
+              "result": "loss"
+            },
+            {
+              "symbol": "BPLPHARMA",
+              "trigger_date": "2026-11-17",
+              "max_move_pct": 13.29,
+              "final_pct": 10.67,
+              "sessions_held": 1,
+              "result": "win"
+            }
+          ]
+        },
+        {
+          "setup": "momentum-burst",
+          "label": "Momentum Burst",
+          "signals": 168,
+          "resolved": 87,
+          "open_positions": 81,
+          "win_rate": 14.9,
+          "wins": 13,
+          "losses": 74,
+          "timeouts": 0,
+          "median_max_move_pct": 1.46,
+          "median_final_pct": -2.71,
+          "median_sessions_held": 2,
+          "pct_closed_near_high": 17.2,
+          "pct_reached_big_move": 2.3,
+          "pct_big_move_held": 50.0,
+          "examples": [
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-20",
+              "max_move_pct": 14.34,
+              "final_pct": -5.49,
+              "sessions_held": 1,
+              "result": "loss"
+            },
+            {
+              "symbol": "GREAVESCOT",
+              "trigger_date": "2026-11-17",
+              "max_move_pct": 10.47,
+              "final_pct": 9.5,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-19",
+              "max_move_pct": 9.91,
+              "final_pct": 6.79,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-18",
+              "max_move_pct": 9.9,
+              "final_pct": 6.77,
+              "sessions_held": 3,
+              "result": "win"
+            },
+            {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-16",
+              "max_move_pct": 9.89,
+              "final_pct": 6.76,
+              "sessions_held": 5,
+              "result": "win"
             }
           ]
         },
@@ -17757,79 +17875,20 @@
           ]
         },
         {
-          "setup": "strong-nifty",
-          "label": "Strong vs Benchmark",
-          "signals": 378,
-          "resolved": 204,
-          "open_positions": 174,
-          "win_rate": 13.2,
-          "wins": 27,
-          "losses": 177,
-          "timeouts": 0,
-          "median_max_move_pct": 1.27,
-          "median_final_pct": -2.82,
-          "median_sessions_held": 1.0,
-          "pct_closed_near_high": 17.2,
-          "pct_reached_big_move": 6.9,
-          "pct_big_move_held": 85.7,
-          "examples": [
-            {
-              "symbol": "HMAAGRO",
-              "trigger_date": "2026-11-20",
-              "max_move_pct": 19.99,
-              "final_pct": 18.05,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "HMAAGRO",
-              "trigger_date": "2026-11-19",
-              "max_move_pct": 18.0,
-              "final_pct": 15.58,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-20",
-              "max_move_pct": 14.34,
-              "final_pct": -5.49,
-              "sessions_held": 1,
-              "result": "loss"
-            },
-            {
-              "symbol": "KDDL",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 13.98,
-              "final_pct": 6.94,
-              "sessions_held": 1,
-              "result": "loss"
-            },
-            {
-              "symbol": "BPLPHARMA",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 13.29,
-              "final_pct": 10.67,
-              "sessions_held": 1,
-              "result": "win"
-            }
-          ]
-        },
-        {
           "setup": "strong-sector",
           "label": "Strong vs Sector",
-          "signals": 421,
-          "resolved": 222,
-          "open_positions": 199,
-          "win_rate": 13.1,
-          "wins": 29,
+          "signals": 422,
+          "resolved": 226,
+          "open_positions": 196,
+          "win_rate": 14.6,
+          "wins": 33,
           "losses": 193,
           "timeouts": 0,
-          "median_max_move_pct": 1.29,
-          "median_final_pct": -2.84,
-          "median_sessions_held": 1.0,
-          "pct_closed_near_high": 16.7,
-          "pct_reached_big_move": 6.8,
+          "median_max_move_pct": 1.32,
+          "median_final_pct": -2.82,
+          "median_sessions_held": 2.0,
+          "pct_closed_near_high": 18.1,
+          "pct_reached_big_move": 6.6,
           "pct_big_move_held": 86.7,
           "examples": [
             {
@@ -17875,6 +17934,124 @@
           ]
         },
         {
+          "setup": "relative-strength",
+          "label": "Relative Strengths",
+          "signals": 565,
+          "resolved": 335,
+          "open_positions": 230,
+          "win_rate": 13.7,
+          "wins": 46,
+          "losses": 289,
+          "timeouts": 0,
+          "median_max_move_pct": 1.45,
+          "median_final_pct": -2.73,
+          "median_sessions_held": 2,
+          "pct_closed_near_high": 15.8,
+          "pct_reached_big_move": 6.3,
+          "pct_big_move_held": 90.5,
+          "examples": [
+            {
+              "symbol": "HMAAGRO",
+              "trigger_date": "2026-11-20",
+              "max_move_pct": 19.99,
+              "final_pct": 18.05,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "KMCSHIL",
+              "trigger_date": "2026-11-16",
+              "max_move_pct": 18.09,
+              "final_pct": 16.13,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "SGMART",
+              "trigger_date": "2026-11-20",
+              "max_move_pct": 14.34,
+              "final_pct": -5.49,
+              "sessions_held": 1,
+              "result": "loss"
+            },
+            {
+              "symbol": "KDDL",
+              "trigger_date": "2026-11-17",
+              "max_move_pct": 13.98,
+              "final_pct": 6.94,
+              "sessions_held": 1,
+              "result": "loss"
+            },
+            {
+              "symbol": "BPLPHARMA",
+              "trigger_date": "2026-11-17",
+              "max_move_pct": 13.29,
+              "final_pct": 10.67,
+              "sessions_held": 1,
+              "result": "win"
+            }
+          ]
+        },
+        {
+          "setup": "contraction",
+          "label": "Contraction",
+          "signals": 212,
+          "resolved": 133,
+          "open_positions": 79,
+          "win_rate": 13.5,
+          "wins": 18,
+          "losses": 115,
+          "timeouts": 0,
+          "median_max_move_pct": 1.14,
+          "median_final_pct": -2.74,
+          "median_sessions_held": 2,
+          "pct_closed_near_high": 13.5,
+          "pct_reached_big_move": 3.8,
+          "pct_big_move_held": 80.0,
+          "examples": [
+            {
+              "symbol": "RATNAVEER",
+              "trigger_date": "2026-11-17",
+              "max_move_pct": 13.24,
+              "final_pct": 12.26,
+              "sessions_held": 4,
+              "result": "win"
+            },
+            {
+              "symbol": "AVTNPL",
+              "trigger_date": "2026-11-16",
+              "max_move_pct": 13.13,
+              "final_pct": 5.59,
+              "sessions_held": 1,
+              "result": "win"
+            },
+            {
+              "symbol": "RATNAVEER",
+              "trigger_date": "2026-11-16",
+              "max_move_pct": 12.28,
+              "final_pct": 11.32,
+              "sessions_held": 5,
+              "result": "win"
+            },
+            {
+              "symbol": "SAMBHV",
+              "trigger_date": "2026-11-18",
+              "max_move_pct": 11.64,
+              "final_pct": 9.83,
+              "sessions_held": 3,
+              "result": "win"
+            },
+            {
+              "symbol": "RATNAVEER",
+              "trigger_date": "2026-11-19",
+              "max_move_pct": 10.81,
+              "final_pct": 9.86,
+              "sessions_held": 2,
+              "result": "win"
+            }
+          ]
+        },
+        {
           "setup": "ema-expansion",
           "label": "Expansion",
           "signals": 53,
@@ -17885,7 +18062,7 @@
           "losses": 34,
           "timeouts": 0,
           "median_max_move_pct": 3.05,
-          "median_final_pct": -2.82,
+          "median_final_pct": -2.8,
           "median_sessions_held": 1,
           "pct_closed_near_high": 15.4,
           "pct_reached_big_move": 10.3,
@@ -17934,78 +18111,19 @@
           ]
         },
         {
-          "setup": "relative-strength",
-          "label": "Relative Strengths",
-          "signals": 564,
-          "resolved": 331,
-          "open_positions": 233,
-          "win_rate": 12.7,
-          "wins": 42,
-          "losses": 289,
-          "timeouts": 0,
-          "median_max_move_pct": 1.44,
-          "median_final_pct": -2.74,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 14.8,
-          "pct_reached_big_move": 6.3,
-          "pct_big_move_held": 90.5,
-          "examples": [
-            {
-              "symbol": "HMAAGRO",
-              "trigger_date": "2026-11-20",
-              "max_move_pct": 19.99,
-              "final_pct": 18.05,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "KMCSHIL",
-              "trigger_date": "2026-11-16",
-              "max_move_pct": 18.09,
-              "final_pct": 16.13,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-20",
-              "max_move_pct": 14.34,
-              "final_pct": -5.49,
-              "sessions_held": 1,
-              "result": "loss"
-            },
-            {
-              "symbol": "KDDL",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 13.98,
-              "final_pct": 6.94,
-              "sessions_held": 1,
-              "result": "loss"
-            },
-            {
-              "symbol": "BPLPHARMA",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 13.29,
-              "final_pct": 10.67,
-              "sessions_held": 1,
-              "result": "win"
-            }
-          ]
-        },
-        {
           "setup": "clean-pullback",
           "label": "Clean Pullbacks",
           "signals": 220,
-          "resolved": 104,
-          "open_positions": 116,
-          "win_rate": 11.5,
-          "wins": 12,
+          "resolved": 105,
+          "open_positions": 115,
+          "win_rate": 12.4,
+          "wins": 13,
           "losses": 92,
           "timeouts": 0,
-          "median_max_move_pct": 1.31,
-          "median_final_pct": -2.66,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 18.3,
+          "median_max_move_pct": 1.32,
+          "median_final_pct": -2.62,
+          "median_sessions_held": 2,
+          "pct_closed_near_high": 19.0,
           "pct_reached_big_move": 2.9,
           "pct_big_move_held": 100.0,
           "examples": [
@@ -18034,78 +18152,78 @@
               "result": "win"
             },
             {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-18",
+              "max_move_pct": 9.9,
+              "final_pct": 6.77,
+              "sessions_held": 3,
+              "result": "win"
+            },
+            {
               "symbol": "RATNAVEER",
               "trigger_date": "2026-11-18",
               "max_move_pct": 9.8,
               "final_pct": 8.85,
               "sessions_held": 3,
               "result": "win"
-            },
-            {
-              "symbol": "GHCLTEXTIL",
-              "trigger_date": "2026-11-18",
-              "max_move_pct": 9.31,
-              "final_pct": 5.49,
-              "sessions_held": 3,
-              "result": "win"
             }
           ]
         },
         {
-          "setup": "contraction",
-          "label": "Contraction",
-          "signals": 212,
-          "resolved": 130,
-          "open_positions": 82,
-          "win_rate": 11.5,
-          "wins": 15,
-          "losses": 115,
+          "setup": "qullamaggie",
+          "label": "Qullamaggie",
+          "signals": 84,
+          "resolved": 60,
+          "open_positions": 24,
+          "win_rate": 11.7,
+          "wins": 7,
+          "losses": 53,
           "timeouts": 0,
-          "median_max_move_pct": 1.12,
-          "median_final_pct": -2.76,
+          "median_max_move_pct": 1.34,
+          "median_final_pct": -2.68,
           "median_sessions_held": 2.0,
-          "pct_closed_near_high": 11.5,
-          "pct_reached_big_move": 3.8,
-          "pct_big_move_held": 80.0,
+          "pct_closed_near_high": 13.3,
+          "pct_reached_big_move": 3.3,
+          "pct_big_move_held": 0.0,
           "examples": [
             {
-              "symbol": "RATNAVEER",
+              "symbol": "FILATEX",
+              "trigger_date": "2026-11-16",
+              "max_move_pct": 15.76,
+              "final_pct": 6.71,
+              "sessions_held": 2,
+              "result": "win"
+            },
+            {
+              "symbol": "KDDL",
               "trigger_date": "2026-11-17",
-              "max_move_pct": 13.24,
-              "final_pct": 12.26,
-              "sessions_held": 4,
-              "result": "win"
-            },
-            {
-              "symbol": "AVTNPL",
-              "trigger_date": "2026-11-16",
-              "max_move_pct": 13.13,
-              "final_pct": 5.59,
+              "max_move_pct": 13.98,
+              "final_pct": 6.94,
               "sessions_held": 1,
+              "result": "loss"
+            },
+            {
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-19",
+              "max_move_pct": 9.91,
+              "final_pct": 6.79,
+              "sessions_held": 2,
               "result": "win"
             },
             {
-              "symbol": "RATNAVEER",
-              "trigger_date": "2026-11-16",
-              "max_move_pct": 12.28,
-              "final_pct": 11.32,
-              "sessions_held": 5,
-              "result": "win"
-            },
-            {
-              "symbol": "SAMBHV",
+              "symbol": "SHUKRAPHAR",
               "trigger_date": "2026-11-18",
-              "max_move_pct": 11.64,
-              "final_pct": 9.83,
+              "max_move_pct": 9.9,
+              "final_pct": 6.77,
               "sessions_held": 3,
               "result": "win"
             },
             {
-              "symbol": "RATNAVEER",
-              "trigger_date": "2026-11-19",
-              "max_move_pct": 10.81,
-              "final_pct": 9.86,
-              "sessions_held": 2,
+              "symbol": "SHUKRAPHAR",
+              "trigger_date": "2026-11-16",
+              "max_move_pct": 9.89,
+              "final_pct": 6.76,
+              "sessions_held": 5,
               "result": "win"
             }
           ]
@@ -18170,78 +18288,19 @@
           ]
         },
         {
-          "setup": "momentum-burst",
-          "label": "Momentum Burst",
-          "signals": 168,
-          "resolved": 83,
-          "open_positions": 85,
-          "win_rate": 10.8,
-          "wins": 9,
-          "losses": 74,
-          "timeouts": 0,
-          "median_max_move_pct": 1.15,
-          "median_final_pct": -2.74,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 13.3,
-          "pct_reached_big_move": 2.4,
-          "pct_big_move_held": 50.0,
-          "examples": [
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-20",
-              "max_move_pct": 14.34,
-              "final_pct": -5.49,
-              "sessions_held": 1,
-              "result": "loss"
-            },
-            {
-              "symbol": "GREAVESCOT",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 10.47,
-              "final_pct": 9.5,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-19",
-              "max_move_pct": 9.61,
-              "final_pct": 8.57,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "ALICON",
-              "trigger_date": "2026-11-19",
-              "max_move_pct": 9.18,
-              "final_pct": 5.62,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "SGMART",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 8.99,
-              "final_pct": 7.95,
-              "sessions_held": 3,
-              "result": "win"
-            }
-          ]
-        },
-        {
           "setup": "power-base",
           "label": "Power Base",
-          "signals": 584,
-          "resolved": 373,
-          "open_positions": 211,
-          "win_rate": 8.8,
-          "wins": 33,
+          "signals": 586,
+          "resolved": 377,
+          "open_positions": 209,
+          "win_rate": 9.8,
+          "wins": 37,
           "losses": 340,
           "timeouts": 0,
-          "median_max_move_pct": 1.33,
-          "median_final_pct": -2.87,
+          "median_max_move_pct": 1.4,
+          "median_final_pct": -2.85,
           "median_sessions_held": 2,
-          "pct_closed_near_high": 10.5,
+          "pct_closed_near_high": 11.4,
           "pct_reached_big_move": 2.4,
           "pct_big_move_held": 66.7,
           "examples": [
@@ -18283,65 +18342,6 @@
               "max_move_pct": 12.28,
               "final_pct": 11.32,
               "sessions_held": 5,
-              "result": "win"
-            }
-          ]
-        },
-        {
-          "setup": "qullamaggie",
-          "label": "Qullamaggie",
-          "signals": 84,
-          "resolved": 56,
-          "open_positions": 28,
-          "win_rate": 5.4,
-          "wins": 3,
-          "losses": 53,
-          "timeouts": 0,
-          "median_max_move_pct": 1.23,
-          "median_final_pct": -2.87,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 7.1,
-          "pct_reached_big_move": 3.6,
-          "pct_big_move_held": 0.0,
-          "examples": [
-            {
-              "symbol": "FILATEX",
-              "trigger_date": "2026-11-16",
-              "max_move_pct": 15.76,
-              "final_pct": 6.71,
-              "sessions_held": 2,
-              "result": "win"
-            },
-            {
-              "symbol": "KDDL",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 13.98,
-              "final_pct": 6.94,
-              "sessions_held": 1,
-              "result": "loss"
-            },
-            {
-              "symbol": "WELSPUNLIV",
-              "trigger_date": "2026-11-16",
-              "max_move_pct": 8.68,
-              "final_pct": 7.92,
-              "sessions_held": 1,
-              "result": "win"
-            },
-            {
-              "symbol": "HINDOILEXP",
-              "trigger_date": "2026-11-17",
-              "max_move_pct": 7.47,
-              "final_pct": -3.5,
-              "sessions_held": 2,
-              "result": "loss"
-            },
-            {
-              "symbol": "WELSPUNLIV",
-              "trigger_date": "2026-11-18",
-              "max_move_pct": 7.04,
-              "final_pct": 5.0,
-              "sessions_held": 2,
               "result": "win"
             }
           ]
@@ -18515,9 +18515,9 @@
         "ipo": {
           "setup": "ipo",
           "label": "Recent IPOs",
-          "signals": 183,
+          "signals": 184,
           "resolved": 119,
-          "open_positions": 64,
+          "open_positions": 65,
           "win_rate": 6.7,
           "wins": 8,
           "losses": 111,
@@ -18574,18 +18574,18 @@
         "leading_groups": {
           "setup": "leading",
           "label": "Top-decile groups",
-          "signals": 1330,
-          "resolved": 647,
-          "open_positions": 683,
-          "win_rate": 11.4,
-          "wins": 74,
+          "signals": 1338,
+          "resolved": 679,
+          "open_positions": 659,
+          "win_rate": 15.6,
+          "wins": 106,
           "losses": 573,
           "timeouts": 0,
-          "median_max_move_pct": 1.02,
-          "median_final_pct": -2.94,
+          "median_max_move_pct": 1.15,
+          "median_final_pct": -2.83,
           "median_sessions_held": 2,
-          "pct_closed_near_high": 13.9,
-          "pct_reached_big_move": 2.0,
+          "pct_closed_near_high": 18.0,
+          "pct_reached_big_move": 1.9,
           "pct_big_move_held": 100.0,
           "examples": [
             {
@@ -18633,18 +18633,18 @@
         "lagging_groups": {
           "setup": "lagging",
           "label": "Everything else",
-          "signals": 4930,
-          "resolved": 2818,
-          "open_positions": 2112,
-          "win_rate": 15.4,
-          "wins": 434,
+          "signals": 4932,
+          "resolved": 2829,
+          "open_positions": 2103,
+          "win_rate": 15.7,
+          "wins": 445,
           "losses": 2384,
           "timeouts": 0,
           "median_max_move_pct": 1.6,
-          "median_final_pct": -2.67,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 17.4,
-          "pct_reached_big_move": 6.0,
+          "median_final_pct": -2.65,
+          "median_sessions_held": 2,
+          "pct_closed_near_high": 17.7,
+          "pct_reached_big_move": 5.9,
           "pct_big_move_held": 78.6,
           "examples": [
             {
@@ -18693,7 +18693,7 @@
     }
   ],
   "comparable": {
-    "horizon_sessions": 5,
+    "horizon_sessions": 1,
     "weeks": [
       {
         "week": "2026-W36",
@@ -18703,16 +18703,16 @@
           "signals": 10052,
           "resolved": 10052,
           "open_positions": 0,
-          "win_rate": 23.9,
-          "wins": 2404,
-          "losses": 5269,
-          "timeouts": 2379,
-          "median_max_move_pct": 3.19,
-          "median_final_pct": -0.95,
-          "median_sessions_held": 3.0,
-          "pct_closed_near_high": 26.0,
-          "pct_reached_big_move": 8.3,
-          "pct_big_move_held": 70.5
+          "win_rate": 5.9,
+          "wins": 593,
+          "losses": 2184,
+          "timeouts": 7275,
+          "median_max_move_pct": 1.68,
+          "median_final_pct": -0.17,
+          "median_sessions_held": 1.0,
+          "pct_closed_near_high": 19.4,
+          "pct_reached_big_move": 2.7,
+          "pct_big_move_held": 60.5
         }
       },
       {
@@ -18723,16 +18723,16 @@
           "signals": 10053,
           "resolved": 10053,
           "open_positions": 0,
-          "win_rate": 10.9,
-          "wins": 1098,
-          "losses": 8341,
-          "timeouts": 614,
-          "median_max_move_pct": 1.85,
-          "median_final_pct": -2.66,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 14.4,
-          "pct_reached_big_move": 5.4,
-          "pct_big_move_held": 61.4
+          "win_rate": 3.8,
+          "wins": 385,
+          "losses": 3358,
+          "timeouts": 6310,
+          "median_max_move_pct": 1.43,
+          "median_final_pct": -0.67,
+          "median_sessions_held": 1,
+          "pct_closed_near_high": 18.2,
+          "pct_reached_big_move": 2.1,
+          "pct_big_move_held": 50.5
         }
       },
       {
@@ -18743,16 +18743,16 @@
           "signals": 5942,
           "resolved": 5942,
           "open_positions": 0,
-          "win_rate": 33.1,
-          "wins": 1967,
-          "losses": 2583,
-          "timeouts": 1392,
-          "median_max_move_pct": 4.48,
-          "median_final_pct": 0.88,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 36.6,
-          "pct_reached_big_move": 10.2,
-          "pct_big_move_held": 80.7
+          "win_rate": 7.6,
+          "wins": 452,
+          "losses": 1554,
+          "timeouts": 3936,
+          "median_max_move_pct": 2.25,
+          "median_final_pct": 0.4,
+          "median_sessions_held": 1.0,
+          "pct_closed_near_high": 27.0,
+          "pct_reached_big_move": 2.6,
+          "pct_big_move_held": 71.7
         }
       },
       {
@@ -18763,16 +18763,16 @@
           "signals": 9161,
           "resolved": 9161,
           "open_positions": 0,
-          "win_rate": 17.1,
-          "wins": 1570,
-          "losses": 6380,
-          "timeouts": 1211,
-          "median_max_move_pct": 2.47,
-          "median_final_pct": -2.17,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 16.7,
-          "pct_reached_big_move": 5.5,
-          "pct_big_move_held": 62.2
+          "win_rate": 4.8,
+          "wins": 439,
+          "losses": 2238,
+          "timeouts": 6484,
+          "median_max_move_pct": 1.71,
+          "median_final_pct": -0.39,
+          "median_sessions_held": 1,
+          "pct_closed_near_high": 15.4,
+          "pct_reached_big_move": 2.3,
+          "pct_big_move_held": 53.6
         }
       },
       {
@@ -18783,16 +18783,16 @@
           "signals": 6044,
           "resolved": 6044,
           "open_positions": 0,
-          "win_rate": 19.7,
-          "wins": 1191,
-          "losses": 4148,
-          "timeouts": 705,
-          "median_max_move_pct": 2.85,
-          "median_final_pct": -1.64,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 22.1,
-          "pct_reached_big_move": 7.2,
-          "pct_big_move_held": 64.1
+          "win_rate": 4.6,
+          "wins": 277,
+          "losses": 2083,
+          "timeouts": 3684,
+          "median_max_move_pct": 2.0,
+          "median_final_pct": -0.31,
+          "median_sessions_held": 1.0,
+          "pct_closed_near_high": 17.4,
+          "pct_reached_big_move": 1.8,
+          "pct_big_move_held": 50.9
         }
       },
       {
@@ -18803,16 +18803,16 @@
           "signals": 6892,
           "resolved": 6892,
           "open_positions": 0,
-          "win_rate": 17.9,
-          "wins": 1235,
-          "losses": 4852,
-          "timeouts": 805,
-          "median_max_move_pct": 2.62,
-          "median_final_pct": -2.32,
-          "median_sessions_held": 2.0,
-          "pct_closed_near_high": 20.2,
-          "pct_reached_big_move": 4.6,
-          "pct_big_move_held": 60.8
+          "win_rate": 6.0,
+          "wins": 413,
+          "losses": 2198,
+          "timeouts": 4281,
+          "median_max_move_pct": 1.87,
+          "median_final_pct": -0.28,
+          "median_sessions_held": 1.0,
+          "pct_closed_near_high": 19.4,
+          "pct_reached_big_move": 1.6,
+          "pct_big_move_held": 36.1
         }
       },
       {
@@ -18823,16 +18823,16 @@
           "signals": 6457,
           "resolved": 6457,
           "open_positions": 0,
-          "win_rate": 9.1,
-          "wins": 585,
-          "losses": 5536,
-          "timeouts": 336,
-          "median_max_move_pct": 1.76,
-          "median_final_pct": -3.06,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 11.3,
-          "pct_reached_big_move": 3.9,
-          "pct_big_move_held": 37.9
+          "win_rate": 3.2,
+          "wins": 208,
+          "losses": 2352,
+          "timeouts": 3897,
+          "median_max_move_pct": 1.39,
+          "median_final_pct": -0.61,
+          "median_sessions_held": 1,
+          "pct_closed_near_high": 18.7,
+          "pct_reached_big_move": 1.7,
+          "pct_big_move_held": 34.9
         }
       },
       {
@@ -18843,16 +18843,16 @@
           "signals": 2678,
           "resolved": 2678,
           "open_positions": 0,
-          "win_rate": 10.8,
-          "wins": 289,
-          "losses": 2286,
-          "timeouts": 103,
-          "median_max_move_pct": 1.39,
-          "median_final_pct": -3.04,
+          "win_rate": 2.0,
+          "wins": 54,
+          "losses": 1752,
+          "timeouts": 872,
+          "median_max_move_pct": 1.17,
+          "median_final_pct": -2.11,
           "median_sessions_held": 1.0,
-          "pct_closed_near_high": 18.0,
-          "pct_reached_big_move": 4.0,
-          "pct_big_move_held": 47.7
+          "pct_closed_near_high": 14.6,
+          "pct_reached_big_move": 2.0,
+          "pct_big_move_held": 24.5
         }
       },
       {
@@ -18863,16 +18863,16 @@
           "signals": 3369,
           "resolved": 3369,
           "open_positions": 0,
-          "win_rate": 28.2,
-          "wins": 951,
-          "losses": 1953,
-          "timeouts": 465,
-          "median_max_move_pct": 3.89,
-          "median_final_pct": -0.03,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 33.5,
-          "pct_reached_big_move": 7.1,
-          "pct_big_move_held": 62.9
+          "win_rate": 6.6,
+          "wins": 224,
+          "losses": 1021,
+          "timeouts": 2124,
+          "median_max_move_pct": 1.96,
+          "median_final_pct": 0.17,
+          "median_sessions_held": 1,
+          "pct_closed_near_high": 27.2,
+          "pct_reached_big_move": 1.7,
+          "pct_big_move_held": 41.4
         }
       },
       {
@@ -18883,16 +18883,16 @@
           "signals": 4371,
           "resolved": 4371,
           "open_positions": 0,
-          "win_rate": 33.3,
-          "wins": 1455,
-          "losses": 1995,
-          "timeouts": 921,
-          "median_max_move_pct": 5.05,
-          "median_final_pct": 1.24,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 34.2,
-          "pct_reached_big_move": 10.5,
-          "pct_big_move_held": 60.2
+          "win_rate": 6.3,
+          "wins": 274,
+          "losses": 1091,
+          "timeouts": 3006,
+          "median_max_move_pct": 2.46,
+          "median_final_pct": 0.37,
+          "median_sessions_held": 1,
+          "pct_closed_near_high": 27.2,
+          "pct_reached_big_move": 2.7,
+          "pct_big_move_held": 62.2
         }
       },
       {
@@ -18903,16 +18903,16 @@
           "signals": 4622,
           "resolved": 4622,
           "open_positions": 0,
-          "win_rate": 19.1,
-          "wins": 884,
-          "losses": 2487,
-          "timeouts": 1251,
-          "median_max_move_pct": 3.13,
-          "median_final_pct": -0.96,
-          "median_sessions_held": 3.0,
-          "pct_closed_near_high": 23.3,
-          "pct_reached_big_move": 4.5,
-          "pct_big_move_held": 51.4
+          "win_rate": 4.7,
+          "wins": 218,
+          "losses": 912,
+          "timeouts": 3492,
+          "median_max_move_pct": 1.92,
+          "median_final_pct": 0.01,
+          "median_sessions_held": 1.0,
+          "pct_closed_near_high": 19.5,
+          "pct_reached_big_move": 1.0,
+          "pct_big_move_held": 58.3
         }
       },
       {
@@ -18920,29 +18920,29 @@
         "overall": {
           "setup": "all",
           "label": "All setups",
-          "signals": 6260,
-          "resolved": 3783,
-          "open_positions": 2477,
-          "win_rate": 13.4,
-          "wins": 508,
-          "losses": 2957,
-          "timeouts": 318,
-          "median_max_move_pct": 1.66,
-          "median_final_pct": -2.57,
-          "median_sessions_held": 2,
-          "pct_closed_near_high": 16.0,
-          "pct_reached_big_move": 4.8,
-          "pct_big_move_held": 80.1
+          "signals": 6270,
+          "resolved": 6270,
+          "open_positions": 0,
+          "win_rate": 2.4,
+          "wins": 149,
+          "losses": 1432,
+          "timeouts": 4689,
+          "median_max_move_pct": 1.44,
+          "median_final_pct": -0.21,
+          "median_sessions_held": 1.0,
+          "pct_closed_near_high": 20.5,
+          "pct_reached_big_move": 1.0,
+          "pct_big_move_held": 52.3
         }
       }
     ]
   },
-  "generated_at": "2026-11-24T02:12:46.138960+00:00",
-  "as_of_session": "2026-11-20",
+  "generated_at": "2026-11-25T00:01:21.490525+00:00",
+  "as_of_session": "2026-11-23",
   "symbols_replayed": 1567,
-  "sessions_replayed": 56,
-  "signals": 75911,
-  "outcomes": 75901,
+  "sessions_replayed": 57,
+  "signals": 77176,
+  "outcomes": 75911,
   "rules": {
     "entry": "close of the session the setup triggered",
     "stop_pct": 3.0,
