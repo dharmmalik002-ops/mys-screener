@@ -1,10 +1,10 @@
 {
   "summary": {
     "started": "2026-09-18",
-    "last_session": "2026-11-23",
-    "sessions": 43,
+    "last_session": "2026-11-25",
+    "sessions": 44,
     "starting_equity": 1000000.0,
-    "equity": 976651.53,
+    "equity": 976651.54,
     "return_pct": -2.33,
     "max_drawdown_pct": -2.36,
     "open_positions": 0,
@@ -16,7 +16,7 @@
     "declined_recent": 0
   },
   "holdings": {
-    "as_of": "2026-11-23",
+    "as_of": "2026-11-25",
     "regime": "choppy",
     "cash": 0.0,
     "stocks": 0.0,
@@ -333,6 +333,13 @@
       "open": 0,
       "cash": 0.0,
       "sleeve": 976651.53
+    },
+    {
+      "day": "2026-11-25",
+      "equity": 976651.54,
+      "open": 0,
+      "cash": 0.0,
+      "sleeve": 976651.54
     }
   ]
 }
