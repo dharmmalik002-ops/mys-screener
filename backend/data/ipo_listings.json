@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-25",
+ "as_of": "2026-11-26",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -10,7 +10,7 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-25",
+ "bse_ipos_as_of": "2026-11-26",
  "bse_ipos": {
   "544617": {
    "name": "Excelsoft Technologies Limited",
@@ -737,6 +737,12 @@
    "symbol": "BCSSL",
    "listing_date": "2026-11-05",
    "issue_price": 82.0
+  },
+  "545031": {
+   "name": "Crystal Crop Protection Limited",
+   "symbol": "CRYSTALCP",
+   "listing_date": "2026-11-26",
+   "issue_price": 272.0
   }
  },
  "listings": {
@@ -1791,6 +1797,19 @@
    "bse_code": "509472",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "CRYSTALCP": {
+   "listing_date": "2026-11-26",
+   "name": "Crystal Crop Protection Limited",
+   "isin": "INE101P01016",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-11-25",
+   "prior_trading": false,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": true
   },
   "CSM": {
    "listing_date": "2026-07-02",
@@ -3745,6 +3764,19 @@
    "bse_code": "531996",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "OLIL": {
+   "listing_date": "2026-11-26",
+   "name": "Oneclick Logistics India Limited",
+   "isin": "INE0OPS01011",
+   "series": "EQ",
+   "exchange": "NSE",
+   "checked_session": "2026-11-25",
+   "prior_trading": true,
+   "nse_checked": true,
+   "prior_rule": "issuer_prefix",
+   "basis": "isin_history",
+   "ipo": false
   },
   "OMNI": {
    "listing_date": "2026-03-05",
