@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-26T13:06:19.533962+00:00",
+  "generated_at": "2026-11-26T19:58:18.141786+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -11932,7 +11932,7 @@
       "close_in_range_pct": 0.8358,
       "next_day_gap_pct": 0.118,
       "day_rvol_50d": 2.293,
-      "return_5d_pct": -3.151,
+      "return_5d_pct": -6.449,
       "source": "bse-calendar",
       "best_pop_pct": 2.803,
       "best_pop_rvol": 2.293
@@ -16957,12 +16957,12 @@
       "symbol": "ENRIN",
       "earnings_date": "2026-11-25",
       "close_in_range_pct": 0.5006,
-      "next_day_gap_pct": 8.808,
+      "next_day_gap_pct": null,
       "day_rvol_50d": 1.046,
-      "return_5d_pct": 2.963,
+      "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": 2.963,
-      "best_pop_rvol": 6.318
+      "best_pop_pct": -0.218,
+      "best_pop_rvol": 1.046
     }
   }
 }
