@@ -1804,12 +1804,13 @@
    "isin": "INE101P01016",
    "series": "EQ",
    "exchange": "NSE",
-   "checked_session": "2026-11-25",
-   "prior_trading": false,
-   "nse_checked": true,
-   "prior_rule": "issuer_prefix",
-   "basis": "isin_history",
-   "ipo": true
+   "bse_code": "545031",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 272.0,
+   "sector": "Chemicals",
+   "sub_sector": "Pesticides & Agrochemicals",
+   "shares_crore": 16.317761
   },
   "CSM": {
    "listing_date": "2026-07-02",
