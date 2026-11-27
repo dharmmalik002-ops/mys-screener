@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-27T12:04:52.945436+00:00",
+  "generated_at": "2026-11-27T13:05:57.834147+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
@@ -8641,12 +8641,12 @@
       "symbol": "TIMEX",
       "earnings_date": "2026-11-03",
       "close_in_range_pct": 0.6542,
-      "next_day_gap_pct": null,
-      "day_rvol_50d": 1.955,
-      "return_5d_pct": null,
+      "next_day_gap_pct": -1.522,
+      "day_rvol_50d": 1.956,
+      "return_5d_pct": 11.667,
       "source": "bse-calendar",
       "best_pop_pct": 5.171,
-      "best_pop_rvol": 1.955
+      "best_pop_rvol": 1.956
     },
     "KOLTEPATIL": {
       "symbol": "KOLTEPATIL",
@@ -8860,13 +8860,13 @@
     "NOVARTIND": {
       "symbol": "NOVARTIND",
       "earnings_date": "2026-11-03",
-      "close_in_range_pct": 0.6969,
-      "next_day_gap_pct": null,
-      "day_rvol_50d": 0.223,
-      "return_5d_pct": null,
+      "close_in_range_pct": 0.8281,
+      "next_day_gap_pct": -4.203,
+      "day_rvol_50d": 0.265,
+      "return_5d_pct": 8.191,
       "source": "bse-calendar",
       "best_pop_pct": 0.274,
-      "best_pop_rvol": 0.223
+      "best_pop_rvol": 0.265
     },
     "RHETAN": {
       "symbol": "RHETAN",
@@ -16963,6 +16963,28 @@
       "source": "bse-calendar",
       "best_pop_pct": 2.963,
       "best_pop_rvol": 6.32
+    },
+    "NIRLON": {
+      "symbol": "NIRLON",
+      "earnings_date": "2026-11-02",
+      "close_in_range_pct": 0.7105,
+      "next_day_gap_pct": 0.433,
+      "day_rvol_50d": 6.542,
+      "return_5d_pct": -1.769,
+      "source": "bse-calendar",
+      "best_pop_pct": 2.519,
+      "best_pop_rvol": 6.542
+    },
+    "SEKURITIND": {
+      "symbol": "SEKURITIND",
+      "earnings_date": "2026-11-02",
+      "close_in_range_pct": 0.527,
+      "next_day_gap_pct": 0.386,
+      "day_rvol_50d": 1.049,
+      "return_5d_pct": 4.0,
+      "source": "bse-calendar",
+      "best_pop_pct": 2.219,
+      "best_pop_rvol": 0.472
     }
   }
 }
