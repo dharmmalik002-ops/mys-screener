@@ -3287,12 +3287,12 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "545032",
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 136.0,
    "sector": "Oil, Gas & Consumable Fuels",
    "sub_sector": "Coal",
-   "shares_crore": 661.836275
+   "shares_crore": 661.836275,
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 136.0
   },
   "MAJESAUT": {
    "listing_date": "2026-04-20",
