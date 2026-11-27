@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-26",
+ "as_of": "2026-11-27",
  "aliases": {
   "AMIRCHAND": "AEROPLANE",
   "ASHIKA": "ASHIKAG",
@@ -10,14 +10,8 @@
  },
  "rule": "ipo = on BSE's mainboard IPO list when the company trades on BSE; otherwise ISIN absent from the last BSE and NSE EOD files before its listing date",
  "bse_ipo_list_read": true,
- "bse_ipos_as_of": "2026-11-26",
+ "bse_ipos_as_of": "2026-11-27",
  "bse_ipos": {
-  "544617": {
-   "name": "Excelsoft Technologies Limited",
-   "symbol": "EXCELSOFT",
-   "listing_date": "2025-11-26",
-   "issue_price": 120.0
-  },
   "544619": {
    "name": "Sudeep Pharma Limited",
    "symbol": "SUDEEPPHRM",
@@ -743,6 +737,12 @@
    "symbol": "CRYSTALCP",
    "listing_date": "2026-11-26",
    "issue_price": 272.0
+  },
+  "545032": {
+   "name": "Mahanadi Coalfields Limited",
+   "symbol": "MAHACOAL",
+   "listing_date": "2026-11-27",
+   "issue_price": 136.0
   }
  },
  "listings": {
@@ -2125,20 +2125,6 @@
    "ipo": false,
    "basis": "bse_ipo_list"
   },
-  "EXCELSOFT": {
-   "listing_date": "2025-11-26",
-   "name": "Excelsoft Technologies Limited",
-   "isin": "INE606N01019",
-   "series": "EQ",
-   "exchange": "NSE",
-   "bse_code": "544617",
-   "sector": "Information Technology",
-   "sub_sector": "IT Enabled Services",
-   "shares_crore": 11.508406,
-   "ipo": true,
-   "basis": "bse_ipo_list",
-   "issue_price": 120.0
-  },
   "FEDDERSHOL": {
    "listing_date": "2026-04-20",
    "name": "Fedders Holding Limited",
@@ -2470,6 +2456,16 @@
    "ipo": true,
    "basis": "bse_ipo_list",
    "issue_price": 271.0
+  },
+  "HEGRAPHITE": {
+   "listing_date": "2026-11-27",
+   "name": "HEG Limited",
+   "isin": "INE0Y9J01020",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "544896",
+   "ipo": false,
+   "basis": "bse_ipo_list"
   },
   "HEROMOTORS": {
    "listing_date": "2026-09-23",
@@ -3283,6 +3279,20 @@
    "bse_code": "500264",
    "ipo": false,
    "basis": "bse_ipo_list"
+  },
+  "MAHACOAL": {
+   "listing_date": "2026-11-27",
+   "name": "Mahanadi Coalfields Limited",
+   "isin": "INE03K401026",
+   "series": "EQ",
+   "exchange": "NSE",
+   "bse_code": "545032",
+   "ipo": true,
+   "basis": "bse_ipo_list",
+   "issue_price": 136.0,
+   "sector": "Oil, Gas & Consumable Fuels",
+   "sub_sector": "Coal",
+   "shares_crore": 661.836275
   },
   "MAJESAUT": {
    "listing_date": "2026-04-20",
@@ -4109,6 +4119,16 @@
    "series": "EQ",
    "exchange": "NSE",
    "bse_code": "531637",
+   "ipo": false,
+   "basis": "bse_ipo_list"
+  },
+  "PRAXIS-RE3": {
+   "listing_date": "2026-11-27",
+   "name": "Praxis Home Retail Limited-RE",
+   "isin": "INE546Y20048",
+   "series": "BE",
+   "exchange": "NSE",
+   "bse_code": "751163",
    "ipo": false,
    "basis": "bse_ipo_list"
   },

@@ -1,11 +1,11 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-11-26T22:03:28.025114+00:00",
+  "generated_at": "2026-11-27T11:05:50.470685+00:00",
   "entries": {
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-11-26",
-      "close_in_range_pct": 0.5,
+      "earnings_date": "2026-11-27",
+      "close_in_range_pct": 0.8148,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -15,7 +15,7 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-11-26",
+      "earnings_date": "2026-11-27",
       "close_in_range_pct": 0.0,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
@@ -26,8 +26,8 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-11-26",
-      "close_in_range_pct": 0.49,
+      "earnings_date": "2026-11-27",
+      "close_in_range_pct": 1.0,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -11932,7 +11932,7 @@
       "close_in_range_pct": 0.8358,
       "next_day_gap_pct": 0.118,
       "day_rvol_50d": 2.293,
-      "return_5d_pct": -6.449,
+      "return_5d_pct": -4.535,
       "source": "bse-calendar",
       "best_pop_pct": 2.803,
       "best_pop_rvol": 2.293
@@ -16957,12 +16957,12 @@
       "symbol": "ENRIN",
       "earnings_date": "2026-11-25",
       "close_in_range_pct": 0.5006,
-      "next_day_gap_pct": null,
+      "next_day_gap_pct": 8.808,
       "day_rvol_50d": 1.046,
-      "return_5d_pct": null,
+      "return_5d_pct": 4.444,
       "source": "bse-calendar",
-      "best_pop_pct": -0.218,
-      "best_pop_rvol": 1.046
+      "best_pop_pct": 2.963,
+      "best_pop_rvol": 6.32
     }
   }
 }
